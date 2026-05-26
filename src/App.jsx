@@ -661,6 +661,212 @@ function HistoryTab({steamid}) {
   );
 }
 
+
+// ── AI Report (автосводка) ────────────────────────────────────────────────────
+function AIReport({player, source}) {
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+
+  async function load() {
+    setLoading(true);
+    const stats = source === "faceit" && fc ? {
+      kd: fc.lifetime?.kd||"0", winrate: fc.lifetime?.winrate||"0",
+      hs: fc.lifetime?.hs||"0", matches: fc.lifetime?.matches||"0",
+      faceit_level: String(fc.level||""), faceit_elo: String(fc.elo||""),
+      maps: arr(fc.maps),
+    } : {
+      kd: cs2.kd||"0", winrate: cs2.winrate||"0",
+      hs: cs2.hs||"0", matches: cs2.matches||"0",
+      faceit_level: String(fc?.level||""), faceit_elo: String(fc?.elo||""),
+      maps: arr(fc?.maps),
+    };
+    try {
+      const r = await fetch(`${BACKEND}/ai-summary`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(stats)
+      });
+      const d = await r.json();
+      if (d.result) { setReport(d.result); setLoaded(true); }
+    } catch {}
+    setLoading(false);
+  }
+
+  // Авто-загрузка при первом рендере
+  useEffect(() => { if (!loaded && !loading) load(); }, [player?.steamid, source]);
+
+  const roleColor = {ENTRY:C.lose, SUPPORT:C.blue, RIFLER:C.yellow, LURKER:"#aa88ff", AWP:"#44ddaa"};
+  const rc = roleColor[report?.role?.split(" ")[0]] || C.yellow;
+
+  if (loading) return (
+    <div style={{background:C.card,border:`2px solid ${C.yellow}`,padding:"28px",marginBottom:"16px",animation:"fadeIn .3s ease"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"16px"}}>
+        <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",animation:"pulse 1.5s infinite"}}/>
+        <span style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow}}>AI АНАЛИЗИРУЕТ ТВОЮ ИГРУ</span>
+      </div>
+      <Skel w="90%" h="18" mb={10}/><Skel w="70%" h="16" mb={10}/><Skel w="80%" h="16"/>
+    </div>
+  );
+
+  if (!report) return null;
+
+  return (
+    <div style={{background:"#15140a",border:`2px solid ${C.yellow}44`,borderLeft:`4px solid ${C.yellow}`,
+      padding:"28px",marginBottom:"16px",position:"relative",overflow:"hidden",animation:"up .4s ease both"}}>
+      {/* glow */}
+      <div style={{position:"absolute",top:"-40px",right:"-40px",width:"200px",height:"200px",
+        background:`radial-gradient(circle,${C.yellow}12,transparent 70%)`,pointerEvents:"none"}}/>
+
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px",flexWrap:"wrap"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+          <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%"}}/>
+          <span style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>AI REPORT</span>
+        </div>
+        {report.role&&<span style={{padding:"3px 14px",background:rc+"22",color:rc,border:`1px solid ${rc}55`,fontSize:"12px",letterSpacing:"2px",fontWeight:700}}>
+          {report.role}
+        </span>}
+        <button onClick={load} style={{marginLeft:"auto",background:"transparent",border:`1px solid ${C.border}`,
+          color:C.muted,cursor:"pointer",fontSize:"11px",padding:"4px 12px",fontFamily:"inherit"}}>
+          ↻ обновить
+        </button>
+      </div>
+
+      {/* Verdict */}
+      <div style={{fontSize:"17px",color:C.value,lineHeight:1.8,marginBottom:"20px",fontWeight:400}}>
+        {report.verdict}
+      </div>
+
+      {/* Roast */}
+      {report.roast&&<div style={{background:"#1e1a08",border:`1px solid ${C.yellow}33`,
+        padding:"12px 18px",marginBottom:"20px",fontSize:"15px",color:C.yellow,
+        fontStyle:"italic",lineHeight:1.6}}>
+        💬 "{report.roast}"
+      </div>}
+
+      {/* Problems */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:"8px",marginBottom:"20px"}}>
+        {arr(report.problems).map((p,i)=>(
+          <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",
+            background:"#1a1009",border:`1px solid ${C.lose}33`,padding:"12px 14px"}}>
+            <span style={{color:C.lose,fontSize:"16px",flexShrink:0}}>✗</span>
+            <span style={{fontSize:"14px",color:C.text,lineHeight:1.6}}>{p}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Priority */}
+      {report.priority&&<div style={{display:"flex",gap:"12px",alignItems:"flex-start",
+        background:"#0f1a0f",border:`1px solid ${C.win}44`,padding:"14px 18px"}}>
+        <span style={{fontSize:"16px",flexShrink:0}}>🎯</span>
+        <div>
+          <div style={{fontSize:"12px",letterSpacing:"2px",color:C.win,marginBottom:"4px",fontWeight:700}}>
+            ГЛАВНЫЙ ПРИОРИТЕТ
+          </div>
+          <div style={{fontSize:"15px",color:C.value,lineHeight:1.6}}>{report.priority}</div>
+        </div>
+      </div>}
+    </div>
+  );
+}
+
+// ── AI Chat ───────────────────────────────────────────────────────────────────
+function ChatPanel({player, source, onClose}) {
+  const [msgs, setMsgs] = useState([
+    {role:"assistant", content:"Привет! Я твой AI-тренер. Вижу твои статы и готов отвечать на конкретные вопросы — например: Почему я умираю первым? Как апнуть FACEIT? Что тренировать на Mirage?"}
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef(null);
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+
+  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[msgs]);
+
+  const stats = source==="faceit"&&fc ? {
+    kd:fc.lifetime?.kd, winrate:fc.lifetime?.winrate, hs:fc.lifetime?.hs,
+    matches:fc.lifetime?.matches, faceit_level:String(fc.level||""), faceit_elo:String(fc.elo||"")
+  } : {kd:cs2.kd, winrate:cs2.winrate, hs:cs2.hs, matches:cs2.matches,
+       faceit_level:String(fc?.level||""), faceit_elo:String(fc?.elo||"")};
+
+  async function send() {
+    const q = input.trim(); if (!q || loading) return;
+    const newMsgs = [...msgs, {role:"user",content:q}];
+    setMsgs(newMsgs); setInput(""); setLoading(true);
+    try {
+      const r = await fetch(`${BACKEND}/chat`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({messages:newMsgs.filter(m=>m.role!=="system"), stats})
+      });
+      const d = await r.json();
+      setMsgs(m=>[...m, {role:"assistant",content:d.reply||"Не смог ответить, попробуй ещё."}]);
+    } catch { setMsgs(m=>[...m, {role:"assistant",content:"Ошибка сервера."}]); }
+    setLoading(false);
+  }
+
+  const QUICK = ["Почему я умираю первым?","Как апнуть FACEIT?","Что тренировать?","Лучшая карта для меня?"];
+
+  return (
+    <div style={{position:"fixed",bottom:"80px",right:"24px",width:"380px",maxHeight:"550px",
+      background:C.card,border:`1px solid ${C.yellow}55`,boxShadow:`0 8px 40px rgba(0,0,0,0.7), 0 0 20px ${C.yellow}18`,
+      display:"flex",flexDirection:"column",zIndex:200,animation:"slideUp .3s ease"}}>
+      {/* Header */}
+      <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",background:"#181408"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+          <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
+          <span style={{fontSize:"13px",color:C.yellow,fontWeight:700,letterSpacing:"2px"}}>AI ТРЕНЕР</span>
+        </div>
+        <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
+      </div>
+
+      {/* Messages */}
+      <div style={{flex:1,overflowY:"auto",padding:"16px",display:"flex",flexDirection:"column",gap:"10px"}}>
+        {msgs.map((m,i)=>(
+          <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+            <div style={{maxWidth:"85%",padding:"10px 14px",
+              background:m.role==="user"?C.yellow+"22":"#1e1e12",
+              border:`1px solid ${m.role==="user"?C.yellow+"44":C.border}`,
+              fontSize:"14px",color:m.role==="user"?C.yellow:C.text,lineHeight:1.65}}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {loading&&<div style={{display:"flex",gap:"5px",padding:"8px"}}>
+          {[0,1,2].map(i=><div key={i} style={{width:"7px",height:"7px",background:C.yellow,borderRadius:"50%",animation:`blink 1s ${i*.3}s infinite`}}/>)}
+        </div>}
+        <div ref={endRef}/>
+      </div>
+
+      {/* Quick questions */}
+      {msgs.length<=1&&<div style={{padding:"0 12px 12px",display:"flex",flexWrap:"wrap",gap:"6px"}}>
+        {QUICK.map((q,i)=>(
+          <button key={i} onClick={()=>{setInput(q);}} style={{
+            padding:"5px 11px",background:"transparent",border:`1px solid ${C.border}`,
+            color:C.label,cursor:"pointer",fontSize:"12px",fontFamily:"inherit"}}>
+            {q}
+          </button>
+        ))}
+      </div>}
+
+      {/* Input */}
+      <div style={{padding:"12px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"8px"}}>
+        <input value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&send()}
+          placeholder="Спроси тренера..."
+          style={{flex:1,background:"#111109",border:`1px solid ${C.border}`,color:C.value,
+            fontSize:"14px",padding:"9px 12px",fontFamily:"inherit"}}/>
+        <button onClick={send} disabled={loading||!input.trim()} style={{
+          padding:"9px 16px",background:loading||!input.trim()?"#1a1a0e":C.yellow,
+          color:"#080807",border:"none",cursor:loading||!input.trim()?"not-allowed":"pointer",
+          fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>→</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [player,setPlayer]       = useState(null);
@@ -672,6 +878,7 @@ export default function App() {
   const [errorMsg,setErrorMsg]   = useState(null);
   const [showPopup,setShowPopup] = useState(false);
   const [profileView,setProfileView] = useState(null);
+  const [chatOpen,setChatOpen] = useState(false);
 
   const hasFaceit = !!(player?.faceit && (player.faceit.elo || arr(player.faceit.matches).length));
 
@@ -845,6 +1052,7 @@ export default function App() {
           <div style={{animation:"up .4s ease both"}}>
             <SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>
             {source==="steam"&&player.cs2?.private&&<PrivateWarning/>}
+            {!player.cs2?.private&&<AIReport player={player} source={source}/>}
             <HeroCard player={player} source={source}/>
             {source==="faceit"&&hasFaceit
               ?<div style={{marginTop:"12px"}}><ChartsSection faceit={player.faceit}/></div>
@@ -1017,6 +1225,19 @@ export default function App() {
       </div>
 
       <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${C.yellow},transparent)`}}/>
+
+      {/* Chat bubble */}
+      {player&&<>
+        <button onClick={()=>setChatOpen(o=>!o)} style={{
+          position:"fixed",bottom:"24px",right:"24px",width:"56px",height:"56px",
+          background:chatOpen?C.yellow:"#1a1a0e",color:chatOpen?"#080807":C.yellow,
+          border:`2px solid ${C.yellow}`,borderRadius:"50%",cursor:"pointer",
+          fontSize:"24px",boxShadow:`0 4px 20px ${C.yellow}44`,zIndex:200,
+          transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          {chatOpen?"✕":"🤖"}
+        </button>
+        {chatOpen&&<ChatPanel player={player} source={source} onClose={()=>setChatOpen(false)}/>}
+      </>}
     </div>
   );
 }
