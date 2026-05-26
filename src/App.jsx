@@ -392,9 +392,18 @@ function MatchHistory({faceit}) {
   }
 
   if (!matches.length) return (
-    <div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>
-      <div style={{fontSize:"30px",marginBottom:"12px"}}>🎮</div>
-      НЕТ МАТЧЕЙ FACEIT
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"36px 28px",textAlign:"center"}}>
+      <div style={{fontSize:"36px",marginBottom:"14px"}}>🎮</div>
+      <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"8px"}}>Нет матчей FACEIT</div>
+      <div style={{fontSize:"14px",color:C.label,lineHeight:1.75,marginBottom:"20px",maxWidth:"400px",margin:"0 auto 20px"}}>
+        История матчей и AI разбор доступны для игроков FACEIT.<br/>
+        Регистрация бесплатная — просто привяжи Steam аккаунт.
+      </div>
+      <a href="https://www.faceit.com" target="_blank" rel="noreferrer"
+        style={{display:"inline-block",padding:"11px 28px",background:C.orange,
+          color:"#fff",textDecoration:"none",fontSize:"13px",fontWeight:700,letterSpacing:"2px"}}>
+        РЕГИСТРАЦИЯ НА FACEIT →
+      </a>
     </div>
   );
 
@@ -532,9 +541,12 @@ function MapPool({faceit}) {
   const maps = arr(faceit?.maps).filter(m=>parseInt(m.matches)>0)
     .sort((a,b)=>parseFloat(b.winrate)-parseFloat(a.winrate));
   if (!maps.length) return (
-    <div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>
-      <div style={{fontSize:"30px",marginBottom:"12px"}}>🗺️</div>
-      НЕТ ДАННЫХ ПО КАРТАМ
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"36px 28px",textAlign:"center"}}>
+      <div style={{fontSize:"36px",marginBottom:"14px"}}>🗺️</div>
+      <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"8px"}}>Нет статистики по картам</div>
+      <div style={{fontSize:"14px",color:C.label,lineHeight:1.75}}>
+        Сыграй хотя бы 5 матчей на FACEIT — статистика по картам появится автоматически.
+      </div>
     </div>
   );
   const best=maps[0], worst=maps[maps.length-1];
@@ -840,7 +852,11 @@ function ScoreCards({player, source}) {
 
 // ── Daily Training Plan ───────────────────────────────────────────────────────
 function TrainingPlan({player, source}) {
-  const [done, setDone] = useState({});
+  const today = new Date().toDateString().replace(/ /g,"_");
+  const storKey = `cs2_training_${today}`;
+  const [done, setDone] = useState(()=>{
+    try{ return JSON.parse(localStorage.getItem(storKey)||"{}"); }catch{ return {}; }
+  });
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -933,7 +949,8 @@ function TrainingPlan({player, source}) {
       {doneCount===total&&total>0&&(
         <div style={{textAlign:"center",padding:"16px",marginTop:"8px",
           background:"#0f1a0f",border:`1px solid ${C.win}44`,
-          fontSize:"15px",color:C.win,animation:"up .3s ease"}}>
+          fontSize:"15px",color:C.win,animation:"up .3s ease"}}
+          ref={el=>{if(el)try{localStorage.setItem("cs2_training_done","1");}catch{}}}>
           🎉 Тренировка выполнена! Удачи в рейтинговых сегодня.
         </div>
       )}
@@ -1168,6 +1185,77 @@ function LandingPage({onLogin}) {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Setup Checklist ───────────────────────────────────────────────────────────
+function SetupChecklist({player, hasFaceit, analysisCount, onDismiss}) {
+  const cs2 = player?.cs2 || {};
+  const steps = [
+    {id:"steam",    done:true,                         label:"Войти через Steam",              action:null},
+    {id:"stats",    done:!cs2.private,                 label:"Открыть статистику CS2 в Steam", action:"privacy"},
+    {id:"faceit",   done:hasFaceit,                    label:"Подключить FACEIT аккаунт",      action:"faceit"},
+    {id:"analysis", done:analysisCount>0,              label:"Получить первый AI разбор",      action:"coach"},
+    {id:"chat",     done:!!localStorage.getItem("cs2_chat_done"), label:"Поговорить с AI тренером", action:"chat"},
+    {id:"training", done:!!localStorage.getItem("cs2_training_done"), label:"Выполнить первую тренировку", action:"coach"},
+  ];
+  const done = steps.filter(s=>s.done).length;
+  const total = steps.length;
+  const pct = Math.round(done/total*100);
+  if (done===total) { onDismiss(); return null; }
+
+  const ACTIONS = {
+    privacy: ()=>window.open("https://steamcommunity.com/my/edit/settings","_blank"),
+    faceit:  ()=>window.open("https://www.faceit.com","_blank"),
+  };
+
+  return (
+    <div style={{background:"#141409",border:`1px solid ${C.yellow}44`,
+      borderLeft:`3px solid ${C.yellow}`,padding:"20px 24px",marginBottom:"16px",
+      animation:"up .4s ease both",position:"relative"}}>
+      <button onClick={onDismiss} style={{position:"absolute",top:"12px",right:"14px",
+        background:"transparent",border:"none",color:C.muted,cursor:"pointer",
+        fontSize:"16px",lineHeight:1}}>✕</button>
+
+      <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"16px",flexWrap:"wrap"}}>
+        <div>
+          <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,marginBottom:"2px"}}>
+            🚀 Настройка профиля
+          </div>
+          <div style={{fontSize:"13px",color:C.muted}}>{done} из {total} шагов выполнено</div>
+        </div>
+        <div style={{flex:1,minWidth:"120px"}}>
+          <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${pct}%`,background:C.yellow,
+              transition:"width .8s ease",borderRadius:"3px"}}/>
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"6px"}}>
+        {steps.map(step=>(
+          <div key={step.id} onClick={()=>ACTIONS[step.action]?.()}
+            style={{display:"flex",gap:"10px",alignItems:"center",padding:"9px 12px",
+              background:step.done?"#0f1a0f":"#111109",
+              border:`1px solid ${step.done?"#2a5a1a":C.border}`,
+              cursor:step.action&&!step.done?"pointer":"default",
+              transition:"border-color .2s"}}>
+            <div style={{width:"20px",height:"20px",flexShrink:0,borderRadius:"50%",
+              background:step.done?C.win:"transparent",
+              border:`2px solid ${step.done?C.win:C.muted}`,
+              display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {step.done&&<span style={{color:"#080807",fontSize:"11px",fontWeight:700}}>✓</span>}
+            </div>
+            <span style={{fontSize:"13px",color:step.done?C.win:C.label,lineHeight:1.4}}>
+              {step.label}
+              {!step.done&&step.action&&["privacy","faceit"].includes(step.action)&&
+                <span style={{color:C.muted,fontSize:"11px"}}> →</span>}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1504,6 +1592,9 @@ export default function App() {
       for(let i=0;i<3;i++){try{result=await call();break;}catch(e){le=e;if(i<2)await new Promise(r=>setTimeout(r,700));}}
       if (!result) throw le;
       setAnalysis(result); setSubTab("weak");
+      const newCount = analysisCount+1;
+      setAnalysisCount(newCount);
+      try{ localStorage.setItem("cs2_analysis_count",String(newCount)); }catch{}
       fetch(`${BACKEND}/leaderboard/add`,{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({steamid:player.steamid,username:player.username,
           avatar:player.avatar||"",stats:statsPayload,level:result.level,overall:result.overall})}).catch(()=>{});
@@ -1592,6 +1683,10 @@ export default function App() {
         {mainTab==="overview"&&(player?(
           <div style={{animation:"up .4s ease both"}}>
             <SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>
+            {showChecklist&&<SetupChecklist
+              player={player} hasFaceit={hasFaceit}
+              analysisCount={analysisCount}
+              onDismiss={()=>setShowChecklist(false)}/>}
             {source==="steam"&&player.cs2?.private&&<PrivateWarning/>}
             {!player.cs2?.private&&<AIReport player={player} source={source}/>}
             <HeroCard player={player} source={source}/>
@@ -1755,7 +1850,12 @@ export default function App() {
         )}
 
         {mainTab==="matches"&&(player
-          ?<><SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>{source==="faceit"?<MatchHistory faceit={player.faceit}/>:<div style={{textAlign:"center",padding:"50px",color:C.muted,fontSize:"13px"}}>История матчей доступна только через ⚡ FACEIT</div>}</>
+          ?<><SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>{source==="faceit"?<MatchHistory faceit={player.faceit}/>:
+            <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"28px 24px",textAlign:"center"}}>
+              <div style={{fontSize:"24px",marginBottom:"10px"}}>⚡</div>
+              <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"8px"}}>Переключись на FACEIT</div>
+              <div style={{fontSize:"14px",color:C.label,lineHeight:1.7}}>История матчей доступна только через FACEIT. Нажми кнопку ⚡ FACEIT выше.</div>
+            </div>}</>
           :<div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>Войди через Steam</div>)}
 
         {mainTab==="maps"&&(player
@@ -1779,7 +1879,7 @@ export default function App() {
 
       {/* Chat bubble */}
       {player&&<>
-        <button onClick={()=>setChatOpen(o=>!o)} style={{
+        <button onClick={()=>{ setChatOpen(o=>!o); try{localStorage.setItem("cs2_chat_done","1");}catch{} }} style={{
           position:"fixed",bottom:"24px",right:"24px",width:"56px",height:"56px",
           background:chatOpen?C.yellow:"#1a1a0e",color:chatOpen?"#080807":C.yellow,
           border:`2px solid ${C.yellow}`,borderRadius:"50%",cursor:"pointer",
