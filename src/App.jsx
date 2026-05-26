@@ -40,10 +40,27 @@ const css = `
     background-size:600px 100%;animation:shimmer 1.5s infinite linear;border-radius:2px;}
   .glow-btn:hover:not(:disabled){box-shadow:0 0 28px #f5c51855;}
   .match-row:hover{background:#181810 !important;}
-  @media(max-width:600px){
-    h1{font-size:28px !important;}
-    .main-grid{grid-template-columns:1fr !important;}
-    .hide-mobile{display:none !important;}
+  /* ── Mobile ── */
+  @media(max-width:768px){
+    .desktop-nav{display:none !important;}
+    .mobile-nav{display:flex !important;}
+    .topbar-search{display:none !important;}
+    .topbar-right{gap:8px !important;}
+    .content-pad{padding:16px 14px 80px !important;}
+    .stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+    .two-col{grid-template-columns:1fr !important;}
+    .match-grid{grid-template-columns:3px 1fr 80px 60px !important;}
+    .match-extra{display:none !important;}
+    .lb-grid{grid-template-columns:36px 1fr 70px 56px !important;}
+    .lb-extra{display:none !important;}
+    .hero-right{display:none !important;}
+    .score-rings{flex-direction:row !important;justify-content:space-around !important;}
+    .chat-panel{width:100% !important;right:0 !important;bottom:64px !important;}
+    .search-bar{display:none !important;}
+  }
+  @media(min-width:769px){
+    .mobile-nav{display:none !important;}
+    .desktop-nav{display:flex !important;}
   }
 `;
 
@@ -259,7 +276,7 @@ function HeroCard({player, source}) {
 
         {/* ELO (faceit mode only) */}
         {isFaceit&&fc&&!!elo&&(
-          <div style={{textAlign:"right",minWidth:"145px"}}>
+          <div className="hero-right" style={{textAlign:"right",minWidth:"145px"}}>
             <div style={{fontSize:"11px",letterSpacing:"3px",color:C.orange,marginBottom:"2px"}}>FACEIT ELO</div>
             <div style={{fontSize:"44px",fontWeight:700,color:lvlColor,lineHeight:1,textShadow:`0 0 18px ${lvlColor}55`}}>
               {eloCount}
@@ -365,7 +382,7 @@ function MatchHistory({faceit}) {
         return (
           <div key={i}>
             <div className="match-row" onClick={()=>setExp(isExp?null:i)} style={{
-              display:"grid",gridTemplateColumns:"4px 1fr 100px 88px 72px 64px",
+              className:"match-grid",display:"grid",gridTemplateColumns:"4px 1fr 100px 88px 72px 64px",
               gap:"14px",padding:"15px 16px",cursor:"pointer",alignItems:"center",
               background:isExp?"#181810":C.card,border:`1px solid ${C.border}`,
               borderLeft:`3px solid ${ac}`,marginBottom:"3px",transition:"background .15s"}}>
@@ -575,7 +592,7 @@ function Leaderboard({myId, onProfile}) {
   return (
     <div style={{animation:"up .4s ease both"}}>
       <div style={{fontSize:"12px",color:C.muted,marginBottom:"14px"}}>Нажми на игрока — откроется профиль</div>
-      <div style={{display:"grid",gridTemplateColumns:"48px 1fr 100px 68px 68px 68px 90px",gap:"2px",
+      <div style={{className:"lb-grid",display:"grid",gridTemplateColumns:"48px 1fr 100px 68px 68px 68px 90px",gap:"2px",
         padding:"8px 14px",fontSize:"11px",letterSpacing:"2px",color:C.muted,borderBottom:`1px solid ${C.border}`}}>
         <div>#</div><div>ИГРОК</div><div>RANK</div><div>K/D</div><div>WIN%</div><div>HS%</div><div>УРОВЕНЬ</div>
       </div>
@@ -585,7 +602,7 @@ function Leaderboard({myId, onProfile}) {
         const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":null;
         return (
           <div key={i} className="hov-row" onClick={()=>onProfile(p.steamid)} style={{
-            display:"grid",gridTemplateColumns:"48px 1fr 100px 68px 68px 68px 90px",gap:"2px",
+            className:"lb-grid",display:"grid",gridTemplateColumns:"48px 1fr 100px 68px 68px 68px 90px",gap:"2px",
             padding:"14px",cursor:"pointer",borderBottom:`1px solid ${C.border}`,
             background:isMe?"#1a1a08":C.card,borderLeft:isMe?`2px solid ${C.yellow}`:`2px solid transparent`,
             transition:"background .15s"}}>
@@ -712,7 +729,7 @@ function ScoreCards({player, source}) {
   };
 
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,
+    <div style={{className:"score-rings",background:C.card,border:`1px solid ${C.border}`,
       display:"flex",justifyContent:"space-around",flexWrap:"wrap",marginBottom:"3px",animation:"up .5s ease both"}}>
       <ScoreRing score={overallScore} label="ОБЩИЙ РЕЙТИНГ" color={C.yellow}/>
       <ScoreRing score={aimScore} label="AIM SCORE"/>
@@ -825,6 +842,55 @@ function TrainingPlan({player, source}) {
   );
 }
 
+
+
+// ── Mobile Navigation ─────────────────────────────────────────────────────────
+function MobileNav({tab, setTab}) {
+  const items = [
+    {id:"overview", icon:"👤", label:"Обзор"},
+    {id:"coach",    icon:"🎯", label:"Тренер"},
+    {id:"matches",  icon:"🎮", label:"Матчи"},
+    {id:"history",  icon:"📋", label:"История"},
+    {id:"leaderboard", icon:"🏆", label:"Топ"},
+  ];
+  return (
+    <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,
+      background:"#0d0d09",borderTop:`1px solid ${C.border}`,zIndex:100,
+      alignItems:"stretch"}}>
+      {items.map(item=>(
+        <button key={item.id} onClick={()=>setTab(item.id)} style={{
+          flex:1,padding:"8px 2px 10px",background:"transparent",border:"none",
+          cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:"3px",
+          borderTop:`2px solid ${tab===item.id?C.yellow:"transparent"}`,
+          transition:"border-color .15s"}}>
+          <span style={{fontSize:"20px",lineHeight:1}}>{item.icon}</span>
+          <span style={{fontSize:"9px",letterSpacing:"1px",color:tab===item.id?C.yellow:C.muted,fontFamily:"inherit"}}>
+            {item.label}
+          </span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+// ── Streak Toast ──────────────────────────────────────────────────────────────
+function StreakToast({streak, onClose}) {
+  useEffect(()=>{ const t=setTimeout(onClose, 3500); return()=>clearTimeout(t); },[]);
+  const msg = streak>=30?"🔥 30 дней подряд! Легенда!":streak>=14?"🔥 2 недели подряд! Серьёзно!":streak>=7?"🔥 Неделя подряд! Огонь!":"🔥 "+streak+" дня подряд!";
+  return (
+    <div style={{position:"fixed",top:"70px",left:"50%",transform:"translateX(-50%)",
+      background:"#1a1408",border:`2px solid ${C.yellow}`,padding:"14px 24px",
+      zIndex:300,animation:"slideUp .4s ease",boxShadow:`0 4px 24px ${C.yellow}44`,
+      display:"flex",alignItems:"center",gap:"10px",whiteSpace:"nowrap"}}>
+      <span style={{fontSize:"22px"}}>🔥</span>
+      <div>
+        <div style={{fontSize:"14px",color:C.yellow,fontWeight:700}}>{msg}</div>
+        <div style={{fontSize:"12px",color:C.muted,marginTop:"2px"}}>Заходи завтра чтобы не потерять</div>
+      </div>
+      <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"16px",marginLeft:"8px"}}>✕</button>
+    </div>
+  );
+}
 
 // ── Cold Start Banner ─────────────────────────────────────────────────────────
 function ColdStartBanner({status}) {
@@ -1156,7 +1222,7 @@ function ChatPanel({player, source, onClose}) {
   const QUICK = ["Почему я умираю первым?","Как апнуть FACEIT?","Что тренировать?","Лучшая карта для меня?"];
 
   return (
-    <div style={{position:"fixed",bottom:"80px",right:"24px",width:"380px",maxHeight:"550px",
+    <div style={{className:"chat-panel",position:"fixed",bottom:"80px",right:"24px",width:"380px",maxHeight:"550px",
       background:C.card,border:`1px solid ${C.yellow}55`,boxShadow:`0 8px 40px rgba(0,0,0,0.7), 0 0 20px ${C.yellow}18`,
       display:"flex",flexDirection:"column",zIndex:200,animation:"slideUp .3s ease"}}>
       {/* Header */}
@@ -1226,9 +1292,28 @@ export default function App() {
   const [profileView,setProfileView] = useState(null);
   const [chatOpen,setChatOpen] = useState(false);
   const [serverStatus,setServerStatus] = useState("checking");
-  const [shareOpen,setShareOpen] = useState(false);
+  const [shareOpen,setShareOpen]   = useState(false);
+  const [streak,setStreak]         = useState(0);
+  const [showStreakToast,setShowStreakToast] = useState(false);
 
   const hasFaceit = !!(player?.faceit && (player.faceit.elo || arr(player.faceit.matches).length));
+
+  // ── streak tracking ─────────────────────────────────────────────────────────
+  useEffect(()=>{
+    try {
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now()-86400000).toDateString();
+      const last = localStorage.getItem("cs2_last_visit");
+      const cur  = parseInt(localStorage.getItem("cs2_streak")||"0");
+      let newStreak = 1;
+      if (last===today)       newStreak=cur;
+      else if(last===yesterday) newStreak=cur+1;
+      setStreak(newStreak);
+      localStorage.setItem("cs2_streak",String(newStreak));
+      localStorage.setItem("cs2_last_visit",today);
+      if (newStreak>1 && last!==today) setTimeout(()=>setShowStreakToast(true),1500);
+    } catch {}
+  },[]);
 
   // ── cold start wake-up ──────────────────────────────────────────────────────
   useEffect(()=>{
@@ -1354,7 +1439,7 @@ export default function App() {
           <span style={{fontSize:"13px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>CS2 AI ТРЕНЕР</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
-          <SearchBar onSelect={r=>setProfileView({nickname:r.nickname})}/>
+          <div className="search-bar"><SearchBar onSelect={r=>setProfileView({nickname:r.nickname})}/></div>
           {player?(
             <>
               <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
@@ -1365,6 +1450,11 @@ export default function App() {
                   FACEIT {player.faceit.level} · {player.faceit.elo} ELO
                 </span>}
               </div>
+              {streak>1&&<div style={{display:"flex",alignItems:"center",gap:"4px",
+                padding:"4px 10px",background:"#1a1408",border:`1px solid ${C.yellow}44`}}>
+                <span style={{fontSize:"14px"}}>🔥</span>
+                <span style={{fontSize:"13px",color:C.yellow,fontWeight:700}}>{streak}</span>
+              </div>}
               <button onClick={()=>setShareOpen(true)} style={{background:"transparent",border:`1px solid ${C.yellow}44`,color:C.yellow,cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"inherit",padding:"5px 12px"}}>📤</button>
               <button onClick={logout} style={{background:"transparent",border:`1px solid ${C.border}`,color:C.label,cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"inherit",padding:"5px 10px"}}>ВЫЙТИ</button>
             </>
@@ -1374,7 +1464,7 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{maxWidth:"1100px",margin:"0 auto",padding:"28px 24px 80px",position:"relative",zIndex:5}}>
+      <div style={{className:"content-pad",maxWidth:"1100px",margin:"0 auto",padding:"28px 24px 80px",position:"relative",zIndex:5}}>
 
         {/* Page title */}
         <div style={{marginBottom:"24px"}}>
@@ -1385,7 +1475,7 @@ export default function App() {
         </div>
 
         {/* Main tabs */}
-        <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:"22px",flexWrap:"wrap"}}>
+        <div style={{className:"desktop-nav",display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:"22px",flexWrap:"wrap"}}>
           {[["overview","ОБЗОР"],["coach","🎯 ТРЕНЕР"],["matches","🎮 МАТЧИ"],["maps","🗺️ КАРТЫ"],["history","📋 ИСТОРИЯ"],["leaderboard","🏆 ЛИДЕРЫ"]].map(([t,l])=>(
             <button key={t} onClick={()=>setMainTab(t)} style={{
               padding:"11px 18px",background:"transparent",
@@ -1437,7 +1527,7 @@ export default function App() {
               {source==="steam"&&player.cs2?.private&&<PrivateWarning/>}
 
               {/* Stat cards */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:"3px",marginBottom:"16px"}}>
+              <div style={{className:"stat-grid",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:"3px",marginBottom:"16px"}}>
                 {(source==="faceit"&&player.faceit?[
                   {l:"K/D",v:player.faceit.lifetime?.kd||"—"},
                   {l:"WIN %",v:player.faceit.lifetime?.winrate?(player.faceit.lifetime.winrate+"%"):"—"},
@@ -1527,7 +1617,7 @@ export default function App() {
                 </div>
 
                 {subTab==="weak"&&(
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",animation:"up .25s ease both"}}>
+                  <div style={{className:"two-col",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",animation:"up .25s ease both"}}>
                     {analysis.weaknesses?.map((w,i)=>(
                       <div key={i} style={{background:C.card,border:"1px solid #2e1414",borderTop:"2px solid #ff5544",padding:"20px"}}>
                         <div style={{display:"inline-block",padding:"3px 13px",background:"#ff554422",color:"#ff8866",fontSize:"12px",letterSpacing:"2px",fontWeight:700,marginBottom:"12px"}}>{w.stat?.toUpperCase()}</div>
@@ -1538,7 +1628,7 @@ export default function App() {
                   </div>
                 )}
                 {subTab==="strong"&&(
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",animation:"up .25s ease both"}}>
+                  <div style={{className:"two-col",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",animation:"up .25s ease both"}}>
                     {analysis.strengths?.map((s,i)=>(
                       <div key={i} style={{background:C.card,border:"1px solid #142814",borderTop:"2px solid #55aa55",padding:"20px"}}>
                         <div style={{display:"inline-block",padding:"3px 13px",background:"#55aa5522",color:"#88ee88",fontSize:"12px",letterSpacing:"2px",fontWeight:700,marginBottom:"12px"}}>{s.stat?.toUpperCase()}</div>
@@ -1581,6 +1671,12 @@ export default function App() {
       </div>
 
       <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${C.yellow},transparent)`}}/>
+
+      {/* Streak toast */}
+      {showStreakToast&&<StreakToast streak={streak} onClose={()=>setShowStreakToast(false)}/>}
+
+      {/* Mobile nav */}
+      {player&&<MobileNav tab={mainTab} setTab={setMainTab}/>}
 
       {/* Chat bubble */}
       {player&&<>
