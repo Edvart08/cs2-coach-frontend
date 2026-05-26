@@ -366,59 +366,158 @@ function ChartsSection({faceit}) {
 
 // ── Match History ─────────────────────────────────────────────────────────────
 function MatchHistory({faceit}) {
-  const [exp,setExp] = useState(null);
+  const [exp,setExp]           = useState(null);
+  const [analyses,setAnalyses] = useState({});
+  const [aiLoading,setAiLoading] = useState({});
   const matches = arr(faceit?.matches);
+
+  async function fetchAnalysis(m, i) {
+    if (analyses[i] || aiLoading[i]) return;
+    setAiLoading(l=>({...l,[i]:true}));
+    try {
+      const r = await fetch(`${BACKEND}/analyze-match`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          map:m.map||"Unknown", result:m.result||"0",
+          kills:m.kills||"0", deaths:m.deaths||"0",
+          assists:m.assists||"0", kd:m.kd||"0",
+          hs:m.hs||"0", adr:m.adr||"0",
+          mvps:m.mvps||"0", score:m.score||""
+        })
+      });
+      const d = await r.json();
+      if (d.result) setAnalyses(a=>({...a,[i]:d.result}));
+    } catch {}
+    setAiLoading(l=>({...l,[i]:false}));
+  }
+
   if (!matches.length) return (
     <div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>
       <div style={{fontSize:"30px",marginBottom:"12px"}}>🎮</div>
       НЕТ МАТЧЕЙ FACEIT
     </div>
   );
+
   return (
     <div style={{animation:"up .4s ease both"}}>
-      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>ИСТОРИЯ МАТЧЕЙ · FACEIT</div>
+      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>
+        ИСТОРИЯ МАТЧЕЙ · FACEIT
+        <span style={{fontSize:"12px",color:C.muted,fontWeight:400,marginLeft:"12px",letterSpacing:"1px"}}>
+          нажми на матч → AI разбор
+        </span>
+      </div>
+
       {matches.map((m,i)=>{
-        const win=m.result==="1", ac=win?C.win:C.lose, isExp=exp===i;
+        const win=m.result==="1", ac=win?C.win:C.lose;
+        const isExp=exp===i, ai=analyses[i], isAiLoading=aiLoading[i];
+
         return (
-          <div key={i}>
-            <div className="match-row" onClick={()=>setExp(isExp?null:i)} style={{
-              className:"match-grid",display:"grid",gridTemplateColumns:"4px 1fr 100px 88px 72px 64px",
-              gap:"14px",padding:"15px 16px",cursor:"pointer",alignItems:"center",
+          <div key={i} style={{marginBottom:"3px"}}>
+            <div className="match-row" onClick={()=>{
+              const opening=!isExp;
+              setExp(isExp?null:i);
+              if(opening) fetchAnalysis(m,i);
+            }} style={{
+              display:"grid",gridTemplateColumns:"3px 1fr 90px 78px 66px 48px",
+              gap:"12px",padding:"14px 16px",cursor:"pointer",alignItems:"center",
               background:isExp?"#181810":C.card,border:`1px solid ${C.border}`,
-              borderLeft:`3px solid ${ac}`,marginBottom:"3px",transition:"background .15s"}}>
+              borderLeft:`3px solid ${ac}`,transition:"background .15s"}}>
               <div/>
               <div>
-                <div style={{fontSize:"16px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
-                <div style={{fontSize:"13px",color:ac,marginTop:"3px"}}>
-                  {win?"ПОБЕДА":"ПОРАЖЕНИЕ"} · {m.score}
-                </div>
+                <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
+                <div style={{fontSize:"12px",color:ac,marginTop:"2px"}}>{win?"ПОБЕДА":"ПОРАЖЕНИЕ"} · {m.score}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"13px",color:C.label,marginBottom:"4px"}}>K/D</div>
+                <div style={{fontSize:"11px",color:C.label,marginBottom:"3px"}}>K/D</div>
                 <div style={{fontSize:"16px",color:C.yellow,fontWeight:700}}>{m.kd}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"13px",color:C.label,marginBottom:"4px"}}>K — D</div>
-                <div style={{fontSize:"15px",color:C.text}}>{m.kills}—{m.deaths}</div>
+                <div style={{fontSize:"11px",color:C.label,marginBottom:"3px"}}>K–D</div>
+                <div style={{fontSize:"14px",color:C.text}}>{m.kills}–{m.deaths}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"13px",color:C.label,marginBottom:"4px"}}>HS%</div>
-                <div style={{fontSize:"15px",color:C.text}}>{m.hs}%</div>
+                <div style={{fontSize:"11px",color:C.label,marginBottom:"3px"}}>HS%</div>
+                <div style={{fontSize:"14px",color:C.text}}>{m.hs}%</div>
               </div>
-              <div style={{textAlign:"center",fontSize:"18px"}}>{parseInt(m.mvps)>0?"⭐":""}</div>
+              <div style={{textAlign:"center"}}>
+                {parseInt(m.mvps)>0&&<div style={{fontSize:"14px"}}>⭐</div>}
+                <div style={{fontSize:"11px",color:isExp?C.yellow:C.muted,marginTop:"2px"}}>{isExp?"▲":"▼"}</div>
+              </div>
             </div>
+
             {isExp&&(
               <div style={{background:"#0f0f09",border:`1px solid ${C.border}`,borderTop:"none",
-                padding:"16px 20px",marginBottom:"3px",animation:"up .2s ease both"}}>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(90px,1fr))",gap:"4px"}}>
-                  {[{l:"УБИЙСТВА",v:m.kills},{l:"СМЕРТИ",v:m.deaths},{l:"АССИСТЫ",v:m.assists},
-                    {l:"K/R",v:m.kr},{l:"ADR",v:m.adr},{l:"MVP",v:m.mvps}].map((s,j)=>(
-                    <div key={j} style={{background:C.card,border:`1px solid ${C.border}`,padding:"10px 12px"}}>
-                      <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>{s.l}</div>
-                      <div style={{fontSize:"17px",color:C.yellow,fontWeight:700}}>{s.v||"—"}</div>
+                padding:"16px 20px",animation:"up .2s ease both"}}>
+
+                {/* Stats */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(80px,1fr))",
+                  gap:"4px",marginBottom:"16px"}}>
+                  {[{l:"УБИЙСТВА",v:m.kills},{l:"СМЕРТИ",v:m.deaths},{l:"АССИСТЫ",v:m.assists||"—"},
+                    {l:"ADR",v:m.adr||"—"},{l:"K/R",v:m.kr||"—"},{l:"MVP",v:m.mvps||"0"}].map((st,j)=>(
+                    <div key={j} style={{background:C.card,border:`1px solid ${C.border}`,
+                      padding:"9px 10px",textAlign:"center"}}>
+                      <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"3px"}}>{st.l}</div>
+                      <div style={{fontSize:"16px",color:C.yellow,fontWeight:700}}>{st.v}</div>
                     </div>
                   ))}
                 </div>
+
+                {/* AI loading */}
+                {isAiLoading&&(
+                  <div style={{background:"#15150a",border:`1px solid ${C.yellow}33`,
+                    borderLeft:`3px solid ${C.yellow}`,padding:"16px 18px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"12px"}}>
+                      <div style={{display:"flex",gap:"4px"}}>
+                        {[0,1,2].map(k=><div key={k} style={{width:"6px",height:"6px",background:C.yellow,
+                          borderRadius:"50%",animation:`blink 1s ${k*.3}s infinite`}}/>)}
+                      </div>
+                      <span style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px",fontWeight:700}}>
+                        AI РАЗБИРАЕТ МАТЧ
+                      </span>
+                    </div>
+                    <Skel w="90%" h="14"/><Skel w="75%" h="14" mb={4}/><Skel w="60%" h="14"/>
+                  </div>
+                )}
+
+                {/* AI result */}
+                {ai&&!isAiLoading&&(
+                  <div style={{background:"#15150a",border:`1px solid ${C.yellow}33`,
+                    borderLeft:`3px solid ${C.yellow}`,padding:"18px 20px",
+                    animation:"up .3s ease both"}}>
+                    <div style={{fontSize:"11px",letterSpacing:"3px",color:C.yellow,
+                      marginBottom:"14px",fontWeight:700}}>🤖 AI РАЗБОР МАТЧА</div>
+
+                    <div style={{fontSize:"15px",color:C.value,lineHeight:1.75,marginBottom:"16px"}}>
+                      {ai.verdict}
+                    </div>
+
+                    <div style={{marginBottom:"14px"}}>
+                      {arr(ai.mistakes).map((err,k)=>(
+                        <div key={k} style={{display:"flex",gap:"10px",
+                          alignItems:"flex-start",marginBottom:"8px"}}>
+                          <span style={{color:C.lose,fontSize:"15px",flexShrink:0,marginTop:"1px"}}>✗</span>
+                          <span style={{fontSize:"14px",color:C.label,lineHeight:1.65}}>{err}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {ai.bright&&(
+                      <div style={{display:"flex",gap:"10px",padding:"11px 14px",
+                        background:"#0f1a0f",border:`1px solid ${C.win}33`,marginBottom:"10px"}}>
+                        <span style={{color:C.win,fontSize:"15px",flexShrink:0}}>✓</span>
+                        <span style={{fontSize:"14px",color:C.win,lineHeight:1.65}}>{ai.bright}</span>
+                      </div>
+                    )}
+
+                    {ai.tip&&(
+                      <div style={{display:"flex",gap:"10px",padding:"11px 14px",
+                        background:C.yellow+"0a",border:`1px solid ${C.yellow}22`}}>
+                        <span style={{fontSize:"15px",flexShrink:0}}>💡</span>
+                        <span style={{fontSize:"14px",color:C.yellow,lineHeight:1.65}}>{ai.tip}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
