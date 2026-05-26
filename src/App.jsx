@@ -11,6 +11,8 @@ const LVL_COLOR = {1:"#EEEEEE",2:"#EEEEEE",3:"#1CE400",4:"#1CE400",5:"#FFC800",
 const LEVEL_COLOR = {Новичок:"#ff5544",Средний:"#ffaa33",Хороший:"#f5c518",Про:"#44ddaa"};
 
 const css = `
+  html,body,#root{margin:0;padding:0;background:#080807;}
+  body{overflow-x:hidden;}
   @keyframes blink{0%,100%{opacity:.15}50%{opacity:1}}
   @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -78,7 +80,7 @@ function useCountUp(target,dur=900,dec=0){
 // ── Sparkline chart ──────────────────────────────────────────────────────────
 function Sparkline({data,color="#f5c518",h=70,label,fill=true}){
   if(!data||data.length<2)return(
-    <div style={{height:h,display:"flex",alignItems:"center",justifyContent:"center",color:"#2a2a18",fontSize:"10px",letterSpacing:"1px"}}>
+    <div style={{height:h,display:"flex",alignItems:"center",justifyContent:"center",color:"#8a8270",fontSize:"10px",letterSpacing:"1px"}}>
       МАЛО ДАННЫХ
     </div>
   );
@@ -174,9 +176,31 @@ function SteamPopup({onLogin,onSkip}){
           </svg>
           ВОЙТИ ЧЕРЕЗ STEAM
         </button>
-        <button onClick={onSkip} style={{background:"transparent",border:"none",color:"#2a2a18",cursor:"pointer",fontSize:"10px",letterSpacing:"2px",fontFamily:"'Courier New',monospace",padding:"6px"}}>
+        <button onClick={onSkip} style={{background:"transparent",border:"none",color:"#8a8270",cursor:"pointer",fontSize:"10px",letterSpacing:"2px",fontFamily:"'Courier New',monospace",padding:"6px"}}>
           ПРОСТО ОСМОТРЕТЬСЯ →
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Stat row (Steam / FACEIT) ────────────────────────────────────────────────
+function StatRow({label,labelColor,stats}){
+  return(
+    <div style={{display:"flex",alignItems:"stretch",borderTop:"1px solid #1e1e12"}}>
+      <div style={{width:"96px",flexShrink:0,display:"flex",alignItems:"center",
+        padding:"0 0 0 20px",fontSize:"12px",letterSpacing:"2px",color:labelColor,fontWeight:700,
+        borderRight:"1px solid #1e1e12",background:labelColor+"0e"}}>
+        {label}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",flex:1}}>
+        {stats.map((s,i)=>(
+          <div key={i} style={{padding:"14px 8px",textAlign:"center",
+            borderLeft:i>0?"1px solid #1e1e12":"none"}}>
+            <div style={{fontSize:"10px",color:"#9a9078",letterSpacing:"1px",marginBottom:"5px"}}>{s.l}</div>
+            <div style={{fontSize:"21px",color:"#f5c518",fontWeight:700}}>{s.v}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -185,20 +209,19 @@ function SteamPopup({onLogin,onSkip}){
 // ── Hero Card ────────────────────────────────────────────────────────────────
 function HeroCard({player}){
   const fc=player.faceit;
+  const cs2=player.cs2||{};
   const elo=fc?.elo||0;
   const li=levelInfo(elo);
   const lvlColor=LVL_COLOR[li.lvl]||"#f5c518";
-  const role=roleOf(fc?.lifetime?.kd||player.cs2?.kd||0);
+  const role=roleOf(cs2.kd||fc?.lifetime?.kd||0);
   const form=arr(fc?.matches).slice(0,7).map(m=>m.result==="1");
   const eloCount=useCountUp(elo,1100);
-  const kdVal=fc?.lifetime?.kd||player.cs2?.kd||"0";
 
   return(
     <div className="hov-card" style={{
       background:"#0d0d07",border:"1px solid #1e1e12",position:"relative",
       overflow:"hidden",marginBottom:"3px"
     }}>
-      {/* glow */}
       <div style={{position:"absolute",top:"-60px",right:"-40px",width:"260px",height:"260px",
         background:`radial-gradient(circle,${lvlColor}22,transparent 70%)`,
         animation:"glowPulse 4s ease-in-out infinite",pointerEvents:"none"}}/>
@@ -206,42 +229,46 @@ function HeroCard({player}){
       <div style={{display:"flex",gap:"22px",padding:"26px",position:"relative",flexWrap:"wrap"}}>
         {/* Avatar */}
         <div style={{position:"relative",flexShrink:0}}>
-          {(fc?.avatar||player.avatar)
-            ?<img src={fc?.avatar||player.avatar} alt="" style={{width:"96px",height:"96px",borderRadius:"4px",border:`2px solid ${lvlColor}`,boxShadow:`0 0 20px ${lvlColor}44`}}/>
+          {(player.avatar||fc?.avatar)
+            ?<img src={player.avatar||fc?.avatar} alt="" style={{width:"96px",height:"96px",borderRadius:"4px",border:`2px solid ${lvlColor}`,boxShadow:`0 0 20px ${lvlColor}44`}}/>
             :<div style={{width:"96px",height:"96px",background:"#1a1a10",border:`2px solid ${lvlColor}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"36px"}}>👤</div>
           }
-          <div style={{position:"absolute",bottom:"-8px",left:"50%",transform:"translateX(-50%)",
-            background:lvlColor,color:"#080807",fontSize:"11px",fontWeight:700,
+          {fc&&<div style={{position:"absolute",bottom:"-8px",left:"50%",transform:"translateX(-50%)",
+            background:lvlColor,color:"#080807",fontSize:"12px",fontWeight:700,
             padding:"2px 10px",letterSpacing:"1px",whiteSpace:"nowrap"}}>
             LVL {li.lvl}
-          </div>
+          </div>}
         </div>
 
         {/* Identity */}
         <div style={{flex:1,minWidth:"180px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px"}}>
-            <span style={{fontSize:"22px",color:"#f0e8c0",fontWeight:700}}>
-              {fc?.nickname||player.username}
+          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"5px"}}>
+            <span style={{fontSize:"24px",color:"#f5ecc8",fontWeight:700}}>
+              {player.username}
             </span>
-            <span style={{fontSize:"18px"}}>{flag(fc?.country||player.country)}</span>
+            <span style={{fontSize:"20px"}}>{flag(player.country||fc?.country)}</span>
           </div>
-          <div style={{fontSize:"11px",color:"#3a3a28",letterSpacing:"1px",marginBottom:"12px"}}>
-            {player.created&&`Steam c ${new Date(player.created*1000).getFullYear()}`}
+          <div style={{fontSize:"12px",color:"#8a8268",letterSpacing:"1px",marginBottom:"6px"}}>
+            {player.created&&`Steam с ${new Date(player.created*1000).getFullYear()} г.`}
             {player.steam_level!=null&&`  ·  Steam Lvl ${player.steam_level}`}
           </div>
-          {/* Role + form */}
-          <div style={{display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap"}}>
-            <span style={{padding:"3px 12px",background:role.color+"1e",color:role.color,
-              border:`1px solid ${role.color}44`,fontSize:"10px",letterSpacing:"2px",fontWeight:700}}>
+          {fc?.nickname&&fc.nickname!==player.username&&(
+            <div style={{fontSize:"12px",color:"#ff7733",letterSpacing:"1px",marginBottom:"12px"}}>
+              FACEIT ник: {fc.nickname}
+            </div>
+          )}
+          <div style={{display:"flex",gap:"10px",alignItems:"center",flexWrap:"wrap",marginTop:"4px"}}>
+            <span style={{padding:"4px 14px",background:role.color+"22",color:role.color,
+              border:`1px solid ${role.color}55`,fontSize:"12px",letterSpacing:"2px",fontWeight:700}}>
               {role.name}
             </span>
             {form.length>0&&(
-              <div style={{display:"flex",gap:"3px",alignItems:"center"}}>
-                <span style={{fontSize:"9px",color:"#2a2a18",letterSpacing:"1px",marginRight:"2px"}}>ФОРМА</span>
+              <div style={{display:"flex",gap:"4px",alignItems:"center"}}>
+                <span style={{fontSize:"11px",color:"#8a8268",letterSpacing:"1px",marginRight:"3px"}}>ФОРМА</span>
                 {form.map((w,i)=>(
-                  <div key={i} style={{width:"18px",height:"18px",display:"flex",alignItems:"center",
-                    justifyContent:"center",fontSize:"9px",fontWeight:700,
-                    background:w?"#1a3a1a":"#3a1414",color:w?"#55dd55":"#ff5544",
+                  <div key={i} style={{width:"20px",height:"20px",display:"flex",alignItems:"center",
+                    justifyContent:"center",fontSize:"11px",fontWeight:700,
+                    background:w?"#1a3a1a":"#3a1414",color:w?"#66ee66":"#ff6655",
                     border:`1px solid ${w?"#2a5a2a":"#5a2020"}`}}>
                     {w?"W":"L"}
                   </div>
@@ -252,18 +279,17 @@ function HeroCard({player}){
         </div>
 
         {/* ELO block */}
-        {fc&&(
-          <div style={{textAlign:"right",minWidth:"140px"}}>
-            <div style={{fontSize:"9px",letterSpacing:"3px",color:"#3a3a28",marginBottom:"2px"}}>FACEIT ELO</div>
-            <div style={{fontSize:"42px",fontWeight:700,color:lvlColor,lineHeight:1,
+        {fc&&!!elo&&(
+          <div style={{textAlign:"right",minWidth:"150px"}}>
+            <div style={{fontSize:"11px",letterSpacing:"3px",color:"#ff7733",marginBottom:"2px"}}>FACEIT ELO</div>
+            <div style={{fontSize:"44px",fontWeight:700,color:lvlColor,lineHeight:1,
               textShadow:`0 0 20px ${lvlColor}55`}}>
               {eloCount}
             </div>
-            <div style={{fontSize:"10px",color:"#3a3a28",marginTop:"4px"}}>
+            <div style={{fontSize:"11px",color:"#9a9078",marginTop:"5px"}}>
               до LVL {Math.min(10,li.lvl+1)}: {li.toNext>0?li.toNext:"MAX"} ELO
             </div>
-            {/* progress bar */}
-            <div style={{marginTop:"8px",height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
+            <div style={{marginTop:"8px",height:"7px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
               <div style={{height:"100%",width:`${li.progress}%`,
                 background:`linear-gradient(90deg,${lvlColor}88,${lvlColor})`,
                 boxShadow:`0 0 8px ${lvlColor}`,transition:"width 1s ease"}}/>
@@ -272,21 +298,23 @@ function HeroCard({player}){
         )}
       </div>
 
-      {/* quick stats strip */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:"1px solid #1a1a0e"}}>
-        {[
-          {l:"K/D",v:kdVal},
-          {l:"WIN %",v:(fc?.lifetime?.winrate||player.cs2?.winrate||"0")+"%"},
-          {l:"HS %",v:(fc?.lifetime?.hs||player.cs2?.hs||"0")+"%"},
-          {l:"МАТЧИ",v:fc?.lifetime?.matches||player.cs2?.matches||"0"},
-        ].map((s,i)=>(
-          <div key={i} style={{padding:"14px",textAlign:"center",
-            borderRight:i<3?"1px solid #1a1a0e":"none"}}>
-            <div style={{fontSize:"9px",color:"#2a2a18",letterSpacing:"2px",marginBottom:"4px"}}>{s.l}</div>
-            <div style={{fontSize:"19px",color:"#f5c518",fontWeight:700}}>{s.v}</div>
-          </div>
-        ))}
-      </div>
+      {/* Steam stats row */}
+      <StatRow label="STEAM" labelColor="#66c0f4" stats={[
+        {l:"K/D",v:cs2.kd||"—"},
+        {l:"WIN %",v:cs2.winrate?cs2.winrate+"%":"—"},
+        {l:"HS %",v:cs2.hs?cs2.hs+"%":"—"},
+        {l:"МАТЧИ",v:cs2.matches||"—"},
+      ]}/>
+
+      {/* FACEIT stats row */}
+      {fc&&(fc.elo||fc.lifetime?.matches)&&(
+        <StatRow label="FACEIT" labelColor="#ff7733" stats={[
+          {l:"K/D",v:fc.lifetime?.kd||"—"},
+          {l:"WIN %",v:fc.lifetime?.winrate?fc.lifetime.winrate+"%":"—"},
+          {l:"HS %",v:fc.lifetime?.hs?fc.lifetime.hs+"%":"—"},
+          {l:"МАТЧИ",v:fc.lifetime?.matches||"—"},
+        ]}/>
+      )}
     </div>
   );
 }
@@ -300,17 +328,17 @@ function ChartsSection({faceit}){
 
   const lt=faceit?.lifetime||{};
   const radarAxes=[
-    {label:"K/D",value:Math.min(100,(parseFloat(lt.kd)||0)*55)},
-    {label:"HS%",value:parseFloat(lt.hs)||0},
-    {label:"WIN%",value:parseFloat(lt.winrate)||0},
-    {label:"K/R",value:Math.min(100,(parseFloat(lt.kr)||0)*120)},
-    {label:"СТРИК",value:Math.min(100,(parseInt(lt.longest_streak)||0)*10)},
+    {label:"K/D",value:Math.min(100,(parseFloat(lt.kd)||0)*55),raw:lt.kd||"0"},
+    {label:"HS%",value:parseFloat(lt.hs)||0,raw:(lt.hs||"0")+"%"},
+    {label:"WIN%",value:parseFloat(lt.winrate)||0,raw:(lt.winrate||"0")+"%"},
+    {label:"K/R",value:Math.min(100,(parseFloat(lt.kr)||0)*120),raw:lt.kr||"0"},
+    {label:"СТРИК",value:Math.min(100,(parseInt(lt.longest_streak)||0)*10),raw:lt.longest_streak||"0"},
   ];
 
   const Chart=({title,data,color,unit=""})=>(
     <div className="hov-card" style={{background:"#0d0d07",border:"1px solid #1e1e12",padding:"16px 18px"}}>
       <div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}>
-        <span style={{fontSize:"9px",letterSpacing:"2px",color:"#5a5438"}}>{title}</span>
+        <span style={{fontSize:"11px",letterSpacing:"2px",color:"#9a9078"}}>{title}</span>
         {data.length>0&&<span style={{fontSize:"11px",color:color,fontWeight:700}}>
           {data[data.length-1]?.toFixed(unit==="%"?0:2)}{unit}
         </span>}
@@ -333,16 +361,16 @@ function ChartsSection({faceit}){
       {/* Radar */}
       <div className="hov-card" style={{background:"#0d0d07",border:"1px solid #1e1e12",padding:"18px",display:"flex",gap:"24px",alignItems:"center",flexWrap:"wrap"}}>
         <div style={{flex:"0 0 auto"}}>
-          <div style={{fontSize:"9px",letterSpacing:"2px",color:"#5a5438",marginBottom:"8px"}}>ПРОФИЛЬ ИГРЫ</div>
+          <div style={{fontSize:"11px",letterSpacing:"2px",color:"#9a9078",marginBottom:"8px"}}>ПРОФИЛЬ ИГРЫ</div>
           <Radar axes={radarAxes}/>
         </div>
         <div style={{flex:1,minWidth:"180px"}}>
-          <div style={{fontSize:"9px",letterSpacing:"2px",color:"#5a5438",marginBottom:"12px"}}>ПОКАЗАТЕЛИ</div>
+          <div style={{fontSize:"11px",letterSpacing:"2px",color:"#9a9078",marginBottom:"12px"}}>ПОКАЗАТЕЛИ</div>
           {radarAxes.map((a,i)=>(
             <div key={i} style={{marginBottom:"10px"}}>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:"10px",marginBottom:"3px"}}>
-                <span style={{color:"#6a6448",letterSpacing:"1px"}}>{a.label}</span>
-                <span style={{color:"#f5c518"}}>{Math.round(a.value)}</span>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:"12px",marginBottom:"4px"}}>
+                <span style={{color:"#9a9078",letterSpacing:"1px"}}>{a.label}</span>
+                <span style={{color:"#f5c518",fontWeight:700}}>{a.raw}</span>
               </div>
               <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
                 <div style={{height:"100%",width:`${Math.min(100,a.value)}%`,
@@ -361,7 +389,7 @@ function MatchHistory({faceit}){
   const[exp,setExp]=useState(null);
   const matches=arr(faceit?.matches);
   if(!matches.length)return(
-    <div style={{textAlign:"center",padding:"50px",color:"#2a2a18"}}>
+    <div style={{textAlign:"center",padding:"50px",color:"#8a8270"}}>
       <div style={{fontSize:"28px",marginBottom:"10px"}}>🎮</div>
       <div style={{fontSize:"11px",letterSpacing:"2px"}}>НЕТ МАТЧЕЙ FACEIT</div>
     </div>
@@ -390,15 +418,15 @@ function MatchHistory({faceit}){
                 </div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"9px",color:"#2a2a18"}}>K/D</div>
+                <div style={{fontSize:"11px",color:"#8a8270"}}>K/D</div>
                 <div style={{fontSize:"15px",color:"#f5c518",fontWeight:700}}>{m.kd}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"9px",color:"#2a2a18"}}>K — D</div>
+                <div style={{fontSize:"11px",color:"#8a8270"}}>K — D</div>
                 <div style={{fontSize:"14px",color:"#a09060"}}>{m.kills}—{m.deaths}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"9px",color:"#2a2a18"}}>HS%</div>
+                <div style={{fontSize:"11px",color:"#8a8270"}}>HS%</div>
                 <div style={{fontSize:"14px",color:"#a09060"}}>{m.hs}%</div>
               </div>
               <div style={{textAlign:"center"}}>
@@ -415,7 +443,7 @@ function MatchHistory({faceit}){
                     {l:"ADR",v:m.adr},{l:"MVP",v:m.mvps},
                   ].map((s,j)=>(
                     <div key={j} style={{background:"#111108",border:"1px solid #1a1a0e",padding:"8px 10px"}}>
-                      <div style={{fontSize:"8px",color:"#2a2a18",letterSpacing:"1px",marginBottom:"3px"}}>{s.l}</div>
+                      <div style={{fontSize:"8px",color:"#8a8270",letterSpacing:"1px",marginBottom:"3px"}}>{s.l}</div>
                       <div style={{fontSize:"15px",color:"#f5c518",fontWeight:700}}>{s.v||"—"}</div>
                     </div>
                   ))}
@@ -435,7 +463,7 @@ function MapPool({faceit}){
     .filter(m=>parseInt(m.matches)>0)
     .sort((a,b)=>parseFloat(b.winrate)-parseFloat(a.winrate));
   if(!maps.length)return(
-    <div style={{textAlign:"center",padding:"50px",color:"#2a2a18"}}>
+    <div style={{textAlign:"center",padding:"50px",color:"#8a8270"}}>
       <div style={{fontSize:"28px",marginBottom:"10px"}}>🗺️</div>
       <div style={{fontSize:"11px",letterSpacing:"2px"}}>НЕТ ДАННЫХ ПО КАРТАМ</div>
     </div>
@@ -450,22 +478,22 @@ function MapPool({faceit}){
       {/* summary cards */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:"3px",marginBottom:"12px"}}>
         <div style={{background:"#0d1a0d",border:"1px solid #1e3a1e",padding:"14px 16px"}}>
-          <div style={{fontSize:"9px",color:"#55aa55",letterSpacing:"2px",marginBottom:"4px"}}>ЛУЧШАЯ КАРТА</div>
+          <div style={{fontSize:"11px",color:"#55aa55",letterSpacing:"2px",marginBottom:"4px"}}>ЛУЧШАЯ КАРТА</div>
           <div style={{fontSize:"17px",color:"#66dd66",fontWeight:700}}>{best.map} · {best.winrate}%</div>
         </div>
         <div style={{background:"#1a0d0d",border:"1px solid #3a1e1e",padding:"14px 16px"}}>
-          <div style={{fontSize:"9px",color:"#cc5555",letterSpacing:"2px",marginBottom:"4px"}}>ХУДШАЯ КАРТА</div>
+          <div style={{fontSize:"11px",color:"#cc5555",letterSpacing:"2px",marginBottom:"4px"}}>ХУДШАЯ КАРТА</div>
           <div style={{fontSize:"17px",color:"#ff6655",fontWeight:700}}>{worst.map} · {worst.winrate}%</div>
         </div>
         {bans.length>0&&(
           <div style={{background:"#1a1408",border:"1px solid #3a2e14",padding:"14px 16px"}}>
-            <div style={{fontSize:"9px",color:"#f5c518",letterSpacing:"2px",marginBottom:"4px"}}>РЕКОМЕНДУЮ БАНИТЬ</div>
+            <div style={{fontSize:"11px",color:"#f5c518",letterSpacing:"2px",marginBottom:"4px"}}>РЕКОМЕНДУЮ БАНИТЬ</div>
             <div style={{fontSize:"15px",color:"#f5c518",fontWeight:700}}>{bans.map(b=>b.map).join(", ")}</div>
           </div>
         )}
       </div>
       {/* table */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 110px 80px 70px",gap:"2px",padding:"8px 14px",fontSize:"9px",letterSpacing:"2px",color:"#2a2a18",borderBottom:"1px solid #1a1a0e"}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 110px 80px 70px",gap:"2px",padding:"8px 14px",fontSize:"11px",letterSpacing:"2px",color:"#8a8270",borderBottom:"1px solid #1a1a0e"}}>
         <div>КАРТА</div><div>WINRATE</div><div>МАТЧИ</div><div>K/D</div>
       </div>
       {maps.map((m,i)=>{
@@ -527,8 +555,8 @@ function SearchBar({onSelect}){
       {open&&q.trim().length>=2&&(
         <div style={{position:"absolute",top:"100%",left:0,right:0,marginTop:"2px",
           background:"#0d0d07",border:"1px solid #252515",zIndex:50,maxHeight:"280px",overflowY:"auto"}}>
-          {loading&&<div style={{padding:"12px",fontSize:"11px",color:"#3a3a28",textAlign:"center"}}>поиск...</div>}
-          {!loading&&results.length===0&&<div style={{padding:"12px",fontSize:"11px",color:"#3a3a28",textAlign:"center"}}>ничего не найдено</div>}
+          {loading&&<div style={{padding:"12px",fontSize:"11px",color:"#9a9078",textAlign:"center"}}>поиск...</div>}
+          {!loading&&results.length===0&&<div style={{padding:"12px",fontSize:"11px",color:"#9a9078",textAlign:"center"}}>ничего не найдено</div>}
           {results.map((r,i)=>(
             <div key={i} className="hov-row" onClick={()=>{onSelect(r);setOpen(false);setQ("");}} style={{
               display:"flex",alignItems:"center",gap:"10px",padding:"9px 12px",
@@ -589,7 +617,7 @@ function ProfileModal({steamid,nickname,onClose}){
                     <div key={i} style={{background:"#0d0d07",border:"1px solid #1a1a0e",borderLeft:`2px solid ${lc}`,padding:"12px 16px",marginBottom:"3px"}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}>
                         <span style={{fontSize:"10px",color:lc,letterSpacing:"2px"}}>{h.result?.level?.toUpperCase()}</span>
-                        <span style={{fontSize:"10px",color:"#2a2a18"}}>{fmt(h.timestamp)}</span>
+                        <span style={{fontSize:"10px",color:"#8a8270"}}>{fmt(h.timestamp)}</span>
                       </div>
                       <div style={{fontSize:"12px",color:"#807050",lineHeight:1.5}}>{h.result?.overall}</div>
                     </div>
@@ -598,13 +626,13 @@ function ProfileModal({steamid,nickname,onClose}){
               </div>
             )}
             {!fc?.elo&&!arr(fc?.matches).length&&(
-              <div style={{padding:"40px",textAlign:"center",color:"#3a3a28",fontSize:"12px"}}>
+              <div style={{padding:"40px",textAlign:"center",color:"#9a9078",fontSize:"12px"}}>
                 FACEIT профиль не найден для этого игрока
               </div>
             )}
           </div>
         ):(
-          <div style={{padding:"40px",textAlign:"center",color:"#3a3a28",fontSize:"12px"}}>
+          <div style={{padding:"40px",textAlign:"center",color:"#9a9078",fontSize:"12px"}}>
             Профиль не найден
             <div><button onClick={onClose} style={{marginTop:"16px",background:"transparent",border:"1px solid #2a2a18",color:"#666",cursor:"pointer",padding:"8px 16px",fontFamily:"monospace",fontSize:"11px"}}>ЗАКРЫТЬ</button></div>
           </div>
@@ -624,15 +652,15 @@ function Leaderboard({currentSteamId,onProfile}){
     <div style={{padding:"10px"}}>{[1,2,3,4,5].map(i=><Skel key={i} h="48"/>)}</div>
   );
   if(!data.length)return(
-    <div style={{textAlign:"center",padding:"70px",color:"#2a2a18"}}>
+    <div style={{textAlign:"center",padding:"70px",color:"#8a8270"}}>
       <div style={{fontSize:"36px",marginBottom:"14px"}}>🏆</div>
       <div style={{fontSize:"12px",letterSpacing:"3px"}}>ТАБЛИЦА ПУСТА</div>
     </div>
   );
   return(
     <div style={{animation:"up .4s ease both"}}>
-      <div style={{fontSize:"11px",color:"#2a2a18",marginBottom:"12px",letterSpacing:"1px"}}>Нажми на игрока — откроется профиль</div>
-      <div style={{display:"grid",gridTemplateColumns:"44px 1fr 100px 64px 64px 64px 88px",gap:"2px",padding:"8px 14px",fontSize:"9px",letterSpacing:"2px",color:"#2a2a18",borderBottom:"1px solid #1a1a0e"}}>
+      <div style={{fontSize:"11px",color:"#8a8270",marginBottom:"12px",letterSpacing:"1px"}}>Нажми на игрока — откроется профиль</div>
+      <div style={{display:"grid",gridTemplateColumns:"44px 1fr 100px 64px 64px 64px 88px",gap:"2px",padding:"8px 14px",fontSize:"11px",letterSpacing:"2px",color:"#8a8270",borderBottom:"1px solid #1a1a0e"}}>
         <div>#</div><div>ИГРОК</div><div>RANK</div><div>K/D</div><div>WIN%</div><div>HS%</div><div>УРОВЕНЬ</div>
       </div>
       {data.map((p,i)=>{
@@ -672,7 +700,7 @@ function HistoryTab({steamid}){
   },[steamid]);
   if(data===null)return<div style={{padding:"10px"}}>{[1,2,3].map(i=><Skel key={i} h="60"/>)}</div>;
   if(!data.length)return(
-    <div style={{textAlign:"center",padding:"60px",color:"#2a2a18"}}>
+    <div style={{textAlign:"center",padding:"60px",color:"#8a8270"}}>
       <div style={{fontSize:"28px",marginBottom:"12px"}}>📋</div>
       <div style={{fontSize:"11px",letterSpacing:"3px"}}>ИСТОРИЯ ПУСТА</div>
     </div>
@@ -690,9 +718,9 @@ function HistoryTab({steamid}){
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
                 <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
                   <span style={{padding:"3px 12px",background:lc+"18",color:lc,border:`1px solid ${lc}33`,fontSize:"10px",letterSpacing:"2px",fontWeight:700}}>{h.result?.level?.toUpperCase()}</span>
-                  <span style={{fontSize:"12px",color:"#3a3a28"}}>Rank {h.stats?.rank} · K/D {h.stats?.kd}</span>
+                  <span style={{fontSize:"12px",color:"#9a9078"}}>Rank {h.stats?.rank} · K/D {h.stats?.kd}</span>
                 </div>
-                <span style={{fontSize:"11px",color:"#2a2a18"}}>{fmt(h.timestamp)}</span>
+                <span style={{fontSize:"11px",color:"#8a8270"}}>{fmt(h.timestamp)}</span>
               </div>
               <div style={{fontSize:"14px",color:"#807050",lineHeight:1.6}}>{h.result?.overall}</div>
             </div>
@@ -702,7 +730,7 @@ function HistoryTab({steamid}){
                 {h.result?.mapInsights?.map((mi,j)=>(
                   <div key={j} style={{fontSize:"12px",color:"#f5c518",marginBottom:"6px"}}>🗺️ {mi}</div>
                 ))}
-                <div style={{fontSize:"11px",color:"#3a3820",borderTop:"1px solid #1a1a0e",paddingTop:"10px",marginTop:"10px"}}>🎯 {h.result?.goal}</div>
+                <div style={{fontSize:"11px",color:"#9a9078",borderTop:"1px solid #1a1a0e",paddingTop:"10px",marginTop:"10px"}}>🎯 {h.result?.goal}</div>
               </div>
             )}
           </div>
@@ -735,20 +763,19 @@ export default function App(){
   useEffect(()=>{
     const handler=(e)=>{
       if(!e.data?.player)return;
-      const p=e.data.player;
+      const s=e.data.stats||{};
+      const p={...e.data.player,cs2:s};
       setPlayer(p);
       try{localStorage.setItem("cs2_player_v3",JSON.stringify(p));}catch{}
-      const s=e.data.stats||{};
-      const fc=p.faceit;
       setStats({
-        kd:fc?.lifetime?.kd||s.kd||"—",
-        winrate:fc?.lifetime?.winrate||s.winrate||"—",
+        kd:s.kd||"—",
+        winrate:s.winrate||"—",
         hltv:"—",
-        hs:fc?.lifetime?.hs||s.hs||"—",
-        adr:(arr(fc?.matches)[0]?.adr)||"—",
+        hs:s.hs||"—",
+        adr:(arr(p.faceit?.matches)[0]?.adr)||"—",
         clutch1v1:"—",entrySuccess:"—",
-        rank:fc?.elo||"—",
-        matches:fc?.lifetime?.matches||s.matches||"—",
+        rank:p.faceit?.elo||"—",
+        matches:s.matches||"—",
       });
       setShowPopup(false);
     };
@@ -820,7 +847,7 @@ export default function App(){
                 {(player.faceit?.avatar||player.avatar)&&<img src={player.faceit?.avatar||player.avatar} alt="" style={{width:"28px",height:"28px",borderRadius:"2px"}}/>}
                 <span style={{fontSize:"12px",color:"#c8b070"}}>{player.faceit?.nickname||player.username}</span>
               </div>
-              <button onClick={logout} style={{background:"transparent",border:"1px solid #2a2a18",color:"#3a3a28",cursor:"pointer",fontSize:"9px",letterSpacing:"1px",fontFamily:"'Courier New',monospace",padding:"5px 10px"}}>ВЫЙТИ</button>
+              <button onClick={logout} style={{background:"transparent",border:"1px solid #2a2a18",color:"#9a9078",cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"'Courier New',monospace",padding:"5px 10px"}}>ВЫЙТИ</button>
             </>
           ):(
             <button onClick={openSteam} style={{background:"#1b6090",color:"#fff",border:"none",padding:"8px 16px",cursor:"pointer",fontSize:"10px",fontWeight:700,letterSpacing:"2px",fontFamily:"'Courier New',monospace"}}>STEAM</button>
@@ -846,7 +873,7 @@ export default function App(){
           <div style={{background:"#14140a",border:"1px solid #2a2a18",borderLeft:"3px solid #f5c518",padding:"20px 24px",marginBottom:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
             <div>
               <div style={{fontSize:"13px",color:"#c8b070",marginBottom:"4px",fontWeight:700}}>Войди через Steam</div>
-              <div style={{fontSize:"11px",color:"#3a3a28",letterSpacing:"1px"}}>Аналитика, графики и история — после входа</div>
+              <div style={{fontSize:"11px",color:"#9a9078",letterSpacing:"1px"}}>Аналитика, графики и история — после входа</div>
             </div>
             <button onClick={openSteam} style={{background:"#1b6090",color:"#fff",border:"none",padding:"10px 20px",cursor:"pointer",fontSize:"11px",fontWeight:700,letterSpacing:"2px",fontFamily:"'Courier New',monospace"}}>ВОЙТИ</button>
           </div>
@@ -858,20 +885,20 @@ export default function App(){
             <HeroCard player={player}/>
             {hasFaceit
               ?<div style={{marginTop:"16px"}}><ChartsSection faceit={player.faceit}/></div>
-              :<div style={{marginTop:"16px",padding:"30px",textAlign:"center",background:"#0d0d07",border:"1px solid #1a1a0e",color:"#3a3a28",fontSize:"12px",lineHeight:1.7}}>
+              :<div style={{marginTop:"16px",padding:"30px",textAlign:"center",background:"#0d0d07",border:"1px solid #1a1a0e",color:"#9a9078",fontSize:"12px",lineHeight:1.7}}>
                   FACEIT профиль не найден.<br/>Графики и матчи доступны для игроков FACEIT.
                 </div>}
           </div>
         )}
         {mainTab==="overview"&&!player&&(
-          <div style={{textAlign:"center",padding:"60px",color:"#2a2a18",fontSize:"12px"}}>Войди через Steam для просмотра обзора</div>
+          <div style={{textAlign:"center",padding:"60px",color:"#8a8270",fontSize:"12px"}}>Войди через Steam для просмотра обзора</div>
         )}
 
         {/* ── MATCHES ── */}
-        {mainTab==="matches"&&(player?<MatchHistory faceit={player.faceit}/>:<div style={{textAlign:"center",padding:"60px",color:"#2a2a18",fontSize:"12px"}}>Войди через Steam</div>)}
+        {mainTab==="matches"&&(player?<MatchHistory faceit={player.faceit}/>:<div style={{textAlign:"center",padding:"60px",color:"#8a8270",fontSize:"12px"}}>Войди через Steam</div>)}
 
         {/* ── MAPS ── */}
-        {mainTab==="maps"&&(player?<MapPool faceit={player.faceit}/>:<div style={{textAlign:"center",padding:"60px",color:"#2a2a18",fontSize:"12px"}}>Войди через Steam</div>)}
+        {mainTab==="maps"&&(player?<MapPool faceit={player.faceit}/>:<div style={{textAlign:"center",padding:"60px",color:"#8a8270",fontSize:"12px"}}>Войди через Steam</div>)}
 
         {/* ── COACH ── */}
         {mainTab==="coach"&&<>
@@ -882,7 +909,7 @@ export default function App(){
                 {l:"FACEIT ELO",v:stats.rank},{l:"МАТЧИ",v:stats.matches},{l:"ADR",v:stats.adr},
               ].map((f,i)=>(
                 <div key={i} className="hov-card" style={{background:"#0d0d07",border:"1px solid #1a1a0e",padding:"14px 16px"}}>
-                  <div style={{fontSize:"9px",letterSpacing:"2px",color:"#2a2a18",marginBottom:"7px"}}>{f.l}</div>
+                  <div style={{fontSize:"11px",letterSpacing:"2px",color:"#8a8270",marginBottom:"7px"}}>{f.l}</div>
                   <div style={{fontSize:"22px",color:"#f5c518",fontWeight:700}}>{f.v}</div>
                 </div>
               ))}
@@ -901,7 +928,7 @@ export default function App(){
 
           {loading&&(
             <div style={{textAlign:"center",padding:"40px"}}>
-              <div style={{fontSize:"11px",letterSpacing:"3px",color:"#2a2a18",marginBottom:"16px"}}>ТРЕНЕР ИЗУЧАЕТ СТАТИСТИКУ</div>
+              <div style={{fontSize:"11px",letterSpacing:"3px",color:"#8a8270",marginBottom:"16px"}}>ТРЕНЕР ИЗУЧАЕТ СТАТИСТИКУ</div>
               <div style={{display:"flex",justifyContent:"center",gap:"8px"}}>
                 {[0,1,2].map(i=><div key={i} style={{width:"8px",height:"8px",background:"#f5c518",borderRadius:"50%",animation:`blink 1.2s ${i*.35}s infinite`}}/>)}
               </div>
@@ -915,8 +942,8 @@ export default function App(){
               <div style={{background:"#0d0d07",border:"1px solid #1a1a0e",borderLeft:`4px solid ${lc}`,padding:"24px 26px",marginBottom:"3px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"14px",flexWrap:"wrap"}}>
                   <span style={{padding:"5px 16px",fontSize:"12px",letterSpacing:"3px",fontWeight:700,background:lc+"20",color:lc,border:`1px solid ${lc}55`}}>{analysis.level?.toUpperCase()}</span>
-                  <span style={{fontSize:"13px",color:"#3a3820"}}>→ {analysis.goal}</span>
-                  <span style={{marginLeft:"auto",fontSize:"10px",color:"#2a2a18",letterSpacing:"1px"}}>✓ в лидерах</span>
+                  <span style={{fontSize:"13px",color:"#9a9078"}}>→ {analysis.goal}</span>
+                  <span style={{marginLeft:"auto",fontSize:"10px",color:"#8a8270",letterSpacing:"1px"}}>✓ в лидерах</span>
                 </div>
                 <div style={{fontSize:"16px",color:"#d8cc90",lineHeight:1.7,marginBottom:"14px"}}>{analysis.overall}</div>
                 <div style={{background:"#ff440410",borderLeft:"3px solid #ff5544",padding:"12px 16px",fontSize:"14px",color:"#ff8866",lineHeight:1.6}}>⚠ {analysis.mainProblem}</div>
@@ -977,7 +1004,7 @@ export default function App(){
           )}
         </>}
 
-        {mainTab==="history"&&(player?<HistoryTab steamid={player.steamid}/>:<div style={{textAlign:"center",padding:"60px",color:"#2a2a18",fontSize:"12px"}}>Войди через Steam</div>)}
+        {mainTab==="history"&&(player?<HistoryTab steamid={player.steamid}/>:<div style={{textAlign:"center",padding:"60px",color:"#8a8270",fontSize:"12px"}}>Войди через Steam</div>)}
         {mainTab==="leaderboard"&&<Leaderboard currentSteamId={player?.steamid} onProfile={(sid)=>setProfileView({steamid:sid})}/>}
       </div>
 
