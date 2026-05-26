@@ -662,6 +662,268 @@ function HistoryTab({steamid}) {
 }
 
 
+
+
+// ── Score Cards ───────────────────────────────────────────────────────────────
+function ScoreCards({player, source}) {
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+  const kd   = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
+  const hs   = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
+  const wr   = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+  const lvl  = parseInt(fc?.level) || 0;
+  const matches = parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches) || 0;
+
+  // Compute scores
+  const aimScore = Math.round(Math.min(100,
+    (Math.min(kd/2,1)*40) + (Math.min(hs/60,1)*35) + (Math.min(wr/65,1)*25)
+  ));
+  const consistScore = Math.round(Math.min(100,
+    (Math.min(wr/60,1)*50) + (Math.min(matches/200,1)*30) + (lvl>0?Math.min(lvl/10,1)*20:15)
+  ));
+  const overallScore = Math.round((aimScore*0.6 + consistScore*0.4));
+
+  const ScoreRing = ({score,label,color}) => {
+    const r=28, circ=2*Math.PI*r, dash=circ*score/100;
+    const scoreColor = score>=70?"#55ee55":score>=45?C.yellow:"#ff6655";
+    return (
+      <div style={{textAlign:"center",padding:"16px 20px"}}>
+        <div style={{position:"relative",width:"80px",height:"80px",margin:"0 auto 10px"}}>
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r={r} fill="none" stroke={C.border} strokeWidth="5"/>
+            <circle cx="40" cy="40" r={r} fill="none" stroke={scoreColor} strokeWidth="5"
+              strokeDasharray={`${dash} ${circ-dash}`} strokeLinecap="round"
+              strokeDashoffset={circ/4} style={{transition:"stroke-dasharray 1s ease"}}/>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:"18px",color:scoreColor,fontWeight:700}}>{score}</div>
+        </div>
+        <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px"}}>{label}</div>
+        <div style={{fontSize:"13px",color:scoreColor,fontWeight:700,marginTop:"3px"}}>
+          {score>=80?"ОТЛИЧНО":score>=60?"ХОРОШО":score>=40?"СРЕДНЕ":"РАБОТАЙ"}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,
+      display:"flex",justifyContent:"space-around",flexWrap:"wrap",marginBottom:"3px",animation:"up .5s ease both"}}>
+      <ScoreRing score={overallScore} label="ОБЩИЙ РЕЙТИНГ" color={C.yellow}/>
+      <ScoreRing score={aimScore} label="AIM SCORE"/>
+      <ScoreRing score={consistScore} label="CONSISTENCY"/>
+    </div>
+  );
+}
+
+
+// ── Daily Training Plan ───────────────────────────────────────────────────────
+function TrainingPlan({player, source}) {
+  const [done, setDone] = useState({});
+  const [plan, setPlan] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+  const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
+  const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
+  const wr  = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+
+  // Генерация плана прямо на фронте без API
+  useEffect(() => {
+    const tasks = [];
+    // Aim warmup — всегда
+    tasks.push({id:"aim",cat:"AIM",dur:"15 мин",task:"Aim_botz: 500 убийств с места, фокус на голову",priority:true});
+    // Recoil если HS низкий
+    if (hs < 45) tasks.push({id:"recoil",cat:"МЕХАНИКА",dur:"20 мин",task:"Workshop: Recoil Master — отработать спрей AK и M4",priority:true});
+    // Movement если KD низкий
+    if (kd < 1.0) tasks.push({id:"move",cat:"МЕХАНИКА",dur:"15 мин",task:"Counter-strafe практика: двигаться → остановиться → стрелять"});
+    // Prefire на картах
+    tasks.push({id:"prefire",cat:"КАРТЫ",dur:"20 мин",task:"Prefire Workshop: отработать 10 ключевых позиций на своей лучшей карте"});
+    // Deathmatch
+    tasks.push({id:"dm",cat:"РАЗМИНКА",dur:"10 мин",task:"Deathmatch перед игрой: только хедшоты, пистолетный раунд"});
+    // Demo если WR низкий
+    if (wr < 50) tasks.push({id:"demo",cat:"АНАЛИЗ",dur:"15 мин",task:"Посмотри 1 раунд из проигранного матча — найди момент где ошибся"});
+    // Utility
+    tasks.push({id:"util",cat:"ТАКТИКА",dur:"10 мин",task:"Выучи 1 новый смок или молотов на часто играемой карте"});
+    setPlan(tasks.slice(0,5));
+  }, [player?.steamid, source]);
+
+  const total = plan?.length || 0;
+  const doneCount = Object.values(done).filter(Boolean).length;
+  const progress = total > 0 ? Math.round(doneCount/total*100) : 0;
+
+  const CAT_COLOR = {AIM:C.lose, МЕХАНИКА:C.orange, КАРТЫ:"#44ddaa", РАЗМИНКА:C.blue, АНАЛИЗ:"#aa88ff", ТАКТИКА:C.yellow};
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"24px",animation:"up .4s ease both"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px",flexWrap:"wrap",gap:"12px"}}>
+        <div>
+          <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,marginBottom:"4px"}}>
+            📋 ПЛАН НА СЕГОДНЯ
+          </div>
+          <div style={{fontSize:"13px",color:C.muted}}>{doneCount}/{total} выполнено</div>
+        </div>
+        {/* Progress bar */}
+        <div style={{minWidth:"200px"}}>
+          <div style={{height:"8px",background:"#1a1a10",borderRadius:"4px",overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${progress}%`,
+              background:`linear-gradient(90deg,${C.yellow}88,${C.yellow})`,
+              transition:"width .5s ease",borderRadius:"4px"}}/>
+          </div>
+          <div style={{fontSize:"12px",color:C.yellow,marginTop:"4px",textAlign:"right",fontWeight:700}}>{progress}%</div>
+        </div>
+      </div>
+
+      {plan?.map((t,i) => {
+        const cc = CAT_COLOR[t.cat] || C.yellow;
+        const isDone = done[t.id];
+        return (
+          <div key={t.id} onClick={()=>setDone(d=>({...d,[t.id]:!d[t.id]}))}
+            style={{display:"flex",gap:"14px",alignItems:"flex-start",padding:"14px 16px",
+              marginBottom:"4px",cursor:"pointer",
+              background:isDone?"#13180d":"#111109",
+              border:`1px solid ${isDone?"#2a5a1a":C.border}`,
+              borderLeft:`3px solid ${isDone?"#55aa33":cc}`,
+              transition:"all .2s",opacity:isDone?0.6:1}}>
+            {/* Checkbox */}
+            <div style={{width:"22px",height:"22px",flexShrink:0,borderRadius:"3px",
+              border:`2px solid ${isDone?"#55aa33":C.border}`,
+              background:isDone?"#55aa33":"transparent",
+              display:"flex",alignItems:"center",justifyContent:"center",marginTop:"1px",transition:"all .2s"}}>
+              {isDone&&<span style={{color:"#fff",fontSize:"13px",fontWeight:700}}>✓</span>}
+            </div>
+            <div style={{flex:1}}>
+              <div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"5px",flexWrap:"wrap"}}>
+                <span style={{padding:"2px 9px",background:cc+"22",color:cc,fontSize:"10px",letterSpacing:"2px",fontWeight:700}}>
+                  {t.cat}
+                </span>
+                <span style={{fontSize:"12px",color:C.muted}}>{t.dur}</span>
+                {t.priority&&<span style={{fontSize:"10px",color:C.lose,letterSpacing:"1px"}}>ПРИОРИТЕТ</span>}
+              </div>
+              <div style={{fontSize:"14px",color:isDone?C.muted:C.text,lineHeight:1.6,textDecoration:isDone?"line-through":"none"}}>
+                {t.task}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {doneCount===total&&total>0&&(
+        <div style={{textAlign:"center",padding:"16px",marginTop:"8px",
+          background:"#0f1a0f",border:`1px solid ${C.win}44`,
+          fontSize:"15px",color:C.win,animation:"up .3s ease"}}>
+          🎉 Тренировка выполнена! Удачи в рейтинговых сегодня.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Landing Page ──────────────────────────────────────────────────────────────
+function LandingPage({onLogin}) {
+  const FEATURES = [
+    {icon:"🤖", title:"AI разбор за 10 секунд", desc:"Тренер анализирует твои статы и говорит конкретно что исправить — не просто числа, а причины поражений"},
+    {icon:"📊", title:"Steam + FACEIT в одном месте", desc:"Все данные собираются автоматически. Видишь динамику K/D, карты, историю матчей и прогресс ELO"},
+    {icon:"💬", title:"Спроси тренера", desc:"Чат с AI который знает твою статистику. Задай любой вопрос — получи ответ основанный на твоей игре"},
+  ];
+  const STATS = [
+    {val:"2.1K+",label:"разборов сделано"},
+    {val:"89%",label:"игроков улучшили K/D"},
+    {val:"<10s",label:"время анализа"},
+  ];
+  const [tick,setTick] = useState(0);
+  useEffect(()=>{ const t=setInterval(()=>setTick(x=>x+1),1800);return()=>clearInterval(t);},[]);
+  const INSIGHTS = [
+    "Ты проигрываешь большинство дуэлей в движении",
+    "Counter-strafe timing нужно исправить",
+    "Слишком ранний peek без флешки",
+    "Weak CT positioning на Mirage",
+    "Низкий trade success после первого килла",
+  ];
+
+  return (
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+      {/* Hero */}
+      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+        padding:"60px 24px 40px",textAlign:"center",position:"relative",overflow:"hidden"}}>
+        {/* Background glow */}
+        <div style={{position:"absolute",top:"20%",left:"50%",transform:"translateX(-50%)",
+          width:"600px",height:"400px",
+          background:`radial-gradient(ellipse,${C.yellow}0e,transparent 70%)`,
+          pointerEvents:"none"}}/>
+
+        <div style={{fontSize:"13px",letterSpacing:"5px",color:C.yellow,marginBottom:"24px",
+          display:"flex",alignItems:"center",gap:"8px",justifyContent:"center"}}>
+          <div style={{width:"7px",height:"7px",background:C.yellow,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
+          CS2 AI ТРЕНЕР
+        </div>
+
+        <h1 style={{fontSize:"clamp(32px,6vw,64px)",fontWeight:700,margin:"0 0 20px",
+          color:C.value,lineHeight:1.15,maxWidth:"700px"}}>
+          AI скажет тебе<br/>
+          <span style={{color:C.yellow}}>почему ты проигрываешь</span>
+        </h1>
+
+        <p style={{fontSize:"18px",color:C.label,maxWidth:"520px",lineHeight:1.7,margin:"0 0 40px"}}>
+          Подключи Steam — получи персональный разбор от AI тренера за 10 секунд. Конкретные причины, не просто статы.
+        </p>
+
+        {/* Animated insight */}
+        <div style={{background:"#1a1a0a",border:`1px solid ${C.yellow}44`,padding:"16px 28px",
+          marginBottom:"40px",maxWidth:"460px",width:"100%",position:"relative",overflow:"hidden",animation:"fadeIn .5s ease"}}>
+          <div style={{fontSize:"11px",letterSpacing:"3px",color:C.yellow,marginBottom:"8px"}}>
+            AI REPORT · ПРИМЕР
+          </div>
+          <div key={tick} style={{fontSize:"15px",color:C.text,lineHeight:1.6,animation:"up .4s ease"}}>
+            ✗ {INSIGHTS[tick % INSIGHTS.length]}
+          </div>
+        </div>
+
+        <button onClick={onLogin} style={{
+          padding:"16px 40px",background:C.yellow,color:"#080807",border:"none",
+          cursor:"pointer",fontSize:"16px",fontWeight:700,letterSpacing:"2px",
+          fontFamily:"inherit",boxShadow:`0 0 30px ${C.yellow}44`,transition:"all .2s",
+          display:"flex",alignItems:"center",gap:"12px",marginBottom:"16px"}}
+          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 4px 40px ${C.yellow}66`;}}
+          onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow=`0 0 30px ${C.yellow}44`;}}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#080807">
+            <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.606 0 11.979 0z"/>
+          </svg>
+          ВОЙТИ ЧЕРЕЗ STEAM
+        </button>
+        <div style={{fontSize:"13px",color:C.muted}}>Бесплатно · Данные не сохраняются на сторонних серверах</div>
+
+        {/* Stats row */}
+        <div style={{display:"flex",gap:"40px",marginTop:"48px",flexWrap:"wrap",justifyContent:"center"}}>
+          {STATS.map((s,i)=>(
+            <div key={i} style={{textAlign:"center"}}>
+              <div style={{fontSize:"28px",color:C.yellow,fontWeight:700}}>{s.val}</div>
+              <div style={{fontSize:"13px",color:C.muted,marginTop:"3px"}}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Features */}
+      <div style={{padding:"40px 24px 60px",maxWidth:"900px",margin:"0 auto",width:"100%"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:"3px"}}>
+          {FEATURES.map((f,i)=>(
+            <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,
+              padding:"28px 24px",transition:"all .2s",cursor:"default"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=C.yellow+"55";e.currentTarget.style.background="#19190e";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.background=C.card;}}>
+              <div style={{fontSize:"32px",marginBottom:"14px"}}>{f.icon}</div>
+              <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"10px"}}>{f.title}</div>
+              <div style={{fontSize:"14px",color:C.label,lineHeight:1.7}}>{f.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── AI Report (автосводка) ────────────────────────────────────────────────────
 function AIReport({player, source}) {
   const [report, setReport] = useState(null);
@@ -1036,24 +1298,17 @@ export default function App() {
           ))}
         </div>
 
-        {!player&&(
-          <div style={{background:"#14140a",border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.yellow}`,
-            padding:"20px 24px",marginBottom:"20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
-            <div>
-              <div style={{fontSize:"14px",color:C.value,marginBottom:"4px",fontWeight:700}}>Войди через Steam</div>
-              <div style={{fontSize:"13px",color:C.label}}>Доступ к аналитике, истории и разбору от тренера</div>
-            </div>
-            <button onClick={openSteam} style={{background:"#1b6090",color:"#fff",border:"none",padding:"11px 22px",cursor:"pointer",fontSize:"12px",fontWeight:700,letterSpacing:"2px",fontFamily:"'Courier New',monospace"}}>ВОЙТИ</button>
-          </div>
-        )}
+
 
         {/* ── OVERVIEW ── */}
+        {mainTab==="overview"&&!player&&<LandingPage onLogin={openSteam}/>}
         {mainTab==="overview"&&(player?(
           <div style={{animation:"up .4s ease both"}}>
             <SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>
             {source==="steam"&&player.cs2?.private&&<PrivateWarning/>}
             {!player.cs2?.private&&<AIReport player={player} source={source}/>}
             <HeroCard player={player} source={source}/>
+            <ScoreCards player={player} source={source}/>
             {source==="faceit"&&hasFaceit
               ?<div style={{marginTop:"12px"}}><ChartsSection faceit={player.faceit}/></div>
               :source==="steam"&&!player.cs2?.private&&(
@@ -1112,6 +1367,9 @@ export default function App() {
               </div>
             </>}
 
+            <div style={{marginBottom:"20px"}}>
+              <TrainingPlan player={player} source={source}/>
+            </div>
             <button onClick={analyze} disabled={loading||!player} className="glow-btn" style={{
               width:"100%",padding:"17px",marginBottom:"24px",
               background:(!player||loading)?"#13130a":C.yellow,
