@@ -1482,6 +1482,10 @@ export default function App() {
   const [shareOpen,setShareOpen]   = useState(false);
   const [streak,setStreak]         = useState(0);
   const [showStreakToast,setShowStreakToast] = useState(false);
+  const [showChecklist,setShowChecklist] = useState(true);
+  const [analysisCount,setAnalysisCount] = useState(
+    ()=>{ try{ return parseInt(localStorage.getItem("cs2_analysis_count")||"0"); }catch{ return 0; } }
+  );
 
   const hasFaceit = !!(player?.faceit && (player.faceit.elo || arr(player.faceit.matches).length));
 
