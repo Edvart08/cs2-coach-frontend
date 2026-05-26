@@ -12,10 +12,12 @@ const ANALYSIS_COLOR = {Новичок:"#ff5544",Средний:"#ffaa33",Хор
 
 // ── colour tokens ─────────────────────────────────────────────────────────────
 const C = {
-  bg:"#0a0a07", card:"#131309", border:"#26261a",
-  yellow:"#f5c518", orange:"#ff7733", blue:"#66c0f4",
-  label:"#a8a280", value:"#f0e8c0", muted:"#6e6850",
-  win:"#55dd55", lose:"#ff5544", text:"#c8bc98",
+  bg:"#0a0a07", card:"#141409", border:"#2e2e1e",
+  yellow:"#f5c518", orange:"#ff8844", blue:"#74c6f5",
+  label:"#c8c0a0",   // ярче: читаемые подписи
+  value:"#f5eed8",   // ярче: заголовки и значения
+  muted:"#9a9270",   // ярче: второстепенный текст
+  win:"#66ee66", lose:"#ff6655", text:"#ddd6bc",
 };
 
 const css = `
@@ -143,10 +145,10 @@ function PrivateWarning() {
   return (
     <div style={{background:"#1a1408",border:"1px solid #4a3a18",borderLeft:"3px solid "+C.yellow,padding:"20px 24px",marginBottom:"16px",animation:"up .3s ease"}}>
       <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,marginBottom:"8px"}}>🔒 Статистика CS2 скрыта в Steam</div>
-      <div style={{fontSize:"13px",color:C.text,lineHeight:1.7,marginBottom:"12px"}}>
+      <div style={{fontSize:"14px",color:C.text,lineHeight:1.75,marginBottom:"14px"}}>
         Valve не даёт доступ к статистике, если профиль закрыт. Чтобы открыть:
       </div>
-      <div style={{fontSize:"13px",color:C.label,lineHeight:2}}>
+      <div style={{fontSize:"14px",color:C.label,lineHeight:2}}>
         1. Зайди в <span style={{color:C.blue}}>Steam → твой профиль</span><br/>
         2. <span style={{color:C.blue}}>Редактировать профиль → Настройки приватности</span><br/>
         3. <span style={{color:C.blue}}>«Детали игр»</span> → поставь <span style={{color:C.yellow,fontWeight:700}}>«Открыто для всех»</span><br/>
@@ -226,21 +228,21 @@ function HeroCard({player, source}) {
         {/* Name / meta */}
         <div style={{flex:1,minWidth:"160px"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"5px"}}>
-            <span style={{fontSize:"24px",color:C.value,fontWeight:700}}>{player.username}</span>
+            <span style={{fontSize:"26px",color:C.value,fontWeight:700}}>{player.username}</span>
             <span style={{fontSize:"18px"}}>{flag(player.country||fc?.country)}</span>
           </div>
-          <div style={{fontSize:"13px",color:C.label,marginBottom:"6px"}}>
+          <div style={{fontSize:"14px",color:C.label,marginBottom:"7px"}}>
             {player.created&&`Steam с ${new Date(player.created*1000).getFullYear()} г.`}
             {player.steam_level!=null&&`  ·  Steam Lvl ${player.steam_level}`}
           </div>
           {fc?.nickname&&fc.nickname!==player.username&&(
-            <div style={{fontSize:"12px",color:C.orange,marginBottom:"8px"}}>
+            <div style={{fontSize:"14px",color:C.orange,marginBottom:"8px"}}>
               FACEIT: {fc.nickname}
             </div>
           )}
           {form.length>0&&(
             <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"6px"}}>
-              <span style={{fontSize:"11px",color:C.muted,marginRight:"2px"}}>ФОРМА</span>
+              <span style={{fontSize:"13px",color:C.muted,marginRight:"3px"}}>ФОРМА</span>
               {form.map((w,i)=>(
                 <div key={i} style={{width:"20px",height:"20px",display:"flex",alignItems:"center",justifyContent:"center",
                   fontSize:"11px",fontWeight:700,background:w?"#1a361a":"#361a1a",
@@ -257,7 +259,7 @@ function HeroCard({player, source}) {
             <div style={{fontSize:"44px",fontWeight:700,color:lvlColor,lineHeight:1,textShadow:`0 0 18px ${lvlColor}55`}}>
               {eloCount}
             </div>
-            <div style={{fontSize:"12px",color:C.label,marginTop:"5px"}}>
+            <div style={{fontSize:"13px",color:C.label,marginTop:"6px"}}>
               до LVL {Math.min(10,li.lvl+1)}: {li.toNext>0?li.toNext:"MAX"} ELO
             </div>
             <div style={{marginTop:"8px",height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
@@ -271,8 +273,8 @@ function HeroCard({player, source}) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:`1px solid ${C.border}`}}>
         {stats.map((s,i)=>(
           <div key={i} style={{padding:"16px 10px",textAlign:"center",borderLeft:i>0?`1px solid ${C.border}`:"none"}}>
-            <div style={{fontSize:"12px",color:C.label,letterSpacing:"2px",marginBottom:"6px"}}>{s.l}</div>
-            <div style={{fontSize:"22px",color:C.yellow,fontWeight:700}}>{s.v}</div>
+            <div style={{fontSize:"13px",color:C.label,letterSpacing:"1px",marginBottom:"7px"}}>{s.l}</div>
+            <div style={{fontSize:"24px",color:C.yellow,fontWeight:700}}>{s.v}</div>
           </div>
         ))}
       </div>
@@ -309,7 +311,7 @@ function ChartsSection({faceit}) {
 
   return (
     <div style={{animation:"up .4s ease both"}}>
-      <div style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,padding:"8px 0 14px"}}>ДИНАМИКА МАТЧЕЙ</div>
+      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>ДИНАМИКА МАТЧЕЙ</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:"3px",marginBottom:"3px"}}>
         <Chart title="K/D RATIO" data={kdData} color={C.yellow}/>
         <Chart title="HEADSHOT %" data={hsData} color={C.orange} unit="%"/>
@@ -352,7 +354,7 @@ function MatchHistory({faceit}) {
   );
   return (
     <div style={{animation:"up .4s ease both"}}>
-      <div style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,padding:"8px 0 14px"}}>ИСТОРИЯ МАТЧЕЙ · FACEIT</div>
+      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>ИСТОРИЯ МАТЧЕЙ · FACEIT</div>
       {matches.map((m,i)=>{
         const win=m.result==="1", ac=win?C.win:C.lose, isExp=exp===i;
         return (
@@ -364,21 +366,21 @@ function MatchHistory({faceit}) {
               borderLeft:`3px solid ${ac}`,marginBottom:"3px",transition:"background .15s"}}>
               <div/>
               <div>
-                <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
-                <div style={{fontSize:"12px",color:ac,letterSpacing:"1px",marginTop:"2px"}}>
+                <div style={{fontSize:"16px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
+                <div style={{fontSize:"13px",color:ac,marginTop:"3px"}}>
                   {win?"ПОБЕДА":"ПОРАЖЕНИЕ"} · {m.score}
                 </div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"11px",color:C.label,marginBottom:"3px"}}>K/D</div>
+                <div style={{fontSize:"13px",color:C.label,marginBottom:"4px"}}>K/D</div>
                 <div style={{fontSize:"16px",color:C.yellow,fontWeight:700}}>{m.kd}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"11px",color:C.label,marginBottom:"3px"}}>K — D</div>
+                <div style={{fontSize:"13px",color:C.label,marginBottom:"4px"}}>K — D</div>
                 <div style={{fontSize:"15px",color:C.text}}>{m.kills}—{m.deaths}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"11px",color:C.label,marginBottom:"3px"}}>HS%</div>
+                <div style={{fontSize:"13px",color:C.label,marginBottom:"4px"}}>HS%</div>
                 <div style={{fontSize:"15px",color:C.text}}>{m.hs}%</div>
               </div>
               <div style={{textAlign:"center",fontSize:"18px"}}>{parseInt(m.mvps)>0?"⭐":""}</div>
@@ -418,7 +420,7 @@ function MapPool({faceit}) {
   const bans=maps.filter(m=>parseFloat(m.winrate)<45).slice(-2);
   return (
     <div style={{animation:"up .4s ease both"}}>
-      <div style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,padding:"8px 0 14px"}}>ПУЛ КАРТ · FACEIT</div>
+      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>ПУЛ КАРТ · FACEIT</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:"3px",marginBottom:"12px"}}>
         <div style={{background:"#0d1a0d",border:`1px solid #1e3a1e`,padding:"16px 18px"}}>
           <div style={{fontSize:"11px",color:"#55aa55",letterSpacing:"2px",marginBottom:"5px"}}>ЛУЧШАЯ</div>
@@ -446,7 +448,7 @@ function MapPool({faceit}) {
           <div key={i} className="hov-row" style={{display:"grid",gridTemplateColumns:"1fr 110px 80px 70px",
             gap:"2px",padding:"13px 14px",alignItems:"center",borderBottom:`1px solid ${C.border}`,
             background:C.card,transition:"background .15s"}}>
-            <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>{m.map}</div>
+            <div style={{fontSize:"16px",color:C.value,fontWeight:700}}>{m.map}</div>
             <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
               <div style={{flex:1,height:"5px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
                 <div style={{height:"100%",width:`${wr}%`,background:wc,transition:"width .8s ease"}}/>
@@ -481,7 +483,7 @@ function SearchBar({onSelect}) {
       <input value={q} onChange={e=>setQ(e.target.value)} onFocus={()=>setOpen(true)}
         placeholder="поиск по FACEIT нику..."
         style={{width:"100%",background:"#111109",border:`1px solid ${C.border}`,
-          color:C.yellow,fontSize:"12px",padding:"9px 13px",fontFamily:"'Courier New',monospace"}}/>
+          color:C.yellow,fontSize:"13px",padding:"9px 13px",fontFamily:"'Segoe UI',system-ui,sans-serif"}}/>
       {open&&q.trim().length>=2&&(
         <div style={{position:"absolute",top:"100%",left:0,right:0,marginTop:"2px",
           background:C.card,border:`1px solid ${C.border}`,zIndex:50,maxHeight:"280px",overflowY:"auto"}}>
@@ -493,7 +495,7 @@ function SearchBar({onSelect}) {
                 cursor:"pointer",borderBottom:`1px solid ${C.border}`,transition:"background .15s"}}>
               {r.avatar?<img src={r.avatar} alt="" style={{width:"26px",height:"26px",borderRadius:"2px"}}/>
                 :<div style={{width:"26px",height:"26px",background:"#1a1a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px"}}>👤</div>}
-              <span style={{fontSize:"13px",color:C.value,flex:1}}>{r.nickname}</span>
+              <span style={{fontSize:"14px",color:C.value,flex:1}}>{r.nickname}</span>
               <span style={{fontSize:"16px"}}>{flag(r.country)}</span>
             </div>
           ))}
@@ -533,7 +535,7 @@ function ProfileModal({steamid,nickname,onClose}) {
             {arr(fc?.maps).length>0&&<div style={{padding:"0 16px 20px"}}><MapPool faceit={fc}/></div>}
             {steamid&&data.history?.length>0&&(
               <div style={{padding:"0 16px 20px"}}>
-                <div style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,padding:"6px 0 12px"}}>ИСТОРИЯ РАЗБОРОВ</div>
+                <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"6px 0 14px"}}>ИСТОРИЯ РАЗБОРОВ</div>
                 {data.history.map((h,i)=>{
                   const lc=ANALYSIS_COLOR[h.result?.level]||C.yellow;
                   return <div key={i} style={{background:"#111109",border:`1px solid ${C.border}`,borderLeft:`2px solid ${lc}`,padding:"13px 16px",marginBottom:"3px"}}>
@@ -541,7 +543,7 @@ function ProfileModal({steamid,nickname,onClose}) {
                       <span style={{fontSize:"11px",color:lc,letterSpacing:"2px"}}>{h.result?.level?.toUpperCase()}</span>
                       <span style={{fontSize:"11px",color:C.muted}}>{fmt(h.timestamp)}</span>
                     </div>
-                    <div style={{fontSize:"13px",color:C.label,lineHeight:1.5}}>{h.result?.overall}</div>
+                    <div style={{fontSize:"14px",color:C.label,lineHeight:1.6}}>{h.result?.overall}</div>
                   </div>;
                 })}
               </div>
@@ -586,12 +588,12 @@ function Leaderboard({myId, onProfile}) {
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
               {p.avatar?<img src={p.avatar} alt="" style={{width:"30px",height:"30px",borderRadius:"2px"}}/>
                 :<div style={{width:"30px",height:"30px",background:"#1a1a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px"}}>👤</div>}
-              <span style={{fontSize:"14px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:400}}>
+              <span style={{fontSize:"15px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:400}}>
                 {p.username}{isMe?" (ты)":""}
               </span>
             </div>
             <div style={{fontSize:"15px",color:C.yellow,fontWeight:700}}>{p.stats?.rank||"—"}</div>
-            <div style={{fontSize:"14px",color:C.label}}>{p.stats?.kd||"—"}</div>
+            <div style={{fontSize:"15px",color:C.label}}>{p.stats?.kd||"—"}</div>
             <div style={{fontSize:"14px",color:C.label}}>{p.stats?.winrate||"—"}%</div>
             <div style={{fontSize:"14px",color:C.label}}>{p.stats?.hs||"—"}%</div>
             <div style={{padding:"3px 10px",background:lc+"18",color:lc,border:`1px solid ${lc}33`,
@@ -636,7 +638,7 @@ function HistoryTab({steamid}) {
                 </div>
                 <span style={{fontSize:"12px",color:C.muted}}>{fmt(h.timestamp)}</span>
               </div>
-              <div style={{fontSize:"14px",color:C.text,lineHeight:1.6}}>{h.result?.overall}</div>
+              <div style={{fontSize:"15px",color:C.text,lineHeight:1.75}}>{h.result?.overall}</div>
             </div>
             {isExp&&(
               <div style={{background:"#0f0f09",border:`1px solid ${C.border}`,borderTop:"none",
@@ -765,7 +767,7 @@ export default function App() {
 
   // ── Layout ────────────────────────────────────────────────────────────────
   return (
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Courier New',monospace",color:C.text}}>
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Segoe UI',system-ui,-apple-system,sans-serif",color:C.text}}>
       <style>{css}</style>
       {/* scanline */}
       <div style={{position:"fixed",left:0,right:0,height:"2px",
@@ -783,7 +785,7 @@ export default function App() {
         display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap",position:"relative",zIndex:10}}>
         <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
           <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
-          <span style={{fontSize:"12px",letterSpacing:"5px",color:C.yellow,fontWeight:700}}>CS2 AI ТРЕНЕР</span>
+          <span style={{fontSize:"13px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>CS2 AI ТРЕНЕР</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
           <SearchBar onSelect={r=>setProfileView({nickname:r.nickname})}/>
@@ -822,8 +824,8 @@ export default function App() {
               padding:"11px 18px",background:"transparent",
               color:mainTab===t?C.yellow:C.muted,border:"none",
               borderBottom:`2px solid ${mainTab===t?C.yellow:"transparent"}`,
-              cursor:"pointer",fontSize:"12px",letterSpacing:"1px",
-              fontFamily:"'Courier New',monospace",marginBottom:"-1px",transition:"color .15s"}}>{l}</button>
+              cursor:"pointer",fontSize:"13px",letterSpacing:"1px",
+              fontFamily:"'Segoe UI',system-ui,sans-serif",marginBottom:"-1px",transition:"color .15s"}}>{l}</button>
           ))}
         </div>
 
@@ -850,8 +852,8 @@ export default function App() {
                 <div style={{marginTop:"12px",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:"3px"}}>
                   {[{l:"УБИЙСТВА",v:player.cs2?.kills},{l:"СМЕРТИ",v:player.cs2?.deaths},{l:"ПОБЕДЫ",v:player.cs2?.wins},{l:"MVP",v:player.cs2?.mvps}].map((s,i)=>(
                     <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"16px",textAlign:"center"}}>
-                      <div style={{fontSize:"12px",color:C.label,letterSpacing:"2px",marginBottom:"6px"}}>{s.l}</div>
-                      <div style={{fontSize:"22px",color:C.yellow,fontWeight:700}}>{s.v||"—"}</div>
+                      <div style={{fontSize:"13px",color:C.label,letterSpacing:"1px",marginBottom:"7px"}}>{s.l}</div>
+                      <div style={{fontSize:"24px",color:C.yellow,fontWeight:700}}>{s.v||"—"}</div>
                     </div>
                   ))}
                 </div>
@@ -892,7 +894,7 @@ export default function App() {
                 ]).map((f,i)=>(
                   <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px 16px"}}>
                     <div style={{fontSize:"11px",color:C.label,letterSpacing:"2px",marginBottom:"7px"}}>{f.l}</div>
-                    <div style={{fontSize:"22px",color:C.yellow,fontWeight:700}}>{f.v}</div>
+                    <div style={{fontSize:"24px",color:C.yellow,fontWeight:700}}>{f.v}</div>
                   </div>
                 ))}
               </div>
@@ -934,7 +936,7 @@ export default function App() {
                     <span style={{fontSize:"13px",color:C.muted}}>→ {analysis.goal}</span>
                     <span style={{marginLeft:"auto",fontSize:"11px",color:C.muted,letterSpacing:"1px"}}>✓ в лидерах</span>
                   </div>
-                  <div style={{fontSize:"16px",color:C.value,lineHeight:1.7,marginBottom:"14px"}}>{analysis.overall}</div>
+                  <div style={{fontSize:"16px",color:C.value,lineHeight:1.8,marginBottom:"16px"}}>{analysis.overall}</div>
                   <div style={{background:"#ff440410",borderLeft:"3px solid #ff5544",padding:"13px 16px",fontSize:"14px",color:"#ff9977",lineHeight:1.6}}>
                     ⚠ {analysis.mainProblem}
                   </div>
@@ -956,7 +958,7 @@ export default function App() {
                       color:subTab===t?(t==="weak"?"#ff8866":t==="strong"?"#88ee88":C.yellow):C.muted,
                       border:"none",borderBottom:`2px solid ${subTab===t?(t==="weak"?"#ff5544":t==="strong"?"#55bb55":C.yellow):"transparent"}`,
                       cursor:"pointer",fontSize:"12px",letterSpacing:"2px",
-                      fontFamily:"'Courier New',monospace",marginBottom:"-1px",transition:"color .15s"}}>{l}</button>
+                      fontFamily:"'Segoe UI',system-ui,sans-serif",marginBottom:"-1px",transition:"color .15s"}}>{l}</button>
                   ))}
                 </div>
 
@@ -965,8 +967,8 @@ export default function App() {
                     {analysis.weaknesses?.map((w,i)=>(
                       <div key={i} style={{background:C.card,border:"1px solid #2e1414",borderTop:"2px solid #ff5544",padding:"20px"}}>
                         <div style={{display:"inline-block",padding:"3px 13px",background:"#ff554422",color:"#ff8866",fontSize:"12px",letterSpacing:"2px",fontWeight:700,marginBottom:"12px"}}>{w.stat?.toUpperCase()}</div>
-                        <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"12px"}}>{w.problem}</div>
-                        <div style={{background:C.yellow+"12",border:`1px solid ${C.yellow}33`,padding:"11px 14px",fontSize:"13px",color:C.yellow,lineHeight:1.6}}>💡 {w.fix}</div>
+                        <div style={{fontSize:"15px",color:C.label,lineHeight:1.75,marginBottom:"14px"}}>{w.problem}</div>
+                        <div style={{background:C.yellow+"12",border:`1px solid ${C.yellow}33`,padding:"11px 14px",fontSize:"14px",color:C.yellow,lineHeight:1.7}}>💡 {w.fix}</div>
                       </div>
                     ))}
                   </div>
@@ -976,7 +978,7 @@ export default function App() {
                     {analysis.strengths?.map((s,i)=>(
                       <div key={i} style={{background:C.card,border:"1px solid #142814",borderTop:"2px solid #55aa55",padding:"20px"}}>
                         <div style={{display:"inline-block",padding:"3px 13px",background:"#55aa5522",color:"#88ee88",fontSize:"12px",letterSpacing:"2px",fontWeight:700,marginBottom:"12px"}}>{s.stat?.toUpperCase()}</div>
-                        <div style={{fontSize:"14px",color:"#66aa66",lineHeight:1.7}}>{s.comment}</div>
+                        <div style={{fontSize:"15px",color:"#77cc77",lineHeight:1.75}}>{s.comment}</div>
                       </div>
                     ))}
                   </div>
@@ -986,7 +988,7 @@ export default function App() {
                     {analysis.plan?.map((day,i)=>(
                       <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"3px",display:"flex",gap:"18px",alignItems:"flex-start"}}>
                         <div style={{minWidth:"32px",height:"32px",background:C.yellow+"18",border:`1px solid ${C.yellow}44`,color:C.yellow,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:700,flexShrink:0}}>{i+1}</div>
-                        <div style={{fontSize:"15px",color:C.value,lineHeight:1.7}}>{day}</div>
+                        <div style={{fontSize:"15px",color:C.value,lineHeight:1.8}}>{day}</div>
                       </div>
                     ))}
                     <div style={{marginTop:"3px",padding:"18px 20px",background:C.yellow+"0a",border:`1px solid ${C.yellow}22`,fontSize:"15px",color:C.yellow}}>
