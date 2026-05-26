@@ -40,6 +40,11 @@ const css = `
     background-size:600px 100%;animation:shimmer 1.5s infinite linear;border-radius:2px;}
   .glow-btn:hover:not(:disabled){box-shadow:0 0 28px #f5c51855;}
   .match-row:hover{background:#181810 !important;}
+  @media(max-width:600px){
+    h1{font-size:28px !important;}
+    .main-grid{grid-template-columns:1fr !important;}
+    .hide-mobile{display:none !important;}
+  }
 `;
 
 const arr = x => Array.isArray(x) ? x : [];
@@ -820,6 +825,85 @@ function TrainingPlan({player, source}) {
   );
 }
 
+
+// ── Cold Start Banner ─────────────────────────────────────────────────────────
+function ColdStartBanner({status}) {
+  if (status !== 'slow' && status !== 'waking') return null;
+  return (
+    <div style={{position:"fixed",bottom:"88px",left:"50%",transform:"translateX(-50%)",
+      background:"#1a1a0a",border:`1px solid ${C.yellow}55`,padding:"10px 20px",
+      zIndex:150,display:"flex",alignItems:"center",gap:"10px",whiteSpace:"nowrap",
+      boxShadow:`0 4px 20px rgba(0,0,0,0.5)`,animation:"slideUp .3s ease"}}>
+      <div style={{display:"flex",gap:"4px"}}>
+        {[0,1,2].map(i=><div key={i} style={{width:"5px",height:"5px",background:C.yellow,
+          borderRadius:"50%",animation:`blink 1s ${i*.25}s infinite`}}/>)}
+      </div>
+      <span style={{fontSize:"13px",color:C.label}}>Сервер запускается</span>
+      <span style={{fontSize:"12px",color:C.muted}}>~30 сек при первом заходе</span>
+    </div>
+  );
+}
+
+// ── Share Modal ────────────────────────────────────────────────────────────────
+function ShareModal({steamid, onClose}) {
+  const shareUrl = `${BACKEND}/share/${steamid}`;
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      prompt("Скопируй ссылку:", shareUrl);
+    }
+  };
+
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
+      zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn .2s ease"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.border}`,
+        borderTop:`2px solid ${C.yellow}`,maxWidth:"460px",width:"100%",padding:"32px",animation:"slideUp .3s ease"}}>
+        <div style={{fontSize:"14px",letterSpacing:"3px",color:C.yellow,fontWeight:700,marginBottom:"20px"}}>
+          📤 ПОДЕЛИТЬСЯ ПРОФИЛЕМ
+        </div>
+        <p style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>
+          Отправь эту ссылку другу или скинь в Discord — откроется красивая карточка с твоими статами и AI вердиктом.
+        </p>
+
+        {/* URL preview */}
+        <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"12px 16px",
+          marginBottom:"16px",fontSize:"13px",color:C.muted,wordBreak:"break-all",lineHeight:1.5}}>
+          {shareUrl}
+        </div>
+
+        <div style={{display:"flex",gap:"10px",flexWrap:"wrap"}}>
+          <button onClick={copy} style={{
+            flex:1,padding:"12px",background:copied?"#1a3a1a":C.yellow,
+            color:copied?"#55aa55":"#080807",border:copied?`1px solid #55aa55`:"none",
+            cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit",
+            transition:"all .2s"}}>
+            {copied ? "✓ СКОПИРОВАНО!" : "📋 КОПИРОВАТЬ ССЫЛКУ"}
+          </button>
+          <a href={shareUrl} target="_blank" rel="noreferrer" style={{
+            padding:"12px 20px",background:"transparent",
+            color:C.label,border:`1px solid ${C.border}`,
+            textDecoration:"none",fontSize:"14px",fontFamily:"inherit",
+            display:"flex",alignItems:"center",gap:"6px"}}>
+            👁 Открыть
+          </a>
+        </div>
+
+        <button onClick={onClose} style={{width:"100%",marginTop:"12px",padding:"10px",
+          background:"transparent",border:`1px solid ${C.border}`,color:C.muted,
+          cursor:"pointer",fontSize:"13px",fontFamily:"inherit"}}>
+          Закрыть
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Landing Page ──────────────────────────────────────────────────────────────
 function LandingPage({onLogin}) {
   const FEATURES = [
@@ -1141,8 +1225,19 @@ export default function App() {
   const [showPopup,setShowPopup] = useState(false);
   const [profileView,setProfileView] = useState(null);
   const [chatOpen,setChatOpen] = useState(false);
+  const [serverStatus,setServerStatus] = useState("checking");
+  const [shareOpen,setShareOpen] = useState(false);
 
   const hasFaceit = !!(player?.faceit && (player.faceit.elo || arr(player.faceit.matches).length));
+
+  // ── cold start wake-up ──────────────────────────────────────────────────────
+  useEffect(()=>{
+    const t = setTimeout(()=>setServerStatus('slow'), 2500);
+    fetch(`${BACKEND}/health`).then(()=>{
+      clearTimeout(t); setServerStatus('ready');
+    }).catch(()=>{ clearTimeout(t); setServerStatus('ready'); });
+    return ()=>clearTimeout(t);
+  },[]);
 
   // ── restore + refresh ─────────────────────────────────────────────────────
   useEffect(()=>{
@@ -1245,6 +1340,8 @@ export default function App() {
 
       {showPopup&&<SteamPopup onLogin={openSteam} onSkip={()=>setShowPopup(false)}/>}
       {profileView&&<ProfileModal steamid={profileView.steamid} nickname={profileView.nickname} onClose={()=>setProfileView(null)}/>}
+      {shareOpen&&player&&<ShareModal steamid={player.steamid} onClose={()=>setShareOpen(false)}/>}
+      <ColdStartBanner status={serverStatus}/>
 
       {/* Top accent */}
       <div style={{height:"3px",background:`linear-gradient(90deg,${C.yellow},#c9a000,${C.yellow})`}}/>
@@ -1268,7 +1365,8 @@ export default function App() {
                   FACEIT {player.faceit.level} · {player.faceit.elo} ELO
                 </span>}
               </div>
-              <button onClick={logout} style={{background:"transparent",border:`1px solid ${C.border}`,color:C.label,cursor:"pointer",fontSize:"10px",letterSpacing:"1px",fontFamily:"'Courier New',monospace",padding:"5px 10px"}}>ВЫЙТИ</button>
+              <button onClick={()=>setShareOpen(true)} style={{background:"transparent",border:`1px solid ${C.yellow}44`,color:C.yellow,cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"inherit",padding:"5px 12px"}}>📤</button>
+              <button onClick={logout} style={{background:"transparent",border:`1px solid ${C.border}`,color:C.label,cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"inherit",padding:"5px 10px"}}>ВЫЙТИ</button>
             </>
           ):(
             <button onClick={openSteam} style={{background:"#1b6090",color:"#fff",border:"none",padding:"9px 18px",cursor:"pointer",fontSize:"11px",fontWeight:700,letterSpacing:"2px",fontFamily:"'Courier New',monospace"}}>STEAM</button>
@@ -1276,7 +1374,7 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{maxWidth:"980px",margin:"0 auto",padding:"28px 20px 80px",position:"relative",zIndex:5}}>
+      <div style={{maxWidth:"1100px",margin:"0 auto",padding:"28px 24px 80px",position:"relative",zIndex:5}}>
 
         {/* Page title */}
         <div style={{marginBottom:"24px"}}>
