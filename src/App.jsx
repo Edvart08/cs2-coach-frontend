@@ -33,6 +33,7 @@ const css = `
 `;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+const arr = x => Array.isArray(x) ? x : [];
 function flag(cc){
   if(!cc||cc.length!==2)return"";
   try{return cc.toUpperCase().replace(/./g,c=>String.fromCodePoint(127397+c.charCodeAt()));}catch{return"";}
@@ -188,7 +189,7 @@ function HeroCard({player}){
   const li=levelInfo(elo);
   const lvlColor=LVL_COLOR[li.lvl]||"#f5c518";
   const role=roleOf(fc?.lifetime?.kd||player.cs2?.kd||0);
-  const form=(fc?.matches||[]).slice(0,7).map(m=>m.result==="1");
+  const form=arr(fc?.matches).slice(0,7).map(m=>m.result==="1");
   const eloCount=useCountUp(elo,1100);
   const kdVal=fc?.lifetime?.kd||player.cs2?.kd||"0";
 
@@ -292,7 +293,7 @@ function HeroCard({player}){
 
 // ── Charts Section ───────────────────────────────────────────────────────────
 function ChartsSection({faceit}){
-  const matches=(faceit?.matches||[]).slice().reverse();
+  const matches=arr(faceit?.matches).slice().reverse();
   const kdData=matches.map(m=>parseFloat(m.kd)||0);
   const hsData=matches.map(m=>parseFloat(m.hs)||0);
   const adrData=matches.map(m=>parseFloat(m.adr)||0).filter(v=>v>0);
@@ -358,7 +359,7 @@ function ChartsSection({faceit}){
 // ── Match History ────────────────────────────────────────────────────────────
 function MatchHistory({faceit}){
   const[exp,setExp]=useState(null);
-  const matches=faceit?.matches||[];
+  const matches=arr(faceit?.matches);
   if(!matches.length)return(
     <div style={{textAlign:"center",padding:"50px",color:"#2a2a18"}}>
       <div style={{fontSize:"28px",marginBottom:"10px"}}>🎮</div>
@@ -430,7 +431,7 @@ function MatchHistory({faceit}){
 
 // ── Map Pool ─────────────────────────────────────────────────────────────────
 function MapPool({faceit}){
-  const maps=(faceit?.maps||[]).slice()
+  const maps=arr(faceit?.maps).slice()
     .filter(m=>parseInt(m.matches)>0)
     .sort((a,b)=>parseFloat(b.winrate)-parseFloat(a.winrate));
   if(!maps.length)return(
@@ -574,11 +575,11 @@ function ProfileModal({steamid,nickname,onClose}){
               <button onClick={onClose} style={{background:"transparent",border:"1px solid #2a2a18",color:"#444",cursor:"pointer",width:"24px",height:"24px",fontFamily:"monospace"}}>✕</button>
             </div>
             <div style={{padding:"4px 0"}}>
-              {(fc?.elo||fc?.matches)&&<HeroCard player={{...pl,faceit:fc,cs2:data?.cs2}}/>}
+              {(fc?.elo||arr(fc?.matches).length)&&<HeroCard player={{...pl,faceit:fc,cs2:data?.cs2}}/>}
             </div>
-            {fc?.matches?.length>0&&<div style={{padding:"0 16px"}}><ChartsSection faceit={fc}/></div>}
-            {fc?.matches?.length>0&&<div style={{padding:"12px 16px"}}><MatchHistory faceit={fc}/></div>}
-            {fc?.maps?.length>0&&<div style={{padding:"0 16px 20px"}}><MapPool faceit={fc}/></div>}
+            {arr(fc?.matches).length>0&&<div style={{padding:"0 16px"}}><ChartsSection faceit={fc}/></div>}
+            {arr(fc?.matches).length>0&&<div style={{padding:"12px 16px"}}><MatchHistory faceit={fc}/></div>}
+            {arr(fc?.maps).length>0&&<div style={{padding:"0 16px 20px"}}><MapPool faceit={fc}/></div>}
             {steamid&&data.history?.length>0&&(
               <div style={{padding:"0 16px 20px"}}>
                 <div style={{fontSize:"11px",letterSpacing:"3px",color:"#f5c518",padding:"6px 0 12px"}}>ИСТОРИЯ РАЗБОРОВ</div>
@@ -596,7 +597,7 @@ function ProfileModal({steamid,nickname,onClose}){
                 })}
               </div>
             )}
-            {!fc?.elo&&!fc?.matches?.length&&(
+            {!fc?.elo&&!arr(fc?.matches).length&&(
               <div style={{padding:"40px",textAlign:"center",color:"#3a3a28",fontSize:"12px"}}>
                 FACEIT профиль не найден для этого игрока
               </div>
@@ -725,7 +726,7 @@ export default function App(){
 
   useEffect(()=>{
     try{
-      const s=localStorage.getItem("cs2_player");
+      const s=localStorage.getItem("cs2_player_v3");
       if(s)setPlayer(JSON.parse(s));
       else setTimeout(()=>setShowPopup(true),1200);
     }catch{setTimeout(()=>setShowPopup(true),1200);}
@@ -736,7 +737,7 @@ export default function App(){
       if(!e.data?.player)return;
       const p=e.data.player;
       setPlayer(p);
-      try{localStorage.setItem("cs2_player",JSON.stringify(p));}catch{}
+      try{localStorage.setItem("cs2_player_v3",JSON.stringify(p));}catch{}
       const s=e.data.stats||{};
       const fc=p.faceit;
       setStats({
@@ -744,7 +745,7 @@ export default function App(){
         winrate:fc?.lifetime?.winrate||s.winrate||"—",
         hltv:"—",
         hs:fc?.lifetime?.hs||s.hs||"—",
-        adr:(fc?.matches?.[0]?.adr)||"—",
+        adr:(arr(fc?.matches)[0]?.adr)||"—",
         clutch1v1:"—",entrySuccess:"—",
         rank:fc?.elo||"—",
         matches:fc?.lifetime?.matches||s.matches||"—",
@@ -759,14 +760,14 @@ export default function App(){
   const logout=()=>{
     setPlayer(null);setAnalysis(null);
     setStats({kd:"—",winrate:"—",hltv:"—",hs:"—",adr:"—",clutch1v1:"—",entrySuccess:"—",rank:"—",matches:"—"});
-    try{localStorage.removeItem("cs2_player");}catch{}
+    try{localStorage.removeItem("cs2_player_v3");}catch{}
     setShowPopup(true);
   };
 
   async function analyze(){
     if(!player){setShowPopup(true);return;}
     setLoading(true);setAnalysis(null);setErrorMsg(null);
-    const payload={...stats,steamid:player.steamid,maps:player.faceit?.maps||[]};
+    const payload={...stats,steamid:player.steamid,maps:arr(player.faceit?.maps)};
     const call=async()=>{
       const res=await fetch(`${BACKEND}/analyze`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
       const d=await res.json();
@@ -788,7 +789,7 @@ export default function App(){
   }
 
   const lc=LEVEL_COLOR[analysis?.level]||"#f5c518";
-  const hasFaceit=player?.faceit&&(player.faceit.elo||player.faceit.matches?.length);
+  const hasFaceit=player?.faceit&&(player.faceit.elo||arr(player.faceit.matches).length);
 
   return(
     <div style={{minHeight:"100vh",background:"#080807",fontFamily:"'Courier New',monospace",color:"#b8b090",
