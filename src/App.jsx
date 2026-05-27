@@ -1191,6 +1191,236 @@ function LandingPage({onLogin}) {
 }
 
 
+
+// ── Pro система ───────────────────────────────────────────────────────────────
+const FREE_DAILY = 5;
+
+function ProModal({player, onClose, onActivated}) {
+  const [tab,setTab]     = useState("plans");   // plans | activate
+  const [key,setKey]     = useState("");
+  const [loading,setLoading] = useState(false);
+  const [msg,setMsg]     = useState(null);
+
+  async function activate() {
+    if (!key.trim() || !player?.steamid) return;
+    setLoading(true); setMsg(null);
+    try {
+      const r = await fetch(`${BACKEND}/activate-key`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({steamid:player.steamid, key:key.trim().toUpperCase()})
+      });
+      const d = await r.json();
+      if (d.ok) { setMsg({ok:true,text:"🎉 Pro активирован!"}); onActivated(); }
+      else setMsg({ok:false, text: d.detail||"Ошибка"});
+    } catch { setMsg({ok:false,text:"Ошибка сети"}); }
+    setLoading(false);
+  }
+
+  const PLANS = [
+    {period:"МЕСЯЦ", price:"299 ₽", sub:"~$3.3"},
+    {period:"ГОД",   price:"1990 ₽", sub:"~$22 · экономия 40%", best:true},
+  ];
+
+  const FREE_FEATS  = ["1 AI Report в день","5 AI запросов в день","Базовые статы (Steam + FACEIT)","История матчей","Таблица лидеров"];
+  const PRO_FEATS   = ["Безлимитные AI Reports","Безлимитный AI чат","AI разбор каждого матча","Без дневных лимитов","Pro значок в лидерах","Приоритетная поддержка"];
+  const PAY_METHODS = [
+    {name:"Boosty",   icon:"🟡", desc:"Карты РФ, СБП",    url: "https://boosty.to"},
+    {name:"CryptoBot",icon:"💎", desc:"Крипта в Telegram", url: "https://t.me/CryptoBot"},
+    {name:"Stripe",   icon:"💳", desc:"Карты Visa/MC",     url: "https://stripe.com"},
+  ];
+
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",
+      zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",
+      padding:"20px",animation:"fadeIn .2s ease"}}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:C.card,border:`1px solid ${C.yellow}55`,borderTop:`3px solid ${C.yellow}`,
+        maxWidth:"520px",width:"100%",maxHeight:"90vh",overflowY:"auto",
+        animation:"slideUp .3s ease",boxShadow:`0 8px 60px ${C.yellow}18`}}>
+
+        {/* Header */}
+        <div style={{padding:"22px 24px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"4px"}}>
+              ⚡ CS2 AI ТРЕНЕР PRO
+            </div>
+            <div style={{fontSize:"20px",color:C.value,fontWeight:700}}>Убери ограничения</div>
+          </div>
+          <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
+            color:C.muted,cursor:"pointer",width:"28px",height:"28px",fontSize:"14px"}}>✕</button>
+        </div>
+
+        {/* Tab switch */}
+        <div style={{display:"flex",margin:"18px 24px 0",gap:"3px"}}>
+          {[["plans","Тарифы"],["activate","Ввести ключ"]].map(([t,l])=>(
+            <button key={t} onClick={()=>setTab(t)} style={{
+              flex:1,padding:"9px",background:tab===t?C.yellow+"22":"transparent",
+              border:`1px solid ${tab===t?C.yellow+"66":C.border}`,
+              color:tab===t?C.yellow:C.muted,cursor:"pointer",fontSize:"13px",
+              fontFamily:"inherit",fontWeight:tab===t?700:400}}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        <div style={{padding:"20px 24px 24px"}}>
+          {tab==="plans"&&<>
+            {/* Feature comparison */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"20px"}}>
+              <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
+                <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"12px"}}>FREE</div>
+                {FREE_FEATS.map((f,i)=>(
+                  <div key={i} style={{fontSize:"13px",color:C.label,marginBottom:"7px",
+                    display:"flex",gap:"8px",alignItems:"flex-start"}}>
+                    <span style={{color:C.muted,flexShrink:0}}>—</span>{f}
+                  </div>
+                ))}
+              </div>
+              <div style={{background:"#1a1a0a",border:`2px solid ${C.yellow}44`,padding:"16px",position:"relative"}}>
+                <div style={{position:"absolute",top:"-1px",right:"12px",
+                  background:C.yellow,color:"#080807",fontSize:"10px",fontWeight:700,
+                  padding:"2px 10px",letterSpacing:"2px"}}>PRO</div>
+                <div style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px"}}>PRO</div>
+                {PRO_FEATS.map((f,i)=>(
+                  <div key={i} style={{fontSize:"13px",color:C.value,marginBottom:"7px",
+                    display:"flex",gap:"8px",alignItems:"flex-start"}}>
+                    <span style={{color:C.win,flexShrink:0}}>✓</span>{f}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Prices */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"20px"}}>
+              {PLANS.map((p,i)=>(
+                <div key={i} style={{background:p.best?"#1a1a0a":"#111109",
+                  border:`${p.best?2:1}px solid ${p.best?C.yellow+"66":C.border}`,
+                  padding:"16px",textAlign:"center",position:"relative"}}>
+                  {p.best&&<div style={{position:"absolute",top:"-1px",left:"50%",
+                    transform:"translateX(-50%)",background:C.yellow,color:"#080807",
+                    fontSize:"10px",fontWeight:700,padding:"2px 12px",letterSpacing:"1px",
+                    whiteSpace:"nowrap"}}>ВЫГОДНО</div>}
+                  <div style={{fontSize:"12px",color:C.muted,marginBottom:"6px",marginTop:p.best?"8px":0}}>{p.period}</div>
+                  <div style={{fontSize:"24px",color:C.yellow,fontWeight:700}}>{p.price}</div>
+                  <div style={{fontSize:"12px",color:C.muted,marginTop:"3px"}}>{p.sub}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Payment methods */}
+            <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>
+              СПОСОБЫ ОПЛАТЫ
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:"6px",marginBottom:"16px"}}>
+              {PAY_METHODS.map((m,i)=>(
+                <a key={i} href={m.url} target="_blank" rel="noreferrer" style={{
+                  display:"flex",alignItems:"center",gap:"12px",padding:"12px 16px",
+                  background:"#111109",border:`1px solid ${C.border}`,
+                  textDecoration:"none",transition:"border-color .2s"}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"55"}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+                  <span style={{fontSize:"20px"}}>{m.icon}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{m.name}</div>
+                    <div style={{fontSize:"12px",color:C.muted}}>{m.desc}</div>
+                  </div>
+                  <span style={{fontSize:"12px",color:C.yellow}}>→</span>
+                </a>
+              ))}
+            </div>
+
+            <div style={{fontSize:"12px",color:C.muted,lineHeight:1.6,
+              background:"#111109",border:`1px solid ${C.border}`,padding:"12px 14px"}}>
+              После оплаты ты получишь ключ активации.<br/>
+              Введи его во вкладке "Ввести ключ" и Pro активируется мгновенно.
+            </div>
+          </>}
+
+          {tab==="activate"&&<>
+            <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>
+              Введи ключ который получил после оплаты. Формат: <span style={{color:C.yellow,fontFamily:"monospace"}}>CS2PRO-XXXX-XXXX-XXXX</span>
+            </div>
+            <input value={key} onChange={e=>setKey(e.target.value)}
+              placeholder="CS2PRO-XXXX-XXXX-XXXX"
+              style={{width:"100%",background:"#111109",border:`1px solid ${msg?.ok===false?C.lose:C.border}`,
+                color:C.yellow,fontSize:"16px",padding:"13px 16px",
+                fontFamily:"'Consolas',monospace",letterSpacing:"2px",marginBottom:"10px"}}/>
+            {msg&&<div style={{fontSize:"13px",color:msg.ok?C.win:C.lose,
+              marginBottom:"12px",padding:"10px 14px",
+              background:msg.ok?"#0f1a0f":"#1a0f0f",
+              border:`1px solid ${msg.ok?C.win+"33":C.lose+"33"}`}}>
+              {msg.text}
+            </div>}
+            <button onClick={activate} disabled={loading||!key.trim()||!player} style={{
+              width:"100%",padding:"14px",background:loading?"#1a1a0e":C.yellow,
+              color:"#080807",border:"none",cursor:loading?"not-allowed":"pointer",
+              fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>
+              {loading?"АКТИВИРУЮ...":"АКТИВИРОВАТЬ PRO"}
+            </button>
+          </>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProBadge() {
+  return (
+    <div style={{display:"inline-flex",alignItems:"center",gap:"4px",
+      background:`linear-gradient(135deg,${C.yellow}22,#ff880022)`,
+      border:`1px solid ${C.yellow}66`,padding:"3px 10px"}}>
+      <span style={{fontSize:"11px"}}>⚡</span>
+      <span style={{fontSize:"11px",color:C.yellow,fontWeight:700,letterSpacing:"1px"}}>PRO</span>
+    </div>
+  );
+}
+
+function UsageBar({remaining, total=FREE_DAILY, isPro, onUpgrade}) {
+  if (isPro) return null;
+  const pct = remaining/total*100;
+  const color = remaining<=1?C.lose:remaining<=2?C.orange:C.win;
+  return (
+    <div style={{background:"#111109",border:`1px solid ${C.border}`,
+      padding:"10px 14px",marginBottom:"12px",display:"flex",alignItems:"center",gap:"12px"}}>
+      <div style={{flex:1}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
+          <span style={{fontSize:"12px",color:C.label}}>AI запросов сегодня</span>
+          <span style={{fontSize:"12px",color,fontWeight:700}}>{remaining}/{total}</span>
+        </div>
+        <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${pct}%`,background:color,transition:"width .5s ease"}}/>
+        </div>
+      </div>
+      <button onClick={onUpgrade} style={{flexShrink:0,padding:"6px 14px",
+        background:C.yellow+"22",border:`1px solid ${C.yellow}55`,color:C.yellow,
+        cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"inherit"}}>
+        ⚡ Pro
+      </button>
+    </div>
+  );
+}
+
+function PaywallOverlay({feature, onUpgrade}) {
+  return (
+    <div style={{background:"#0f0f09",border:`1px solid ${C.yellow}33`,
+      padding:"28px",textAlign:"center",animation:"fadeIn .3s ease"}}>
+      <div style={{fontSize:"28px",marginBottom:"12px"}}>⚡</div>
+      <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"8px"}}>
+        {feature} — Pro функция
+      </div>
+      <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>
+        Дневной лимит исчерпан.<br/>
+        Получи Pro — безлимитный AI без ограничений.
+      </div>
+      <button onClick={onUpgrade} style={{padding:"12px 32px",background:C.yellow,
+        color:"#080807",border:"none",cursor:"pointer",fontSize:"14px",
+        fontWeight:700,fontFamily:"inherit"}}>
+        ПОПРОБОВАТЬ PRO →
+      </button>
+    </div>
+  );
+}
+
 // ── Setup Checklist ───────────────────────────────────────────────────────────
 function SetupChecklist({player, hasFaceit, analysisCount, onDismiss}) {
   const cs2 = player?.cs2 || {};
@@ -1482,6 +1712,9 @@ export default function App() {
   const [shareOpen,setShareOpen]   = useState(false);
   const [streak,setStreak]         = useState(0);
   const [showStreakToast,setShowStreakToast] = useState(false);
+  const [isPro,setIsPro]               = useState(false);
+  const [aiRemaining,setAiRemaining]   = useState(FREE_DAILY);
+  const [showProModal,setShowProModal] = useState(false);
   const [showChecklist,setShowChecklist] = useState(true);
   const [analysisCount,setAnalysisCount] = useState(
     ()=>{ try{ return parseInt(localStorage.getItem("cs2_analysis_count")||"0"); }catch{ return 0; } }
@@ -1523,6 +1756,13 @@ export default function App() {
         const p = JSON.parse(saved);
         setPlayer(p);
         if (!hasFaceit) setSource("steam");
+        // check Pro status
+        if (p.steamid) {
+          fetch(`${BACKEND}/pro/${p.steamid}`)
+            .then(r=>r.json())
+            .then(d=>{ setIsPro(d.pro||false); setAiRemaining(d.remaining??FREE_DAILY); })
+            .catch(()=>{});
+        }
         // background refresh
         if (p.steamid) {
           fetch(`${BACKEND}/profile/${p.steamid}`).then(r=>r.json()).then(d=>{
@@ -1550,6 +1790,13 @@ export default function App() {
       if (!p.faceit?.elo) setSource("steam");
       try{localStorage.setItem("cs2_player_v3",JSON.stringify(p));}catch{}
       setShowPopup(false);
+      // check Pro status
+      if (p.steamid) {
+        fetch(`${BACKEND}/pro/${p.steamid}`)
+          .then(r=>r.json())
+          .then(d=>{ setIsPro(d.pro||false); setAiRemaining(d.remaining??FREE_DAILY); })
+          .catch(()=>{});
+      }
     };
     window.addEventListener("message", handler);
     return ()=>window.removeEventListener("message", handler);
@@ -1565,6 +1812,7 @@ export default function App() {
   // ── Analyze ───────────────────────────────────────────────────────────────
   async function analyze() {
     if (!player) { setShowPopup(true); return; }
+    if (!isPro && aiRemaining <= 0) { setShowProModal(true); return; }
     setLoading(true); setAnalysis(null); setErrorMsg(null);
 
     const fc = player.faceit;
@@ -1599,6 +1847,7 @@ export default function App() {
       const newCount = analysisCount+1;
       setAnalysisCount(newCount);
       try{ localStorage.setItem("cs2_analysis_count",String(newCount)); }catch{}
+      if (!isPro) setAiRemaining(r=>Math.max(0,r-1));
       fetch(`${BACKEND}/leaderboard/add`,{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({steamid:player.steamid,username:player.username,
           avatar:player.avatar||"",stats:statsPayload,level:result.level,overall:result.overall})}).catch(()=>{});
@@ -1620,6 +1869,8 @@ export default function App() {
       {showPopup&&<SteamPopup onLogin={openSteam} onSkip={()=>setShowPopup(false)}/>}
       {profileView&&<ProfileModal steamid={profileView.steamid} nickname={profileView.nickname} onClose={()=>setProfileView(null)}/>}
       {shareOpen&&player&&<ShareModal steamid={player.steamid} onClose={()=>setShareOpen(false)}/>}
+      {showProModal&&<ProModal player={player} onClose={()=>setShowProModal(false)}
+        onActivated={()=>{setIsPro(true);setAiRemaining(999);setShowProModal(false);}}/>}
       <ColdStartBanner status={serverStatus}/>
 
       {/* Top accent */}
@@ -1644,6 +1895,14 @@ export default function App() {
                   FACEIT {player.faceit.level} · {player.faceit.elo} ELO
                 </span>}
               </div>
+              {isPro
+                ? <ProBadge/>
+                : <button onClick={()=>setShowProModal(true)} style={{
+                    padding:"5px 12px",background:C.yellow+"18",border:`1px solid ${C.yellow}44`,
+                    color:C.yellow,cursor:"pointer",fontSize:"11px",fontWeight:700,
+                    fontFamily:"inherit",letterSpacing:"1px"}}>
+                    ⚡ PRO
+                  </button>}
               {streak>1&&<div style={{display:"flex",alignItems:"center",gap:"4px",
                 padding:"4px 10px",background:"#1a1408",border:`1px solid ${C.yellow}44`}}>
                 <span style={{fontSize:"14px"}}>🔥</span>
@@ -1692,7 +1951,7 @@ export default function App() {
               analysisCount={analysisCount}
               onDismiss={()=>setShowChecklist(false)}/>}
             {source==="steam"&&player.cs2?.private&&<PrivateWarning/>}
-            {!player.cs2?.private&&<AIReport player={player} source={source}/>}
+            {!player.cs2?.private&&(isPro||aiRemaining>0?<AIReport player={player} source={source}/>:<PaywallOverlay feature="AI Report" onUpgrade={()=>setShowProModal(true)}/>)}
             <HeroCard player={player} source={source}/>
             <ScoreCards player={player} source={source}/>
             {source==="faceit"&&hasFaceit
@@ -1747,6 +2006,7 @@ export default function App() {
                   </div>
                 ))}
               </div>
+              <UsageBar remaining={aiRemaining} isPro={isPro} onUpgrade={()=>setShowProModal(true)}/>
               <div style={{fontSize:"12px",color:C.muted,marginBottom:"16px"}}>
                 Источник данных: <span style={{color:source==="faceit"?C.orange:C.blue,fontWeight:700}}>{source==="faceit"?"FACEIT":"STEAM"}</span>
                 {source==="steam"&&player.faceit&&" (переключись на FACEIT для более детального анализа)"}
