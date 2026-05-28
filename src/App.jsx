@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 const BACKEND = "https://cs2-coach-backend.onrender.com";
-const FREE_DAILY = 5;
+const FREE_DAILY = 20;
 
 const FACEIT_ELO_RANGES = [
   [1,100,500],[2,501,750],[3,751,900],[4,901,1050],[5,1051,1200],
@@ -1035,12 +1035,12 @@ function Logo({size=32, withText=true}) {
 
 // ── Online counter ────────────────────────────────────────────────────────────
 function useOnline() {
-  const [n, setN] = useState(()=>Math.floor(Math.random()*40)+23);
+  const [n, setN] = useState(()=>Math.floor(Math.random()*60)+64);
   useEffect(()=>{
     const t = setInterval(()=>{
       setN(prev => {
-        const delta = Math.floor(Math.random()*5)-2;
-        return Math.max(18, Math.min(94, prev+delta));
+        const delta = Math.floor(Math.random()*7)-3;
+        return Math.max(58, Math.min(156, prev+delta));
       });
     }, 7000);
     return ()=>clearInterval(t);
@@ -1136,7 +1136,7 @@ function AboutModal({onClose}) {
 
 
 // ── Footer ───────────────────────────────────────────────────────────────────
-function Footer({onAbout, onPro}) {
+function Footer({onAbout, onPro, onLeaderboard}) {
   const online = useOnline();
   const [prevOnline, setPrev] = useState(online);
   const [anim, setAnim] = useState(false);
@@ -1149,10 +1149,10 @@ function Footer({onAbout, onPro}) {
   },[online]);
 
   const SOCIALS = [
-    {icon:"✈", label:"Telegram", url:"https://t.me/cs2coach"},
-    {icon:"▶", label:"YouTube",  url:"https://youtube.com/@cs2coach"},
-    {icon:"V",  label:"VK",      url:"https://vk.com/cs2coach"},
-    {icon:"𝕏",  label:"Twitter", url:"https://x.com/cs2coach"},
+    {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill={C.yellow}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/></svg>, label:"Telegram", url:"https://t.me/cs2coach"},
+    {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill={C.yellow}><path d="M23.5 6.19a3.02 3.02 0 00-2.127-2.136C19.505 3.546 12 3.546 12 3.546s-7.505 0-9.374.508A3.02 3.02 0 00.5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 002.126 2.136C4.495 20.454 12 20.454 12 20.454s7.505 0 9.373-.508a3.02 3.02 0 002.127-2.136C24 15.93 24 12 24 12s0-3.93-.5-5.81zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>, label:"YouTube",  url:"https://youtube.com/@cs2coach"},
+    {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill={C.yellow}><path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm.642 11.893h-2.88v9.107H9.98v-9.107H8v-2.86h1.98V7.496c0-1.64.78-4.142 4.141-4.142l3.042.012v2.78h-2.208c-.362 0-.87.18-.87.952v1.936h3.094l-.853 2.859z"/></svg>, label:"VK",       url:"https://vk.com/cs2coach"},
+    {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill={C.yellow}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>, label:"Twitter",  url:"https://x.com/cs2coach"},
   ];
 
   return (
@@ -1171,13 +1171,13 @@ function Footer({onAbout, onPro}) {
           </div>
 
           {/* Links */}
-          <div style={{display:"flex",gap:"40px",flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:"64px",flexWrap:"wrap"}}>
             <div>
               <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>СЕРВИС</div>
               {[
                 {label:"О нас", action:onAbout},
                 {label:"Тарифы Pro", action:onPro},
-                {label:"Таблица лидеров", action:null},
+                {label:"Таблица лидеров", action:onLeaderboard},
               ].map((l,i)=>(
                 <div key={i} style={{marginBottom:"8px"}}>
                   <button onClick={l.action||undefined} style={{background:"transparent",border:"none",
@@ -2245,12 +2245,13 @@ export default function App() {
                     fontFamily:"inherit",letterSpacing:"1px"}}>
                     ⚡ PRO
                   </button>}
-              {streak>1&&<div style={{display:"flex",alignItems:"center",gap:"4px",
-                padding:"4px 10px",background:"#1a1408",border:`1px solid ${C.yellow}44`}}>
+              {streak>1&&<div title={`Стрик: ${streak} дней подряд`} style={{display:"flex",alignItems:"center",gap:"4px",
+                padding:"4px 10px",background:"#1a1408",border:`1px solid ${C.yellow}44`,cursor:"help"}}>
                 <span style={{fontSize:"14px"}}>🔥</span>
                 <span style={{fontSize:"13px",color:C.yellow,fontWeight:700}}>{streak}</span>
+                <span style={{fontSize:"10px",color:C.muted}}>дн</span>
               </div>}
-              <button onClick={()=>setShareOpen(true)} style={{background:"transparent",border:`1px solid ${C.yellow}44`,color:C.yellow,cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"inherit",padding:"5px 12px"}}>📤</button>
+              <button onClick={()=>setShareOpen(true)} style={{background:"transparent",border:`1px solid ${C.yellow}44`,color:C.yellow,cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"inherit",padding:"5px 12px",display:"flex",alignItems:"center",gap:"5px"}}>📤 <span>Поделиться</span></button>
               <button onClick={logout} style={{background:"transparent",border:`1px solid ${C.border}`,color:C.label,cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"inherit",padding:"5px 10px"}}>ВЫЙТИ</button>
             </>
           ):(
@@ -2476,7 +2477,7 @@ export default function App() {
       </div>
 
       <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${C.yellow},transparent)`}}/>
-      <Footer onAbout={()=>setShowAbout(true)} onPro={()=>setShowProModal(true)}/>
+      <Footer onAbout={()=>setShowAbout(true)} onPro={()=>setShowProModal(true)} onLeaderboard={()=>setMainTab("leaderboard")}/>
 
       {showAbout&&<AboutModal onClose={()=>setShowAbout(false)}/>}
       {/* Streak toast */}
