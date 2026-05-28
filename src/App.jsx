@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 const BACKEND = "https://cs2-coach-backend.onrender.com";
+const FREE_DAILY = 5;
 
 const FACEIT_ELO_RANGES = [
   [1,100,500],[2,501,750],[3,751,900],[4,901,1050],[5,1051,1200],
