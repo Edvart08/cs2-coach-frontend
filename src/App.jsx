@@ -1008,6 +1008,242 @@ function StreakToast({streak, onClose}) {
   );
 }
 
+
+// ── Logo ─────────────────────────────────────────────────────────────────────
+function Logo({size=32, withText=true}) {
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:"8px",userSelect:"none"}}>
+      <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="17" stroke="#f5c518" strokeWidth="2.2"/>
+        <line x1="20" y1="3"  x2="20" y2="12" stroke="#f5c518" strokeWidth="2.2" strokeLinecap="round"/>
+        <line x1="20" y1="28" x2="20" y2="37" stroke="#f5c518" strokeWidth="2.2" strokeLinecap="round"/>
+        <line x1="3"  y1="20" x2="12" y2="20" stroke="#f5c518" strokeWidth="2.2" strokeLinecap="round"/>
+        <line x1="28" y1="20" x2="37" y2="20" stroke="#f5c518" strokeWidth="2.2" strokeLinecap="round"/>
+        <circle cx="20" cy="20" r="2.5" fill="#f5c518"/>
+        <text x="26" y="11" fontSize="7" fill="#f5c518" fontFamily="'Segoe UI',sans-serif" fontWeight="700">AI</text>
+      </svg>
+      {withText&&<div>
+        <div style={{fontSize:"15px",color:"#f5c518",fontWeight:700,letterSpacing:"2px",lineHeight:1.1}}>CS2</div>
+        <div style={{fontSize:"9px",color:"#9a9270",letterSpacing:"3px",lineHeight:1}}>ТРЕНЕР</div>
+      </div>}
+    </div>
+  );
+}
+
+
+// ── Online counter ────────────────────────────────────────────────────────────
+function useOnline() {
+  const [n, setN] = useState(()=>Math.floor(Math.random()*40)+23);
+  useEffect(()=>{
+    const t = setInterval(()=>{
+      setN(prev => {
+        const delta = Math.floor(Math.random()*5)-2;
+        return Math.max(18, Math.min(94, prev+delta));
+      });
+    }, 7000);
+    return ()=>clearInterval(t);
+  },[]);
+  return n;
+}
+
+
+// ── About Modal ───────────────────────────────────────────────────────────────
+function AboutModal({onClose}) {
+  const FEATURES = [
+    {icon:"🤖",title:"AI анализ",desc:"Нейросеть анализирует твою статистику и объясняет причины поражений на понятном языке. Не просто цифры — конкретные советы."},
+    {icon:"📊",title:"Steam + FACEIT",desc:"Все данные подтягиваются автоматически при входе. K/D, процент побед, статистика карт, история матчей."},
+    {icon:"🎯",title:"Per-match разбор",desc:"Нажми на любой матч — AI объяснит что пошло не так именно в этой игре. Какие ошибки, что было хорошо."},
+    {icon:"💬",title:"AI тренер 24/7",desc:"Чат с тренером который знает твою статистику. Задавай вопросы, получай советы специально для тебя."},
+    {icon:"📋",title:"План тренировок",desc:"Каждый день новый план — конкретные упражнения под твои слабые стороны. Чеклист с сохранением прогресса."},
+    {icon:"⚡",title:"Рейтинг игроков",desc:"Таблица лидеров среди всех пользователей сервиса. Сравни себя с другими и стремись к вершине."},
+  ];
+
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",
+      zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",
+      padding:"20px",animation:"fadeIn .2s ease",overflowY:"auto"}}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:C.card,border:`1px solid ${C.border}`,borderTop:`3px solid ${C.yellow}`,
+        maxWidth:"620px",width:"100%",animation:"slideUp .3s ease"}}>
+
+        <div style={{padding:"28px 28px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
+            <Logo size={40}/>
+            <div>
+              <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"3px"}}>О СЕРВИСЕ</div>
+              <div style={{fontSize:"18px",color:C.value,fontWeight:700}}>CS2 AI Тренер</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
+            color:C.muted,cursor:"pointer",width:"28px",height:"28px",fontSize:"14px",flexShrink:0}}>✕</button>
+        </div>
+
+        <div style={{padding:"24px 28px"}}>
+          <div style={{fontSize:"16px",color:C.value,lineHeight:1.8,marginBottom:"24px"}}>
+            CS2 AI Тренер — это персональный аналитик для игроков Counter-Strike 2.
+            Сервис подключается к твоему Steam и FACEIT аккаунту, анализирует статистику
+            и с помощью искусственного интеллекта объясняет <span style={{color:C.yellow,fontWeight:700}}>почему ты проигрываешь</span> и как это исправить.
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:"3px",marginBottom:"24px"}}>
+            {FEATURES.map((f,i)=>(
+              <div key={i} style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
+                <div style={{fontSize:"22px",marginBottom:"8px"}}>{f.icon}</div>
+                <div style={{fontSize:"14px",color:C.value,fontWeight:700,marginBottom:"6px"}}>{f.title}</div>
+                <div style={{fontSize:"13px",color:C.label,lineHeight:1.6}}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"20px"}}>
+            <div style={{fontSize:"12px",letterSpacing:"2px",color:C.yellow,marginBottom:"10px"}}>КАК ЭТО РАБОТАЕТ</div>
+            {[
+              "1. Войди через Steam — данные подтянутся автоматически",
+              "2. AI Report загрузится сразу — увидишь свои сильные и слабые стороны",
+              "3. Задай вопрос тренеру или нажми на матч для детального разбора",
+              "4. Выполняй ежедневный план тренировок и отслеживай прогресс",
+            ].map((t,i)=>(
+              <div key={i} style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"4px"}}>{t}</div>
+            ))}
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"20px"}}>
+            <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
+              <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>ТЕХНОЛОГИИ</div>
+              {["Steam Web API","FACEIT Open API","Groq AI (LLaMA 3.3)","React + FastAPI"].map((t,i)=>(
+                <div key={i} style={{fontSize:"13px",color:C.label,marginBottom:"4px"}}>· {t}</div>
+              ))}
+            </div>
+            <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
+              <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>КОНФИДЕНЦИАЛЬНОСТЬ</div>
+              <div style={{fontSize:"13px",color:C.label,lineHeight:1.6}}>
+                Мы не храним пароли и личные данные. Используется только публичная статистика Steam и FACEIT.
+              </div>
+            </div>
+          </div>
+
+          <div style={{textAlign:"center",padding:"16px",background:"#111109",border:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"13px",color:C.muted,marginBottom:"6px"}}>Вопросы и поддержка</div>
+            <div style={{fontSize:"14px",color:C.yellow}}>Telegram: @cs2coach_support</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Footer ───────────────────────────────────────────────────────────────────
+function Footer({onAbout, onPro}) {
+  const online = useOnline();
+  const [prevOnline, setPrev] = useState(online);
+  const [anim, setAnim] = useState(false);
+  useEffect(()=>{
+    if (online !== prevOnline) {
+      setAnim(true);
+      setPrev(online);
+      setTimeout(()=>setAnim(false), 400);
+    }
+  },[online]);
+
+  const SOCIALS = [
+    {icon:"✈", label:"Telegram", url:"https://t.me/cs2coach"},
+    {icon:"▶", label:"YouTube",  url:"https://youtube.com/@cs2coach"},
+    {icon:"V",  label:"VK",      url:"https://vk.com/cs2coach"},
+    {icon:"𝕏",  label:"Twitter", url:"https://x.com/cs2coach"},
+  ];
+
+  return (
+    <footer style={{background:"#0d0d09",borderTop:`1px solid ${C.border}`,
+      padding:"32px 24px 24px",marginTop:"32px"}}>
+      <div style={{maxWidth:"1100px",margin:"0 auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",
+          flexWrap:"wrap",gap:"24px",marginBottom:"28px"}}>
+
+          {/* Brand */}
+          <div style={{minWidth:"200px"}}>
+            <Logo size={36} withText={true}/>
+            <div style={{fontSize:"13px",color:C.muted,marginTop:"10px",lineHeight:1.6,maxWidth:"220px"}}>
+              AI тренер для CS2 игроков. Анализ статистики и персональные советы.
+            </div>
+          </div>
+
+          {/* Links */}
+          <div style={{display:"flex",gap:"40px",flexWrap:"wrap"}}>
+            <div>
+              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>СЕРВИС</div>
+              {[
+                {label:"О нас", action:onAbout},
+                {label:"Тарифы Pro", action:onPro},
+                {label:"Таблица лидеров", action:null},
+              ].map((l,i)=>(
+                <div key={i} style={{marginBottom:"8px"}}>
+                  <button onClick={l.action||undefined} style={{background:"transparent",border:"none",
+                    color:C.label,cursor:l.action?"pointer":"default",fontSize:"14px",padding:0,
+                    fontFamily:"inherit",textAlign:"left"}}
+                    onMouseEnter={e=>{if(l.action)e.currentTarget.style.color=C.yellow;}}
+                    onMouseLeave={e=>{e.currentTarget.style.color=C.label;}}>
+                    {l.label}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>СОЦСЕТИ</div>
+              {SOCIALS.map((s,i)=>(
+                <a key={i} href={s.url} target="_blank" rel="noreferrer"
+                  style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px",
+                    textDecoration:"none",color:C.label,fontSize:"14px"}}
+                  onMouseEnter={e=>{e.currentTarget.style.color=C.yellow;}}
+                  onMouseLeave={e=>{e.currentTarget.style.color=C.label;}}>
+                  <span style={{width:"20px",textAlign:"center",fontSize:"14px"}}>{s.icon}</span>
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Online */}
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"6px"}}>СЕЙЧАС ОНЛАЙН</div>
+            <div style={{display:"flex",alignItems:"center",gap:"8px",justifyContent:"flex-end"}}>
+              <div style={{width:"8px",height:"8px",background:C.win,borderRadius:"50%",
+                animation:"pulse 2s infinite",boxShadow:`0 0 6px ${C.win}`}}/>
+              <span style={{
+                fontSize:"32px",color:C.win,fontWeight:700,
+                fontFamily:"'Consolas',monospace",
+                animation:anim?"up .3s ease":"none",
+                display:"inline-block"}}>
+                {online}
+              </span>
+            </div>
+            <div style={{fontSize:"12px",color:C.muted,marginTop:"4px"}}>игроков на сайте</div>
+          </div>
+        </div>
+
+        <div style={{borderTop:`1px solid ${C.border}`,paddingTop:"18px",
+          display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"12px"}}>
+          <div style={{fontSize:"13px",color:C.muted}}>
+            © {new Date().getFullYear()} CS2 AI Тренер. Все права защищены.
+          </div>
+          <div style={{display:"flex",gap:"20px"}}>
+            {["Политика конфиденциальности","Условия использования"].map((t,i)=>(
+              <span key={i} style={{fontSize:"12px",color:C.muted,cursor:"pointer"}}
+                onMouseEnter={e=>{e.currentTarget.style.color=C.label;}}
+                onMouseLeave={e=>{e.currentTarget.style.color=C.muted;}}>
+                {t}
+              </span>
+            ))}
+          </div>
+          <div style={{fontSize:"12px",color:C.muted}}>
+            Не аффилирован с Valve Corporation или FACEIT Ltd.
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 // ── Cold Start Banner ─────────────────────────────────────────────────────────
 function ColdStartBanner({status}) {
   if (status !== 'slow' && status !== 'waking') return null;
@@ -1099,13 +1335,13 @@ function LandingPage({onLogin}) {
     {val:"<10s",label:"время анализа"},
   ];
   const [tick,setTick] = useState(0);
-  useEffect(()=>{ const t=setInterval(()=>setTick(x=>x+1),1800);return()=>clearInterval(t);},[]);
+  useEffect(()=>{ const t=setInterval(()=>setTick(x=>x+1),3200);return()=>clearInterval(t);},[]);
   const INSIGHTS = [
     "Ты проигрываешь большинство дуэлей в движении",
-    "Counter-strafe timing нужно исправить",
-    "Слишком ранний peek без флешки",
-    "Weak CT positioning на Mirage",
-    "Низкий trade success после первого килла",
+    "Нужно исправить остановку перед выстрелом",
+    "Слишком ранний выход на позицию без флешки",
+    "Слабое позиционирование на КТ стороне Mirage",
+    "Низкий процент добиваний после первого убийства",
   ];
 
   return (
@@ -1223,11 +1459,22 @@ function ProModal({player, onClose, onActivated}) {
 
   const FREE_FEATS  = ["1 AI Report в день","5 AI запросов в день","Базовые статы (Steam + FACEIT)","История матчей","Таблица лидеров"];
   const PRO_FEATS   = ["Безлимитные AI Reports","Безлимитный AI чат","AI разбор каждого матча","Без дневных лимитов","Pro значок в лидерах","Приоритетная поддержка"];
-  const PAY_METHODS = [
-    {name:"Boosty",   icon:"🟡", desc:"Карты РФ, СБП",    url: "https://boosty.to"},
-    {name:"CryptoBot",icon:"💎", desc:"Крипта в Telegram", url: "https://t.me/CryptoBot"},
-    {name:"Stripe",   icon:"💳", desc:"Карты Visa/MC",     url: "https://stripe.com"},
-  ];
+  const [payLoading,setPayLoading] = useState(null);
+
+  async function startPayment(plan) {
+    if (!player?.steamid) return;
+    setPayLoading(plan);
+    try {
+      const r = await fetch(`${BACKEND}/payment/create`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({steamid:player.steamid, plan})
+      });
+      const d = await r.json();
+      if (d.url) window.open(d.url,"_blank");
+      else alert("Ошибка создания платежа. Попробуй активировать ключ вручную.");
+    } catch { alert("Ошибка сети"); }
+    setPayLoading(null);
+  }
 
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",
@@ -1290,49 +1537,54 @@ function ProModal({player, onClose, onActivated}) {
               </div>
             </div>
 
-            {/* Prices */}
+            {/* Plans + pay buttons */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"20px"}}>
-              {PLANS.map((p,i)=>(
-                <div key={i} style={{background:p.best?"#1a1a0a":"#111109",
-                  border:`${p.best?2:1}px solid ${p.best?C.yellow+"66":C.border}`,
-                  padding:"16px",textAlign:"center",position:"relative"}}>
-                  {p.best&&<div style={{position:"absolute",top:"-1px",left:"50%",
-                    transform:"translateX(-50%)",background:C.yellow,color:"#080807",
-                    fontSize:"10px",fontWeight:700,padding:"2px 12px",letterSpacing:"1px",
-                    whiteSpace:"nowrap"}}>ВЫГОДНО</div>}
-                  <div style={{fontSize:"12px",color:C.muted,marginBottom:"6px",marginTop:p.best?"8px":0}}>{p.period}</div>
-                  <div style={{fontSize:"24px",color:C.yellow,fontWeight:700}}>{p.price}</div>
-                  <div style={{fontSize:"12px",color:C.muted,marginTop:"3px"}}>{p.sub}</div>
+              {PLANS.map((p,i)=>{
+                const plan = i===0?"month":"year";
+                return (
+                  <div key={i} style={{background:p.best?"#1a1a0a":"#111109",
+                    border:`${p.best?2:1}px solid ${p.best?C.yellow+"66":C.border}`,
+                    padding:"16px",textAlign:"center",position:"relative"}}>
+                    {p.best&&<div style={{position:"absolute",top:"-1px",left:"50%",
+                      transform:"translateX(-50%)",background:C.yellow,color:"#080807",
+                      fontSize:"10px",fontWeight:700,padding:"2px 12px",letterSpacing:"1px",
+                      whiteSpace:"nowrap"}}>ВЫГОДНО</div>}
+                    <div style={{fontSize:"12px",color:C.muted,marginBottom:"6px",marginTop:p.best?"8px":0}}>{p.period}</div>
+                    <div style={{fontSize:"26px",color:C.yellow,fontWeight:700,marginBottom:"6px"}}>{p.price}</div>
+                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"14px"}}>{p.sub}</div>
+                    <button onClick={()=>startPayment(plan)} disabled={payLoading===plan} style={{
+                      width:"100%",padding:"10px",
+                      background:payLoading===plan?"#1a1a0e":C.yellow,
+                      color:"#080807",border:"none",cursor:"pointer",
+                      fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
+                      {payLoading===plan?"...":"ОПЛАТИТЬ"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Payment logos */}
+            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>СПОСОБЫ ОПЛАТЫ</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"4px",marginBottom:"16px"}}>
+              {[
+                {icon:"🏦",label:"СБП"},
+                {icon:"💎",label:"Крипта"},
+                {icon:"💳",label:"Карты"},
+                {icon:"🎮",label:"Скины"},
+              ].map((m,i)=>(
+                <div key={i} style={{background:"#111109",border:`1px solid ${C.border}`,
+                  padding:"10px 6px",textAlign:"center"}}>
+                  <div style={{fontSize:"20px",marginBottom:"4px"}}>{m.icon}</div>
+                  <div style={{fontSize:"11px",color:C.label}}>{m.label}</div>
                 </div>
               ))}
             </div>
 
-            {/* Payment methods */}
-            <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>
-              СПОСОБЫ ОПЛАТЫ
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:"6px",marginBottom:"16px"}}>
-              {PAY_METHODS.map((m,i)=>(
-                <a key={i} href={m.url} target="_blank" rel="noreferrer" style={{
-                  display:"flex",alignItems:"center",gap:"12px",padding:"12px 16px",
-                  background:"#111109",border:`1px solid ${C.border}`,
-                  textDecoration:"none",transition:"border-color .2s"}}
-                  onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"55"}
-                  onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
-                  <span style={{fontSize:"20px"}}>{m.icon}</span>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{m.name}</div>
-                    <div style={{fontSize:"12px",color:C.muted}}>{m.desc}</div>
-                  </div>
-                  <span style={{fontSize:"12px",color:C.yellow}}>→</span>
-                </a>
-              ))}
-            </div>
-
-            <div style={{fontSize:"12px",color:C.muted,lineHeight:1.6,
+            <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7,
               background:"#111109",border:`1px solid ${C.border}`,padding:"12px 14px"}}>
-              После оплаты ты получишь ключ активации.<br/>
-              Введи его во вкладке "Ввести ключ" и Pro активируется мгновенно.
+              Оплата через FreeKassa — СБП, банковские карты, криптовалюта, CS2 скины.<br/>
+              После успешной оплаты Pro активируется автоматически.
             </div>
           </>}
 
@@ -1707,6 +1959,7 @@ export default function App() {
   const [errorMsg,setErrorMsg]   = useState(null);
   const [showPopup,setShowPopup] = useState(false);
   const [profileView,setProfileView] = useState(null);
+  const [showAbout,setShowAbout]       = useState(false);
   const [chatOpen,setChatOpen] = useState(false);
   const [serverStatus,setServerStatus] = useState("checking");
   const [shareOpen,setShareOpen]   = useState(false);
@@ -1737,6 +1990,23 @@ export default function App() {
       localStorage.setItem("cs2_last_visit",today);
       if (newStreak>1 && last!==today) setTimeout(()=>setShowStreakToast(true),1500);
     } catch {}
+  },[]);
+
+  // ── payment success check ─────────────────────────────────────────────────────
+  useEffect(()=>{
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment")==="success") {
+      window.history.replaceState({},"","/");
+      setTimeout(()=>{
+        if (player?.steamid) {
+          fetch(`${BACKEND}/pro/${player.steamid}`)
+            .then(r=>r.json())
+            .then(d=>{ if(d.pro){ setIsPro(true); setAiRemaining(999); } })
+            .catch(()=>{});
+        }
+        setShowProModal(true);
+      }, 500);
+    }
   },[]);
 
   // ── cold start wake-up ──────────────────────────────────────────────────────
@@ -2134,7 +2404,9 @@ export default function App() {
       </div>
 
       <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${C.yellow},transparent)`}}/>
+      <Footer onAbout={()=>setShowAbout(true)} onPro={()=>setShowProModal(true)}/>
 
+      {showAbout&&<AboutModal onClose={()=>setShowAbout(false)}/>}
       {/* Streak toast */}
       {showStreakToast&&<StreakToast streak={streak} onClose={()=>setShowStreakToast(false)}/>}
 
