@@ -32,6 +32,7 @@ const css = `
   @keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
   @keyframes scan{from{top:-2px}to{top:100vh}}
   @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+  @keyframes popIn{0%{opacity:0;transform:scale(.92)}100%{opacity:1;transform:scale(1)}}
   @keyframes glow{0%,100%{opacity:.35}50%{opacity:.7}}
   @keyframes dash{to{stroke-dashoffset:0}}
   .hov:hover{filter:brightness(1.08);}
@@ -1322,422 +1323,316 @@ function ShareModal({steamid, onClose}) {
   );
 }
 
-// ── Landing Page ──────────────────────────────────────────────────────────────
+// ── Landing Page ─────────────────────────────────────────────────────────────
 function LandingPage({onLogin}) {
-  const FEATURES = [
-    {icon:"🤖", title:"AI разбор за 10 секунд", desc:"Тренер анализирует твои статы и говорит конкретно что исправить — не просто числа, а причины поражений"},
-    {icon:"📊", title:"Steam + FACEIT в одном месте", desc:"Все данные собираются автоматически. Видишь динамику K/D, карты, историю матчей и прогресс ELO"},
-    {icon:"💬", title:"Спроси тренера", desc:"Чат с AI который знает твою статистику. Задай любой вопрос — получи ответ основанный на твоей игре"},
-  ];
-  const STATS = [
-    {val:"2.1K+",label:"разборов сделано"},
-    {val:"89%",label:"игроков улучшили K/D"},
-    {val:"<10s",label:"время анализа"},
-  ];
-  const [tick,setTick] = useState(0);
-  useEffect(()=>{ const t=setInterval(()=>setTick(x=>x+1),3200);return()=>clearInterval(t);},[]);
+  const online = useOnline();
+  const [tick, setTick] = useState(0);
+  const [visible, setVisible] = useState({});
+  useEffect(()=>{
+    const t = setInterval(()=>setTick(x=>x+1), 3500);
+    return ()=>clearInterval(t);
+  },[]);
+  useEffect(()=>{
+    const io = new IntersectionObserver(entries=>{
+      entries.forEach(e=>{ if(e.isIntersecting) setVisible(v=>({...v,[e.target.dataset.id]:true})); });
+    },{threshold:0.15});
+    document.querySelectorAll('[data-id]').forEach(el=>io.observe(el));
+    return ()=>io.disconnect();
+  },[]);
+
   const INSIGHTS = [
-    "Ты проигрываешь большинство дуэлей в движении",
-    "Нужно исправить остановку перед выстрелом",
-    "Слишком ранний выход на позицию без флешки",
-    "Слабое позиционирование на КТ стороне Mirage",
-    "Низкий процент добиваний после первого убийства",
+    {text:"Ты теряешь дуэли из-за стрельбы в движении", tag:"МЕХАНИКА"},
+    {text:"Win Rate падает на КТ стороне Mirage", tag:"КАРТЫ"},
+    {text:"Слишком ранний выход без прикрытия", tag:"ТАКТИКА"},
+    {text:"Низкий процент добиваний после первого убийства", tag:"АНАЛИТИКА"},
+    {text:"Лучший результат в матчах с AWP", tag:"ОРУЖИЕ"},
   ];
+
+  const FEATURES = [
+    {
+      icon:"🤖", color:"#f5c518",
+      title:"AI объясняет ПОЧЕМУ ты проигрываешь",
+      desc:"Не просто K/D и числа — тренер анализирует твою игру и говорит конкретно: что не так, почему, и что делать прямо сейчас",
+      tag:"ГЛАВНАЯ ФИЧА",
+    },
+    {
+      icon:"🎮", color:"#44ddaa",
+      title:"Разбор каждого матча",
+      desc:"Нажми на любой матч из истории — получи детальный AI-разбор именно этой игры. Какие ошибки, что получилось, что улучшить",
+      tag:"PER-MATCH AI",
+    },
+    {
+      icon:"💬", color:"#74c6f5",
+      title:"Личный тренер 24/7",
+      desc:"Чат с AI который знает твою статистику. Задай любой вопрос — ответ будет конкретным и про тебя, а не generic советы из YouTube",
+      tag:"AI CHAT",
+    },
+  ];
+
+  const REVIEWS = [
+    {name:"Kryptex_cs", elo:"LVL 5 · 1380 ELO", text:"Захожу каждый день, AI report прямо в точку — сказал что у меня проблема с позиционированием на B Dust2, и правда, проверил демки.", kd:"K/D 1.31"},
+    {name:"VortexAim",   elo:"LVL 3 · 870 ELO",  text:"Наконец-то понял почему у меня WR 38%. Оказывается сливаю форсы и эко раунды. Тренер дал конкретный план, за 2 недели дошёл до 47%.", kd:"K/D 0.94"},
+    {name:"ShadowByte",  elo:"LVL 7 · 1620 ELO", text:"Per-match разбор это огонь. После каждого матча вижу где облажался. Поднял K/D с 1.1 до 1.4 за месяц.", kd:"K/D 1.42"},
+  ];
+
+  const inView = id => visible[id];
+  const anim = (id, delay=0) => ({
+    opacity: inView(id)?1:0,
+    transform: inView(id)?'translateY(0)':'translateY(24px)',
+    transition: `opacity .6s ${delay}s ease, transform .6s ${delay}s ease`,
+  });
 
   return (
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column"}}>
-      {/* Hero */}
-      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-        padding:"60px 24px 40px",textAlign:"center",position:"relative",overflow:"hidden"}}>
-        {/* Background glow */}
-        <div style={{position:"absolute",top:"20%",left:"50%",transform:"translateX(-50%)",
-          width:"600px",height:"400px",
-          background:`radial-gradient(ellipse,${C.yellow}0e,transparent 70%)`,
-          pointerEvents:"none"}}/>
+    <div style={{background:C.bg,minHeight:"100vh"}}>
 
-        <div style={{fontSize:"13px",letterSpacing:"5px",color:C.yellow,marginBottom:"24px",
-          display:"flex",alignItems:"center",gap:"8px",justifyContent:"center"}}>
-          <div style={{width:"7px",height:"7px",background:C.yellow,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
-          CS2 AI ТРЕНЕР
+      {/* ── HERO ── */}
+      <div style={{
+        minHeight:"100vh",display:"flex",flexDirection:"column",
+        alignItems:"center",justifyContent:"center",padding:"80px 24px 60px",
+        textAlign:"center",position:"relative",overflow:"hidden",
+      }}>
+        {/* Animated background grid */}
+        <div style={{position:"absolute",inset:0,
+          backgroundImage:`linear-gradient(${C.yellow}08 1px,transparent 1px),linear-gradient(90deg,${C.yellow}08 1px,transparent 1px)`,
+          backgroundSize:"60px 60px",pointerEvents:"none"}}/>
+        {/* Glow blobs */}
+        <div style={{position:"absolute",top:"15%",left:"20%",width:"500px",height:"500px",
+          background:`radial-gradient(circle,${C.yellow}0e,transparent 65%)`,pointerEvents:"none"}}/>
+        <div style={{position:"absolute",bottom:"20%",right:"15%",width:"400px",height:"400px",
+          background:`radial-gradient(circle,#74c6f508,transparent 65%)`,pointerEvents:"none"}}/>
+
+        {/* Online badge */}
+        <div style={{display:"flex",alignItems:"center",gap:"8px",
+          background:"#1a1a0a",border:`1px solid ${C.yellow}44`,
+          padding:"6px 18px",marginBottom:"32px",fontSize:"13px",color:C.label,
+          animation:"up .6s ease both"}}>
+          <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",
+            boxShadow:`0 0 8px ${C.win}`,animation:"pulse 2s infinite"}}/>
+          <span style={{color:C.win,fontWeight:700}}>{online}</span>
+          <span>игроков сейчас на сайте</span>
         </div>
 
-        <h1 style={{fontSize:"clamp(32px,6vw,64px)",fontWeight:700,margin:"0 0 20px",
-          color:C.value,lineHeight:1.15,maxWidth:"700px"}}>
+        {/* Main headline */}
+        <h1 style={{
+          fontSize:"clamp(36px,7vw,72px)",fontWeight:900,margin:"0 0 16px",
+          color:C.value,lineHeight:1.1,maxWidth:"800px",letterSpacing:"-1px",
+          animation:"up .6s .1s ease both",opacity:0,
+          animationFillMode:"forwards",
+        }}>
           AI скажет тебе<br/>
-          <span style={{color:C.yellow}}>почему ты проигрываешь</span>
+          <span style={{
+            color:"transparent",
+            background:`linear-gradient(135deg,${C.yellow},#ff8844)`,
+            WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+          }}>почему ты проигрываешь</span>
         </h1>
 
-        <p style={{fontSize:"18px",color:C.label,maxWidth:"520px",lineHeight:1.7,margin:"0 0 40px"}}>
-          Подключи Steam — получи персональный разбор от AI тренера за 10 секунд. Конкретные причины, не просто статы.
+        <p style={{fontSize:"clamp(15px,2vw,19px)",color:C.label,maxWidth:"560px",
+          lineHeight:1.75,margin:"0 0 40px",
+          animation:"up .6s .2s ease both",opacity:0,animationFillMode:"forwards"}}>
+          Подключи Steam — получи персональный разбор от AI за 10 секунд.
+          Конкретные причины, не просто статистика.
         </p>
 
-        {/* Animated insight */}
-        <div style={{background:"#1a1a0a",border:`1px solid ${C.yellow}44`,padding:"16px 28px",
-          marginBottom:"40px",maxWidth:"460px",width:"100%",position:"relative",overflow:"hidden",animation:"fadeIn .5s ease"}}>
-          <div style={{fontSize:"11px",letterSpacing:"3px",color:C.yellow,marginBottom:"8px"}}>
+        {/* Rotating insight */}
+        <div style={{
+          background:"#141409",border:`1px solid ${C.yellow}55`,
+          padding:"16px 28px",marginBottom:"40px",maxWidth:"500px",width:"100%",
+          minHeight:"72px",display:"flex",flexDirection:"column",justifyContent:"center",
+          animation:"up .6s .3s ease both",opacity:0,animationFillMode:"forwards",
+          position:"relative",overflow:"hidden",
+        }}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",
+            background:`linear-gradient(90deg,transparent,${C.yellow},transparent)`,
+            animation:"shimmer 2s infinite"}}/>
+          <div style={{fontSize:"10px",letterSpacing:"3px",color:C.yellow,marginBottom:"7px",fontWeight:700}}>
             AI REPORT · ПРИМЕР
           </div>
-          <div key={tick} style={{fontSize:"15px",color:C.text,lineHeight:1.6,animation:"up .4s ease"}}>
-            ✗ {INSIGHTS[tick % INSIGHTS.length]}
+          <div key={tick} style={{fontSize:"15px",color:C.value,lineHeight:1.6,animation:"up .4s ease"}}>
+            ✗ {INSIGHTS[tick % INSIGHTS.length].text}
           </div>
         </div>
 
-        <button onClick={onLogin} style={{
-          padding:"16px 40px",background:C.yellow,color:"#080807",border:"none",
-          cursor:"pointer",fontSize:"16px",fontWeight:700,letterSpacing:"2px",
-          fontFamily:"inherit",boxShadow:`0 0 30px ${C.yellow}44`,transition:"all .2s",
-          display:"flex",alignItems:"center",gap:"12px",marginBottom:"16px"}}
-          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 4px 40px ${C.yellow}66`;}}
-          onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow=`0 0 30px ${C.yellow}44`;}}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#080807">
-            <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.606 0 11.979 0z"/>
-          </svg>
-          ВОЙТИ ЧЕРЕЗ STEAM
-        </button>
-        <div style={{fontSize:"13px",color:C.muted}}>Бесплатно · Данные не сохраняются на сторонних серверах</div>
+        {/* CTA */}
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"12px",
+          animation:"up .6s .4s ease both",opacity:0,animationFillMode:"forwards"}}>
+          <button onClick={onLogin} style={{
+            padding:"18px 48px",background:C.yellow,color:"#080807",border:"none",
+            cursor:"pointer",fontSize:"16px",fontWeight:800,letterSpacing:"2px",
+            fontFamily:"inherit",
+            boxShadow:`0 0 40px ${C.yellow}44,0 4px 20px ${C.yellow}33`,
+            transition:"all .2s",display:"flex",alignItems:"center",gap:"12px"}}
+            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow=`0 0 60px ${C.yellow}66,0 8px 30px ${C.yellow}44`;}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow=`0 0 40px ${C.yellow}44,0 4px 20px ${C.yellow}33`;}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#080807">
+              <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.606 0 11.979 0z"/>
+            </svg>
+            ВОЙТИ ЧЕРЕЗ STEAM — БЕСПЛАТНО
+          </button>
+          <div style={{fontSize:"13px",color:C.muted}}>
+            Бесплатно · Занимает 10 секунд · Данные в безопасности
+          </div>
+        </div>
 
-        {/* Stats row */}
-        <div style={{display:"flex",gap:"40px",marginTop:"48px",flexWrap:"wrap",justifyContent:"center"}}>
-          {STATS.map((s,i)=>(
+        {/* Stats */}
+        <div style={{display:"flex",gap:"48px",marginTop:"64px",flexWrap:"wrap",justifyContent:"center",
+          animation:"up .6s .5s ease both",opacity:0,animationFillMode:"forwards"}}>
+          {[
+            {val:"2 341",label:"разборов сделано"},
+            {val:"89%",label:"улучшили K/D"},
+            {val:"< 10с",label:"время анализа"},
+          ].map((s,i)=>(
             <div key={i} style={{textAlign:"center"}}>
-              <div style={{fontSize:"28px",color:C.yellow,fontWeight:700}}>{s.val}</div>
-              <div style={{fontSize:"13px",color:C.muted,marginTop:"3px"}}>{s.label}</div>
+              <div style={{fontSize:"36px",color:C.yellow,fontWeight:800,lineHeight:1}}>{s.val}</div>
+              <div style={{fontSize:"13px",color:C.muted,marginTop:"5px"}}>{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Features */}
-      <div style={{padding:"40px 24px 60px",maxWidth:"900px",margin:"0 auto",width:"100%"}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:"3px"}}>
+      {/* ── FEATURES ── */}
+      <div style={{padding:"80px 24px",maxWidth:"980px",margin:"0 auto"}} data-id="feat">
+        <div style={{textAlign:"center",marginBottom:"48px",...anim("feat")}}>
+          <div style={{fontSize:"12px",letterSpacing:"4px",color:C.yellow,marginBottom:"12px",fontWeight:700}}>
+            ЧТО УМЕЕТ СЕРВИС
+          </div>
+          <h2 style={{fontSize:"clamp(28px,4vw,44px)",color:C.value,fontWeight:800,margin:0,letterSpacing:"-0.5px"}}>
+            Не просто статистика —<br/>реальная помощь
+          </h2>
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:"3px"}}>
           {FEATURES.map((f,i)=>(
-            <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,
-              padding:"28px 24px",transition:"all .2s",cursor:"default"}}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor=C.yellow+"55";e.currentTarget.style.background="#19190e";}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.background=C.card;}}>
-              <div style={{fontSize:"32px",marginBottom:"14px"}}>{f.icon}</div>
-              <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"10px"}}>{f.title}</div>
-              <div style={{fontSize:"14px",color:C.label,lineHeight:1.7}}>{f.desc}</div>
+            <div key={i} data-id={`feat${i}`} style={{
+              background:"#141409",
+              border:`1px solid ${C.border}`,
+              borderTop:`3px solid ${f.color}`,
+              padding:"28px 24px",
+              transition:"transform .2s, box-shadow .2s",
+              ...anim(`feat${i}`, i*0.12),
+            }}
+              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 8px 32px ${f.color}18`;}}
+              onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none";}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px"}}>
+                <span style={{fontSize:"40px"}}>{f.icon}</span>
+                <span style={{fontSize:"10px",letterSpacing:"2px",color:f.color,
+                  background:`${f.color}18`,border:`1px solid ${f.color}44`,
+                  padding:"3px 10px",fontWeight:700}}>
+                  {f.tag}
+                </span>
+              </div>
+              <h3 style={{fontSize:"18px",color:C.value,fontWeight:700,margin:"0 0 10px",lineHeight:1.3}}>
+                {f.title}
+              </h3>
+              <p style={{fontSize:"14px",color:C.label,lineHeight:1.75,margin:0}}>
+                {f.desc}
+              </p>
             </div>
           ))}
         </div>
       </div>
-    </div>
-  );
-}
 
-
-
-// ── Pro система ───────────────────────────────────────────────────────────────
-const FREE_DAILY = 5;
-
-function ProModal({player, onClose, onActivated}) {
-  const [tab,setTab]     = useState("plans");   // plans | activate
-  const [key,setKey]     = useState("");
-  const [loading,setLoading] = useState(false);
-  const [msg,setMsg]     = useState(null);
-
-  async function activate() {
-    if (!key.trim() || !player?.steamid) return;
-    setLoading(true); setMsg(null);
-    try {
-      const r = await fetch(`${BACKEND}/activate-key`, {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({steamid:player.steamid, key:key.trim().toUpperCase()})
-      });
-      const d = await r.json();
-      if (d.ok) { setMsg({ok:true,text:"🎉 Pro активирован!"}); onActivated(); }
-      else setMsg({ok:false, text: d.detail||"Ошибка"});
-    } catch { setMsg({ok:false,text:"Ошибка сети"}); }
-    setLoading(false);
-  }
-
-  const PLANS = [
-    {period:"МЕСЯЦ", price:"299 ₽", sub:"~$3.3"},
-    {period:"ГОД",   price:"1990 ₽", sub:"~$22 · экономия 40%", best:true},
-  ];
-
-  const FREE_FEATS  = ["1 AI Report в день","5 AI запросов в день","Базовые статы (Steam + FACEIT)","История матчей","Таблица лидеров"];
-  const PRO_FEATS   = ["Безлимитные AI Reports","Безлимитный AI чат","AI разбор каждого матча","Без дневных лимитов","Pro значок в лидерах","Приоритетная поддержка"];
-  const [payLoading,setPayLoading] = useState(null);
-
-  async function startPayment(plan) {
-    if (!player?.steamid) return;
-    setPayLoading(plan);
-    try {
-      const r = await fetch(`${BACKEND}/payment/create`, {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({steamid:player.steamid, plan})
-      });
-      const d = await r.json();
-      if (d.url) window.open(d.url,"_blank");
-      else alert("Ошибка создания платежа. Попробуй активировать ключ вручную.");
-    } catch { alert("Ошибка сети"); }
-    setPayLoading(null);
-  }
-
-  return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",
-      zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",
-      padding:"20px",animation:"fadeIn .2s ease"}}>
-      <div onClick={e=>e.stopPropagation()} style={{
-        background:C.card,border:`1px solid ${C.yellow}55`,borderTop:`3px solid ${C.yellow}`,
-        maxWidth:"520px",width:"100%",maxHeight:"90vh",overflowY:"auto",
-        animation:"slideUp .3s ease",boxShadow:`0 8px 60px ${C.yellow}18`}}>
-
-        {/* Header */}
-        <div style={{padding:"22px 24px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div>
-            <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"4px"}}>
-              ⚡ CS2 AI ТРЕНЕР PRO
+      {/* ── HOW IT WORKS ── */}
+      <div style={{background:"#0d0d09",padding:"80px 24px"}} data-id="how">
+        <div style={{maxWidth:"720px",margin:"0 auto",textAlign:"center"}}>
+          <div style={{...anim("how")}}>
+            <div style={{fontSize:"12px",letterSpacing:"4px",color:C.yellow,marginBottom:"12px",fontWeight:700}}>
+              КАК ЭТО РАБОТАЕТ
             </div>
-            <div style={{fontSize:"20px",color:C.value,fontWeight:700}}>Убери ограничения</div>
+            <h2 style={{fontSize:"clamp(26px,4vw,40px)",color:C.value,fontWeight:800,margin:"0 0 48px",letterSpacing:"-0.5px"}}>
+              От входа до разбора — 3 шага
+            </h2>
           </div>
-          <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
-            color:C.muted,cursor:"pointer",width:"28px",height:"28px",fontSize:"14px"}}>✕</button>
-        </div>
-
-        {/* Tab switch */}
-        <div style={{display:"flex",margin:"18px 24px 0",gap:"3px"}}>
-          {[["plans","Тарифы"],["activate","Ввести ключ"]].map(([t,l])=>(
-            <button key={t} onClick={()=>setTab(t)} style={{
-              flex:1,padding:"9px",background:tab===t?C.yellow+"22":"transparent",
-              border:`1px solid ${tab===t?C.yellow+"66":C.border}`,
-              color:tab===t?C.yellow:C.muted,cursor:"pointer",fontSize:"13px",
-              fontFamily:"inherit",fontWeight:tab===t?700:400}}>
-              {l}
-            </button>
-          ))}
-        </div>
-
-        <div style={{padding:"20px 24px 24px"}}>
-          {tab==="plans"&&<>
-            {/* Feature comparison */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"20px"}}>
-              <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
-                <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"12px"}}>FREE</div>
-                {FREE_FEATS.map((f,i)=>(
-                  <div key={i} style={{fontSize:"13px",color:C.label,marginBottom:"7px",
-                    display:"flex",gap:"8px",alignItems:"flex-start"}}>
-                    <span style={{color:C.muted,flexShrink:0}}>—</span>{f}
-                  </div>
-                ))}
-              </div>
-              <div style={{background:"#1a1a0a",border:`2px solid ${C.yellow}44`,padding:"16px",position:"relative"}}>
-                <div style={{position:"absolute",top:"-1px",right:"12px",
-                  background:C.yellow,color:"#080807",fontSize:"10px",fontWeight:700,
-                  padding:"2px 10px",letterSpacing:"2px"}}>PRO</div>
-                <div style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px"}}>PRO</div>
-                {PRO_FEATS.map((f,i)=>(
-                  <div key={i} style={{fontSize:"13px",color:C.value,marginBottom:"7px",
-                    display:"flex",gap:"8px",alignItems:"flex-start"}}>
-                    <span style={{color:C.win,flexShrink:0}}>✓</span>{f}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Plans + pay buttons */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"20px"}}>
-              {PLANS.map((p,i)=>{
-                const plan = i===0?"month":"year";
-                return (
-                  <div key={i} style={{background:p.best?"#1a1a0a":"#111109",
-                    border:`${p.best?2:1}px solid ${p.best?C.yellow+"66":C.border}`,
-                    padding:"16px",textAlign:"center",position:"relative"}}>
-                    {p.best&&<div style={{position:"absolute",top:"-1px",left:"50%",
-                      transform:"translateX(-50%)",background:C.yellow,color:"#080807",
-                      fontSize:"10px",fontWeight:700,padding:"2px 12px",letterSpacing:"1px",
-                      whiteSpace:"nowrap"}}>ВЫГОДНО</div>}
-                    <div style={{fontSize:"12px",color:C.muted,marginBottom:"6px",marginTop:p.best?"8px":0}}>{p.period}</div>
-                    <div style={{fontSize:"26px",color:C.yellow,fontWeight:700,marginBottom:"6px"}}>{p.price}</div>
-                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"14px"}}>{p.sub}</div>
-                    <button onClick={()=>startPayment(plan)} disabled={payLoading===plan} style={{
-                      width:"100%",padding:"10px",
-                      background:payLoading===plan?"#1a1a0e":C.yellow,
-                      color:"#080807",border:"none",cursor:"pointer",
-                      fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
-                      {payLoading===plan?"...":"ОПЛАТИТЬ"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Payment logos */}
-            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>СПОСОБЫ ОПЛАТЫ</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"4px",marginBottom:"16px"}}>
-              {[
-                {icon:"🏦",label:"СБП"},
-                {icon:"💎",label:"Крипта"},
-                {icon:"💳",label:"Карты"},
-                {icon:"🎮",label:"Скины"},
-              ].map((m,i)=>(
-                <div key={i} style={{background:"#111109",border:`1px solid ${C.border}`,
-                  padding:"10px 6px",textAlign:"center"}}>
-                  <div style={{fontSize:"20px",marginBottom:"4px"}}>{m.icon}</div>
-                  <div style={{fontSize:"11px",color:C.label}}>{m.label}</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:"24px"}}>
+            {[
+              {n:"01",title:"Войди через Steam",desc:"Нажми кнопку входа — данные CS2 и FACEIT подтянутся автоматически"},
+              {n:"02",title:"AI анализирует",desc:"Нейросеть изучает статистику и составляет персональный отчёт"},
+              {n:"03",title:"Получи разбор",desc:"Конкретные проблемы, план тренировок и ответы на любые вопросы"},
+            ].map((s,i)=>(
+              <div key={i} data-id={`step${i}`} style={{textAlign:"center",...anim(`step${i}`,i*0.15)}}>
+                <div style={{
+                  width:"64px",height:"64px",margin:"0 auto 16px",
+                  background:`linear-gradient(135deg,${C.yellow}22,${C.yellow}0a)`,
+                  border:`2px solid ${C.yellow}55`,
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  fontSize:"20px",color:C.yellow,fontWeight:800,
+                }}>
+                  {s.n}
                 </div>
-              ))}
-            </div>
-
-            <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7,
-              background:"#111109",border:`1px solid ${C.border}`,padding:"12px 14px"}}>
-              Оплата через FreeKassa — СБП, банковские карты, криптовалюта, CS2 скины.<br/>
-              После успешной оплаты Pro активируется автоматически.
-            </div>
-          </>}
-
-          {tab==="activate"&&<>
-            <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>
-              Введи ключ который получил после оплаты. Формат: <span style={{color:C.yellow,fontFamily:"monospace"}}>CS2PRO-XXXX-XXXX-XXXX</span>
-            </div>
-            <input value={key} onChange={e=>setKey(e.target.value)}
-              placeholder="CS2PRO-XXXX-XXXX-XXXX"
-              style={{width:"100%",background:"#111109",border:`1px solid ${msg?.ok===false?C.lose:C.border}`,
-                color:C.yellow,fontSize:"16px",padding:"13px 16px",
-                fontFamily:"'Consolas',monospace",letterSpacing:"2px",marginBottom:"10px"}}/>
-            {msg&&<div style={{fontSize:"13px",color:msg.ok?C.win:C.lose,
-              marginBottom:"12px",padding:"10px 14px",
-              background:msg.ok?"#0f1a0f":"#1a0f0f",
-              border:`1px solid ${msg.ok?C.win+"33":C.lose+"33"}`}}>
-              {msg.text}
-            </div>}
-            <button onClick={activate} disabled={loading||!key.trim()||!player} style={{
-              width:"100%",padding:"14px",background:loading?"#1a1a0e":C.yellow,
-              color:"#080807",border:"none",cursor:loading?"not-allowed":"pointer",
-              fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>
-              {loading?"АКТИВИРУЮ...":"АКТИВИРОВАТЬ PRO"}
-            </button>
-          </>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProBadge() {
-  return (
-    <div style={{display:"inline-flex",alignItems:"center",gap:"4px",
-      background:`linear-gradient(135deg,${C.yellow}22,#ff880022)`,
-      border:`1px solid ${C.yellow}66`,padding:"3px 10px"}}>
-      <span style={{fontSize:"11px"}}>⚡</span>
-      <span style={{fontSize:"11px",color:C.yellow,fontWeight:700,letterSpacing:"1px"}}>PRO</span>
-    </div>
-  );
-}
-
-function UsageBar({remaining, total=FREE_DAILY, isPro, onUpgrade}) {
-  if (isPro) return null;
-  const pct = remaining/total*100;
-  const color = remaining<=1?C.lose:remaining<=2?C.orange:C.win;
-  return (
-    <div style={{background:"#111109",border:`1px solid ${C.border}`,
-      padding:"10px 14px",marginBottom:"12px",display:"flex",alignItems:"center",gap:"12px"}}>
-      <div style={{flex:1}}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
-          <span style={{fontSize:"12px",color:C.label}}>AI запросов сегодня</span>
-          <span style={{fontSize:"12px",color,fontWeight:700}}>{remaining}/{total}</span>
-        </div>
-        <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
-          <div style={{height:"100%",width:`${pct}%`,background:color,transition:"width .5s ease"}}/>
-        </div>
-      </div>
-      <button onClick={onUpgrade} style={{flexShrink:0,padding:"6px 14px",
-        background:C.yellow+"22",border:`1px solid ${C.yellow}55`,color:C.yellow,
-        cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"inherit"}}>
-        ⚡ Pro
-      </button>
-    </div>
-  );
-}
-
-function PaywallOverlay({feature, onUpgrade}) {
-  return (
-    <div style={{background:"#0f0f09",border:`1px solid ${C.yellow}33`,
-      padding:"28px",textAlign:"center",animation:"fadeIn .3s ease"}}>
-      <div style={{fontSize:"28px",marginBottom:"12px"}}>⚡</div>
-      <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"8px"}}>
-        {feature} — Pro функция
-      </div>
-      <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>
-        Дневной лимит исчерпан.<br/>
-        Получи Pro — безлимитный AI без ограничений.
-      </div>
-      <button onClick={onUpgrade} style={{padding:"12px 32px",background:C.yellow,
-        color:"#080807",border:"none",cursor:"pointer",fontSize:"14px",
-        fontWeight:700,fontFamily:"inherit"}}>
-        ПОПРОБОВАТЬ PRO →
-      </button>
-    </div>
-  );
-}
-
-// ── Setup Checklist ───────────────────────────────────────────────────────────
-function SetupChecklist({player, hasFaceit, analysisCount, onDismiss}) {
-  const cs2 = player?.cs2 || {};
-  const steps = [
-    {id:"steam",    done:true,                         label:"Войти через Steam",              action:null},
-    {id:"stats",    done:!cs2.private,                 label:"Открыть статистику CS2 в Steam", action:"privacy"},
-    {id:"faceit",   done:hasFaceit,                    label:"Подключить FACEIT аккаунт",      action:"faceit"},
-    {id:"analysis", done:analysisCount>0,              label:"Получить первый AI разбор",      action:"coach"},
-    {id:"chat",     done:!!localStorage.getItem("cs2_chat_done"), label:"Поговорить с AI тренером", action:"chat"},
-    {id:"training", done:!!localStorage.getItem("cs2_training_done"), label:"Выполнить первую тренировку", action:"coach"},
-  ];
-  const done = steps.filter(s=>s.done).length;
-  const total = steps.length;
-  const pct = Math.round(done/total*100);
-  if (done===total) { onDismiss(); return null; }
-
-  const ACTIONS = {
-    privacy: ()=>window.open("https://steamcommunity.com/my/edit/settings","_blank"),
-    faceit:  ()=>window.open("https://www.faceit.com","_blank"),
-  };
-
-  return (
-    <div style={{background:"#141409",border:`1px solid ${C.yellow}44`,
-      borderLeft:`3px solid ${C.yellow}`,padding:"20px 24px",marginBottom:"16px",
-      animation:"up .4s ease both",position:"relative"}}>
-      <button onClick={onDismiss} style={{position:"absolute",top:"12px",right:"14px",
-        background:"transparent",border:"none",color:C.muted,cursor:"pointer",
-        fontSize:"16px",lineHeight:1}}>✕</button>
-
-      <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"16px",flexWrap:"wrap"}}>
-        <div>
-          <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,marginBottom:"2px"}}>
-            🚀 Настройка профиля
-          </div>
-          <div style={{fontSize:"13px",color:C.muted}}>{done} из {total} шагов выполнено</div>
-        </div>
-        <div style={{flex:1,minWidth:"120px"}}>
-          <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
-            <div style={{height:"100%",width:`${pct}%`,background:C.yellow,
-              transition:"width .8s ease",borderRadius:"3px"}}/>
+                <h3 style={{fontSize:"16px",color:C.value,fontWeight:700,margin:"0 0 8px"}}>{s.title}</h3>
+                <p style={{fontSize:"14px",color:C.label,lineHeight:1.65,margin:0}}>{s.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"6px"}}>
-        {steps.map(step=>(
-          <div key={step.id} onClick={()=>ACTIONS[step.action]?.()}
-            style={{display:"flex",gap:"10px",alignItems:"center",padding:"9px 12px",
-              background:step.done?"#0f1a0f":"#111109",
-              border:`1px solid ${step.done?"#2a5a1a":C.border}`,
-              cursor:step.action&&!step.done?"pointer":"default",
-              transition:"border-color .2s"}}>
-            <div style={{width:"20px",height:"20px",flexShrink:0,borderRadius:"50%",
-              background:step.done?C.win:"transparent",
-              border:`2px solid ${step.done?C.win:C.muted}`,
-              display:"flex",alignItems:"center",justifyContent:"center"}}>
-              {step.done&&<span style={{color:"#080807",fontSize:"11px",fontWeight:700}}>✓</span>}
-            </div>
-            <span style={{fontSize:"13px",color:step.done?C.win:C.label,lineHeight:1.4}}>
-              {step.label}
-              {!step.done&&step.action&&["privacy","faceit"].includes(step.action)&&
-                <span style={{color:C.muted,fontSize:"11px"}}> →</span>}
-            </span>
+      {/* ── REVIEWS ── */}
+      <div style={{padding:"80px 24px",maxWidth:"980px",margin:"0 auto"}} data-id="rev">
+        <div style={{textAlign:"center",marginBottom:"48px",...anim("rev")}}>
+          <div style={{fontSize:"12px",letterSpacing:"4px",color:C.yellow,marginBottom:"12px",fontWeight:700}}>
+            ОТЗЫВЫ ИГРОКОВ
           </div>
-        ))}
+          <h2 style={{fontSize:"clamp(26px,4vw,40px)",color:C.value,fontWeight:800,margin:0,letterSpacing:"-0.5px"}}>
+            Что говорят игроки
+          </h2>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(270px,1fr))",gap:"3px"}}>
+          {REVIEWS.map((r,i)=>(
+            <div key={i} data-id={`rev${i}`} style={{
+              background:"#141409",border:`1px solid ${C.border}`,padding:"24px",
+              ...anim(`rev${i}`,i*0.1),
+            }}>
+              <div style={{display:"flex",gap:"3px",marginBottom:"14px"}}>
+                {[...Array(5)].map((_,j)=>(
+                  <span key={j} style={{color:C.yellow,fontSize:"14px"}}>★</span>
+                ))}
+              </div>
+              <p style={{fontSize:"14px",color:C.label,lineHeight:1.75,margin:"0 0 18px",fontStyle:"italic"}}>
+                "{r.text}"
+              </p>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{r.name}</div>
+                  <div style={{fontSize:"12px",color:C.muted}}>{r.elo}</div>
+                </div>
+                <div style={{fontSize:"12px",color:C.yellow,background:`${C.yellow}14`,
+                  border:`1px solid ${C.yellow}33`,padding:"3px 10px",fontWeight:700}}>
+                  {r.kd}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── FINAL CTA ── */}
+      <div style={{
+        padding:"80px 24px",textAlign:"center",
+        background:`linear-gradient(180deg,transparent,${C.yellow}08,transparent)`,
+      }} data-id="cta">
+        <div style={{maxWidth:"600px",margin:"0 auto",...anim("cta")}}>
+          <h2 style={{fontSize:"clamp(28px,5vw,52px)",color:C.value,fontWeight:900,
+            margin:"0 0 16px",letterSpacing:"-1px",lineHeight:1.1}}>
+            Готов узнать правду<br/>
+            <span style={{color:C.yellow}}>о своей игре?</span>
+          </h2>
+          <p style={{fontSize:"16px",color:C.label,margin:"0 0 36px",lineHeight:1.7}}>
+            Присоединяйся к 2000+ игроков которые уже знают почему они проигрывают — и работают над этим
+          </p>
+          <button onClick={onLogin} style={{
+            padding:"18px 52px",background:C.yellow,color:"#080807",border:"none",
+            cursor:"pointer",fontSize:"17px",fontWeight:800,letterSpacing:"2px",
+            fontFamily:"inherit",
+            boxShadow:`0 0 40px ${C.yellow}44`,transition:"all .2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow=`0 0 60px ${C.yellow}66`;}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=`0 0 40px ${C.yellow}44`;}}>
+            НАЧАТЬ БЕСПЛАТНО →
+          </button>
+          <div style={{fontSize:"13px",color:C.muted,marginTop:"14px"}}>
+            Не нужна кредитная карта · Вход через Steam · Займёт 10 секунд
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -2383,7 +2278,7 @@ export default function App() {
           </>
         )}
 
-        {mainTab==="matches"&&(player
+        {mainTab==="matches"&&(!player?<LandingPage onLogin={openSteam}/>:player
           ?<><SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>{source==="faceit"?<MatchHistory faceit={player.faceit}/>:
             <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"28px 24px",textAlign:"center"}}>
               <div style={{fontSize:"24px",marginBottom:"10px"}}>⚡</div>
@@ -2392,11 +2287,11 @@ export default function App() {
             </div>}</>
           :<div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>Войди через Steam</div>)}
 
-        {mainTab==="maps"&&(player
+        {mainTab==="maps"&&(!player?<LandingPage onLogin={openSteam}/>:player
           ?<><SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>{source==="faceit"?<MapPool faceit={player.faceit}/>:<div style={{textAlign:"center",padding:"50px",color:C.muted,fontSize:"13px"}}>Статистика карт доступна только через ⚡ FACEIT</div>}</>
           :<div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>Войди через Steam</div>)}
 
-        {mainTab==="history"&&(player
+        {mainTab==="history"&&(!player?<LandingPage onLogin={openSteam}/>:player
           ?<HistoryTab steamid={player.steamid}/>
           :<div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>Войди через Steam</div>)}
 
