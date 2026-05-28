@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 const BACKEND = "https://cs2-coach-backend.onrender.com";
-const FREE_DAILY = 20;
+const FREE_WEEKLY = 1;
 
 const FACEIT_ELO_RANGES = [
   [1,100,500],[2,501,750],[3,751,900],[4,901,1050],[5,1051,1200],
@@ -1229,11 +1229,15 @@ function Footer({onAbout, onPro, onLeaderboard}) {
             © {new Date().getFullYear()} CS2 AI Тренер. Все права защищены.
           </div>
           <div style={{display:"flex",gap:"20px"}}>
-            {["Политика конфиденциальности","Условия использования"].map((t,i)=>(
-              <span key={i} style={{fontSize:"12px",color:C.muted,cursor:"pointer"}}
-                onMouseEnter={e=>{e.currentTarget.style.color=C.label;}}
+            {[
+              {t:"Политика конфиденциальности",txt:"Мы собираем только публичные данные Steam и FACEIT — никаких паролей, личных данных и платёжной информации. Аналитика обрабатывается AI и не передаётся третьим лицам. Данные хранятся только в рамках текущей сессии."},
+              {t:"Условия использования",txt:"Сервис предназначен для личного использования игроками CS2. Запрещено автоматическое использование API. Сервис не аффилирован с Valve Corporation или FACEIT Ltd. и не несёт ответственности за точность AI-анализа."},
+            ].map((item,i)=>(
+              <span key={i} onClick={()=>window.alert(item.txt)}
+                style={{fontSize:"12px",color:C.muted,cursor:"pointer",textDecoration:"underline",textDecorationStyle:"dotted"}}
+                onMouseEnter={e=>{e.currentTarget.style.color=C.yellow;}}
                 onMouseLeave={e=>{e.currentTarget.style.color=C.muted;}}>
-                {t}
+                {item.t}
               </span>
             ))}
           </div>
@@ -1469,7 +1473,7 @@ function ProBadge() {
   );
 }
 
-function UsageBar({remaining,total=FREE_DAILY,isPro,onUpgrade}) {
+function UsageBar({remaining,total=FREE_WEEKLY,isPro,onUpgrade}) {
   if(isPro)return null;
   const pct=remaining/total*100;
   const color=remaining<=1?C.lose:remaining<=2?C.orange:C.win;
@@ -1477,7 +1481,7 @@ function UsageBar({remaining,total=FREE_DAILY,isPro,onUpgrade}) {
     <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"10px 14px",marginBottom:"12px",display:"flex",alignItems:"center",gap:"12px"}}>
       <div style={{flex:1}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
-          <span style={{fontSize:"12px",color:C.label}}>AI запросов сегодня</span>
+          <span style={{fontSize:"12px",color:C.label}}>AI разборов на этой неделе</span>
           <span style={{fontSize:"12px",color,fontWeight:700}}>{remaining}/{total}</span>
         </div>
         <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
@@ -2038,7 +2042,7 @@ export default function App() {
   const [streak,setStreak]         = useState(0);
   const [showStreakToast,setShowStreakToast] = useState(false);
   const [isPro,setIsPro]               = useState(false);
-  const [aiRemaining,setAiRemaining]   = useState(FREE_DAILY);
+  const [aiRemaining,setAiRemaining]   = useState(FREE_WEEKLY);
   const [showProModal,setShowProModal] = useState(false);
   const [showChecklist,setShowChecklist] = useState(true);
   const [analysisCount,setAnalysisCount] = useState(
@@ -2102,7 +2106,7 @@ export default function App() {
         if (p.steamid) {
           fetch(`${BACKEND}/pro/${p.steamid}`)
             .then(r=>r.json())
-            .then(d=>{ setIsPro(d.pro||false); setAiRemaining(d.remaining??FREE_DAILY); })
+            .then(d=>{ setIsPro(d.pro||false); setAiRemaining(d.remaining??FREE_WEEKLY); })
             .catch(()=>{});
         }
         // background refresh
@@ -2221,9 +2225,14 @@ export default function App() {
       {/* Topbar */}
       <div style={{background:"#0d0d09",borderBottom:`1px solid ${C.border}`,padding:"12px 28px",
         display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap",position:"relative",zIndex:10}}>
-        <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-          <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
-          <span style={{fontSize:"13px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>CS2 AI ТРЕНЕР</span>
+        <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
+          <Logo size={28} withText={true}/>
+          <button onClick={()=>setShowAbout(true)} style={{background:"transparent",border:"none",
+            color:C.muted,cursor:"pointer",fontSize:"13px",fontFamily:"inherit",padding:0}}
+            onMouseEnter={e=>e.currentTarget.style.color=C.label}
+            onMouseLeave={e=>e.currentTarget.style.color=C.muted}>
+            О нас
+          </button>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
           <div className="search-bar"><SearchBar onSelect={r=>setProfileView({nickname:r.nickname})}/></div>
@@ -2349,7 +2358,7 @@ export default function App() {
                   </div>
                 ))}
               </div>
-              <UsageBar remaining={aiRemaining} isPro={isPro} onUpgrade={()=>setShowProModal(true)}/>
+              <UsageBar remaining={aiRemaining} total={FREE_WEEKLY} isPro={isPro} onUpgrade={()=>setShowProModal(true)}/>
               <div style={{fontSize:"12px",color:C.muted,marginBottom:"16px"}}>
                 Источник данных: <span style={{color:source==="faceit"?C.orange:C.blue,fontWeight:700}}>{source==="faceit"?"FACEIT":"STEAM"}</span>
                 {source==="steam"&&player.faceit&&" (переключись на FACEIT для более детального анализа)"}
