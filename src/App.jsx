@@ -1324,6 +1324,182 @@ function ShareModal({steamid, onClose}) {
   );
 }
 
+// ── Pro компоненты ────────────────────────────────────────────────────────────
+function SetupChecklist({player, hasFaceit, analysisCount, onDismiss}) {
+  const cs2 = player?.cs2 || {};
+  const steps = [
+    {id:"steam",    done:true,             label:"Войти через Steam",              action:null},
+    {id:"stats",    done:!cs2.private,     label:"Открыть статистику CS2 в Steam", action:"privacy"},
+    {id:"faceit",   done:hasFaceit,        label:"Подключить FACEIT аккаунт",      action:"faceit"},
+    {id:"analysis", done:analysisCount>0,  label:"Получить первый AI разбор",      action:null},
+    {id:"chat",     done:!!localStorage.getItem("cs2_chat_done"),    label:"Поговорить с AI тренером",    action:null},
+    {id:"training", done:!!localStorage.getItem("cs2_training_done"),label:"Выполнить первую тренировку", action:null},
+  ];
+  const done = steps.filter(s=>s.done).length;
+  const pct  = Math.round(done/steps.length*100);
+  if (done===steps.length) { onDismiss(); return null; }
+  const ACTIONS = {
+    privacy:()=>window.open("https://steamcommunity.com/my/edit/settings","_blank"),
+    faceit: ()=>window.open("https://www.faceit.com","_blank"),
+  };
+  return (
+    <div style={{background:"#141409",border:`1px solid ${C.yellow}44`,borderLeft:`3px solid ${C.yellow}`,padding:"20px 24px",marginBottom:"16px",animation:"up .4s ease both",position:"relative"}}>
+      <button onClick={onDismiss} style={{position:"absolute",top:"12px",right:"14px",background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"16px"}}>✕</button>
+      <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"16px",flexWrap:"wrap"}}>
+        <div>
+          <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,marginBottom:"2px"}}>🚀 Настройка профиля</div>
+          <div style={{fontSize:"13px",color:C.muted}}>{done} из {steps.length} шагов</div>
+        </div>
+        <div style={{flex:1,minWidth:"120px"}}>
+          <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${pct}%`,background:C.yellow,transition:"width .8s ease"}}/>
+          </div>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"6px"}}>
+        {steps.map(step=>(
+          <div key={step.id} onClick={()=>ACTIONS[step.action]?.()} style={{display:"flex",gap:"10px",alignItems:"center",padding:"9px 12px",background:step.done?"#0f1a0f":"#111109",border:`1px solid ${step.done?"#2a5a1a":C.border}`,cursor:step.action&&!step.done?"pointer":"default"}}>
+            <div style={{width:"20px",height:"20px",flexShrink:0,borderRadius:"50%",background:step.done?C.win:"transparent",border:`2px solid ${step.done?C.win:C.muted}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {step.done&&<span style={{color:"#080807",fontSize:"11px",fontWeight:700}}>✓</span>}
+            </div>
+            <span style={{fontSize:"13px",color:step.done?C.win:C.label,lineHeight:1.4}}>{step.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProModal({player, onClose, onActivated}) {
+  const [tab,setTab]         = useState("plans");
+  const [key,setKey]         = useState("");
+  const [loading,setLoading] = useState(false);
+  const [msg,setMsg]         = useState(null);
+  const [payLoading,setPayLoading] = useState(null);
+
+  async function activate() {
+    if (!key.trim()||!player?.steamid) return;
+    setLoading(true); setMsg(null);
+    try {
+      const r = await fetch(`${BACKEND}/activate-key`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({steamid:player.steamid,key:key.trim().toUpperCase()})});
+      const d = await r.json();
+      if(d.ok){setMsg({ok:true,text:"🎉 Pro активирован!"});onActivated();}
+      else setMsg({ok:false,text:d.detail||"Ошибка"});
+    }catch{setMsg({ok:false,text:"Ошибка сети"});}
+    setLoading(false);
+  }
+
+  async function startPayment(plan) {
+    if(!player?.steamid)return;
+    setPayLoading(plan);
+    try{
+      const r=await fetch(`${BACKEND}/payment/create`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({steamid:player.steamid,plan})});
+      const d=await r.json();
+      if(d.url)window.open(d.url,"_blank");
+      else alert("Платежи временно недоступны. Используй активацию ключом.");
+    }catch{alert("Ошибка сети");}
+    setPayLoading(null);
+  }
+
+  const PLANS=[{period:"МЕСЯЦ",price:"299 ₽",sub:"~$3.3",plan:"month"},{period:"ГОД",price:"1990 ₽",sub:"~$22 · экономия 40%",best:true,plan:"year"}];
+  const FREE_F=["1 AI Report в день","5 AI запросов в день","Базовые статы","История матчей","Лидерборд"];
+  const PRO_F=["Безлимитные AI Reports","Безлимитный AI чат","AI разбор каждого матча","Без дневных лимитов","Pro значок","Приоритетная поддержка"];
+
+  return(
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn .2s ease"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.yellow}55`,borderTop:`3px solid ${C.yellow}`,maxWidth:"520px",width:"100%",maxHeight:"90vh",overflowY:"auto",animation:"slideUp .3s ease",boxShadow:`0 8px 60px ${C.yellow}18`}}>
+        <div style={{padding:"22px 24px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div><div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"4px"}}>⚡ CS2 AI ТРЕНЕР PRO</div><div style={{fontSize:"20px",color:C.value,fontWeight:700}}>Убери ограничения</div></div>
+          <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",width:"28px",height:"28px",fontSize:"14px"}}>✕</button>
+        </div>
+        <div style={{display:"flex",margin:"18px 24px 0",gap:"3px"}}>
+          {[["plans","Тарифы"],["activate","Ввести ключ"]].map(([t,l])=>(
+            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"9px",background:tab===t?C.yellow+"22":"transparent",border:`1px solid ${tab===t?C.yellow+"66":C.border}`,color:tab===t?C.yellow:C.muted,cursor:"pointer",fontSize:"13px",fontFamily:"inherit",fontWeight:tab===t?700:400}}>{l}</button>
+          ))}
+        </div>
+        <div style={{padding:"20px 24px 24px"}}>
+          {tab==="plans"&&<>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"20px"}}>
+              <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
+                <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"12px"}}>FREE</div>
+                {FREE_F.map((f,i)=><div key={i} style={{fontSize:"13px",color:C.label,marginBottom:"7px",display:"flex",gap:"8px"}}><span style={{color:C.muted}}>—</span>{f}</div>)}
+              </div>
+              <div style={{background:"#1a1a0a",border:`2px solid ${C.yellow}44`,padding:"16px",position:"relative"}}>
+                <div style={{position:"absolute",top:"-1px",right:"12px",background:C.yellow,color:"#080807",fontSize:"10px",fontWeight:700,padding:"2px 10px",letterSpacing:"2px"}}>PRO</div>
+                <div style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px"}}>PRO</div>
+                {PRO_F.map((f,i)=><div key={i} style={{fontSize:"13px",color:C.value,marginBottom:"7px",display:"flex",gap:"8px"}}><span style={{color:C.win}}>✓</span>{f}</div>)}
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"20px"}}>
+              {PLANS.map((p,i)=>(
+                <div key={i} style={{background:p.best?"#1a1a0a":"#111109",border:`${p.best?2:1}px solid ${p.best?C.yellow+"66":C.border}`,padding:"16px",textAlign:"center",position:"relative"}}>
+                  {p.best&&<div style={{position:"absolute",top:"-1px",left:"50%",transform:"translateX(-50%)",background:C.yellow,color:"#080807",fontSize:"10px",fontWeight:700,padding:"2px 12px",letterSpacing:"1px",whiteSpace:"nowrap"}}>ВЫГОДНО</div>}
+                  <div style={{fontSize:"12px",color:C.muted,marginBottom:"6px",marginTop:p.best?"8px":0}}>{p.period}</div>
+                  <div style={{fontSize:"26px",color:C.yellow,fontWeight:700,marginBottom:"6px"}}>{p.price}</div>
+                  <div style={{fontSize:"11px",color:C.muted,marginBottom:"14px"}}>{p.sub}</div>
+                  <button onClick={()=>startPayment(p.plan)} disabled={payLoading===p.plan} style={{width:"100%",padding:"10px",background:payLoading===p.plan?"#1a1a0e":C.yellow,color:"#080807",border:"none",cursor:"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
+                    {payLoading===p.plan?"...":"ОПЛАТИТЬ"}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7,background:"#111109",border:`1px solid ${C.border}`,padding:"12px 14px"}}>После оплаты получишь ключ активации. Введи его во вкладке "Ввести ключ".</div>
+          </>}
+          {tab==="activate"&&<>
+            <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>Формат: <span style={{color:C.yellow,fontFamily:"monospace"}}>CS2PRO-XXXX-XXXX-XXXX</span></div>
+            <input value={key} onChange={e=>setKey(e.target.value)} placeholder="CS2PRO-XXXX-XXXX-XXXX"
+              style={{width:"100%",background:"#111109",border:`1px solid ${msg?.ok===false?C.lose:C.border}`,color:C.yellow,fontSize:"16px",padding:"13px 16px",fontFamily:"'Consolas',monospace",letterSpacing:"2px",marginBottom:"10px"}}/>
+            {msg&&<div style={{fontSize:"13px",color:msg.ok?C.win:C.lose,marginBottom:"12px",padding:"10px 14px",background:msg.ok?"#0f1a0f":"#1a0f0f",border:`1px solid ${msg.ok?C.win+"33":C.lose+"33"}`}}>{msg.text}</div>}
+            <button onClick={activate} disabled={loading||!key.trim()||!player} style={{width:"100%",padding:"14px",background:loading?"#1a1a0e":C.yellow,color:"#080807",border:"none",cursor:loading?"not-allowed":"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>
+              {loading?"АКТИВИРУЮ...":"АКТИВИРОВАТЬ PRO"}
+            </button>
+          </>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProBadge() {
+  return(
+    <div style={{display:"inline-flex",alignItems:"center",gap:"4px",background:`linear-gradient(135deg,${C.yellow}22,#ff880022)`,border:`1px solid ${C.yellow}66`,padding:"3px 10px"}}>
+      <span style={{fontSize:"11px"}}>⚡</span>
+      <span style={{fontSize:"11px",color:C.yellow,fontWeight:700,letterSpacing:"1px"}}>PRO</span>
+    </div>
+  );
+}
+
+function UsageBar({remaining,total=FREE_DAILY,isPro,onUpgrade}) {
+  if(isPro)return null;
+  const pct=remaining/total*100;
+  const color=remaining<=1?C.lose:remaining<=2?C.orange:C.win;
+  return(
+    <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"10px 14px",marginBottom:"12px",display:"flex",alignItems:"center",gap:"12px"}}>
+      <div style={{flex:1}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
+          <span style={{fontSize:"12px",color:C.label}}>AI запросов сегодня</span>
+          <span style={{fontSize:"12px",color,fontWeight:700}}>{remaining}/{total}</span>
+        </div>
+        <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${pct}%`,background:color,transition:"width .5s ease"}}/>
+        </div>
+      </div>
+      <button onClick={onUpgrade} style={{flexShrink:0,padding:"6px 14px",background:C.yellow+"22",border:`1px solid ${C.yellow}55`,color:C.yellow,cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"inherit"}}>⚡ Pro</button>
+    </div>
+  );
+}
+
+function PaywallOverlay({feature,onUpgrade}) {
+  return(
+    <div style={{background:C.card,border:`1px solid ${C.yellow}33`,padding:"28px",textAlign:"center",animation:"fadeIn .3s ease"}}>
+      <div style={{fontSize:"28px",marginBottom:"12px"}}>⚡</div>
+      <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"8px"}}>{feature} — Pro функция</div>
+      <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>Дневной лимит исчерпан.<br/>Получи Pro — безлимитный AI.</div>
+      <button onClick={onUpgrade} style={{padding:"12px 32px",background:C.yellow,color:"#080807",border:"none",cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>ПОПРОБОВАТЬ PRO →</button>
+    </div>
+  );
+}
+
 // ── Landing Page ─────────────────────────────────────────────────────────────
 function LandingPage({onLogin}) {
   const online = useOnline();
