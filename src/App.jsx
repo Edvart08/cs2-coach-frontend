@@ -1995,31 +1995,47 @@ function SupportPanel({onClose}) {
 
 // ── Support Modal ─────────────────────────────────────────────────────────────
 function SupportModal({player, onClose}) {
-  const [msgs,setMsgs] = useState([
-    {from:"support", text:"Привет! 👋 Чем могу помочь? Опиши проблему — передам команде и ответим в Telegram."}
-  ]);
+  const steamid = player?.steamid || "anon";
+  const SKEY = `cs2_support_${steamid}`;
+  const INITIAL = [{from:"support",text:"Привет! 👋 Чем могу помочь? Опиши проблему — передам команде и ответим в Telegram."}];
+
+  const [msgs,setMsgs] = useState(()=>{
+    try { const s=localStorage.getItem(SKEY); return s?JSON.parse(s):INITIAL; }
+    catch { return INITIAL; }
+  });
   const [input,setInput] = useState("");
   const [loading,setLoading] = useState(false);
-  const [done,setDone] = useState(false);
-  const endRef = useRef(null);
-  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[msgs]);
-
+  const sentAck = useRef(false);
   const lastTs = useRef(0);
-  const steamid = player?.steamid || "anon";
+  const endRef = useRef(null);
 
-  // Polling новых сообщений от админа каждые 2 сек
+  // Сохраняем в localStorage при каждом изменении
+  useEffect(()=>{
+    try { localStorage.setItem(SKEY, JSON.stringify(msgs)); } catch {}
+    endRef.current?.scrollIntoView({behavior:"smooth"});
+  },[msgs]);
+
+  // Инициализируем lastTs из сохранённых сообщений
+  useEffect(()=>{
+    const adminMsgs = msgs.filter(m=>m.from==="admin_real");
+    if(adminMsgs.length>0 && adminMsgs[adminMsgs.length-1].ts)
+      lastTs.current = adminMsgs[adminMsgs.length-1].ts;
+  },[]);
+
+  // Polling новых ответов от админа
   useEffect(()=>{
     const poll = async ()=>{
       try{
         const r = await fetch(`${BACKEND}/support/poll/${steamid}?since=${lastTs.current}`);
         const d = await r.json();
         if(d.messages?.length>0){
+          const newMsgs = d.messages.map(m=>({from:"support",text:m.text,ts:m.ts,admin_real:true}));
           d.messages.forEach(m=>{ lastTs.current = Math.max(lastTs.current, m.ts+1); });
-          setMsgs(prev=>[...prev,...d.messages.map(m=>({from:"support",text:m.text}))]);
+          setMsgs(prev=>[...prev,...newMsgs]);
         }
       }catch{}
     };
-    poll(); // сразу при открытии
+    poll();
     const t = setInterval(poll, 2000);
     return ()=>clearInterval(t);
   },[steamid]);
@@ -2033,7 +2049,11 @@ function SupportModal({player, onClose}) {
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||"Аноним"})
       });
-      setMsgs(m=>[...m,{from:"support",text:"Получили! Менеджер ответит здесь или в @cs2coach_support 🙌"}]);
+      // "Получили!" — только один раз за всю историю
+      if(!sentAck.current && !msgs.some(m=>m.text?.includes("Менеджер ответит"))) {
+        sentAck.current = true;
+        setMsgs(m=>[...m,{from:"support",text:"Получили! Менеджер ответит здесь или в @cs2coach_support 🙌"}]);
+      }
     }catch{
       setMsgs(m=>[...m,{from:"support",text:"Ошибка. Напиши напрямую: @cs2coach_support"}]);
     }
@@ -2425,32 +2445,58 @@ function PracticeTab({player}) {
           const mc=MAP_CALLOUTS[selMap];
           return(
             <div style={{animation:"up .3s ease both"}}>
-              <div style={{background:C.card,border:`1px solid ${C.border}`,borderTop:`2px solid ${C.yellow}`,padding:"20px",marginBottom:"12px"}}>
-                <div style={{fontSize:"11px",letterSpacing:"3px",color:C.yellow,marginBottom:"12px",fontWeight:700}}>
-                  {selMap.toUpperCase()} · ПОЗЫВНЫЕ
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px",marginBottom:"14px"}}>
-                  <div>
-                    <div style={{fontSize:"12px",color:"#ff7755",letterSpacing:"2px",marginBottom:"8px",fontWeight:700}}>ТЕРЫ (T-SIDE)</div>
-                    {mc.T.map((p,i)=>(
-                      <div key={i} style={{padding:"6px 10px",marginBottom:"3px",background:"#1a1010",
-                        border:"1px solid #2a1818",fontSize:"13px",color:C.text}}>
-                        {p}
-                      </div>
-                    ))}
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderTop:`2px solid ${C.yellow}`,overflow:"hidden"}}>
+                <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{fontSize:"12px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>
+                    {selMap.toUpperCase()} · ПОЗЫВНЫЕ
                   </div>
-                  <div>
-                    <div style={{fontSize:"12px",color:C.blue,letterSpacing:"2px",marginBottom:"8px",fontWeight:700}}>КТ (CT-SIDE)</div>
-                    {mc.CT.map((p,i)=>(
-                      <div key={i} style={{padding:"6px 10px",marginBottom:"3px",background:"#101a1a",
-                        border:"1px solid #182a2a",fontSize:"13px",color:C.text}}>
-                        {p}
+                  <a href={`https://totalcsgo.com/callouts/${selMap.toLowerCase()}`} target="_blank" rel="noreferrer"
+                    style={{fontSize:"12px",color:C.muted,textDecoration:"none"}}
+                    onMouseEnter={e=>e.currentTarget.style.color=C.yellow}
+                    onMouseLeave={e=>e.currentTarget.style.color=C.muted}>
+                    Подробная карта →
+                  </a>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:"0"}}>
+                  {/* Radar image */}
+                  <div style={{width:"240px",minWidth:"180px",background:"#0a0a07",
+                    display:"flex",alignItems:"center",justifyContent:"center",padding:"12px",
+                    borderRight:`1px solid ${C.border}`}}>
+                    <img src={mc.radar} alt={selMap}
+                      style={{width:"100%",maxWidth:"220px",imageRendering:"pixelated",
+                        filter:"brightness(1.2) contrast(1.1)",borderRadius:"2px"}}
+                      onError={e=>{e.target.style.display="none";}}/>
+                  </div>
+                  {/* Callouts */}
+                  <div style={{padding:"16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+                    <div>
+                      <div style={{fontSize:"11px",color:"#ff7755",letterSpacing:"2px",marginBottom:"8px",fontWeight:700}}>
+                        🟥 ТЕРЫ
                       </div>
-                    ))}
+                      {mc.T.map((p,i)=>(
+                        <div key={i} style={{padding:"5px 8px",marginBottom:"2px",
+                          background:"#1a1008",border:"1px solid #2a1a10",
+                          fontSize:"12px",color:C.text,borderRadius:"1px"}}>
+                          {p}
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <div style={{fontSize:"11px",color:C.blue,letterSpacing:"2px",marginBottom:"8px",fontWeight:700}}>
+                        🟦 КТ
+                      </div>
+                      {mc.CT.map((p,i)=>(
+                        <div key={i} style={{padding:"5px 8px",marginBottom:"2px",
+                          background:"#0a1018",border:"1px solid #101a28",
+                          fontSize:"12px",color:C.text,borderRadius:"1px"}}>
+                          {p}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div style={{fontSize:"13px",color:C.yellow,background:C.yellow+"0a",
-                  border:`1px solid ${C.yellow}22`,padding:"10px 14px",lineHeight:1.6}}>
+                <div style={{padding:"12px 16px",background:C.yellow+"0a",
+                  borderTop:`1px solid ${C.yellow}22`,fontSize:"13px",color:C.yellow,lineHeight:1.6}}>
                   💡 {mc.key}
                 </div>
               </div>
