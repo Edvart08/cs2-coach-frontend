@@ -1062,8 +1062,9 @@ function AboutModal({onClose}) {
 
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",
-      zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",
-      padding:"20px",animation:"fadeIn .2s ease",overflowY:"auto"}}>
+      zIndex:500,display:"flex",alignItems:"flex-start",justifyContent:"center",
+      paddingTop:"72px",paddingBottom:"20px",paddingLeft:"20px",paddingRight:"20px",
+      animation:"fadeIn .2s ease",overflowY:"auto"}}>
       <div onClick={e=>e.stopPropagation()} style={{
         background:C.card,border:`1px solid ${C.border}`,borderTop:`3px solid ${C.yellow}`,
         maxWidth:"620px",width:"100%",animation:"slideUp .3s ease"}}>
@@ -2004,25 +2005,41 @@ function SupportModal({player, onClose}) {
   const endRef = useRef(null);
   useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[msgs]);
 
+  const lastTs = useRef(0);
+  const steamid = player?.steamid || "anon";
+
+  // Polling новых сообщений от админа
+  useEffect(()=>{
+    const poll = async ()=>{
+      try{
+        const r = await fetch(`${BACKEND}/support/poll/${steamid}?since=${lastTs.current}`);
+        const d = await r.json();
+        if(d.messages?.length>0){
+          d.messages.forEach(m=>{ lastTs.current=Math.max(lastTs.current,m.ts); });
+          setMsgs(prev=>[...prev,...d.messages.map(m=>({from:"support",text:m.text}))]);
+        }
+      }catch{}
+    };
+    const t = setInterval(poll, 3000);
+    return ()=>clearInterval(t);
+  },[steamid]);
+
   async function send() {
     const text = input.trim();
-    if(!text||loading||done) return;
-    const newMsgs = [...msgs,{from:"user",text}];
-    setMsgs(newMsgs); setInput(""); setLoading(true);
+    if(!text||loading) return;
+    const ts = Date.now()/1000|0;
+    lastTs.current = ts;
+    setMsgs(m=>[...m,{from:"user",text}]); setInput(""); setLoading(true);
     try {
       await fetch(`${BACKEND}/support`,{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||"Аноним"})
       });
-      setTimeout(()=>{
-        setMsgs(m=>[...m,{from:"support",text:"Получили! Наш менеджер ответит тебе в Telegram @cs2coach_support в течение 24 часов 🙌"}]);
-        setDone(true);
-        setLoading(false);
-      },900);
+      setMsgs(m=>[...m,{from:"support",text:"Получили! Менеджер ответит здесь или в @cs2coach_support 🙌"}]);
     }catch{
-      setMsgs(m=>[...m,{from:"support",text:"Ошибка отправки. Напиши напрямую: @cs2coach_support"}]);
-      setLoading(false);
+      setMsgs(m=>[...m,{from:"support",text:"Ошибка. Напиши напрямую: @cs2coach_support"}]);
     }
+    setLoading(false);
   }
 
   return (
