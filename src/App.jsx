@@ -1930,8 +1930,125 @@ function AIReport({player, source}) {
   );
 }
 
+
+// ── Support Panel ─────────────────────────────────────────────────────────────
+function SupportPanel({onClose}) {
+  const [msg, setMsg]     = useState("");
+  const [sent, setSent]   = useState(false);
+  return (
+    <div style={{position:"fixed",bottom:"148px",right:"24px",width:"320px",
+      background:C.card,border:`1px solid ${C.blue}55`,
+      boxShadow:`0 8px 40px rgba(0,0,0,0.7),0 0 20px ${C.blue}18`,
+      display:"flex",flexDirection:"column",zIndex:200,animation:"slideUp .3s ease"}}>
+      <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,
+        display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0e0e0e"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+          <div style={{width:"7px",height:"7px",background:C.blue,borderRadius:"50%"}}/>
+          <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>ПОДДЕРЖКА</span>
+        </div>
+        <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px"}}>✕</button>
+      </div>
+      <div style={{padding:"16px 18px"}}>
+        {!sent ? <>
+          <div style={{fontSize:"13px",color:C.label,marginBottom:"14px",lineHeight:1.6}}>
+            Есть вопрос или проблема? Напиши нам:
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"14px"}}>
+            {[
+              {icon:"✈️", text:"Telegram", url:"https://t.me/cs2coach_support"},
+              {icon:"✉️", text:"Email: support@cs2coach.app", url:"mailto:support@cs2coach.app"},
+            ].map((c,i)=>(
+              <a key={i} href={c.url} target="_blank" rel="noreferrer"
+                style={{display:"flex",alignItems:"center",gap:"10px",padding:"10px 14px",
+                  background:"#111109",border:`1px solid ${C.border}`,textDecoration:"none",
+                  color:C.value,fontSize:"13px"}}
+                onMouseEnter={e=>e.currentTarget.style.borderColor=C.blue+"55"}
+                onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+                <span>{c.icon}</span><span>{c.text}</span>
+              </a>
+            ))}
+          </div>
+          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>ИЛИ ОСТАВЬ СООБЩЕНИЕ</div>
+          <textarea value={msg} onChange={e=>setMsg(e.target.value)}
+            placeholder="Опиши проблему..."
+            style={{width:"100%",height:"80px",background:"#111109",border:`1px solid ${C.border}`,
+              color:C.value,fontSize:"13px",padding:"10px",fontFamily:"inherit",resize:"none"}}/>
+          <button onClick={()=>{if(msg.trim()){setSent(true);}}}
+            disabled={!msg.trim()}
+            style={{width:"100%",marginTop:"8px",padding:"10px",
+              background:msg.trim()?C.blue:"#1a1a1a",color:"#fff",border:"none",
+              cursor:msg.trim()?"pointer":"not-allowed",fontSize:"13px",fontFamily:"inherit",fontWeight:700}}>
+            ОТПРАВИТЬ
+          </button>
+        </> : (
+          <div style={{textAlign:"center",padding:"20px 0"}}>
+            <div style={{fontSize:"28px",marginBottom:"10px"}}>✅</div>
+            <div style={{fontSize:"14px",color:C.win,fontWeight:700}}>Сообщение отправлено!</div>
+            <div style={{fontSize:"13px",color:C.label,marginTop:"6px"}}>Ответим в течение 24 часов</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+// ── Support Modal ─────────────────────────────────────────────────────────────
+function SupportModal({onClose}) {
+  const [q,setQ] = useState("");
+  const [sent,setSent] = useState(false);
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
+      zIndex:201,display:"flex",alignItems:"flex-end",justifyContent:"flex-end",
+      padding:"0 24px 150px 0",animation:"fadeIn .2s ease"}}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:C.card,border:`1px solid ${C.border}`,borderTop:`2px solid ${C.blue}`,
+        width:"340px",animation:"slideUp .3s ease",
+        boxShadow:`0 8px 40px rgba(0,0,0,0.7),0 0 20px ${C.blue}18`}}>
+        <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,
+          display:"flex",justifyContent:"space-between",alignItems:"center",background:"#111408"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            <div style={{width:"7px",height:"7px",background:C.blue,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
+            <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>ПОДДЕРЖКА</span>
+          </div>
+          <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
+        </div>
+        {!sent?(
+          <div style={{padding:"18px"}}>
+            <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"16px"}}>
+              Есть вопрос или проблема? Напиши — ответим в течение 24 часов.
+            </div>
+            <textarea value={q} onChange={e=>setQ(e.target.value)}
+              placeholder="Опиши проблему или вопрос..."
+              style={{width:"100%",height:"90px",background:"#111109",border:`1px solid ${C.border}`,
+                color:C.value,fontSize:"14px",padding:"10px",fontFamily:"inherit",
+                resize:"none",marginBottom:"10px"}}/>
+            <button onClick={()=>{if(q.trim())setSent(true);}} style={{
+              width:"100%",padding:"11px",background:q.trim()?C.blue:"#1a1a0e",
+              color:q.trim()?"#fff":C.muted,border:"none",cursor:q.trim()?"pointer":"default",
+              fontSize:"13px",fontWeight:700,fontFamily:"inherit",marginBottom:"12px"}}>
+              ОТПРАВИТЬ
+            </button>
+            <div style={{fontSize:"12px",color:C.muted,textAlign:"center"}}>
+              Или напиши напрямую:{" "}
+              <a href="https://t.me/cs2coach_support" target="_blank" rel="noreferrer"
+                style={{color:C.blue,textDecoration:"none"}}>@cs2coach_support</a>
+            </div>
+          </div>
+        ):(
+          <div style={{padding:"24px",textAlign:"center"}}>
+            <div style={{fontSize:"28px",marginBottom:"12px"}}>✓</div>
+            <div style={{fontSize:"15px",color:C.win,fontWeight:700,marginBottom:"6px"}}>Отправлено!</div>
+            <div style={{fontSize:"13px",color:C.label}}>Ответим в Telegram в течение 24 часов</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── AI Chat ───────────────────────────────────────────────────────────────────
-function ChatPanel({player, source, onClose}) {
+function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
   const [msgs, setMsgs] = useState([
     {role:"assistant", content:"Привет! Я твой AI-тренер. Вижу твои статы и готов отвечать на конкретные вопросы — например: Почему я умираю первым? Как апнуть FACEIT? Что тренировать на Mirage?"}
   ]);
@@ -1951,6 +2068,14 @@ function ChatPanel({player, source, onClose}) {
 
   async function send() {
     const q = input.trim(); if (!q || loading) return;
+    // Проверяем: если просят AI разбор и лимит исчерпан
+    const analysisKeywords = ["разбор","проанализируй","анализ моей игры","разбери мою","analyze"];
+    const wantsAnalysis = analysisKeywords.some(k=>q.toLowerCase().includes(k));
+    if (wantsAnalysis && !isPro && aiRemaining<=0) {
+      setMsgs(m=>[...m,{role:"user",content:q},{role:"assistant",content:"⚡ Еженедельный лимит бесплатных разборов исчерпан. Вернись на следующей неделе или активируй Pro для безлимитного доступа."}]);
+      setInput("");
+      return;
+    }
     const newMsgs = [...msgs, {role:"user",content:q}];
     setMsgs(newMsgs); setInput(""); setLoading(true);
     try {
@@ -2036,7 +2161,8 @@ export default function App() {
   const [showPopup,setShowPopup] = useState(false);
   const [profileView,setProfileView] = useState(null);
   const [showAbout,setShowAbout]       = useState(false);
-  const [chatOpen,setChatOpen] = useState(false);
+  const [chatOpen,setChatOpen]     = useState(false);
+  const [supportOpen,setSupportOpen] = useState(false);
   const [serverStatus,setServerStatus] = useState("checking");
   const [shareOpen,setShareOpen]   = useState(false);
   const [streak,setStreak]         = useState(0);
@@ -2205,7 +2331,7 @@ export default function App() {
 
   // ── Layout ────────────────────────────────────────────────────────────────
   return (
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Segoe UI',system-ui,-apple-system,sans-serif",color:C.text}}>
+    <div className="scanlines" style={{minHeight:"100vh",background:C.bg,fontFamily:"'Segoe UI',system-ui,-apple-system,sans-serif",color:C.text}}>
       <style>{css}</style>
       {/* scanline */}
       <div style={{position:"fixed",left:0,right:0,height:"2px",
@@ -2225,14 +2351,11 @@ export default function App() {
       {/* Topbar */}
       <div style={{background:"#0d0d09",borderBottom:`1px solid ${C.border}`,padding:"12px 28px",
         display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap",position:"relative",zIndex:10}}>
-        <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
+        <div onClick={()=>setShowAbout(true)} style={{display:"flex",alignItems:"center",gap:"14px",cursor:"pointer"}}
+          title="О нас"
+          onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
+          onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
           <Logo size={28} withText={true}/>
-          <button onClick={()=>setShowAbout(true)} style={{background:"transparent",border:"none",
-            color:C.muted,cursor:"pointer",fontSize:"13px",fontFamily:"inherit",padding:0}}
-            onMouseEnter={e=>e.currentTarget.style.color=C.label}
-            onMouseLeave={e=>e.currentTarget.style.color=C.muted}>
-            О нас
-          </button>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
           <div className="search-bar"><SearchBar onSelect={r=>setProfileView({nickname:r.nickname})}/></div>
@@ -2489,23 +2612,48 @@ export default function App() {
       <Footer onAbout={()=>setShowAbout(true)} onPro={()=>setShowProModal(true)} onLeaderboard={()=>setMainTab("leaderboard")}/>
 
       {showAbout&&<AboutModal onClose={()=>setShowAbout(false)}/>}
+      {supportOpen&&<SupportModal onClose={()=>setSupportOpen(false)}/>}
       {/* Streak toast */}
       {showStreakToast&&<StreakToast streak={streak} onClose={()=>setShowStreakToast(false)}/>}
 
       {/* Mobile nav */}
       {player&&<MobileNav tab={mainTab} setTab={setMainTab}/>}
 
-      {/* Chat bubble */}
+      {/* Support button */}
+      {player&&<a href="https://t.me/cs2coach_support" target="_blank" rel="noreferrer"
+        title="Поддержка в Telegram"
+        style={{position:"fixed",bottom:"92px",right:"24px",width:"48px",height:"48px",
+          background:"#0d1520",border:`1px solid ${C.blue}55`,borderRadius:"50%",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          textDecoration:"none",fontSize:"20px",zIndex:199,
+          boxShadow:`0 4px 16px ${C.blue}33`,transition:"all .2s"}}
+        onMouseEnter={e=>{e.currentTarget.style.background="#162030";e.currentTarget.style.boxShadow=`0 4px 24px ${C.blue}66`;}}
+        onMouseLeave={e=>{e.currentTarget.style.background="#0d1520";e.currentTarget.style.boxShadow=`0 4px 16px ${C.blue}33`;}}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill={C.blue}>
+          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/>
+        </svg>
+      </a>}
+
+      {/* Support & Chat bubbles */}
+      <button onClick={()=>setSupportOpen(o=>!o)} style={{
+        position:"fixed",bottom:"94px",right:"24px",width:"48px",height:"48px",
+        background:supportOpen?"#1b6090":"#0d0d09",color:C.blue,
+        border:`2px solid ${C.blue}`,borderRadius:"50%",cursor:"pointer",
+        fontSize:"20px",boxShadow:`0 4px 16px ${C.blue}33`,zIndex:199,
+        transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}
+        title="Поддержка">
+        💬
+      </button>
       {player&&<>
         <button onClick={()=>{ setChatOpen(o=>!o); try{localStorage.setItem("cs2_chat_done","1");}catch{} }} style={{
-          position:"fixed",bottom:"24px",right:"24px",width:"56px",height:"56px",
+          position:"fixed",bottom:"24px",right:"24px",width:"52px",height:"52px",
           background:chatOpen?C.yellow:"#1a1a0e",color:chatOpen?"#080807":C.yellow,
           border:`2px solid ${C.yellow}`,borderRadius:"50%",cursor:"pointer",
           fontSize:"24px",boxShadow:`0 4px 20px ${C.yellow}44`,zIndex:200,
           transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}>
           {chatOpen?"✕":"🤖"}
         </button>
-        {chatOpen&&<ChatPanel player={player} source={source} onClose={()=>setChatOpen(false)}/>}
+        {chatOpen&&<ChatPanel player={player} source={source} isPro={isPro} aiRemaining={aiRemaining} onClose={()=>setChatOpen(false)}/>}
       </>}
     </div>
   );
