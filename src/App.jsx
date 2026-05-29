@@ -2098,20 +2098,18 @@ function SupportModal({player, onClose}) {
         <div ref={endRef}/>
       </div>
 
-      {/* Input */}
-      {!done&&(
-        <div style={{padding:"10px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"7px"}}>
-          <input value={input} onChange={e=>setInput(e.target.value)}
-            onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&send()}
-            placeholder="Напиши вопрос..."
-            style={{flex:1,background:"#111109",border:`1px solid ${C.border}`,
-              color:C.value,fontSize:"13px",padding:"8px 10px",fontFamily:"inherit"}}/>
-          <button onClick={send} disabled={loading||!input.trim()} style={{
-            padding:"8px 14px",background:loading||!input.trim()?"#1a1a0e":C.blue,
-            color:"#fff",border:"none",cursor:"pointer",
-            fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>→</button>
-        </div>
-      )}
+      {/* Input — всегда показываем */}
+      <div style={{padding:"10px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"7px"}}>
+        <input value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&send()}
+          placeholder="Напиши вопрос..."
+          style={{flex:1,background:"#111109",border:`1px solid ${C.border}`,
+            color:C.value,fontSize:"13px",padding:"8px 10px",fontFamily:"inherit"}}/>
+        <button onClick={send} disabled={loading||!input.trim()} style={{
+          padding:"8px 14px",background:loading||!input.trim()?"#1a1a0e":C.blue,
+          color:"#fff",border:"none",cursor:"pointer",
+          fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>→</button>
+      </div>
     </div>
   );
 }
