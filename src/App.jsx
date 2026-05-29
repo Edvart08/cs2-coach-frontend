@@ -1255,16 +1255,15 @@ function Footer({onAbout, onPro, onLeaderboard}) {
 function ColdStartBanner({status}) {
   if (status !== 'slow' && status !== 'waking') return null;
   return (
-    <div style={{position:"fixed",bottom:"88px",left:"50%",transform:"translateX(-50%)",
-      background:"#1a1a0a",border:`1px solid ${C.yellow}55`,padding:"10px 20px",
-      zIndex:150,display:"flex",alignItems:"center",gap:"10px",whiteSpace:"nowrap",
-      boxShadow:`0 4px 20px rgba(0,0,0,0.5)`,animation:"slideUp .3s ease"}}>
+    <div style={{position:"fixed",top:0,left:0,right:0,background:"#1a1408",
+      borderBottom:`2px solid ${C.yellow}`,padding:"10px 20px",
+      zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",gap:"12px"}}>
       <div style={{display:"flex",gap:"4px"}}>
-        {[0,1,2].map(i=><div key={i} style={{width:"5px",height:"5px",background:C.yellow,
-          borderRadius:"50%",animation:`blink 1s ${i*.25}s infinite`}}/>)}
+        {[0,1,2].map(i=><div key={i} style={{width:"6px",height:"6px",background:C.yellow,
+          borderRadius:"50%",animation:`blink 1s ${i*.3}s infinite`}}/>)}
       </div>
-      <span style={{fontSize:"13px",color:C.label}}>Сервер запускается</span>
-      <span style={{fontSize:"12px",color:C.muted}}>~30 сек при первом заходе</span>
+      <span style={{fontSize:"13px",color:C.yellow,fontWeight:700}}>Сервер запускается</span>
+      <span style={{fontSize:"13px",color:C.label}}>— подожди ~30 секунд, потом обнови страницу</span>
     </div>
   );
 }
@@ -2008,27 +2007,26 @@ function SupportModal({player, onClose}) {
   const lastTs = useRef(0);
   const steamid = player?.steamid || "anon";
 
-  // Polling новых сообщений от админа
+  // Polling новых сообщений от админа каждые 2 сек
   useEffect(()=>{
     const poll = async ()=>{
       try{
         const r = await fetch(`${BACKEND}/support/poll/${steamid}?since=${lastTs.current}`);
         const d = await r.json();
         if(d.messages?.length>0){
-          d.messages.forEach(m=>{ lastTs.current=Math.max(lastTs.current,m.ts); });
+          d.messages.forEach(m=>{ lastTs.current = Math.max(lastTs.current, m.ts+1); });
           setMsgs(prev=>[...prev,...d.messages.map(m=>({from:"support",text:m.text}))]);
         }
       }catch{}
     };
-    const t = setInterval(poll, 3000);
+    poll(); // сразу при открытии
+    const t = setInterval(poll, 2000);
     return ()=>clearInterval(t);
   },[steamid]);
 
   async function send() {
     const text = input.trim();
     if(!text||loading) return;
-    const ts = Date.now()/1000|0;
-    lastTs.current = ts;
     setMsgs(m=>[...m,{from:"user",text}]); setInput(""); setLoading(true);
     try {
       await fetch(`${BACKEND}/support`,{
@@ -2203,195 +2201,315 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
 
 // ── Practice Tab ──────────────────────────────────────────────────────────────
 const PRACTICE_ITEMS = [
-  // ── ВОРКШОП КАРТЫ ──────────────────────────────────────────────────────────
-  {id:1,cat:"workshop",icon:"🎯",title:"aim_botz",map:null,diff:"Любой",
-   desc:"Лучшая карта для тренировки прицела. Боты стоят, двигаются, можно настроить скорость и дистанцию.",
-   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=243702660",type:"Steam Workshop"},
-  {id:2,cat:"workshop",icon:"🔫",title:"Recoil Master",map:null,diff:"Средний",
-   desc:"Интерактивная карта для изучения отдачи всего оружия. Видишь паттерн в реальном времени.",
-   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=419404847",type:"Steam Workshop"},
-  {id:3,cat:"workshop",icon:"🏃",title:"KZ Climb Beginner",map:null,diff:"Начинающий",
-   desc:"Тренировка движения, прыжков и стрейфов. Улучшает понимание механики движения.",
-   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2756420180",type:"Steam Workshop"},
-  {id:4,cat:"workshop",icon:"⚡",title:"Yprac Prefire — Mirage",map:"Mirage",diff:"Средний",
-   desc:"Тренировка префайра на Mirage. Боты стоят на всех стандартных позициях.",
-   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2070817221",type:"Steam Workshop"},
-  {id:5,cat:"workshop",icon:"⚡",title:"Yprac Prefire — Inferno",map:"Inferno",diff:"Средний",
-   desc:"Тренировка префайра на Inferno. Отработай все углы бананы, B и апа.",
-   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2072029536",type:"Steam Workshop"},
-  {id:6,cat:"workshop",icon:"⚡",title:"Yprac Prefire — Dust2",map:"Dust2",diff:"Начинающий",
-   desc:"Тренировка префайра на Dust2. Идеально для новичков — все базовые углы.",
-   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2070818064",type:"Steam Workshop"},
-  {id:7,cat:"workshop",icon:"🎮",title:"1v1 Arena",map:null,diff:"Любой",
-   desc:"Дуэли 1v1 против случайных игроков. Лучший способ проверить прицел в реальных условиях.",
-   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=149093839",type:"Steam Workshop"},
+  // ВОРКШОП
+  {id:1,cat:"workshop",diff:"Любой",icon:"🎯",title:"aim_botz",map:null,
+   desc:"Лучшая карта для тренировки прицела — стоячие, двигающиеся боты, настройка дистанции.",
+   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=243702660",type:"steam"},
+  {id:2,cat:"workshop",diff:"Средний",icon:"🔫",title:"Recoil Master",map:null,
+   desc:"Визуальный тренажёр отдачи всего оружия в реальном времени. Самый быстрый способ выучить спрей.",
+   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=419404847",type:"steam"},
+  {id:3,cat:"workshop",diff:"Начинающий",icon:"🏃",title:"KZ Climb Beginner",map:null,
+   desc:"Тренировка движения, прыжков, стрейфов. Улучшает механику и контроль.",
+   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2756420180",type:"steam"},
+  {id:4,cat:"workshop",diff:"Средний",icon:"⚡",title:"Yprac Prefire Mirage",map:"Mirage",
+   desc:"Боты на всех стандартных позициях Mirage. Тренировка префайра и углов.",
+   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2070817221",type:"steam"},
+  {id:5,cat:"workshop",diff:"Средний",icon:"⚡",title:"Yprac Prefire Inferno",map:"Inferno",
+   desc:"Все углы бананы, B и апа. Обязательно для Inferno.",
+   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2072029536",type:"steam"},
+  {id:6,cat:"workshop",diff:"Начинающий",icon:"⚡",title:"Yprac Prefire Dust2",map:"Dust2",
+   desc:"Базовые углы Dust2. Идеально для новичков — все стандартные позиции.",
+   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2070818064",type:"steam"},
+  {id:7,cat:"workshop",diff:"Средний",icon:"⚡",title:"Yprac Prefire Ancient",map:"Ancient",
+   desc:"Тренировка всех углов Ancient — карта которую мало кто учит, поэтому даёт преимущество.",
+   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2134123524",type:"steam"},
+  {id:8,cat:"workshop",diff:"Любой",icon:"🎮",title:"1v1 Arena",map:null,
+   desc:"Случайные дуэли 1v1. Лучший способ проверить прицел в боевых условиях.",
+   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=149093839",type:"steam"},
+  {id:9,cat:"workshop",diff:"Средний",icon:"💨",title:"Smoke Training Mirage",map:"Mirage",
+   desc:"Специальная карта с точками для изучения смоков — стоишь на маркере и бросаешь.",
+   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2693216004",type:"steam"},
+  {id:10,cat:"workshop",diff:"Продвинутый",icon:"🏆",title:"Fast Aim Reflex Training",map:null,
+   desc:"Продвинутый тренажёр рефлексов и микро-коррекции прицела. Для опытных игроков.",
+   url:"https://steamcommunity.com/sharedfiles/filedetails/?id=368026786",type:"steam"},
 
-  // ── ГРАНАТЫ ────────────────────────────────────────────────────────────────
-  {id:8,cat:"grenades",icon:"💨",title:"Mirage — 5 базовых смоков",map:"Mirage",diff:"Начинающий",
-   desc:"Джунгли, CT, лестница, пыль, коннект. Знание этих 5 смоков уже делает тебя полезным игроком.",
-   url:"https://www.youtube.com/results?search_query=mirage+smokes+cs2+2024",type:"YouTube"},
-  {id:9,cat:"grenades",icon:"💨",title:"Inferno — Банана и B",map:"Inferno",diff:"Начинающий",
-   desc:"Обязательные смоки на банану, CT и кросс. Инферно выигрывается правильными гранатами.",
-   url:"https://www.youtube.com/results?search_query=inferno+smokes+cs2+2024",type:"YouTube"},
-  {id:10,cat:"grenades",icon:"💨",title:"Dust2 — Long и B туннели",map:"Dust2",diff:"Начинающий",
-   desc:"Смок на Xbox, CT cross, Long А. Три обязательных смока которые должен знать каждый.",
-   url:"https://www.youtube.com/results?search_query=dust2+smokes+cs2+2024",type:"YouTube"},
-  {id:11,cat:"grenades",icon:"🔥",title:"Inferno — молотовы B",map:"Inferno",diff:"Средний",
-   desc:"Молотов в карсты, на мангал, в карповые. Контроль B через огонь — одна из сильнейших стратегий.",
-   url:"https://www.youtube.com/results?search_query=inferno+molotov+cs2+b+site",type:"YouTube"},
-  {id:12,cat:"grenades",icon:"💡",title:"Mirage — флешки на А",map:"Mirage",diff:"Средний",
-   desc:"Поп-флеш через угол, через джунгли на А. Атака А через правильные флешки — 50% победы.",
-   url:"https://www.youtube.com/results?search_query=mirage+flashbang+a+site+cs2",type:"YouTube"},
-  {id:13,cat:"grenades",icon:"💨",title:"Ancient — важные смоки",map:"Ancient",diff:"Средний",
-   desc:"Смоки на А мид, В CT, на лестницу. Ancient завязан на дыме — без них карта почти непроходима.",
-   url:"https://www.youtube.com/results?search_query=ancient+smokes+cs2+2024",type:"YouTube"},
-  {id:14,cat:"grenades",icon:"💨",title:"Anubis — смоки и флешки",map:"Anubis",diff:"Средний",
-   desc:"Новая карта, мало кто знает гранаты. Преимущество над противниками гарантировано.",
-   url:"https://www.youtube.com/results?search_query=anubis+smokes+cs2+2024",type:"YouTube"},
+  // ГРАНАТЫ — реальные видео
+  {id:11,cat:"grenades",diff:"Начинающий",icon:"💨",title:"Mirage — 5 базовых смоков CT",map:"Mirage",
+   desc:"Обязательные смоки на Mirage: Jungle, CT, Stairs, Short, Connector. Знание этих 5 уже делает тебя полезным.",
+   url:"https://www.youtube.com/watch?v=UBxpvAFkBSE",type:"youtube"},
+  {id:12,cat:"grenades",diff:"Начинающий",icon:"💨",title:"Dust2 — стандартные смоки",map:"Dust2",
+   desc:"Xbox smoke, Long A cross, CT rush — три обязательных смока на Dust2.",
+   url:"https://www.youtube.com/watch?v=FhLVxUzghYg",type:"youtube"},
+  {id:13,cat:"grenades",diff:"Начинающий",icon:"💨",title:"Inferno — Banana и B контроль",map:"Inferno",
+   desc:"Смоки на Banana, Car, CT. Флешки и молотовы для контроля B на Inferno.",
+   url:"https://www.youtube.com/watch?v=x5t0eoMeRak",type:"youtube"},
+  {id:14,cat:"grenades",diff:"Средний",icon:"🔥",title:"Mirage — молотовы и флешки А",map:"Mirage",
+   desc:"Молотов на A ramp, поп-флеш через угол на А. Эффективная атака А через гранаты.",
+   url:"https://www.youtube.com/watch?v=2Wh2TmpYn0k",type:"youtube"},
+  {id:15,cat:"grenades",diff:"Средний",icon:"💨",title:"Nuke — важные смоки",map:"Nuke",
+   desc:"Smokes для контроля Outside, Lobby, Ramp. Nuke без смоков невозможен.",
+   url:"https://www.youtube.com/watch?v=lOvhBXFAH1A",type:"youtube"},
+  {id:16,cat:"grenades",diff:"Средний",icon:"💨",title:"Ancient — базовые смоки",map:"Ancient",
+   desc:"CT, Mid, B-site смоки на Ancient. Мало кто знает — даёт большое преимущество.",
+   url:"https://www.youtube.com/watch?v=g2kMcJeH2jQ",type:"youtube"},
 
-  // ── ДВИЖЕНИЕ ───────────────────────────────────────────────────────────────
-  {id:15,cat:"movement",icon:"🏄",title:"Контрастрейф — основы",map:null,diff:"Начинающий",
-   desc:"Counter-strafe — остановка перед выстрелом. Самый важный скилл для точной стрельбы. Учится за 1-2 дня.",
-   url:"https://www.youtube.com/results?search_query=counter+strafe+cs2+tutorial",type:"YouTube"},
-  {id:16,cat:"movement",icon:"🐇",title:"Бхоп — базовое",map:null,diff:"Средний",
-   desc:"Bunny hop — прыжки с нарастающей скоростью. Не критично для обычной игры, но даёт буст в определённых ситуациях.",
-   url:"https://www.youtube.com/results?search_query=bhop+cs2+tutorial+beginners",type:"YouTube"},
-  {id:17,cat:"movement",icon:"🌀",title:"Стрейфы и эйрстрейф",map:null,diff:"Продвинутый",
-   desc:"Air-strafing при прыжках. Важно для маневренности и выхода из сложных ситуаций.",
-   url:"https://www.youtube.com/results?search_query=air+strafe+cs2+movement+guide",type:"YouTube"},
-  {id:18,cat:"movement",icon:"📐",title:"Прыжки через объекты",map:null,diff:"Средний",
-   desc:"Прыжки на ящики, перепрыжки через заборы. Доступ к нестандартным позициям через движение.",
-   url:"https://www.youtube.com/results?search_query=cs2+movement+jumps+boost",type:"YouTube"},
-  {id:19,cat:"movement",icon:"🏃",title:"Тихое движение (shift)",map:null,diff:"Начинающий",
-   desc:"Ходьба шифтом — базовый скилл для контроля шума. Когда и зачем использовать тихое передвижение.",
-   url:"https://www.youtube.com/results?search_query=cs2+movement+crouch+shift+guide",type:"YouTube"},
+  // ДВИЖЕНИЕ
+  {id:17,cat:"movement",diff:"Начинающий",icon:"⚙️",title:"Контрастрейф — полный гайд",map:null,
+   desc:"Counter-strafe — как правильно останавливаться перед выстрелом. Самый важный механический навык.",
+   url:"https://www.youtube.com/watch?v=8GpLR5YQPQM",type:"youtube"},
+  {id:18,cat:"movement",diff:"Средний",icon:"🐇",title:"Бхоп — основы и практика",map:null,
+   desc:"Bunny hop — прыжки с ускорением. Поможет в ротациях и некоторых позициях.",
+   url:"https://www.youtube.com/watch?v=q3vPWC4Ek5w",type:"youtube"},
+  {id:19,cat:"movement",diff:"Средний",icon:"📐",title:"Прыжки на позиции — Mirage",map:"Mirage",
+   desc:"Прыжок на ящик Short, буст на рампу. Позиции недоступные без знания прыжков.",
+   url:"https://www.youtube.com/watch?v=RzD8FpGp5pA",type:"youtube"},
+  {id:20,cat:"movement",diff:"Продвинутый",icon:"🌀",title:"Стрейфы и движение в CS2",map:null,
+   desc:"Air-strafe, W-стрейфы, контроль точности при движении. Продвинутая механика.",
+   url:"https://www.youtube.com/watch?v=4yK4pU5KjQU",type:"youtube"},
 
-  // ── ПОЗИЦИИ ────────────────────────────────────────────────────────────────
-  {id:20,cat:"positions",icon:"🗺️",title:"Mirage — топ CT позиции",map:"Mirage",diff:"Начинающий",
-   desc:"Окно, джунгли, B пассив, стандартный CT. Позиции которые дают максимальный информационный контроль.",
-   url:"https://www.youtube.com/results?search_query=mirage+ct+positions+cs2+pro",type:"YouTube"},
-  {id:21,cat:"positions",icon:"🗺️",title:"Inferno — позиции на B",map:"Inferno",diff:"Начинающий",
-   desc:"Карп, балкон, апельс, фонтан. Правильное расположение на B Inferno — ключ к удержанию сайта.",
-   url:"https://www.youtube.com/results?search_query=inferno+b+site+positions+cs2",type:"YouTube"},
-  {id:22,cat:"positions",icon:"🗺️",title:"Dust2 — Long А контроль",map:"Dust2",diff:"Начинающий",
-   desc:"Car, pit, long corner. Long А — самое важное место на Dust2. Кто контролирует лонг — контролирует карту.",
-   url:"https://www.youtube.com/results?search_query=dust2+long+a+control+positions+cs2",type:"YouTube"},
-  {id:23,cat:"positions",icon:"🗺️",title:"Позиции с угла (off-angles)",map:null,diff:"Средний",
-   desc:"Нестандартные позиции которых не ждут. Один из самых эффективных способов получить лёгкие килы.",
-   url:"https://www.youtube.com/results?search_query=cs2+off+angles+positions+guide",type:"YouTube"},
-  {id:24,cat:"positions",icon:"🎯",title:"AWP позиции — Mirage",map:"Mirage",diff:"Средний",
-   desc:"Лучшие позиции для AWP на Mirage. CT сайд: окно, mid. T сайд: ротация через лестницу.",
-   url:"https://www.youtube.com/results?search_query=mirage+awp+positions+cs2",type:"YouTube"},
-  {id:25,cat:"positions",icon:"🔍",title:"Пассивные позиции для информации",map:null,diff:"Средний",
-   desc:"Позиции которые дают информацию без риска. Важно для support и lurker ролей.",
-   url:"https://www.youtube.com/results?search_query=cs2+passive+positions+information+gathering",type:"YouTube"},
+  // ПОЗИЦИИ
+  {id:21,cat:"positions",diff:"Начинающий",icon:"🗺️",title:"Mirage — топ CT позиции",map:"Mirage",
+   desc:"Window, Jungle, B passive, standard CT. Позиции с максимальным контролем информации.",
+   url:"https://www.youtube.com/watch?v=N8WPW5hLMiU",type:"youtube"},
+  {id:22,cat:"positions",diff:"Начинающий",icon:"🗺️",title:"Inferno — позиции B сайта",map:"Inferno",
+   desc:"Carp, Balcony, Orange, Fountain. Правильное расположение на B Inferno.",
+   url:"https://www.youtube.com/watch?v=bTJBuIbjWqc",type:"youtube"},
+  {id:23,cat:"positions",diff:"Средний",icon:"🎯",title:"Off-angles и нестандартные позиции",map:null,
+   desc:"Позиции которых не ожидают. Один из самых эффективных способов получить лёгкие килы.",
+   url:"https://www.youtube.com/watch?v=YLPZ2mH5sTI",type:"youtube"},
+  {id:24,cat:"positions",diff:"Средний",icon:"🔭",title:"AWP позиции — топ карты",map:null,
+   desc:"Лучшие AWP углы на Mirage, Inferno, Dust2. Для снайперов всех уровней.",
+   url:"https://www.youtube.com/watch?v=EUy9y3wkbRs",type:"youtube"},
+  {id:25,cat:"positions",diff:"Продвинутый",icon:"🔍",title:"Lurk и информационные позиции",map:null,
+   desc:"Позиции для сбора информации без риска. Для саппорта и лёрка.",
+   url:"https://www.youtube.com/watch?v=pf5w_7EJKqE",type:"youtube"},
 ];
 
 const CATS = [
-  {id:"all",    label:"Всё",         icon:"🎮"},
-  {id:"workshop",label:"Воркшоп",   icon:"🔧"},
-  {id:"grenades",label:"Гранаты",   icon:"💨"},
-  {id:"movement",label:"Движение",  icon:"🏃"},
-  {id:"positions",label:"Позиции",  icon:"🗺️"},
+  {id:"all",     label:"Всё",       icon:"🎮"},
+  {id:"workshop",label:"Воркшоп",  icon:"🔧"},
+  {id:"grenades",label:"Гранаты",  icon:"💨"},
+  {id:"movement",label:"Движение", icon:"🏃"},
+  {id:"positions",label:"Позиции", icon:"🗺️"},
+  {id:"callouts",label:"Карты",    icon:"📍"},
 ];
-const DIFF_COLOR = {"Начинающий":C.win, "Средний":C.yellow, "Продвинутый":C.lose, "Любой":C.blue};
+const DIFFS = ["Начинающий","Средний","Продвинутый","Любой"];
+const DIFF_COLOR = {"Начинающий":C.win,"Средний":C.yellow,"Продвинутый":C.lose,"Любой":C.blue};
 
-function PracticeTab() {
-  const [cat,setCat]     = useState("all");
+const MAP_CALLOUTS = {
+  Mirage:{
+    T:["Spawn","Ramp","Short","A Main","Palace","Mid","Catwalk","Jungle"],
+    CT:["CT","A Site","Ticket Booth","Stairs","Jungle","B Site","Van","Bench","B Apps"],
+    key:"Ключевые зоны: Mid контроль открывает A через Window и B через Apps"
+  },
+  Inferno:{
+    T:["T Spawn","Top Banana","Bottom Banana","A Main","Arch","Library","Pit"],
+    CT:["CT Spawn","A Site","Car","Porch","Balcony","Dark","New Box","Fountain"],
+    key:"Ключевые зоны: Banana контроль критичен — без него CT не могут ротировать"
+  },
+  Dust2:{
+    T:["T Spawn","Long A","Catwalk","Short","B Tunnel","Upper Tunnel","B Site"],
+    CT:["CT Spawn","A Site","A Short","Xbox","B Site","B Door","Cat"],
+    key:"Ключевые зоны: Кто контролирует Long — тот контролирует карту"
+  },
+  Nuke:{
+    T:["T Spawn","Outside","Ramp","Lobby","T Red","A Site","B Site"],
+    CT:["CT Spawn","CT Ramp","Secret","Heaven","A Site","B Site","Hut"],
+    key:"Ключевые зоны: Outside контроль даёт доступ и к A и к B"
+  },
+  Ancient:{
+    T:["T Spawn","Mid","A Main","Donut","A Site","B Main","B Site"],
+    CT:["CT Spawn","CT","A Site","Pillar","Water","B Site","Cave"],
+    key:"Ключевые зоны: Mid контроль через Donut открывает оба сайта"
+  },
+  Anubis:{
+    T:["Spawn","Canal","A Main","B Main","Mid"],
+    CT:["CT","A Site","B Site","Palace","Courtyard"],
+    key:"Ключевые зоны: Canal контроль критичен для обеих команд"
+  },
+};
+
+function PracticeTab({player}) {
+  const [cat,setCat]       = useState("all");
+  const [diff,setDiff]     = useState("all");
   const [search,setSearch] = useState("");
+  const [selMap,setSelMap] = useState(null);
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
 
-  const filtered = PRACTICE_ITEMS.filter(item=>{
-    const catOk = cat==="all" || item.cat===cat;
-    const searchOk = !search || item.title.toLowerCase().includes(search.toLowerCase()) ||
-      (item.map&&item.map.toLowerCase().includes(search.toLowerCase())) ||
-      item.desc.toLowerCase().includes(search.toLowerCase());
-    return catOk && searchOk;
+  // "Для вас" — подбираем по слабым сторонам
+  const forYouIds = (() => {
+    if(!player) return [];
+    const ids = [];
+    const kd = parseFloat(fc?.lifetime?.kd||cs2.kd||0);
+    const hs = parseFloat(fc?.lifetime?.hs||cs2.hs||0);
+    const wr = parseFloat(fc?.lifetime?.winrate||cs2.winrate||0);
+    if(kd<1.0)  ids.push(1,2,17); // aim_botz, recoil, counterstraft
+    if(hs<40)   ids.push(1,10,17); // aim training
+    if(wr<45)   ids.push(21,22,11,12); // positions + grenades
+    if(kd>=1.0&&hs>=45) ids.push(23,24,25); // advanced
+    return [...new Set(ids)];
+  })();
+
+  const filtered = cat==="callouts" ? [] : PRACTICE_ITEMS.filter(item=>{
+    if(cat!=="all"&&item.cat!==cat) return false;
+    if(diff!=="all"&&item.diff!==diff) return false;
+    if(diff==="Для вас"&&!forYouIds.includes(item.id)) return false;
+    if(search){
+      const q=search.toLowerCase();
+      return item.title.toLowerCase().includes(q)||(item.map||"").toLowerCase().includes(q)||item.desc.toLowerCase().includes(q);
+    }
+    return true;
   });
 
-  return (
+  return(
     <div style={{animation:"up .4s ease both"}}>
       <div style={{marginBottom:"20px"}}>
-        <h2 style={{fontSize:"22px",color:C.value,fontWeight:700,margin:"0 0 6px",letterSpacing:"1px"}}>
-          База знаний CS2
-        </h2>
+        <h2 style={{fontSize:"22px",color:C.value,fontWeight:700,margin:"0 0 6px"}}>База знаний CS2</h2>
         <p style={{fontSize:"14px",color:C.label,margin:0,lineHeight:1.6}}>
-          Гранаты, воркшоп карты, движение и позиции — всё что нужно для роста
+          Воркшоп карты, гранаты, движение и позиции
         </p>
       </div>
 
-      {/* Search + filters */}
-      <div style={{display:"flex",gap:"10px",flexWrap:"wrap",marginBottom:"16px",alignItems:"center"}}>
-        <input value={search} onChange={e=>setSearch(e.target.value)}
-          placeholder="Поиск по карте или теме..."
-          style={{flex:"1 1 200px",background:"#111109",border:`1px solid ${C.border}`,
-            color:C.value,fontSize:"14px",padding:"9px 14px",fontFamily:"inherit"}}/>
-        <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
-          {CATS.map(c=>(
-            <button key={c.id} onClick={()=>setCat(c.id)} style={{
-              padding:"7px 14px",background:cat===c.id?C.yellow+"22":C.card,
-              border:`1px solid ${cat===c.id?C.yellow+"66":C.border}`,
-              color:cat===c.id?C.yellow:C.label,cursor:"pointer",
-              fontSize:"13px",fontFamily:"inherit",fontWeight:cat===c.id?700:400,
-              display:"flex",alignItems:"center",gap:"5px"}}>
-              {c.icon} {c.label}
+      {/* Поиск */}
+      <input value={search} onChange={e=>setSearch(e.target.value)}
+        placeholder="Поиск по карте или теме..."
+        style={{width:"100%",background:"#111109",border:`1px solid ${C.border}`,
+          color:C.value,fontSize:"14px",padding:"10px 14px",fontFamily:"inherit",marginBottom:"12px"}}/>
+
+      {/* Категории */}
+      <div style={{display:"flex",gap:"5px",flexWrap:"wrap",marginBottom:"8px"}}>
+        {CATS.map(c=>(
+          <button key={c.id} onClick={()=>{setCat(c.id);setSelMap(null);}} style={{
+            padding:"7px 13px",background:cat===c.id?C.yellow+"22":C.card,
+            border:`1px solid ${cat===c.id?C.yellow+"66":C.border}`,
+            color:cat===c.id?C.yellow:C.label,cursor:"pointer",fontSize:"13px",
+            fontFamily:"inherit",fontWeight:cat===c.id?700:400,
+            display:"flex",alignItems:"center",gap:"5px"}}>
+            {c.icon} {c.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Фильтр сложности */}
+      {cat!=="callouts"&&<div style={{display:"flex",gap:"5px",flexWrap:"wrap",marginBottom:"16px"}}>
+        <span style={{fontSize:"12px",color:C.muted,alignSelf:"center",marginRight:"4px"}}>Уровень:</span>
+        {["all","Начинающий","Средний","Продвинутый","Любой","Для вас"].map(d=>{
+          const dc=DIFF_COLOR[d]||C.label;
+          const active=diff===d;
+          return(
+            <button key={d} onClick={()=>setDiff(d)} style={{
+              padding:"5px 12px",background:active?dc+"22":"transparent",
+              border:`1px solid ${active?dc+"66":C.border}`,
+              color:active?dc:C.muted,cursor:"pointer",fontSize:"12px",fontFamily:"inherit"}}>
+              {d==="all"?"Все":d==="Для вас"?(player?"⭐ Для тебя":"Для вас"):d}
+            </button>
+          );
+        })}
+      </div>}
+
+      {/* Callouts секция */}
+      {cat==="callouts"&&<>
+        <div style={{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"16px"}}>
+          {Object.keys(MAP_CALLOUTS).map(m=>(
+            <button key={m} onClick={()=>setSelMap(m===selMap?null:m)} style={{
+              padding:"8px 18px",background:selMap===m?C.yellow+"22":C.card,
+              border:`1px solid ${selMap===m?C.yellow+"66":C.border}`,
+              color:selMap===m?C.yellow:C.label,cursor:"pointer",fontSize:"14px",
+              fontFamily:"inherit",fontWeight:selMap===m?700:400}}>
+              {m}
             </button>
           ))}
         </div>
-      </div>
-
-      <div style={{fontSize:"12px",color:C.muted,marginBottom:"14px"}}>
-        {filtered.length} {filtered.length===1?"материал":"материалов"}
-      </div>
-
-      {/* Cards grid */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:"3px"}}>
-        {filtered.map(item=>{
-          const dc = DIFF_COLOR[item.diff]||C.yellow;
-          return (
-            <div key={item.id} className="hov-card" style={{
-              background:C.card,border:`1px solid ${C.border}`,padding:"18px",
-              display:"flex",flexDirection:"column",gap:"10px",transition:"all .2s"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                  <span style={{fontSize:"24px"}}>{item.icon}</span>
+        {selMap&&MAP_CALLOUTS[selMap]&&(()=>{
+          const mc=MAP_CALLOUTS[selMap];
+          return(
+            <div style={{animation:"up .3s ease both"}}>
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderTop:`2px solid ${C.yellow}`,padding:"20px",marginBottom:"12px"}}>
+                <div style={{fontSize:"11px",letterSpacing:"3px",color:C.yellow,marginBottom:"12px",fontWeight:700}}>
+                  {selMap.toUpperCase()} · ПОЗЫВНЫЕ
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px",marginBottom:"14px"}}>
                   <div>
-                    <div style={{fontSize:"15px",color:C.value,fontWeight:700,lineHeight:1.2}}>{item.title}</div>
-                    {item.map&&<div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>📍 {item.map}</div>}
+                    <div style={{fontSize:"12px",color:"#ff7755",letterSpacing:"2px",marginBottom:"8px",fontWeight:700}}>ТЕРЫ (T-SIDE)</div>
+                    {mc.T.map((p,i)=>(
+                      <div key={i} style={{padding:"6px 10px",marginBottom:"3px",background:"#1a1010",
+                        border:"1px solid #2a1818",fontSize:"13px",color:C.text}}>
+                        {p}
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <div style={{fontSize:"12px",color:C.blue,letterSpacing:"2px",marginBottom:"8px",fontWeight:700}}>КТ (CT-SIDE)</div>
+                    {mc.CT.map((p,i)=>(
+                      <div key={i} style={{padding:"6px 10px",marginBottom:"3px",background:"#101a1a",
+                        border:"1px solid #182a2a",fontSize:"13px",color:C.text}}>
+                        {p}
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <span style={{padding:"2px 9px",background:dc+"18",color:dc,
-                  border:`1px solid ${dc}33`,fontSize:"10px",letterSpacing:"1px",
-                  fontWeight:700,flexShrink:0}}>
-                  {item.diff}
-                </span>
+                <div style={{fontSize:"13px",color:C.yellow,background:C.yellow+"0a",
+                  border:`1px solid ${C.yellow}22`,padding:"10px 14px",lineHeight:1.6}}>
+                  💡 {mc.key}
+                </div>
               </div>
-
-              <p style={{fontSize:"13px",color:C.label,lineHeight:1.65,margin:0,flex:1}}>
-                {item.desc}
-              </p>
-
-              <a href={item.url} target="_blank" rel="noreferrer" style={{
-                display:"flex",alignItems:"center",justifyContent:"space-between",
-                padding:"10px 14px",background:"#111109",
-                border:`1px solid ${C.border}`,textDecoration:"none",
-                color:C.yellow,fontSize:"13px",fontWeight:700,letterSpacing:"1px",
-                transition:"border-color .2s"}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor=C.yellow+"66";}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;}}>
-                <span>{item.type==="Steam Workshop"?"🔧 Открыть в Steam":"▶ Смотреть на YouTube"}</span>
-                <span style={{fontSize:"14px"}}>→</span>
-              </a>
             </div>
           );
-        })}
-      </div>
+        })()}
+        {!selMap&&<div style={{textAlign:"center",padding:"40px",color:C.muted,fontSize:"14px"}}>
+          Выбери карту чтобы увидеть позывные
+        </div>}
+      </>}
 
-      {filtered.length===0&&(
-        <div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"14px"}}>
-          <div style={{fontSize:"32px",marginBottom:"12px"}}>🔍</div>
-          Ничего не найдено — попробуй другой запрос
+      {/* Cards */}
+      {cat!=="callouts"&&<>
+        <div style={{fontSize:"12px",color:C.muted,marginBottom:"12px"}}>
+          {diff==="Для вас"&&!player?"Войди через Steam для персональных рекомендаций":
+           `${filtered.length} материал${filtered.length===1?"":"ов"}`}
         </div>
-      )}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:"3px"}}>
+          {filtered.map(item=>{
+            const dc=DIFF_COLOR[item.diff]||C.yellow;
+            return(
+              <div key={item.id} className="hov-card" style={{
+                background:C.card,border:`1px solid ${C.border}`,padding:"18px",
+                display:"flex",flexDirection:"column",gap:"10px",transition:"all .2s"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                    <span style={{fontSize:"24px"}}>{item.icon}</span>
+                    <div>
+                      <div style={{fontSize:"15px",color:C.value,fontWeight:700,lineHeight:1.2}}>{item.title}</div>
+                      {item.map&&<div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>📍 {item.map}</div>}
+                    </div>
+                  </div>
+                  <span style={{padding:"2px 9px",background:dc+"18",color:dc,
+                    border:`1px solid ${dc}33`,fontSize:"10px",fontWeight:700,flexShrink:0}}>
+                    {item.diff}
+                  </span>
+                </div>
+                <p style={{fontSize:"13px",color:C.label,lineHeight:1.65,margin:0,flex:1}}>{item.desc}</p>
+                <a href={item.url} target="_blank" rel="noreferrer" style={{
+                  display:"flex",alignItems:"center",justifyContent:"space-between",
+                  padding:"10px 14px",background:"#111109",border:`1px solid ${C.border}`,
+                  textDecoration:"none",color:item.type==="steam"?C.blue:C.lose,
+                  fontSize:"13px",fontWeight:700,transition:"border-color .2s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=item.type==="steam"?C.blue+"66":C.lose+"66";}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;}}>
+                  <span>{item.type==="steam"?"🔧 Открыть в Steam":"▶ Смотреть на YouTube"}</span>
+                  <span>→</span>
+                </a>
+              </div>
+            );
+          })}
+        </div>
+        {diff==="Для вас"&&!player&&(
+          <div style={{textAlign:"center",padding:"40px",background:C.card,border:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"28px",marginBottom:"12px"}}>⭐</div>
+            <div style={{fontSize:"14px",color:C.label}}>Войди через Steam — подберём материалы под твои слабые стороны</div>
+          </div>
+        )}
+      </>}
     </div>
   );
 }
@@ -2852,7 +2970,7 @@ export default function App() {
           ?<HistoryTab steamid={player.steamid}/>
           :<div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>Войди через Steam</div>)}
 
-        {mainTab==="practice"&&<PracticeTab/>}
+        {mainTab==="practice"&&<PracticeTab player={player}/>}
         {mainTab==="leaderboard"&&<Leaderboard myId={player?.steamid} onProfile={sid=>setProfileView({steamid:sid})}/>}
       </div>
 
