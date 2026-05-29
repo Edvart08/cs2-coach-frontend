@@ -1997,7 +1997,7 @@ function SupportPanel({onClose}) {
 function SupportModal({player, onClose}) {
   const steamid = player?.steamid || "anon";
   const SKEY = `cs2_support_${steamid}`;
-  const INITIAL = [{from:"support",text:"Привет! 👋 Чем могу помочь? Опиши проблему — передам команде и ответим в Telegram."}];
+  const INITIAL = [{from:"support",text:"Привет! 👋 Чем могу помочь? Опиши проблему — передам команде и ответим в Telegram.",ts:0}];
 
   const [msgs,setMsgs] = useState(()=>{
     try { const s=localStorage.getItem(SKEY); return s?JSON.parse(s):INITIAL; }
@@ -2029,9 +2029,14 @@ function SupportModal({player, onClose}) {
         const r = await fetch(`${BACKEND}/support/poll/${steamid}?since=${lastTs.current}`);
         const d = await r.json();
         if(d.messages?.length>0){
-          const newMsgs = d.messages.map(m=>({from:"support",text:m.text,ts:m.ts,admin_real:true}));
           d.messages.forEach(m=>{ lastTs.current = Math.max(lastTs.current, m.ts+1); });
-          setMsgs(prev=>[...prev,...newMsgs]);
+          setMsgs(prev=>{
+            const existingTs = new Set(prev.filter(m=>m.admin_real).map(m=>m.ts));
+            const fresh = d.messages
+              .filter(m=>!existingTs.has(m.ts))
+              .map(m=>({from:"support",text:m.text,ts:m.ts,admin_real:true}));
+            return fresh.length>0 ? [...prev,...fresh] : prev;
+          });
         }
       }catch{}
     };
@@ -2040,24 +2045,33 @@ function SupportModal({player, onClose}) {
     return ()=>clearInterval(t);
   },[steamid]);
 
+  const sending = useRef(false); // защита от двойной отправки
+
   async function send() {
     const text = input.trim();
-    if(!text||loading) return;
-    setMsgs(m=>[...m,{from:"user",text}]); setInput(""); setLoading(true);
+    if(!text || loading || sending.current) return;
+    sending.current = true;
+    setInput(""); setLoading(true);
+    setMsgs(m=>[...m,{from:"user",text,ts:Date.now()}]);
     try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(()=>ctrl.abort(), 12000);
       await fetch(`${BACKEND}/support`,{
         method:"POST",headers:{"Content-Type":"application/json"},
+        signal:ctrl.signal,
         body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||"Аноним"})
       });
-      // "Получили!" — только один раз за всю историю
-      if(!sentAck.current && !msgs.some(m=>m.text?.includes("Менеджер ответит"))) {
-        sentAck.current = true;
-        setMsgs(m=>[...m,{from:"support",text:"Получили! Менеджер ответит здесь или в @cs2coach_support 🙌"}]);
-      }
+      clearTimeout(tid);
+      // "Получили!" — только если ещё не было
+      setMsgs(m=>{
+        if(m.some(msg=>msg.text?.includes("Менеджер ответит"))) return m;
+        return [...m,{from:"support",text:"Получили! Менеджер ответит здесь или в @cs2coach_support 🙌",ts:Date.now()}];
+      });
     }catch{
-      setMsgs(m=>[...m,{from:"support",text:"Ошибка. Напиши напрямую: @cs2coach_support"}]);
+      setMsgs(m=>[...m,{from:"support",text:"Ошибка. Напиши напрямую: @cs2coach_support",ts:Date.now()}]);
     }
     setLoading(false);
+    sending.current = false;
   }
 
   return (
@@ -2115,10 +2129,17 @@ function SupportModal({player, onClose}) {
 }
 
 // ── AI Chat ───────────────────────────────────────────────────────────────────
+const CHAT_INIT = [{role:"assistant", content:"Привет! Я твой AI-тренер. Вижу твои статы и готов отвечать на конкретные вопросы — например: Почему я умираю первым? Как апнуть FACEIT? Что тренировать на Mirage?"}];
 function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
-  const [msgs, setMsgs] = useState([
-    {role:"assistant", content:"Привет! Я твой AI-тренер. Вижу твои статы и готов отвечать на конкретные вопросы — например: Почему я умираю первым? Как апнуть FACEIT? Что тренировать на Mirage?"}
-  ]);
+  const chatKey = `cs2_chat_msgs_${player?.steamid||"anon"}`;
+  const [msgs, setMsgsRaw] = useState(()=>{
+    try{ const s=localStorage.getItem(chatKey); return s?JSON.parse(s):CHAT_INIT; }catch{ return CHAT_INIT; }
+  });
+  const setMsgs = (fn) => setMsgsRaw(prev=>{
+    const next = typeof fn==="function"?fn(prev):fn;
+    try{ localStorage.setItem(chatKey,JSON.stringify(next.slice(-60))); }catch{}
+    return next;
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
@@ -2168,7 +2189,10 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
           <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
           <span style={{fontSize:"13px",color:C.yellow,fontWeight:700,letterSpacing:"2px"}}>AI ТРЕНЕР</span>
         </div>
-        <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
+        <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+          <button onClick={()=>setMsgs(CHAT_INIT)} title="Очистить историю" style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"13px",lineHeight:1,padding:"2px 6px",opacity:.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=.6}>🗑</button>
+          <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -2316,36 +2340,235 @@ const DIFF_COLOR = {"Начинающий":C.win,"Средний":C.yellow,"Пр
 
 const MAP_CALLOUTS = {
   Mirage:{
-    T:["Spawn","Ramp","Short","A Main","Palace","Mid","Catwalk","Jungle"],
-    CT:["CT","A Site","Ticket Booth","Stairs","Jungle","B Site","Van","Bench","B Apps"],
-    key:"Ключевые зоны: Mid контроль открывает A через Window и B через Apps"
+    key:"Ключевые зоны: Mid контроль открывает A через Window и B через Apps",
+    zones:[
+      {id:"t_spawn",  label:"T Spawn",     team:"T",  x:10,  y:75,  w:14, h:10, desc:"Стартовая позиция T. Отсюда раздают роли — кто на A, кто на B, кто Mid."},
+      {id:"ramp",     label:"Ramp",        team:"T",  x:10,  y:55,  w:12, h:18, desc:"Вход к A через Ramp и Short. Важно выйти быстро и не дать CT занять Short."},
+      {id:"a_main",   label:"A Main",      team:"T",  x:24,  y:55,  w:14, h:20, desc:"Основной заход на A. Контролируется Jungle-смоком. Здесь часто AWP."},
+      {id:"palace",   label:"Palace",      team:"T",  x:24,  y:76,  w:14, h:10, desc:"Альтернативный заход на A. Позволяет зайти с двух сторон одновременно."},
+      {id:"mid",      label:"Mid",         team:"N",  x:38,  y:38,  w:24, h:22, desc:"Центр карты. Кто контролирует Mid — тот контролирует Catwalk (к A) и Connector (к B)."},
+      {id:"catwalk",  label:"Catwalk",     team:"N",  x:38,  y:60,  w:12, h:14, desc:"Выход с Mid к A. Через Jungle и Window можно зайти CT с неожиданной стороны."},
+      {id:"jungle",   label:"Jungle",      team:"N",  x:52,  y:55,  w:12, h:15, desc:"Ключевая зона между Mid и A. Отсюда можно флэшить CT Spawn и смотреть Site."},
+      {id:"a_site",   label:"A Site",      team:"CT", x:52,  y:25,  w:22, h:28, desc:"Основной взрывной сайт. Защита: Jungle, Ticket Booth, Stairs. Много укрытий."},
+      {id:"ct_spawn", label:"CT Spawn",    team:"CT", x:74,  y:25,  w:12, h:20, desc:"Стартовая точка CT. Быстрый выход к обоим сайтам. Главный ротационный хаб."},
+      {id:"b_apps",   label:"B Apps",      team:"CT", x:62,  y:60,  w:14, h:15, desc:"Заход CT на B с неожиданной стороны. T часто забывают чекать этот угол."},
+      {id:"b_site",   label:"B Site",      team:"CT", x:62,  y:76,  w:20, h:14, desc:"B сайт. Van и Bench — главные укрытия. После плента контролируй Van."},
+      {id:"van",      label:"Van",         team:"CT", x:74,  y:72,  w:8,  h:10, desc:"Van у B Site — любимое место AWP и рифлеров для холда после плента."},
+      {id:"short",    label:"Short",       team:"N",  x:38,  y:22,  w:14, h:16, desc:"Выход с Ramp к A Site. CT часто агрессят здесь — пики ранние и неожиданные."},
+    ]
   },
   Inferno:{
-    T:["T Spawn","Top Banana","Bottom Banana","A Main","Arch","Library","Pit"],
-    CT:["CT Spawn","A Site","Car","Porch","Balcony","Dark","New Box","Fountain"],
-    key:"Ключевые зоны: Banana контроль критичен — без него CT не могут ротировать"
+    key:"Ключевые зоны: Banana контроль критичен — без него CT не могут ротировать",
+    zones:[
+      {id:"t_spawn",  label:"T Spawn",     team:"T",  x:5,   y:55,  w:15, h:20, desc:"T-спавн. Быстрые расходятся на A через Arch/Apartments и на B через Banana."},
+      {id:"banana",   label:"Banana",      team:"N",  x:20,  y:58,  w:20, h:24, desc:"Главная улица к B. Кто контролирует Banana — контролирует ротации CT."},
+      {id:"b_site",   label:"B Site",      team:"CT", x:40,  y:55,  w:22, h:25, desc:"B сайт. Car, Quad и New Box — ключевые укрытия. Сложно чистить после плента."},
+      {id:"ct_spawn", label:"CT Spawn",    team:"CT", x:55,  y:30,  w:18, h:22, desc:"CT спавн. Быстро выходить нельзя — сначала надо понять куда идут T."},
+      {id:"a_site",   label:"A Site",      team:"CT", x:62,  y:52,  w:22, h:25, desc:"A сайт. Pit, Boiler, Car — зоны для пострелять. После плента — чисти темноту."},
+      {id:"a_main",   label:"A Main",      team:"T",  x:5,   y:20,  w:14, h:30, desc:"Apartments — основной путь к A. Мощный заход при поддержке смоков и флэшей."},
+      {id:"arch",     label:"Arch",        team:"T",  x:19,  y:30,  w:14, h:22, desc:"Arch — позиция для контроля выхода T с Apartments. Часто AWP стоит здесь."},
+      {id:"pit",      label:"Pit",         team:"CT", x:62,  y:72,  w:14, h:14, desc:"Pit под A сайтом — мощный холд. T должны смокать или флэшить перед заходом."},
+      {id:"balcony",  label:"Balcony",     team:"CT", x:78,  y:50,  w:10, h:15, desc:"Balcony/Porch — выход CT к A. Агрессивный пик даёт информацию."},
+      {id:"library",  label:"Library",     team:"T",  x:32,  y:25,  w:14, h:22, desc:"Library — укрытие T на пути к A. Хорошо для молотова и занятия позиции."},
+    ]
   },
   Dust2:{
-    T:["T Spawn","Long A","Catwalk","Short","B Tunnel","Upper Tunnel","B Site"],
-    CT:["CT Spawn","A Site","A Short","Xbox","B Site","B Door","Cat"],
-    key:"Ключевые зоны: Кто контролирует Long — тот контролирует карту"
+    key:"Ключевые зоны: Кто контролирует Long — тот контролирует карту",
+    zones:[
+      {id:"t_spawn",  label:"T Spawn",     team:"T",  x:5,   y:60,  w:14, h:20, desc:"T спавн. Разделяйся: кто-то идёт Long, кто-то Catwalk/Mid, кто-то тоннели."},
+      {id:"long_a",   label:"Long A",      team:"T",  x:19,  y:22,  w:18, h:28, desc:"Long — самая дальняя часть карты. Контроль Long = давление на A Site с двух сторон."},
+      {id:"a_site",   label:"A Site",      team:"CT", x:52,  y:20,  w:24, h:28, desc:"A сайт. Long Corner, Short, Car — главные углы. Много позиций, сложно чистить."},
+      {id:"short",    label:"A Short",     team:"CT", x:44,  y:24,  w:10, h:16, desc:"Short — быстрый выход CT к A. Часто агрессивные пики, AWP с Platform."},
+      {id:"cat",      label:"Catwalk",     team:"N",  x:36,  y:42,  w:16, h:12, desc:"Catwalk ведёт на Platform к A. Контроль Catwalk даёт Mid и Short."},
+      {id:"mid",      label:"Mid",         team:"N",  x:36,  y:54,  w:16, h:14, desc:"Mid — центр карты. Xbox, Squeaky door, Windows. Контроль Mid = Split на A."},
+      {id:"b_tunnels",label:"B Tunnels",   team:"T",  x:5,   y:74,  w:18, h:15, desc:"Тоннели к B — быстрый путь. Верхний и Нижний тоннель, выход к B Site."},
+      {id:"b_site",   label:"B Site",      team:"CT", x:52,  y:58,  w:24, h:24, desc:"B сайт. Car, Boxes — укрытия. Закидывай на сайт молотов или смок под двери."},
+      {id:"b_door",   label:"B Door",      team:"CT", x:36,  y:66,  w:14, h:12, desc:"B Door — выход CT к B. Быстрая ротация если T идут через тоннели."},
+      {id:"ct_spawn", label:"CT Spawn",    team:"CT", x:72,  y:38,  w:14, h:20, desc:"CT спавн. Отсюда быстро выходят на обе точки. Главный хаб для ротаций."},
+    ]
   },
   Nuke:{
-    T:["T Spawn","Outside","Ramp","Lobby","T Red","A Site","B Site"],
-    CT:["CT Spawn","CT Ramp","Secret","Heaven","A Site","B Site","Hut"],
-    key:"Ключевые зоны: Outside контроль даёт доступ и к A и к B"
+    key:"Ключевые зоны: Outside контроль даёт доступ и к A и к B",
+    zones:[
+      {id:"t_spawn",  label:"T Spawn",     team:"T",  x:5,   y:30,  w:16, h:20, desc:"T спавн. Главное — получить Outside или идти через Lobby на B через Ramp."},
+      {id:"outside",  label:"Outside",     team:"N",  x:21,  y:20,  w:22, h:36, desc:"Outside — ключевая зона. Контроль даёт выход к A Main и к Shed (вход к B)."},
+      {id:"a_site",   label:"A Site",      team:"CT", x:43,  y:18,  w:24, h:26, desc:"A Site (верхний). Ramp, Heaven, Vent — зоны. Сложно зачищать без контроля Outside."},
+      {id:"heaven",   label:"Heaven",      team:"CT", x:55,  y:8,   w:12, h:14, desc:"Heaven — позиция над A сайтом. Отсюда видно весь сайт. Опасно, но мощно."},
+      {id:"b_site",   label:"B Site",      team:"CT", x:43,  y:54,  w:24, h:24, desc:"B Site (нижний). Сложная карта — два уровня. Vent, Ducting, Secret — позиции."},
+      {id:"ramp",     label:"Ramp",        team:"T",  x:21,  y:60,  w:16, h:20, desc:"Ramp — заход T на B снизу. Часто здесь встречают CT через Ramp Room."},
+      {id:"ct_spawn", label:"CT Spawn",    team:"CT", x:68,  y:34,  w:14, h:20, desc:"CT спавн. Ротация между A и B занимает время — ключ в заранее читать Т."},
+      {id:"lobby",    label:"Lobby",       team:"T",  x:5,   y:55,  w:14, h:24, desc:"Lobby — путь к B через Ramp. Менее распространённый, но неожиданный маршрут."},
+      {id:"secret",   label:"Secret",      team:"CT", x:56,  y:58,  w:12, h:16, desc:"Secret — скрытый проход к B. T редко используют, но очень эффективно."},
+    ]
   },
   Ancient:{
-    T:["T Spawn","Mid","A Main","Donut","A Site","B Main","B Site"],
-    CT:["CT Spawn","CT","A Site","Pillar","Water","B Site","Cave"],
-    key:"Ключевые зоны: Mid контроль через Donut открывает оба сайта"
+    key:"Ключевые зоны: Mid контроль через Donut открывает оба сайта",
+    zones:[
+      {id:"t_spawn",  label:"T Spawn",     team:"T",  x:5,   y:55,  w:15, h:20, desc:"T спавн. Маршруты: A Main, Mid через Donut, или B Main. Всегда разделяйся."},
+      {id:"a_main",   label:"A Main",      team:"T",  x:5,   y:20,  w:16, h:30, desc:"A Main — основной заход на A. Длинный путь, но прямой выход на сайт."},
+      {id:"a_site",   label:"A Site",      team:"CT", x:40,  y:18,  w:26, h:28, desc:"A Site. Много углов, колонны, Temple — чистить очень сложно."},
+      {id:"mid",      label:"Mid",         team:"N",  x:36,  y:48,  w:18, h:16, desc:"Mid — центральный контроль. Через Donut можно сплитить A, через Cave — B."},
+      {id:"donut",    label:"Donut",       team:"N",  x:24,  y:40,  w:14, h:18, desc:"Donut — переходная зона от Mid к A. Контроль здесь = Split на A с двух сторон."},
+      {id:"b_main",   label:"B Main",      team:"T",  x:5,   y:72,  w:15, h:16, desc:"B Main — заход на B. Менее защищённый, но CT часто агрессят здесь."},
+      {id:"b_site",   label:"B Site",      team:"CT", x:40,  y:60,  w:26, h:24, desc:"B Site. Compact и хаотичный. Cave, Water — укрытия. Сложно ротировать CT."},
+      {id:"ct_spawn", label:"CT Spawn",    team:"CT", x:70,  y:38,  w:14, h:22, desc:"CT спавн. Центральный хаб — быстрый выход и к A и к B через CT Middle."},
+      {id:"water",    label:"Water",       team:"CT", x:54,  y:62,  w:12, h:16, desc:"Water — зона у B сайта. Отсюда хорошо читать T при заходе с B Main."},
+    ]
   },
   Anubis:{
-    T:["Spawn","Canal","A Main","B Main","Mid"],
-    CT:["CT","A Site","B Site","Palace","Courtyard"],
-    key:"Ключевые зоны: Canal контроль критичен для обеих команд"
+    key:"Ключевые зоны: Canal контроль критичен для обеих команд",
+    zones:[
+      {id:"t_spawn",  label:"T Spawn",     team:"T",  x:5,   y:55,  w:14, h:20, desc:"T спавн. Две ветки — A Main (правее) и Canal/B (левее). Canal — ключевая зона."},
+      {id:"canal",    label:"Canal",       team:"N",  x:20,  y:48,  w:20, h:18, desc:"Canal — центральный контроль. Кто берёт Canal — тот давит на B и блокирует ротации."},
+      {id:"a_main",   label:"A Main",      team:"T",  x:20,  y:20,  w:18, h:24, desc:"A Main — заход на A. Длинный, но прямой. Флэшируй перед выходом на сайт."},
+      {id:"a_site",   label:"A Site",      team:"CT", x:50,  y:18,  w:24, h:28, desc:"A Site. Palace, Pillar, Heaven — основные укрытия CT. Много углов."},
+      {id:"b_main",   label:"B Main",      team:"T",  x:20,  y:70,  w:16, h:18, desc:"B Main — заход на B. Короткий, но узкий — легко флэшить и гренадировать."},
+      {id:"b_site",   label:"B Site",      team:"CT", x:50,  y:58,  w:24, h:26, desc:"B Site. Courtyard, Bridge — зоны. После плента — держи Courtyard и входы."},
+      {id:"ct_spawn", label:"CT Spawn",    team:"CT", x:72,  y:36,  w:14, h:22, desc:"CT спавн. Быстрая ротация через Mid. Читай информацию правильно — опоздание = поражение."},
+      {id:"palace",   label:"Palace",      team:"CT", x:62,  y:18,  w:12, h:22, desc:"Palace / Heaven у A — мощная позиция CT. AWP здесь держит весь вход."},
+      {id:"courtyard",label:"Courtyard",   team:"CT", x:62,  y:60,  w:14, h:16, desc:"Courtyard — переход между B Main и B Site. Опасная зона для обеих команд."},
+    ]
   },
 };
+
+// ── Interactive Map with SVG zones ───────────────────────────────────────────
+function MapCalloutView({mapName}) {
+  const [hovered, setHovered] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const data = MAP_CALLOUTS[mapName];
+  if(!data) return null;
+  const activeZone = selected || hovered;
+  const info = activeZone ? data.zones.find(z=>z.id===activeZone) : null;
+
+  const teamColor = (team) => team==="T"?"#f5c518":team==="CT"?"#74c6f5":"#aaa88a";
+  const teamBg = (team) => team==="T"?"#f5c51818":team==="CT"?"#74c6f518":"#aaa88a11";
+
+  return(
+    <div style={{animation:"up .3s ease both"}}>
+      <div style={{background:C.card,border:`1px solid ${C.border}`,borderTop:`2px solid ${C.yellow}`,overflow:"hidden"}}>
+        {/* Header */}
+        <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
+          display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontSize:"12px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>
+            {mapName.toUpperCase()} · ИНТЕРАКТИВНАЯ КАРТА
+          </div>
+          <div style={{fontSize:"12px",color:C.muted}}>Наводи на зону для деталей</div>
+        </div>
+
+        {/* SVG Map */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 280px",gap:0}}>
+          {/* Left: SVG */}
+          <div style={{position:"relative",background:"#0c0c08",padding:"4px"}}>
+            <svg viewBox="0 0 100 100" style={{width:"100%",display:"block",cursor:"crosshair"}}
+              xmlns="http://www.w3.org/2000/svg">
+              {/* Background grid */}
+              <defs>
+                <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                  <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#1a1a10" strokeWidth="0.3"/>
+                </pattern>
+              </defs>
+              <rect width="100" height="100" fill="url(#grid)"/>
+
+              {/* Map border */}
+              <rect x="3" y="3" width="94" height="94" fill="none" stroke="#2e2e1e" strokeWidth="0.5"/>
+
+              {/* Zones */}
+              {data.zones.map(z=>{
+                const isActive = activeZone===z.id;
+                const tc = teamColor(z.team);
+                const isSelected = selected===z.id;
+                return(
+                  <g key={z.id}>
+                    <rect
+                      x={z.x} y={z.y} width={z.w} height={z.h}
+                      fill={isActive?tc+"44":teamBg(z.team)}
+                      stroke={isActive?tc:tc+"55"}
+                      strokeWidth={isActive?0.8:0.4}
+                      rx="1"
+                      style={{transition:"all .15s ease",cursor:"pointer"}}
+                      onMouseEnter={()=>setHovered(z.id)}
+                      onMouseLeave={()=>setHovered(null)}
+                      onClick={()=>setSelected(isSelected?null:z.id)}
+                    />
+                    {/* Zone label */}
+                    <text
+                      x={z.x+z.w/2} y={z.y+z.h/2+0.5}
+                      textAnchor="middle" dominantBaseline="middle"
+                      fill={isActive?tc:tc+"cc"}
+                      fontSize={z.w<10||z.h<8?"2.2":"2.8"}
+                      fontWeight={isActive?"bold":"normal"}
+                      style={{pointerEvents:"none",userSelect:"none",transition:"all .15s ease",fontFamily:"monospace"}}
+                    >{z.label}</text>
+                    {/* Selected indicator */}
+                    {isSelected&&<rect x={z.x} y={z.y} width={z.w} height={z.h}
+                      fill="none" stroke={tc} strokeWidth="1" rx="1"
+                      strokeDasharray="2 1" style={{pointerEvents:"none"}}/>}
+                  </g>
+                );
+              })}
+
+              {/* Legend labels */}
+              <text x="5" y="8" fill="#f5c51888" fontSize="2.5" fontFamily="monospace">T</text>
+              <text x="12" y="8" fill="#74c6f588" fontSize="2.5" fontFamily="monospace">CT</text>
+              <text x="20" y="8" fill="#aaa88a88" fontSize="2.5" fontFamily="monospace">NEUTRAL</text>
+            </svg>
+          </div>
+
+          {/* Right: Info panel */}
+          <div style={{borderLeft:`1px solid ${C.border}`,display:"flex",flexDirection:"column",minHeight:"320px"}}>
+            {info?(
+              <div style={{padding:"18px",animation:"up .2s ease both"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px"}}>
+                  <div style={{width:"8px",height:"8px",borderRadius:"50%",
+                    background:teamColor(info.team),boxShadow:`0 0 6px ${teamColor(info.team)}`}}/>
+                  <span style={{fontSize:"11px",color:teamColor(info.team),fontWeight:700,letterSpacing:"2px"}}>
+                    {info.team==="T"?"T СТОРОНА":info.team==="CT"?"CT СТОРОНА":"НЕЙТРАЛЬНАЯ"}
+                  </span>
+                </div>
+                <div style={{fontSize:"18px",color:C.value,fontWeight:700,marginBottom:"10px",lineHeight:1.2}}>
+                  {info.label}
+                </div>
+                <div style={{fontSize:"13px",color:C.text,lineHeight:1.7,marginBottom:"16px"}}>
+                  {info.desc}
+                </div>
+                <div style={{fontSize:"11px",color:C.muted,borderTop:`1px solid ${C.border}`,
+                  paddingTop:"10px",lineHeight:1.5}}>
+                  {selected===info.id?"Клик ещё раз — снять выделение":"Кликни — закрепить выделение"}
+                </div>
+              </div>
+            ):(
+              <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",
+                justifyContent:"center",padding:"20px",textAlign:"center",gap:"12px"}}>
+                <div style={{fontSize:"28px",opacity:.4}}>🗺️</div>
+                <div style={{fontSize:"13px",color:C.muted,lineHeight:1.6}}>
+                  Наведи на зону карты чтобы узнать её название и тактику
+                </div>
+                <div style={{marginTop:"8px",width:"100%"}}>
+                  {[{label:"T Сторона",color:"#f5c518"},{label:"CT Сторона",color:"#74c6f5"},{label:"Нейтральная",color:"#aaa88a"}].map(l=>(
+                    <div key={l.label} style={{display:"flex",alignItems:"center",gap:"8px",
+                      padding:"5px 8px",marginBottom:"4px"}}>
+                      <div style={{width:"10px",height:"10px",background:l.color+"33",
+                        border:`1px solid ${l.color}88`,borderRadius:"2px"}}/>
+                      <span style={{fontSize:"12px",color:C.muted}}>{l.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Key tip */}
+        <div style={{padding:"12px 16px",background:C.yellow+"0a",
+          borderTop:`1px solid ${C.yellow}22`,fontSize:"13px",color:C.yellow,lineHeight:1.6}}>
+          💡 {data.key}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 function PracticeTab({player}) {
   const [cat,setCat]       = useState("all");
@@ -2439,70 +2662,9 @@ function PracticeTab({player}) {
             </button>
           ))}
         </div>
-        {selMap&&MAP_CALLOUTS[selMap]&&(()=>{
-          const mc=MAP_CALLOUTS[selMap];
-          return(
-            <div style={{animation:"up .3s ease both"}}>
-              <div style={{background:C.card,border:`1px solid ${C.border}`,borderTop:`2px solid ${C.yellow}`,overflow:"hidden"}}>
-                <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div style={{fontSize:"12px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>
-                    {selMap.toUpperCase()} · ПОЗЫВНЫЕ
-                  </div>
-                  <a href={`https://totalcsgo.com/callouts/${selMap.toLowerCase()}`} target="_blank" rel="noreferrer"
-                    style={{fontSize:"12px",color:C.muted,textDecoration:"none"}}
-                    onMouseEnter={e=>e.currentTarget.style.color=C.yellow}
-                    onMouseLeave={e=>e.currentTarget.style.color=C.muted}>
-                    Подробная карта →
-                  </a>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:"0"}}>
-                  {/* Radar image */}
-                  <div style={{width:"240px",minWidth:"180px",background:"#0a0a07",
-                    display:"flex",alignItems:"center",justifyContent:"center",padding:"12px",
-                    borderRight:`1px solid ${C.border}`}}>
-                    <img src={mc.radar} alt={selMap}
-                      style={{width:"100%",maxWidth:"220px",imageRendering:"pixelated",
-                        filter:"brightness(1.2) contrast(1.1)",borderRadius:"2px"}}
-                      onError={e=>{e.target.style.display="none";}}/>
-                  </div>
-                  {/* Callouts */}
-                  <div style={{padding:"16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
-                    <div>
-                      <div style={{fontSize:"11px",color:"#ff7755",letterSpacing:"2px",marginBottom:"8px",fontWeight:700}}>
-                        🟥 ТЕРЫ
-                      </div>
-                      {mc.T.map((p,i)=>(
-                        <div key={i} style={{padding:"5px 8px",marginBottom:"2px",
-                          background:"#1a1008",border:"1px solid #2a1a10",
-                          fontSize:"12px",color:C.text,borderRadius:"1px"}}>
-                          {p}
-                        </div>
-                      ))}
-                    </div>
-                    <div>
-                      <div style={{fontSize:"11px",color:C.blue,letterSpacing:"2px",marginBottom:"8px",fontWeight:700}}>
-                        🟦 КТ
-                      </div>
-                      {mc.CT.map((p,i)=>(
-                        <div key={i} style={{padding:"5px 8px",marginBottom:"2px",
-                          background:"#0a1018",border:"1px solid #101a28",
-                          fontSize:"12px",color:C.text,borderRadius:"1px"}}>
-                          {p}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div style={{padding:"12px 16px",background:C.yellow+"0a",
-                  borderTop:`1px solid ${C.yellow}22`,fontSize:"13px",color:C.yellow,lineHeight:1.6}}>
-                  💡 {mc.key}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+        {selMap&&MAP_CALLOUTS[selMap]&&<MapCalloutView mapName={selMap}/>}
         {!selMap&&<div style={{textAlign:"center",padding:"40px",color:C.muted,fontSize:"14px"}}>
-          Выбери карту чтобы увидеть позывные
+          Выбери карту чтобы увидеть интерактивную схему позывных
         </div>}
       </>}
 
