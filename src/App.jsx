@@ -1994,55 +1994,89 @@ function SupportPanel({onClose}) {
 
 
 // ── Support Modal ─────────────────────────────────────────────────────────────
-function SupportModal({onClose}) {
-  const [q,setQ] = useState("");
-  const [sent,setSent] = useState(false);
+function SupportModal({player, onClose}) {
+  const [msgs,setMsgs] = useState([
+    {from:"support", text:"Привет! 👋 Чем могу помочь? Опиши проблему — передам команде и ответим в Telegram."}
+  ]);
+  const [input,setInput] = useState("");
+  const [loading,setLoading] = useState(false);
+  const [done,setDone] = useState(false);
+  const endRef = useRef(null);
+  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[msgs]);
+
+  async function send() {
+    const text = input.trim();
+    if(!text||loading||done) return;
+    const newMsgs = [...msgs,{from:"user",text}];
+    setMsgs(newMsgs); setInput(""); setLoading(true);
+    try {
+      await fetch(`${BACKEND}/support`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||"Аноним"})
+      });
+      setTimeout(()=>{
+        setMsgs(m=>[...m,{from:"support",text:"Получили! Наш менеджер ответит тебе в Telegram @cs2coach_support в течение 24 часов 🙌"}]);
+        setDone(true);
+        setLoading(false);
+      },900);
+    }catch{
+      setMsgs(m=>[...m,{from:"support",text:"Ошибка отправки. Напиши напрямую: @cs2coach_support"}]);
+      setLoading(false);
+    }
+  }
+
   return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
-      zIndex:201,display:"flex",alignItems:"flex-end",justifyContent:"flex-end",
-      padding:"0 24px 150px 0",animation:"fadeIn .2s ease"}}>
-      <div onClick={e=>e.stopPropagation()} style={{
-        background:C.card,border:`1px solid ${C.border}`,borderTop:`2px solid ${C.blue}`,
-        width:"340px",animation:"slideUp .3s ease",
-        boxShadow:`0 8px 40px rgba(0,0,0,0.7),0 0 20px ${C.blue}18`}}>
-        <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,
-          display:"flex",justifyContent:"space-between",alignItems:"center",background:"#111408"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            <div style={{width:"7px",height:"7px",background:C.blue,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
-            <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>ПОДДЕРЖКА</span>
-          </div>
-          <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
+    <div style={{position:"fixed",bottom:"150px",right:"24px",width:"320px",
+      background:C.card,border:`1px solid ${C.blue}55`,
+      boxShadow:`0 8px 40px rgba(0,0,0,0.7),0 0 20px ${C.blue}18`,
+      display:"flex",flexDirection:"column",zIndex:200,animation:"slideUp .3s ease",
+      maxHeight:"420px"}}>
+      {/* Header */}
+      <div style={{padding:"13px 16px",borderBottom:`1px solid ${C.border}`,
+        display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0f1114"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+          <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",
+            animation:"pulse 2s infinite",boxShadow:`0 0 6px ${C.win}`}}/>
+          <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>ПОДДЕРЖКА</span>
         </div>
-        {!sent?(
-          <div style={{padding:"18px"}}>
-            <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"16px"}}>
-              Есть вопрос или проблема? Напиши — ответим в течение 24 часов.
-            </div>
-            <textarea value={q} onChange={e=>setQ(e.target.value)}
-              placeholder="Опиши проблему или вопрос..."
-              style={{width:"100%",height:"90px",background:"#111109",border:`1px solid ${C.border}`,
-                color:C.value,fontSize:"14px",padding:"10px",fontFamily:"inherit",
-                resize:"none",marginBottom:"10px"}}/>
-            <button onClick={()=>{if(q.trim())setSent(true);}} style={{
-              width:"100%",padding:"11px",background:q.trim()?C.blue:"#1a1a0e",
-              color:q.trim()?"#fff":C.muted,border:"none",cursor:q.trim()?"pointer":"default",
-              fontSize:"13px",fontWeight:700,fontFamily:"inherit",marginBottom:"12px"}}>
-              ОТПРАВИТЬ
-            </button>
-            <div style={{fontSize:"12px",color:C.muted,textAlign:"center"}}>
-              Или напиши напрямую:{" "}
-              <a href="https://t.me/cs2coach_support" target="_blank" rel="noreferrer"
-                style={{color:C.blue,textDecoration:"none"}}>@cs2coach_support</a>
-            </div>
-          </div>
-        ):(
-          <div style={{padding:"24px",textAlign:"center"}}>
-            <div style={{fontSize:"28px",marginBottom:"12px"}}>✓</div>
-            <div style={{fontSize:"15px",color:C.win,fontWeight:700,marginBottom:"6px"}}>Отправлено!</div>
-            <div style={{fontSize:"13px",color:C.label}}>Ответим в Telegram в течение 24 часов</div>
-          </div>
-        )}
+        <button onClick={onClose} style={{background:"transparent",border:"none",
+          color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
       </div>
+
+      {/* Messages */}
+      <div style={{flex:1,overflowY:"auto",padding:"14px",display:"flex",
+        flexDirection:"column",gap:"8px"}}>
+        {msgs.map((m,i)=>(
+          <div key={i} style={{display:"flex",justifyContent:m.from==="user"?"flex-end":"flex-start"}}>
+            <div style={{maxWidth:"85%",padding:"9px 13px",
+              background:m.from==="user"?C.blue+"22":"#1a1a12",
+              border:`1px solid ${m.from==="user"?C.blue+"44":C.border}`,
+              fontSize:"13px",color:m.from==="user"?C.blue:C.text,lineHeight:1.6}}>
+              {m.text}
+            </div>
+          </div>
+        ))}
+        {loading&&<div style={{display:"flex",gap:"4px",padding:"6px"}}>
+          {[0,1,2].map(k=><div key={k} style={{width:"6px",height:"6px",background:C.blue,
+            borderRadius:"50%",animation:`blink 1s ${k*.3}s infinite`}}/>)}
+        </div>}
+        <div ref={endRef}/>
+      </div>
+
+      {/* Input */}
+      {!done&&(
+        <div style={{padding:"10px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"7px"}}>
+          <input value={input} onChange={e=>setInput(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&send()}
+            placeholder="Напиши вопрос..."
+            style={{flex:1,background:"#111109",border:`1px solid ${C.border}`,
+              color:C.value,fontSize:"13px",padding:"8px 10px",fontFamily:"inherit"}}/>
+          <button onClick={send} disabled={loading||!input.trim()} style={{
+            padding:"8px 14px",background:loading||!input.trim()?"#1a1a0e":C.blue,
+            color:"#fff",border:"none",cursor:"pointer",
+            fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>→</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -2612,7 +2646,7 @@ export default function App() {
       <Footer onAbout={()=>setShowAbout(true)} onPro={()=>setShowProModal(true)} onLeaderboard={()=>setMainTab("leaderboard")}/>
 
       {showAbout&&<AboutModal onClose={()=>setShowAbout(false)}/>}
-      {supportOpen&&<SupportModal onClose={()=>setSupportOpen(false)}/>}
+      {supportOpen&&<SupportModal player={player} onClose={()=>setSupportOpen(false)}/>}
       {/* Streak toast */}
       {showStreakToast&&<StreakToast streak={streak} onClose={()=>setShowStreakToast(false)}/>}
 
