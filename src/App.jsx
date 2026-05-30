@@ -2544,15 +2544,8 @@ const MAP_CALLOUTS = {
 
 // ── Interactive Map with SVG zones ───────────────────────────────────────────
 function MapCalloutView({mapName}) {
-  const [hovered, setHovered] = useState(null);
-  const [selected, setSelected] = useState(null);
   const data = MAP_CALLOUTS[mapName];
   if(!data) return null;
-  const activeZone = selected || hovered;
-  const info = activeZone ? data.zones.find(z=>z.id===activeZone) : null;
-
-  const teamColor = (team) => team==="T"?"#f5c518":team==="CT"?"#74c6f5":"#aaa88a";
-  const teamBg = (team) => team==="T"?"#f5c51818":team==="CT"?"#74c6f518":"#aaa88a11";
 
   return(
     <div style={{animation:"up .3s ease both"}}>
@@ -2561,134 +2554,25 @@ function MapCalloutView({mapName}) {
         <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
           display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{fontSize:"12px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>
-            {mapName.toUpperCase()} · ИНТЕРАКТИВНАЯ КАРТА
+            {mapName.toUpperCase()} · СХЕМА ПОЗЫВНЫХ
           </div>
-          <div style={{fontSize:"12px",color:C.muted}}>Наводи на зону для деталей</div>
+          <div style={{fontSize:"12px",color:C.muted}}>Актуальный радар карты</div>
         </div>
 
-        {/* SVG Map */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 280px",gap:0}}>
-          {/* Left: Real map image + SVG zones overlay */}
-          <div style={{position:"relative",background:"#080806",overflow:"hidden"}}>
-            {/* Real map image */}
-            {MAP_IMAGES[mapName]&&<img
-              src={MAP_IMAGES[mapName]?.src||MAP_IMAGES[mapName]}
-              alt={mapName}
-              style={{width:"100%",display:"block",opacity:0.85,userSelect:"none",pointerEvents:"none"}}
-            />}
-            {/* SVG overlay with zones — absolute over image */}
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none"
-              style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",cursor:"crosshair"}}
-              xmlns="http://www.w3.org/2000/svg">
-              {/* Zones */}
-              {data.zones.map(z=>{
-                const isActive = activeZone===z.id;
-                const tc = teamColor(z.team);
-                const isSelected = selected===z.id;
-                const shapeProps = {
-                  fill: isActive?tc+"55":"transparent",
-                  stroke: isActive?tc:tc+"88",
-                  strokeWidth: isActive?"0.9":"0.5",
-                  style:{transition:"all .15s ease",cursor:"pointer"},
-                  onMouseEnter:()=>setHovered(z.id),
-                  onMouseLeave:()=>setHovered(null),
-                  onClick:()=>setSelected(isSelected?null:z.id),
-                };
-                return(
-                  <g key={z.id}>
-                    {z.path
-                      ? <path d={z.path} {...shapeProps}/>
-                      : <rect x={z.x} y={z.y} width={z.w} height={z.h} rx="0.5" {...shapeProps}/>
-                    }
-                    {/* Label — shown only when active */}
-                    {isActive&&<>
-                      <rect
-                        x={(z.cx||(z.x+z.w/2))-10} y={(z.cy||(z.y+z.h/2))-2.5}
-                        width="20" height="5" rx="1"
-                        fill="#000000cc" style={{pointerEvents:"none"}}
-                      />
-                      <text
-                        x={z.cx||(z.x+z.w/2)} y={(z.cy||(z.y+z.h/2))+0.5}
-                        textAnchor="middle" dominantBaseline="middle"
-                        fill={tc} fontSize="3.2" fontWeight="bold"
-                        style={{pointerEvents:"none",userSelect:"none",fontFamily:"monospace"}}
-                      >{z.label}</text>
-                    </>}
-                    {/* Non-active: small dot label */}
-                    {!isActive&&<text
-                      x={z.cx||(z.x+z.w/2)} y={(z.cy||(z.y+z.h/2))+0.5}
-                      textAnchor="middle" dominantBaseline="middle"
-                      fill={tc+"cc"} fontSize="2.2" fontWeight="normal"
-                      style={{pointerEvents:"none",userSelect:"none",fontFamily:"monospace"}}
-                    >{z.label}</text>}
-                    {isSelected&&z.path&&<path d={z.path}
-                      fill="none" stroke={tc} strokeWidth="0.9"
-                      strokeDasharray="2 1" style={{pointerEvents:"none"}}/>}
-                    {isSelected&&!z.path&&<rect x={z.x} y={z.y} width={z.w} height={z.h}
-                      fill="none" stroke={tc} strokeWidth="0.9" rx="0.5"
-                      strokeDasharray="2 1" style={{pointerEvents:"none"}}/>}
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-
-          {/* Right: Info panel */}
-          <div style={{borderLeft:`1px solid ${C.border}`,display:"flex",flexDirection:"column",minHeight:"320px"}}>
-            {info?(
-              <div style={{padding:"18px",animation:"up .2s ease both"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"12px"}}>
-                  <div style={{width:"8px",height:"8px",borderRadius:"50%",
-                    background:teamColor(info.team),boxShadow:`0 0 6px ${teamColor(info.team)}`}}/>
-                  <span style={{fontSize:"11px",color:teamColor(info.team),fontWeight:700,letterSpacing:"2px"}}>
-                    {info.team==="T"?"T СТОРОНА":info.team==="CT"?"CT СТОРОНА":"НЕЙТРАЛЬНАЯ"}
-                  </span>
-                </div>
-                <div style={{fontSize:"18px",color:C.value,fontWeight:700,marginBottom:"10px",lineHeight:1.2}}>
-                  {info.label}
-                </div>
-                <div style={{fontSize:"13px",color:C.text,lineHeight:1.7,marginBottom:"12px"}}>
-                  {info.desc}
-                </div>
-                {info.tip&&<div style={{background:C.yellow+"0d",border:`1px solid ${C.yellow}28`,
-                  padding:"10px 12px",marginBottom:"12px"}}>
-                  <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"2px",fontWeight:700,marginBottom:"5px"}}>
-                    💡 ТАКТИКА
-                  </div>
-                  <div style={{fontSize:"12px",color:C.yellow+"cc",lineHeight:1.6}}>{info.tip}</div>
-                </div>}
-                <div style={{fontSize:"11px",color:C.muted,borderTop:`1px solid ${C.border}`,
-                  paddingTop:"10px",lineHeight:1.5}}>
-                  {selected===info.id?"Клик ещё раз — снять выделение":"Кликни — закрепить выделение"}
-                </div>
-              </div>
-            ):(
-              <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",
-                justifyContent:"center",padding:"20px",textAlign:"center",gap:"12px"}}>
-                <div style={{fontSize:"28px",opacity:.4}}>🗺️</div>
-                <div style={{fontSize:"13px",color:C.muted,lineHeight:1.6}}>
-                  Наведи на зону карты чтобы узнать её название и тактику
-                </div>
-                <div style={{marginTop:"8px",width:"100%"}}>
-                  {[{label:"T Сторона",color:"#f5c518"},{label:"CT Сторона",color:"#74c6f5"},{label:"Нейтральная",color:"#aaa88a"}].map(l=>(
-                    <div key={l.label} style={{display:"flex",alignItems:"center",gap:"8px",
-                      padding:"5px 8px",marginBottom:"4px"}}>
-                      <div style={{width:"10px",height:"10px",background:l.color+"33",
-                        border:`1px solid ${l.color}88`,borderRadius:"2px"}}/>
-                      <span style={{fontSize:"12px",color:C.muted}}>{l.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+        {/* Map Image Container */}
+        <div style={{background:"#080806",padding:"12px",display:"flex",justifyContent:"center",alignItems:"center"}}>
+          {MAP_IMAGES[mapName] && <img
+            src={MAP_IMAGES[mapName]?.src || MAP_IMAGES[mapName]}
+            alt={mapName}
+            style={{maxWidth:"100%",maxHeight:"750px",display:"block",opacity:0.95,borderRadius:"4px",userSelect:"none"}}
+          />}
         </div>
 
         {/* Key tip */}
-        <div style={{padding:"12px 16px",background:C.yellow+"0a",
-          borderTop:`1px solid ${C.yellow}22`,fontSize:"13px",color:C.yellow,lineHeight:1.6}}>
+        {data.key && <div style={{padding:"12px 16px",background:C.yellow+"0a",
+          borderTop:`1px solid ${C.border}`,fontSize:"13px",color:C.yellow,lineHeight:1.6}}>
           💡 {data.key}
-        </div>
+        </div>}
       </div>
     </div>
   );
