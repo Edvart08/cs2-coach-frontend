@@ -693,6 +693,7 @@ function ProfileModal({steamid,nickname,onClose}) {
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 function Leaderboard({myId, onProfile}) {
   const [data,setData]=useState(null);
+  const [sortKey,setSortKey]=useState("kd");
   useEffect(()=>{fetch(`${BACKEND}/leaderboard`).then(r=>r.json()).then(d=>setData(d.leaderboard||[])).catch(()=>setData([]));},[]);
   if (!data) return <div style={{padding:"12px"}}>{[1,2,3,4,5].map(i=><Skel key={i} h="50"/>)}</div>;
   if (!data.length) return (
@@ -702,38 +703,90 @@ function Leaderboard({myId, onProfile}) {
       <div style={{fontSize:"13px",color:C.muted,marginTop:"8px"}}>Войди через Steam и сделай анализ</div>
     </div>
   );
+
+  const SORTS = [
+    {id:"kd",      label:"K/D",          icon:"🎯", fn:(a,b)=>(parseFloat(b.stats?.kd||0)-parseFloat(a.stats?.kd||0))},
+    {id:"winrate", label:"Побед %",       icon:"🏆", fn:(a,b)=>(parseFloat(b.stats?.winrate||0)-parseFloat(a.stats?.winrate||0))},
+    {id:"hs",      label:"Хедшоты",      icon:"💥", fn:(a,b)=>(parseFloat(b.stats?.hs||0)-parseFloat(a.stats?.hs||0))},
+    {id:"kills",   label:"Убийства",     icon:"⚔️", fn:(a,b)=>(parseInt(b.stats?.kills||0)-parseInt(a.stats?.kills||0))},
+    {id:"deaths",  label:"Смерти",       icon:"💀", fn:(a,b)=>(parseInt(a.stats?.deaths||0)-parseInt(b.stats?.deaths||0))},
+    {id:"matches", label:"Матчи",        icon:"🎮", fn:(a,b)=>(parseInt(b.stats?.matches||0)-parseInt(a.stats?.matches||0))},
+    {id:"mvp",     label:"MVP",          icon:"⭐", fn:(a,b)=>(parseInt(b.stats?.mvp||0)-parseInt(a.stats?.mvp||0))},
+    {id:"playtime",label:"Время в игре", icon:"⏱️", fn:(a,b)=>(parseInt(b.stats?.playtime||0)-parseInt(a.stats?.playtime||0))},
+  ];
+
+  const sortFn = SORTS.find(s=>s.id===sortKey)?.fn || SORTS[0].fn;
+  const sorted = [...data].sort(sortFn);
+
+  const valFor = (p) => {
+    const s = p.stats || {};
+    switch(sortKey) {
+      case "kd":      return s.kd ? `${s.kd} K/D` : "—";
+      case "winrate": return s.winrate ? `${s.winrate}%` : "—";
+      case "hs":      return s.hs ? `${s.hs}% HS` : "—";
+      case "kills":   return s.kills ? `${parseInt(s.kills).toLocaleString()} kills` : "—";
+      case "deaths":  return s.deaths ? `${parseInt(s.deaths).toLocaleString()} deaths` : "—";
+      case "matches": return s.matches ? `${parseInt(s.matches).toLocaleString()} матч.` : "—";
+      case "mvp":     return s.mvp ? `${parseInt(s.mvp).toLocaleString()} MVP` : "—";
+      case "playtime": return s.playtime ? `${Math.round(s.playtime/60)}ч` : "—";
+      default:        return "—";
+    }
+  };
+
   return (
     <div style={{animation:"up .4s ease both"}}>
-      <div style={{fontSize:"12px",color:C.muted,marginBottom:"14px"}}>Нажми на игрока — откроется профиль</div>
-      <div style={{className:"lb-grid",display:"grid",gridTemplateColumns:"48px 1fr 100px 68px 68px 68px 90px",gap:"2px",
-        padding:"8px 14px",fontSize:"11px",letterSpacing:"2px",color:C.muted,borderBottom:`1px solid ${C.border}`}}>
-        <div>#</div><div>ИГРОК</div><div>RANK</div><div>K/D</div><div>WIN%</div><div>HS%</div><div>УРОВЕНЬ</div>
+      {/* Sort buttons */}
+      <div style={{marginBottom:"14px"}}>
+        <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>СОРТИРОВАТЬ ПО:</div>
+        <div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>
+          {SORTS.map(s=>{
+            const active = sortKey===s.id;
+            return(
+              <button key={s.id} onClick={()=>setSortKey(s.id)} style={{
+                padding:"7px 12px",background:active?C.yellow+"22":C.card,
+                border:`1px solid ${active?C.yellow+"88":C.border}`,
+                borderBottom:`2px solid ${active?C.yellow:"transparent"}`,
+                color:active?C.yellow:C.muted,cursor:"pointer",fontSize:"12px",
+                fontFamily:"inherit",fontWeight:active?700:400,
+                display:"flex",alignItems:"center",gap:"5px",transition:"all .15s",
+                whiteSpace:"nowrap"}}>
+                <span>{s.icon}</span> {s.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
-      {data.map((p,i)=>{
+
+      <div style={{fontSize:"12px",color:C.muted,marginBottom:"10px"}}>Нажми на игрока — откроется профиль</div>
+      <div style={{display:"grid",gridTemplateColumns:"40px 1fr 110px 100px",gap:"2px",
+        padding:"8px 14px",fontSize:"11px",letterSpacing:"2px",color:C.muted,borderBottom:`1px solid ${C.border}`}}>
+        <div>#</div><div>ИГРОК</div><div>УРОВЕНЬ</div>
+        <div style={{textAlign:"right"}}>{SORTS.find(s=>s.id===sortKey)?.label?.toUpperCase()}</div>
+      </div>
+      {sorted.map((p,i)=>{
         const lc=ANALYSIS_COLOR[p.level]||C.yellow;
         const isMe=myId&&p.steamid===myId;
         const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":null;
         return (
-          <div key={i} className="hov-row" onClick={()=>onProfile(p.steamid)} style={{
-            className:"lb-grid",display:"grid",gridTemplateColumns:"48px 1fr 100px 68px 68px 68px 90px",gap:"2px",
-            padding:"14px",cursor:"pointer",borderBottom:`1px solid ${C.border}`,
-            background:isMe?"#1a1a08":C.card,borderLeft:isMe?`2px solid ${C.yellow}`:`2px solid transparent`,
+          <div key={p.steamid||i} className="hov-row" onClick={()=>onProfile(p.steamid)} style={{
+            display:"grid",gridTemplateColumns:"40px 1fr 110px 100px",gap:"2px",
+            padding:"12px 14px",cursor:"pointer",borderBottom:`1px solid ${C.border}`,
+            background:isMe?"#1a1a08":C.card,borderLeft:isMe?`3px solid ${C.yellow}`:`3px solid transparent`,
             transition:"background .15s"}}>
-            <div style={{color:i<3?C.yellow:C.muted,fontSize:"15px",fontWeight:700}}>{medal||i+1}</div>
+            <div style={{color:i<3?C.yellow:C.muted,fontSize:"14px",fontWeight:700,alignSelf:"center"}}>{medal||i+1}</div>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-              {p.avatar?<img src={p.avatar} alt="" style={{width:"30px",height:"30px",borderRadius:"2px"}}/>
-                :<div style={{width:"30px",height:"30px",background:"#1a1a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px"}}>👤</div>}
-              <span style={{fontSize:"15px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:400}}>
+              {p.avatar?<img src={p.avatar} alt="" style={{width:"28px",height:"28px",borderRadius:"2px",flexShrink:0}}/>
+                :<div style={{width:"28px",height:"28px",background:"#1a1a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",flexShrink:0}}>👤</div>}
+              <span style={{fontSize:"14px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                 {p.username}{isMe?" (ты)":""}
               </span>
             </div>
-            <div style={{fontSize:"15px",color:C.yellow,fontWeight:700}}>{p.stats?.rank||"—"}</div>
-            <div style={{fontSize:"15px",color:C.label}}>{p.stats?.kd||"—"}</div>
-            <div style={{fontSize:"14px",color:C.label}}>{p.stats?.winrate||"—"}%</div>
-            <div style={{fontSize:"14px",color:C.label}}>{p.stats?.hs||"—"}%</div>
-            <div style={{padding:"3px 10px",background:lc+"18",color:lc,border:`1px solid ${lc}33`,
-              fontSize:"11px",letterSpacing:"1px",display:"inline-flex",alignItems:"center",height:"fit-content"}}>
+            <div style={{padding:"3px 8px",background:lc+"18",color:lc,border:`1px solid ${lc}33`,
+              fontSize:"10px",letterSpacing:"1px",display:"inline-flex",alignItems:"center",height:"fit-content",alignSelf:"center"}}>
               {p.level}
+            </div>
+            <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,textAlign:"right",alignSelf:"center"}}>
+              {valFor(p)}
             </div>
           </div>
         );
@@ -1151,7 +1204,7 @@ function Footer({onAbout, onPro, onLeaderboard}) {
 
   const SOCIALS = [
     {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill={C.yellow}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>, label:"X / Twitter", url:"https://x.com/CS2Coach"},
-    {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill={C.yellow}><path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 13.875h-2.375c0 3.812-1.625 6.094-4.938 6.094v-2.594c2.031 0 2.688-1.469 2.688-3.5H12.5v-2.813h1.5V9.5c0-.688.219-1.344.594-1.875H10.53c.374.531.594 1.188.594 1.875v2.563h-1.75v2.812h1.75v6.094H8.53v-6.094H6.25v-2.812h2.28V9.5c0-1.969 1.595-3.563 3.563-3.563h5.282v2.594h-3.031c-.531 0-.969.438-.969.969v2.563h3.875l-.875 2.812z"/></svg>, label:"VK", url:"https://vk.com/club239192553"},
+    {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill={C.yellow}><path d="M2 2h20v20H2V2zm18.077 14.348h-2.056c-.778 0-1.017-.62-2.412-2.032-1.22-1.186-1.758-1.348-2.056-1.348-.414 0-.534.117-.534.69v1.854c0 .496-.155.69-1.454.69-2.155 0-4.544-1.321-6.224-3.784C3.518 9.674 2.5 7.5 2.5 7.304c0-.296.117-.573.69-.573h2.056c.517 0 .714.237 .912.794.996 2.887 2.668 5.414 3.358 5.414.258 0 .376-.117.376-.758V9.888c-.08-1.36-.794-1.477-.794-1.96 0-.238.196-.476.514-.476h3.234c.436 0 .594.237.594.754v4.056c0 .437.197.594.317.594.258 0 .476-.157 .952-.633 1.479-1.659 2.534-4.212 2.534-4.212.14-.296.376-.573.891-.573h2.056c.616 0 .754.317.616.753-.258 1.02-2.773 4.748-2.773 4.748-.218.358-.298.516 0 .912.218.296 .932.912 1.41 1.467.874.992 1.539 1.826 1.719 2.4.198.573-.098.863-.674.863z"/></svg>, label:"VK", url:"https://vk.com/club239192553"},
     {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill={C.yellow}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/></svg>, label:"Telegram", url:"https://t.me/csgo2coach"},
   ];
 
@@ -2093,23 +2146,31 @@ function SupportModal({player, onClose}) {
 
       {/* Messages */}
       <div style={{flex:1,overflowY:"auto",padding:"14px",display:"flex",
-        flexDirection:"column",gap:"8px"}}>
+        flexDirection:"column",gap:"10px"}}>
         {msgs.map((m,i)=>{
           const isUser = m.from==="user";
           const nick = isUser ? (player?.username||"Ты") : "Поддержка";
           const nickColor = isUser ? C.blue : C.yellow;
+          const avatar = isUser
+            ? (player?.avatar
+                ? <img src={player.avatar} alt="" style={{width:"22px",height:"22px",borderRadius:"50%",border:`1px solid ${C.blue}44`,flexShrink:0}}/>
+                : <div style={{width:"22px",height:"22px",borderRadius:"50%",background:"#1a2a3a",border:`1px solid ${C.blue}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",flexShrink:0}}>👤</div>)
+            : <div style={{width:"22px",height:"22px",borderRadius:"50%",background:"#1a180a",border:`1px solid ${C.yellow}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",flexShrink:0}}>🎧</div>;
           return(
           <div key={i} style={{display:"flex",flexDirection:"column",
             alignItems:isUser?"flex-end":"flex-start",gap:"3px"}}>
-            <div style={{fontSize:"10px",color:nickColor,fontWeight:700,
-              letterSpacing:"1px",paddingX:isUser?"0 2px":"2px 0",
-              opacity:.8,paddingLeft:isUser?0:"2px",paddingRight:isUser?"2px":0}}>
-              {nick}
+            <div style={{display:"flex",alignItems:"center",gap:"5px",
+              flexDirection:isUser?"row-reverse":"row"}}>
+              {avatar}
+              <span style={{fontSize:"10px",color:nickColor,fontWeight:700,letterSpacing:"1px",opacity:.85}}>
+                {nick}
+              </span>
             </div>
             <div style={{maxWidth:"85%",padding:"9px 13px",
               background:isUser?C.blue+"22":"#1a1a12",
               border:`1px solid ${isUser?C.blue+"44":C.border}`,
-              fontSize:"13px",color:isUser?C.blue:C.text,lineHeight:1.6}}>
+              fontSize:"13px",color:isUser?C.blue:C.text,lineHeight:1.6,
+              marginLeft:isUser?0:"27px",marginRight:isUser?"27px":0}}>
               {m.text}
             </div>
           </div>
@@ -2348,101 +2409,233 @@ const CATS = [
 const DIFFS = ["Начинающий","Средний","Продвинутый","Любой"];
 const DIFF_COLOR = {"Начинающий":C.win,"Средний":C.yellow,"Продвинутый":C.lose,"Любой":C.blue};
 
+// ── MAP CALLOUTS: реалистичные зоны через SVG path ────────────────────────────
+// Каждая карта нарисована по реальной топологии: коридоры, сайты, проходы
 const MAP_CALLOUTS = {
   Mirage:{
     key:"Контроль Mid открывает A через Window и B через Apps",
-    // Mirage: T spawn — левый низ, A site — верх центр, B site — правый низ, Mid — центр
+    // Mirage: T-spawn левый низ, A-site верхний центр, B-site правый низ
+    // Фоновые пути карты (стены/полы)
+    bg:"M5,5 L95,5 L95,95 L5,95 Z",
     zones:[
-      {id:"t_spawn",  label:"T Spawn",   team:"T",  x:4,  y:68, w:13, h:16, desc:"Стартовая позиция T. Отсюда расходятся: двое Ramp/Mid, двое A Main, один Palace.", tip:"Первые 5 секунд — выйди к Ramp. Промедление = КТ занимают Short."},
-      {id:"ramp",     label:"Ramp",      team:"T",  x:18, y:52, w:11, h:18, desc:"Вход к Mid и Short. Важно выйти быстро и не дать CT занять Short.", tip:"Агрессивный пик с Ramp через Window flash ставит CT в неудобную позицию."},
-      {id:"a_main",   label:"A Main",    team:"T",  x:4,  y:36, w:13, h:18, desc:"Основной заход на A. Контролируется Jungle-смоком и AWP с Ticket Booth.", tip:"Smoke Jungle + Flash A Main + smoke CT = стандартный безопасный A take."},
-      {id:"palace",   label:"Palace",    team:"T",  x:4,  y:18, w:13, h:16, desc:"Альтернативный заход на A. Позволяет зайти с двух сторон одновременно.", tip:"Palace + Main одновременно — CT не успевают покрыть обе точки."},
-      {id:"short",    label:"Short",     team:"N",  x:31, y:26, w:14, h:14, desc:"Выход с Ramp к A Site через лестницы. CT часто агрессят здесь ранним пиком.", tip:"Short peek без информации = смерть. Flash first, потом выходи."},
-      {id:"mid",      label:"Mid",       team:"N",  x:30, y:42, w:22, h:18, desc:"Центр карты. Кто контролирует Mid — контролирует и Catwalk (к A) и Apps (к B).", tip:"Smoke Top Mid + Window = T контролирует Mid без потерь. Ключ к карте."},
-      {id:"catwalk",  label:"Catwalk",   team:"N",  x:30, y:62, w:14, h:14, desc:"Выход с Mid к B Apps. Через Jungle и Window — неожиданный фланг на A.", tip:"Catwalk к Apps — связывает Mid и B. Неожиданный маршрут для T."},
-      {id:"jungle",   label:"Jungle",    team:"N",  x:53, y:44, w:13, h:16, desc:"Ключевая зона между Mid и A. Позиция AWP — видно весь вход на A.", tip:"Jungle AWP без смока = T не выходит на Short или Main без потерь."},
-      {id:"a_site",   label:"A Site",    team:"CT", x:31, y:8,  w:28, h:17, desc:"Основной сайт A. Защита: Jungle, Ticket Booth, Short, Stairs. Много углов.", tip:"A hold: один Jungle, один Ticket Booth, один Short — все углы закрыты."},
-      {id:"ct_spawn", label:"CT Spawn",  team:"CT", x:70, y:8,  w:16, h:20, desc:"Стартовая точка CT. Быстрый выход к A через Short или к B через Connector.", tip:"Ротация A→B: 6 секунд. Всегда слушай шаги и звук бомбы."},
-      {id:"b_apps",   label:"B Apps",    team:"CT", x:54, y:62, w:14, h:14, desc:"Вход на B сайт через Catwalk. T заходят сюда с Mid.", tip:"CT агрессивный пик через Apps ранней игры часто убивает неосторожного T."},
-      {id:"b_site",   label:"B Site",    team:"CT", x:60, y:70, w:24, h:18, desc:"B сайт. Van и Bench — главные укрытия. После плента держи Van.", tip:"Молотов Van + smoke Apps = полная блокировка входа T на B."},
-      {id:"van",      label:"Van",       team:"CT", x:74, y:62, w:10, h:10, desc:"Van у B Site — позиция для AWP и рифлеров после плента.", tip:"Van after plant = T не зайдёт с Apps без смока. Держи угол."},
+      // T сторона
+      {id:"t_spawn", label:"T Spawn",  team:"T",
+       path:"M5,70 L22,70 L22,95 L5,95 Z",
+       cx:13, cy:82, desc:"Стартовая позиция T. Раздаёт роли: двое Ramp/Mid, двое A Main, один Palace.", tip:"Первые 5 секунд — выйди к Ramp. Промедление = CT занимают Short."},
+      {id:"ramp",    label:"Ramp",     team:"T",
+       path:"M22,52 L36,52 L36,70 L22,70 Z",
+       cx:29, cy:61, desc:"Коридор к Short и Mid. Быстрый выход не даёт CT занять Short позиции.", tip:"Агрессивный пик через Window flash с Ramp ставит CT в неудобную позицию."},
+      {id:"a_main",  label:"A Main",  team:"T",
+       path:"M5,36 L22,36 L22,70 L5,70 Z",
+       cx:13, cy:53, desc:"Основной заход на A сайт. Под прицелом AWP из Jungle и Ticket Booth.", tip:"Smoke Jungle + Flash A Main + smoke CT = стандартный безопасный A take."},
+      {id:"palace",  label:"Palace",  team:"T",
+       path:"M5,20 L22,20 L22,36 L5,36 Z",
+       cx:13, cy:28, desc:"Альтернативный заход на A. Позволяет зайти с двух сторон одновременно.", tip:"Palace + Main одновременно — CT не успевают покрыть обе позиции."},
+      // Нейтральные зоны (Mid)
+      {id:"short",   label:"Short",   team:"N",
+       path:"M36,20 L52,20 L52,38 L36,38 Z",
+       cx:44, cy:29, desc:"Выход с Ramp к A Site через лестницы. CT часто агрессят здесь ранним пиком.", tip:"Short peek без информации о CT = смерть. Flash first, потом выходи."},
+      {id:"mid",     label:"Mid",     team:"N",
+       path:"M36,38 L60,38 L60,58 L36,58 Z",
+       cx:48, cy:48, desc:"Центр карты. Контроль Mid = контроль Catwalk к A и Apps к B.", tip:"Smoke Top Mid + Window = T контролирует Mid без потерь. Ключ к карте."},
+      {id:"catwalk", label:"Catwalk", team:"N",
+       path:"M36,58 L52,58 L52,72 L36,72 Z",
+       cx:44, cy:65, desc:"Выход с Mid к B Apps. Неожиданный маршрут через Jungle на A.", tip:"Catwalk к Apps — связывает Mid и B. Неожиданный маршрут для T."},
+      {id:"jungle",  label:"Jungle",  team:"N",
+       path:"M52,44 L68,44 L68,62 L52,62 Z",
+       cx:60, cy:53, desc:"Зона между Mid и A. AWP отсюда контролирует весь вход на A сайт.", tip:"Jungle AWP без смока = T не выходит на Short или Main без потерь."},
+      // CT сторона
+      {id:"a_site",  label:"A Site",  team:"CT",
+       path:"M22,5 L68,5 L68,20 L52,20 L52,38 L36,38 L36,20 L22,20 Z",
+       cx:45, cy:14, desc:"Основной сайт A. Ticket Booth, Stairs, Short — много укрытий CT.", tip:"A hold: один Jungle, один Ticket Booth, один Short — все углы закрыты."},
+      {id:"ct_spawn",label:"CT Spawn",team:"CT",
+       path:"M68,5 L95,5 L95,28 L68,28 Z",
+       cx:81, cy:16, desc:"Стартовая точка CT. Быстрый выход к A Short или к B через Connector.", tip:"Ротация A→B: 6 секунд. Всегда слушай шаги и звук бомбы."},
+      {id:"b_apps",  label:"B Apps",  team:"CT",
+       path:"M52,62 L68,62 L68,78 L52,78 Z",
+       cx:60, cy:70, desc:"Вход на B сайт через Catwalk. T заходят сюда с Mid через Catwalk.", tip:"CT агрессивный пик через Apps ранней игры убивает неосторожного T."},
+      {id:"b_site",  label:"B Site",  team:"CT",
+       path:"M60,78 L95,78 L95,95 L60,95 Z",
+       cx:77, cy:86, desc:"Сайт B. Van и Bench — главные укрытия. После плента держи Van.", tip:"Молотов Van + smoke Apps = полная блокировка входа T на B."},
+      {id:"van",     label:"Van",     team:"CT",
+       path:"M82,66 L95,66 L95,78 L82,78 Z",
+       cx:88, cy:72, desc:"Van у B Site — позиция для AWP и рифлеров после плента на B.", tip:"Van after plant = T не зайдёт с Apps без смока. Обязательная позиция."},
     ]
   },
+
   Inferno:{
     key:"Контроль Banana критичен — без него CT не могут ротировать",
-    // Inferno: T spawn — левый низ, A site — правый верх, B site — правый низ, Banana — левый низ
+    // Inferno: T-spawn левый низ, A-site правый верх, B-site правый низ
     zones:[
-      {id:"t_spawn",  label:"T Spawn",   team:"T",  x:4,  y:66, w:14, h:18, desc:"T-спавн. Расходятся: часть на A через Apartments, часть на B через Banana.", tip:"2 на Banana pressure, 3 на A через Apps — стандартный старт раунда."},
-      {id:"a_main",   label:"A Main",    team:"T",  x:4,  y:26, w:14, h:28, desc:"Apartments — основной путь к A. Заход через Arch в сторону A Site.", tip:"Smoke Arch + smoke CT + two flashes = стандартный A take через Apps."},
-      {id:"arch",     label:"Arch",      team:"T",  x:20, y:34, w:14, h:20, desc:"Arch — позиция контроля выхода с Apartments к A. Часто AWP стоит здесь.", tip:"Смок Arch при каждом A пуше — иначе CT AWP закроет весь вход."},
-      {id:"library",  label:"Library",   team:"N",  x:20, y:56, w:14, h:16, desc:"Library — укрытие на пути к A. Хорошо для молотова и позиционирования.", tip:"Library control + Arch smoke = T контролирует всю ситуацию на A."},
-      {id:"banana",   label:"Banana",    team:"N",  x:4,  y:72, w:14, h:18, desc:"Главная улица к B. Кто контролирует Banana — контролирует ротации CT.", tip:"Молотов Top Banana + smoke CT + flash = T берёт Banana без потерь."},
-      {id:"pit",      label:"Pit",       team:"CT", x:50, y:68, w:14, h:14, desc:"Pit под A сайтом — мощная позиция CT. T обязаны смокать перед заходом.", tip:"Pit AWP без смока = T не заходит на A. Сильнейшая позиция на карте."},
-      {id:"a_site",   label:"A Site",    team:"CT", x:50, y:28, w:26, h:28, desc:"Сайт A. Pit, Balcony, Boiler, Dark — много укрытий CT для защиты.", tip:"После плента на A: один за Car, один Pit — перекрывают retake."},
-      {id:"ct_spawn", label:"CT Spawn",  team:"CT", x:72, y:34, w:14, h:22, desc:"CT спавн. Ротация к A и B. Важно не выходить пока нет информации.", tip:"Ротация A→B при потере Banana — 5-6 секунд. Не опаздывай."},
-      {id:"b_site",   label:"B Site",    team:"CT", x:50, y:58, w:26, h:22, desc:"Сайт B. Car, Quad, New Box — укрытия для защиты CT.", tip:"После плента на B: один за Car, один New Box — сложно retake."},
-      {id:"balcony",  label:"Balcony",   team:"CT", x:76, y:58, w:10, h:14, desc:"Balcony/Porch — выход CT к A. Агрессивный ранний пик даёт информацию.", tip:"Early Balcony peek — информация о T позиции без большого риска."},
+      {id:"t_spawn", label:"T Spawn",  team:"T",
+       path:"M5,68 L20,68 L20,95 L5,95 Z",
+       cx:12, cy:81, desc:"T-спавн. Расходятся: часть на A через Apartments, часть на B через Banana.", tip:"2 на Banana pressure, 3 на A через Apps — стандартный старт раунда."},
+      {id:"a_main",  label:"A Main",   team:"T",
+       path:"M5,22 L20,22 L20,56 L5,56 Z",
+       cx:12, cy:39, desc:"Apartments — основной путь к A через Arch и Library.", tip:"Smoke Arch + smoke CT + two flashes = стандартный A take через Apps."},
+      {id:"arch",    label:"Arch",     team:"T",
+       path:"M20,34 L36,34 L36,56 L20,56 Z",
+       cx:28, cy:45, desc:"Arch — позиция AWP CT, контролирует выход T с Apartments.", tip:"Смок Arch при каждом A пуше — иначе CT AWP закроет весь вход на A."},
+      {id:"library", label:"Library",  team:"N",
+       path:"M20,56 L36,56 L36,72 L20,72 Z",
+       cx:28, cy:64, desc:"Library — укрытие на пути к A и переход к Banana control.", tip:"Library control + Arch smoke = T контролирует всю ситуацию на A."},
+      {id:"banana",  label:"Banana",   team:"N",
+       path:"M5,56 L20,56 L20,68 L5,68 Z",
+       cx:12, cy:62, desc:"Главная улица к B. Кто контролирует Banana — контролирует ротации CT.", tip:"Молотов Top Banana + smoke CT + flash = T берёт Banana без потерь."},
+      {id:"pit",     label:"Pit",      team:"CT",
+       path:"M52,66 L68,66 L68,82 L52,82 Z",
+       cx:60, cy:74, desc:"Pit под A сайтом — мощная позиция CT. T обязаны смокать перед заходом.", tip:"Pit AWP без смока = T не заходит на A сайт. Сильнейшая позиция."},
+      {id:"a_site",  label:"A Site",   team:"CT",
+       path:"M36,22 L88,22 L88,66 L52,66 L52,52 L36,52 Z",
+       cx:62, cy:40, desc:"Сайт A. Pit, Balcony, Boiler, Dark — много укрытий CT для защиты.", tip:"После плента на A: один за Car, один Pit — перекрывают retake."},
+      {id:"ct_spawn",label:"CT Spawn", team:"CT",
+       path:"M68,5 L95,5 L95,34 L68,34 Z",
+       cx:81, cy:19, desc:"CT спавн. Ротация к A и B. Важно не выходить пока нет информации.", tip:"Ротация A→B при потере Banana — 5-6 секунд. Не опаздывай."},
+      {id:"b_site",  label:"B Site",   team:"CT",
+       path:"M52,66 L88,66 L88,95 L52,95 Z",
+       cx:70, cy:80, desc:"Сайт B. Car, Quad, New Box — укрытия CT для защиты.", tip:"После плента на B: один за Car, один New Box — сложно retake."},
+      {id:"balcony", label:"Balcony",  team:"CT",
+       path:"M88,34 L95,34 L95,66 L88,66 Z",
+       cx:91, cy:50, desc:"Balcony — выход CT к A. Ранний агрессивный пик даёт информацию.", tip:"Early Balcony peek — информация о T позиции без большого риска."},
     ]
   },
+
   Dust2:{
     key:"Кто контролирует Long A — тот контролирует карту",
-    // Dust2: T spawn — левый низ, Long A — левый верх, A site — центр верх, B — правый низ
+    // Dust2: T-spawn левый центр, Long A — верхний лево, A-site центр верх, B правый низ
     zones:[
-      {id:"t_spawn",  label:"T Spawn",   team:"T",  x:4,  y:62, w:14, h:20, desc:"T спавн. Разделяйся: Long A, Catwalk/Mid или B Tunnels.", tip:"Long push в первые секунды — если у CT нет AWP, тяжело остановить."},
-      {id:"long_a",   label:"Long A",    team:"T",  x:4,  y:14, w:20, h:28, desc:"Long — самая важная часть карты. Контроль = давление на A с двух сторон.", tip:"Smoke CT Cross + smoke Long Corner = безопасный Long take для T."},
-      {id:"cat",      label:"Catwalk",   team:"N",  x:30, y:42, w:14, h:12, desc:"Catwalk ведёт на Platform к A. Контроль Catwalk даёт Mid и Short.", tip:"Smoke Xbox при Catwalk push = T выходит на Short без риска от CT."},
-      {id:"mid",      label:"Mid",       team:"N",  x:30, y:56, w:16, h:14, desc:"Mid — Xbox, Squeaky door. Контроль Mid = Split на A через Short.", tip:"Mid control + Long = A take с двух сторон. CT не успевают покрыть."},
-      {id:"b_tunnels",label:"B Tunnels", team:"T",  x:4,  y:74, w:18, h:14, desc:"Тоннели к B — быстрый и прямой путь к B Site.", tip:"Flash через потолок тоннеля + rush = быстрый B take без смоков."},
-      {id:"a_site",   label:"A Site",    team:"CT", x:46, y:10, w:26, h:28, desc:"Сайт A. Long Corner, Short, Car — главные углы. Много позиций.", tip:"A hold: один Long, один Short, один Car — все входы закрыты."},
-      {id:"short",    label:"A Short",   team:"CT", x:36, y:22, w:12, h:18, desc:"Short — быстрый выход CT к A. Часто агрессивные пики или AWP с Platform.", tip:"Short CT peek в начале раунда даёт информацию о Mid и T позициях."},
-      {id:"b_site",   label:"B Site",    team:"CT", x:58, y:58, w:22, h:24, desc:"Сайт B. Car, Boxes — укрытия. Молотов или смок перекрывают вход.", tip:"Smoke B Door + smoke Window = T не видит CT ни слева ни справа."},
-      {id:"b_door",   label:"B Door",    team:"CT", x:36, y:62, w:14, h:12, desc:"B Door — выход CT к B. Быстрая ротация если T пошли через тоннели.", tip:"B Door peek = информация о T в тоннелях. Осторожно — легко поймать."},
-      {id:"ct_spawn", label:"CT Spawn",  team:"CT", x:72, y:30, w:14, h:22, desc:"CT спавн. Быстрый выход к A и B. Главный хаб для ротаций.", tip:"Ротация A→B: 5 секунд через CT. Слушай бомбу и шаги."},
+      {id:"t_spawn",  label:"T Spawn",  team:"T",
+       path:"M5,60 L22,60 L22,88 L5,88 Z",
+       cx:13, cy:74, desc:"T спавн. Разделяйся: Long A, Catwalk/Mid или B Tunnels.", tip:"Long push в первые секунды — если у CT нет AWP, тяжело остановить."},
+      {id:"long_a",   label:"Long A",   team:"T",
+       path:"M5,12 L28,12 L28,48 L5,48 Z",
+       cx:16, cy:30, desc:"Long — самая важная часть карты. Контроль = давление на A с двух сторон.", tip:"Smoke CT Cross + smoke Long Corner = безопасный Long take для T."},
+      {id:"b_tunnels",label:"B Tunnels",team:"T",
+       path:"M5,88 L28,88 L28,95 L5,95 Z",
+       cx:16, cy:91, desc:"Тоннели к B — быстрый и прямой путь к B Site.", tip:"Flash через потолок тоннеля + rush = быстрый B take без смоков."},
+      {id:"cat",      label:"Catwalk",  team:"N",
+       path:"M28,38 L44,38 L44,52 L28,52 Z",
+       cx:36, cy:45, desc:"Catwalk ведёт на Platform к A. Контроль Catwalk даёт Mid и Short.", tip:"Smoke Xbox при Catwalk push = T выходит на Short без риска от CT."},
+      {id:"mid",      label:"Mid",      team:"N",
+       path:"M28,52 L44,52 L44,68 L28,68 Z",
+       cx:36, cy:60, desc:"Mid — Xbox, Squeaky door. Контроль Mid = Split на A через Short.", tip:"Mid control + Long = A take с двух сторон. CT не успевают покрыть."},
+      {id:"a_site",   label:"A Site",   team:"CT",
+       path:"M44,5 L78,5 L78,38 L44,38 Z",
+       cx:61, cy:21, desc:"Сайт A. Long Corner, Short, Car — главные углы. Много позиций.", tip:"A hold: один Long, один Short, один Car — все входы закрыты."},
+      {id:"short",    label:"A Short",  team:"CT",
+       path:"M28,12 L44,12 L44,38 L28,38 Z",
+       cx:36, cy:25, desc:"Short — быстрый выход CT к A. Часто агрессивные пики.", tip:"Short CT peek в начале раунда даёт информацию о Mid и T позициях."},
+      {id:"b_site",   label:"B Site",   team:"CT",
+       path:"M60,60 L88,60 L88,88 L60,88 Z",
+       cx:74, cy:74, desc:"Сайт B. Car, Boxes — укрытия. Молотов или смок перекрывают вход.", tip:"Smoke B Door + smoke Window = T не видит CT ни слева ни справа."},
+      {id:"b_door",   label:"B Door",   team:"CT",
+       path:"M44,60 L60,60 L60,72 L44,72 Z",
+       cx:52, cy:66, desc:"B Door — выход CT к B. Быстрая ротация если T пошли через тоннели.", tip:"B Door peek = информация о T в тоннелях. Осторожно — легко поймать."},
+      {id:"ct_spawn", label:"CT Spawn", team:"CT",
+       path:"M78,5 L95,5 L95,40 L78,40 Z",
+       cx:86, cy:22, desc:"CT спавн. Быстрый выход к A и B. Главный хаб для ротаций.", tip:"Ротация A→B: 5 секунд через CT. Слушай бомбу и шаги."},
     ]
   },
+
   Nuke:{
     key:"Контроль Outside даёт доступ к обоим сайтам",
-    // Nuke: T spawn — левый центр, Outside — центр, A site верхний — правый верх, B site нижний — правый низ
+    // Nuke: T-spawn левый центр, Outside — центральная зона, A верхний этаж (правый верх), B нижний (правый низ)
     zones:[
-      {id:"t_spawn",  label:"T Spawn",   team:"T",  x:4,  y:40, w:14, h:18, desc:"T спавн. Выбор: Outside к Ramp (A) или Lobby к Ramp (B).", tip:"Split Outside + Lobby = CT не понимает куда идут T. Классический Nuke."},
-      {id:"outside",  label:"Outside",   team:"N",  x:20, y:22, w:22, h:32, desc:"Outside — ключевая зона. Контроль даёт выход к A Main и к Ramp (B).", tip:"Smoke Hut + smoke Ramp + Outside control = T выбирает A или B свободно."},
-      {id:"lobby",    label:"Lobby",     team:"T",  x:4,  y:60, w:14, h:22, desc:"Lobby — путь к B через Ramp. Менее популярный но неожиданный маршрут.", tip:"Lobby rush + Outside noise = CT не понимает куда идти. Путаница."},
-      {id:"ramp",     label:"Ramp",      team:"T",  x:20, y:58, w:16, h:20, desc:"Ramp — заход T на B снизу. Часто здесь CT встречают через Ramp Room.", tip:"Smoke Ramp Room + flash = безопасный вход без встречного боя."},
-      {id:"secret",   label:"Secret",    team:"CT", x:50, y:64, w:14, h:16, desc:"Secret — скрытый проход к нижнему B. T редко используют но очень эффективно.", tip:"Secret smoke = T входит на B без контакта с CT."},
-      {id:"heaven",   label:"Heaven",    team:"CT", x:56, y:6,  w:14, h:14, desc:"Heaven — позиция над A сайтом. Отсюда видно весь сайт. Мощная позиция AWP.", tip:"Heaven AWP без смока = T не выходит на A без потерь."},
-      {id:"a_site",   label:"A Site",    team:"CT", x:42, y:14, w:26, h:28, desc:"Сайт A (верхний). Ramp, Heaven, Hut — зоны защиты CT.", tip:"Heaven hold без Outside smoke = CT AWP контролирует весь A."},
-      {id:"b_site",   label:"B Site",    team:"CT", x:42, y:54, w:26, h:24, desc:"Сайт B (нижний). Vent, Ducting — позиции CT. Два уровня.", tip:"B site hold: один Vent, один main — закрываются все нижние входы."},
-      {id:"ct_spawn", label:"CT Spawn",  team:"CT", x:70, y:34, w:14, h:22, desc:"CT спавн. Ротация между A и B занимает время — нужно читать T заранее.", tip:"Nuke ротация сложнее всех карт. Читай T паттерны заранее."},
+      {id:"t_spawn", label:"T Spawn",  team:"T",
+       path:"M5,42 L20,42 L20,65 L5,65 Z",
+       cx:12, cy:53, desc:"T спавн. Выбор: Outside к Ramp (A) или Lobby к Ramp (B).", tip:"Split Outside + Lobby = CT не понимает куда идут T. Классический Nuke."},
+      {id:"outside", label:"Outside",  team:"N",
+       path:"M20,22 L48,22 L48,58 L20,58 Z",
+       cx:34, cy:40, desc:"Outside — ключевая зона. Контроль даёт выход к A Main и к Ramp (B).", tip:"Smoke Hut + smoke Ramp + Outside control = T выбирает A или B свободно."},
+      {id:"lobby",   label:"Lobby",    team:"T",
+       path:"M5,65 L20,65 L20,88 L5,88 Z",
+       cx:12, cy:76, desc:"Lobby — путь к B через Ramp. Менее популярный но неожиданный маршрут.", tip:"Lobby rush + Outside noise = CT не понимает куда идти."},
+      {id:"ramp",    label:"Ramp",     team:"T",
+       path:"M20,58 L38,58 L38,78 L20,78 Z",
+       cx:29, cy:68, desc:"Ramp — заход T на B снизу. Часто здесь CT встречают через Ramp Room.", tip:"Smoke Ramp Room + flash = безопасный вход без встречного боя."},
+      {id:"secret",  label:"Secret",   team:"CT",
+       path:"M48,64 L64,64 L64,80 L48,80 Z",
+       cx:56, cy:72, desc:"Secret — скрытый проход к нижнему B. T редко используют но эффективно.", tip:"Secret smoke = T входит на B без контакта с CT."},
+      {id:"heaven",  label:"Heaven",   team:"CT",
+       path:"M62,5 L80,5 L80,20 L62,20 Z",
+       cx:71, cy:12, desc:"Heaven — позиция над A сайтом. Отсюда виден весь сайт. AWP позиция.", tip:"Heaven AWP без смока = T не выходит на A без потерь."},
+      {id:"a_site",  label:"A Site",   team:"CT",
+       path:"M48,5 L95,5 L95,42 L62,42 L62,20 L80,20 L80,5 L48,5 Z",
+       cx:68, cy:26, desc:"Сайт A (верхний). Ramp, Heaven, Hut — зоны защиты CT.", tip:"Heaven hold без Outside smoke = CT AWP контролирует весь A."},
+      {id:"b_site",  label:"B Site",   team:"CT",
+       path:"M48,42 L95,42 L95,78 L64,78 L64,64 L48,64 Z",
+       cx:70, cy:58, desc:"Сайт B (нижний). Vent, Ducting — позиции CT. Два уровня.", tip:"B site hold: один Vent, один main — закрываются все нижние входы."},
+      {id:"ct_spawn",label:"CT Spawn", team:"CT",
+       path:"M78,78 L95,78 L95,95 L78,95 Z",
+       cx:86, cy:86, desc:"CT спавн. Ротация между A и B занимает время — нужно читать T заранее.", tip:"Nuke ротация сложнее всех карт. Читай T паттерны заранее."},
     ]
   },
+
   Ancient:{
     key:"Контроль Mid через Donut открывает оба сайта",
-    // Ancient: T spawn — левый низ, A site — левый верх, B site — правый низ, Mid — центр
+    // Ancient: T-spawn левый низ, A-site левый верх, B-site правый низ, Mid центр
     zones:[
-      {id:"t_spawn",  label:"T Spawn",   team:"T",  x:4,  y:68, w:14, h:18, desc:"T спавн. Три маршрута: A Main, Mid через Donut или B Main.", tip:"Mid pressure + A fake = CT ошибается в ротации. Классика Ancient."},
-      {id:"a_main",   label:"A Main",    team:"T",  x:4,  y:20, w:14, h:30, desc:"A Main — основной прямой заход на A. Длинный коридор под контролем CT.", tip:"Smoke Pillar + Flash = стандартный безопасный вход на A через Main."},
-      {id:"donut",    label:"Donut",     team:"N",  x:22, y:46, w:16, h:18, desc:"Donut — ключевая переходная зона от Mid к A. Split с двух сторон.", tip:"Donut control + A Main push одновременно = CT не успевает покрыть."},
-      {id:"mid",      label:"Mid",       team:"N",  x:36, y:52, w:18, h:16, desc:"Mid — центральный контроль. Через Donut к A, через Cave — к B.", tip:"Mid smoke + Donut push = CT теряет информацию. Эффективный split."},
-      {id:"b_main",   label:"B Main",    team:"T",  x:4,  y:72, w:14, h:16, desc:"B Main — заход на B. Менее опасный, но CT часто агрессят здесь.", tip:"B Main + Cave pressure = CT не может держать все углы на B."},
-      {id:"a_site",   label:"A Site",    team:"CT", x:30, y:8,  w:30, h:30, desc:"Сайт A. Много колонн, Temple — чистить очень сложно после плента.", tip:"A hold: один Pillar, один Temple — нет слепых углов для T."},
-      {id:"b_site",   label:"B Site",    team:"CT", x:52, y:60, w:28, h:24, desc:"Сайт B. Cave, Water — укрытия. Компактный но хаотичный сайт.", tip:"B hold: один Cave, один Water — закрывают оба входа на B."},
-      {id:"water",    label:"Water",     team:"CT", x:42, y:68, w:12, h:14, desc:"Water — зона у B сайта. Позиция информации при заходе T с B Main.", tip:"Water hold = информация и перекрытие B Main. Ценная позиция."},
-      {id:"ct_spawn", label:"CT Spawn",  team:"CT", x:72, y:32, w:14, h:24, desc:"CT спавн. Центральное положение — ротация к A и B примерно равна.", tip:"CT ротация через Mid: A→B за 5 секунд. Ключ в скорости реакции."},
+      {id:"t_spawn", label:"T Spawn",  team:"T",
+       path:"M5,72 L20,72 L20,95 L5,95 Z",
+       cx:12, cy:83, desc:"T спавн. Три маршрута: A Main, Mid через Donut или B Main.", tip:"Mid pressure + A fake = CT ошибается в ротации. Классика Ancient."},
+      {id:"a_main",  label:"A Main",   team:"T",
+       path:"M5,22 L20,22 L20,72 L5,72 Z",
+       cx:12, cy:47, desc:"A Main — основной прямой заход на A. Длинный коридор под контролем CT.", tip:"Smoke Pillar + Flash = стандартный безопасный вход на A через Main."},
+      {id:"donut",   label:"Donut",    team:"N",
+       path:"M20,50 L38,50 L38,68 L20,68 Z",
+       cx:29, cy:59, desc:"Donut — ключевой переход от Mid к A. Split с двух сторон.", tip:"Donut control + A Main push одновременно = CT не успевает покрыть."},
+      {id:"mid",     label:"Mid",      team:"N",
+       path:"M38,50 L58,50 L58,72 L38,72 Z",
+       cx:48, cy:61, desc:"Mid — центральный контроль. Через Donut к A, через Cave — к B.", tip:"Mid smoke + Donut push = CT теряет информацию. Эффективный split."},
+      {id:"b_main",  label:"B Main",   team:"T",
+       path:"M5,80 L20,80 L20,95 L5,95 Z",
+       cx:12, cy:87, desc:"B Main — заход на B. Менее опасный, но CT часто агрессят здесь.", tip:"B Main + Cave pressure = CT не может держать все углы на B."},
+      {id:"a_site",  label:"A Site",   team:"CT",
+       path:"M20,5 L65,5 L65,32 L38,32 L38,50 L20,50 Z",
+       cx:40, cy:22, desc:"Сайт A. Много колонн, Temple — чистить очень сложно после плента.", tip:"A hold: один Pillar, один Temple — нет слепых углов для T."},
+      {id:"b_site",  label:"B Site",   team:"CT",
+       path:"M58,64 L95,64 L95,95 L58,95 Z",
+       cx:76, cy:79, desc:"Сайт B. Cave, Water — укрытия. Компактный но хаотичный сайт.", tip:"B hold: один Cave, один Water — закрывают оба входа на B."},
+      {id:"water",   label:"Water",    team:"CT",
+       path:"M42,72 L58,72 L58,88 L42,88 Z",
+       cx:50, cy:80, desc:"Water — зона у B сайта. Позиция информации при заходе T с B Main.", tip:"Water hold = информация и перекрытие B Main. Ценная позиция."},
+      {id:"ct_spawn",label:"CT Spawn", team:"CT",
+       path:"M65,5 L95,5 L95,36 L65,36 Z",
+       cx:80, cy:20, desc:"CT спавн. Центральное положение — ротация к A и B примерно равна.", tip:"CT ротация через Mid: A→B за 5 секунд. Ключ в скорости реакции."},
     ]
   },
+
   Anubis:{
     key:"Контроль Canal критичен для обеих команд",
-    // Anubis: T spawn — левый низ, A site — правый верх, B site — правый низ, Canal — центр
+    // Anubis: T-spawn левый низ, A-site правый верх, B-site правый низ, Canal центр
     zones:[
-      {id:"t_spawn",  label:"T Spawn",   team:"T",  x:4,  y:62, w:14, h:20, desc:"T спавн. Два маршрута: A Main вправо или Canal/B Main влево.", tip:"Canal control должен быть получен в первые 30 секунд раунда."},
-      {id:"canal",    label:"Canal",     team:"N",  x:22, y:48, w:22, h:18, desc:"Canal — центральная зона. Кто берёт Canal — контролирует карту.", tip:"Smoke Canal + push = CT теряет информацию о split атаках T."},
-      {id:"a_main",   label:"A Main",    team:"T",  x:20, y:16, w:18, h:24, desc:"A Main — заход на A. Прямой путь под контролем Palace AWP.", tip:"Smoke Palace + Flash A = безопасный выход без потерь от AWP."},
-      {id:"b_main",   label:"B Main",    team:"T",  x:4,  y:76, w:16, h:14, desc:"B Main — заход на B. Узкий коридор, CT часто используют utility здесь.", tip:"B Main молотов + smoke CT = T входит на B без потерь."},
-      {id:"palace",   label:"Palace",    team:"CT", x:52, y:8,  w:14, h:22, desc:"Palace / Heaven у A — мощная AWP позиция CT. Держит весь вход.", tip:"Palace AWP без смока = T не выходит на A. Топ позиция карты."},
-      {id:"courtyard",label:"Courtyard", team:"N",  x:52, y:68, w:14, h:18, desc:"Courtyard — переход B Main / B Site. Опасная зона для обеих сторон.", tip:"Courtyard control = информация о B push и возможность flanking."},
-      {id:"a_site",   label:"A Site",    team:"CT", x:58, y:14, w:26, h:30, desc:"Сайт A. Palace, Pillar, Heaven — много укрытий для CT.", tip:"A hold: один Palace, один Pillar — надёжная защита при 2-3 CT."},
-      {id:"b_site",   label:"B Site",    team:"CT", x:60, y:62, w:24, h:24, desc:"Сайт B. Bridge, Courtyard — после плента держи оба входа.", tip:"B hold после плента: один Courtyard, один Bridge — retake очень сложен."},
-      {id:"ct_spawn", label:"CT Spawn",  team:"CT", x:76, y:36, w:12, h:22, desc:"CT спавн. Очень быстрая ротация к A и B — центральное положение.", tip:"Anubis CT ротация быстрейшая. Реагируй на Canal потерю сразу."},
+      {id:"t_spawn",  label:"T Spawn",  team:"T",
+       path:"M5,68 L20,68 L20,95 L5,95 Z",
+       cx:12, cy:81, desc:"T спавн. Два маршрута: A Main правее или Canal/B Main влево.", tip:"Canal control должен быть получен в первые 30 секунд раунда."},
+      {id:"canal",    label:"Canal",    team:"N",
+       path:"M20,44 L46,44 L46,68 L20,68 Z",
+       cx:33, cy:56, desc:"Canal — центральная зона. Кто берёт Canal — контролирует карту.", tip:"Smoke Canal + push = CT теряет информацию о split атаках T."},
+      {id:"a_main",   label:"A Main",   team:"T",
+       path:"M20,14 L40,14 L40,44 L20,44 Z",
+       cx:30, cy:29, desc:"A Main — заход на A. Прямой путь под контролем Palace AWP.", tip:"Smoke Palace + Flash A = безопасный выход без потерь от AWP."},
+      {id:"b_main",   label:"B Main",   team:"T",
+       path:"M5,80 L20,80 L20,95 L5,95 Z",
+       cx:12, cy:87, desc:"B Main — заход на B. Узкий коридор, CT используют utility здесь.", tip:"B Main молотов + smoke CT = T входит на B без потерь."},
+      {id:"palace",   label:"Palace",   team:"CT",
+       path:"M58,5 L76,5 L76,28 L58,28 Z",
+       cx:67, cy:16, desc:"Palace — мощная AWP позиция CT. Держит весь вход на A.", tip:"Palace AWP без смока = T не выходит на A сайт. Топ позиция."},
+      {id:"courtyard",label:"Courtyard",team:"N",
+       path:"M46,68 L62,68 L62,88 L46,88 Z",
+       cx:54, cy:78, desc:"Courtyard — переход B Main / B Site. Опасная зона для обеих сторон.", tip:"Courtyard control = информация о B push и возможность flanking."},
+      {id:"a_site",   label:"A Site",   team:"CT",
+       path:"M40,5 L95,5 L95,44 L58,44 L58,28 L76,28 L76,5 L40,5 Z",
+       cx:68, cy:26, desc:"Сайт A. Palace, Pillar, Heaven — много укрытий для CT.", tip:"A hold: один Palace, один Pillar — надёжная защита при 2-3 CT."},
+      {id:"b_site",   label:"B Site",   team:"CT",
+       path:"M62,68 L95,68 L95,95 L62,95 Z",
+       cx:78, cy:81, desc:"Сайт B. Bridge, Courtyard — после плента держи оба входа.", tip:"B hold после плента: один Courtyard, один Bridge — retake очень сложен."},
+      {id:"ct_spawn", label:"CT Spawn", team:"CT",
+       path:"M78,44 L95,44 L95,68 L78,68 Z",
+       cx:86, cy:56, desc:"CT спавн. Очень быстрая ротация к A и B — центральное положение.", tip:"Anubis CT ротация быстрейшая. Реагируй на Canal потерю сразу."},
     ]
   },
 };
@@ -2493,30 +2686,36 @@ function MapCalloutView({mapName}) {
                 const isActive = activeZone===z.id;
                 const tc = teamColor(z.team);
                 const isSelected = selected===z.id;
+                // Use path if available, otherwise fallback to rect
+                const shapeProps = {
+                  fill: isActive?tc+"55":teamBg(z.team),
+                  stroke: isActive?tc:tc+"66",
+                  strokeWidth: isActive?"0.9":"0.45",
+                  style:{transition:"all .15s ease",cursor:"pointer"},
+                  onMouseEnter:()=>setHovered(z.id),
+                  onMouseLeave:()=>setHovered(null),
+                  onClick:()=>setSelected(isSelected?null:z.id),
+                };
                 return(
                   <g key={z.id}>
-                    <rect
-                      x={z.x} y={z.y} width={z.w} height={z.h}
-                      fill={isActive?tc+"44":teamBg(z.team)}
-                      stroke={isActive?tc:tc+"55"}
-                      strokeWidth={isActive?0.8:0.4}
-                      rx="1"
-                      style={{transition:"all .15s ease",cursor:"pointer"}}
-                      onMouseEnter={()=>setHovered(z.id)}
-                      onMouseLeave={()=>setHovered(null)}
-                      onClick={()=>setSelected(isSelected?null:z.id)}
-                    />
-                    {/* Zone label */}
+                    {z.path
+                      ? <path d={z.path} rx="0" {...shapeProps}/>
+                      : <rect x={z.x} y={z.y} width={z.w} height={z.h} rx="1" {...shapeProps}/>
+                    }
+                    {/* Zone label — always at cx/cy center */}
                     <text
-                      x={z.x+z.w/2} y={z.y+z.h/2+0.5}
+                      x={z.cx||(z.x+z.w/2)} y={(z.cy||(z.y+z.h/2))+0.5}
                       textAnchor="middle" dominantBaseline="middle"
-                      fill={isActive?tc:tc+"cc"}
-                      fontSize={z.w<10||z.h<8?"2.2":"2.8"}
+                      fill={isActive?tc:"#ffffffaa"}
+                      fontSize={isActive?"3.2":"2.6"}
                       fontWeight={isActive?"bold":"normal"}
                       style={{pointerEvents:"none",userSelect:"none",transition:"all .15s ease",fontFamily:"monospace"}}
                     >{z.label}</text>
                     {/* Selected indicator */}
-                    {isSelected&&<rect x={z.x} y={z.y} width={z.w} height={z.h}
+                    {isSelected&&z.path&&<path d={z.path}
+                      fill="none" stroke={tc} strokeWidth="1"
+                      strokeDasharray="2 1" style={{pointerEvents:"none"}}/>}
+                    {isSelected&&!z.path&&<rect x={z.x} y={z.y} width={z.w} height={z.h}
                       fill="none" stroke={tc} strokeWidth="1" rx="1"
                       strokeDasharray="2 1" style={{pointerEvents:"none"}}/>}
                   </g>
