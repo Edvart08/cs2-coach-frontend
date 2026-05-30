@@ -15,7 +15,8 @@ const ANALYSIS_COLOR = {Новичок:"#ff5544",Средний:"#ffaa33",Хор
 const C = {
   bg:"#0a0a07", card:"#141409", border:"#2e2e1e",
   yellow:"#f5c518", orange:"#ff8844", blue:"#74c6f5",
-  label:"#c8c0a0",   // ярче: читаемые подписи
+  label:"#c8c0a0",   
+  // ярче: читаемые подписи
   value:"#f5eed8",   // ярче: заголовки и значения
   muted:"#9a9270",   // ярче: второстепенный текст
   win:"#66ee66", lose:"#ff6655", text:"#ddd6bc",
@@ -42,6 +43,22 @@ const css = `
     background-size:600px 100%;animation:shimmer 1.5s infinite linear;border-radius:2px;}
   .glow-btn:hover:not(:disabled){box-shadow:0 0 28px #f5c51855;}
   .match-row:hover{background:#181810 !important;}
+  
+  /* Стили для полигонов интерактивной карты */
+  .map-zone-poly {
+    fill: #f5c51800;
+    stroke: #f5c51833;
+    stroke-width: 0.5;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  .map-zone-poly:hover, .map-zone-poly.active {
+    fill: #f5c5183a;
+    stroke: #f5c518;
+    stroke-width: 1.2;
+    filter: drop-shadow(0px 0px 4px #f5c518aa);
+  }
+
   /* ── Mobile ── */
   @media(max-width:768px){
     .desktop-nav{display:none !important;}
@@ -59,6 +76,7 @@ const css = `
     .score-rings{flex-direction:row !important;justify-content:space-around !important;}
     .chat-panel{width:100% !important;right:0 !important;bottom:64px !important;}
     .search-bar{display:none !important;}
+    .maps-layout { grid-template-columns: 1fr !important; }
   }
   @media(min-width:769px){
     .mobile-nav{display:none !important;}
@@ -225,7 +243,6 @@ function HeroCard({player, source}) {
   const form = arr(fc?.matches).slice(0,7).map(m=>m.result==="1");
   const eloCount = useCountUp(elo);
   const isFaceit = source === "faceit";
-  const accentColor = isFaceit ? C.orange : C.blue;
 
   const stats = isFaceit
     ? [{l:"K/D",v:fc?.lifetime?.kd||"—"},{l:"WIN%",v:fc?.lifetime?.winrate?(fc.lifetime.winrate+"%"):"—"},{l:"HS%",v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—"},{l:"МАТЧИ",v:fc?.lifetime?.matches||"—"}]
@@ -314,11 +331,11 @@ function ChartsSection({faceit}) {
   const adrData = matches.map(m=>parseFloat(m.adr)||0).filter(v=>v>0);
   const lt = faceit?.lifetime||{};
   const radarAxes = [
-    {label:"K/D",  value:Math.min(100,(parseFloat(lt.kd)||0)*55),   raw:lt.kd||"0"},
-    {label:"HS%",  value:parseFloat(lt.hs)||0,                       raw:(lt.hs||"0")+"%"},
-    {label:"WIN%", value:parseFloat(lt.winrate)||0,                   raw:(lt.winrate||"0")+"%"},
-    {label:"K/R",  value:Math.min(100,(parseFloat(lt.kr)||0)*120),   raw:lt.kr||"0"},
-    {label:"СТРИК",value:Math.min(100,(parseInt(lt.longest_streak)||0)*10),raw:lt.longest_streak||"0"},
+    {label:"K/D",   value:Math.min(100,(parseFloat(lt.kd)||0)*55),   raw:lt.kd||"0"},
+    {label:"HS%",   value:parseFloat(lt.hs)||0,                      raw:(lt.hs||"0")+"%"},
+    {label:"WIN%",  value:parseFloat(lt.winrate)||0,                 raw:(lt.winrate||"0")+"%"},
+    {label:"K/R",   value:Math.min(100,(parseFloat(lt.kr)||0)*120),   raw:lt.kr||"0"},
+    {label:"СТРИК", value:Math.min(100,(parseInt(lt.longest_streak)||0)*10),raw:lt.longest_streak||"0"},
   ];
 
   const Chart = ({title,data,color,unit=""}) => (
@@ -366,9 +383,143 @@ function ChartsSection({faceit}) {
   );
 }
 
+// ── DATA FOR TACTICAL INTERACTIVE MAPS ────────────────────────────────────────
+const mapsData = {
+  mirage: {
+    name: "Mirage",
+    img: "2436117307_preview_mirage.jpg",
+    zones: [
+      { id: "b_site", name: "Плент B", desc: "Зона установки бомбы B. Защищается с ковров, машины и бэкстайта.", points: "11.2,16.5 28.5,16.5 28.5,31.2 11.2,31.2" },
+      { id: "b_apps", name: "Ковры B", desc: "Апартаменты на подходе к Б-пленту. Замкнутое пространство, аккуратнее с девайсами.", points: "21.5,9.5 43.2,9.5 43.2,14.2 21.5,14.2" },
+      { id: "mid", name: "Мид (Центр)", desc: "Критически важная зона контроля карты. Соединяет топ-мид, коннектор и шорт.", points: "45.2,50.2 67.5,50.2 67.5,57.5 45.2,57.5" },
+      { id: "connector", name: "Коннектор", desc: "Переход из мида на А-плент. Позиция для снайпера или опорника.", points: "45.0,57.5 54.5,57.5 54.5,69.5 45.0,69.5" },
+      { id: "jungle", name: "Джунгли", desc: "Позиция защиты возле окна. Контролирует коннектор и выход с паласа.", points: "34.8,64.2 45.0,64.2 45.0,76.5 34.8,76.5" },
+      { id: "a_site", name: "Плент A", desc: "Зона установки бомбы А. Открытая площадка, простреливается со многих позиций.", points: "50.5,80.2 63.8,80.2 63.8,89.5 50.5,89.5" },
+      { id: "palace", name: "Дворец (Палас)", desc: "Заход на А-плент для атаки. Часто используется для раскидок.", points: "71.2,80.2 87.5,80.2 87.5,89.5 71.2,89.5" }
+    ]
+  },
+  inferno: {
+    name: "Inferno",
+    img: "2436117307_preview_inferno.jpg",
+    zones: [
+      { id: "t_spawn", name: "T Спавн", desc: "Стартовая позиция атаки.", points: "0.8,60.5 9.6,60.5 9.6,77.5 0.8,77.5" },
+      { id: "banana", name: "Банан", desc: "Главная точка столкновения на карте. Контроль банана дает выход на B.", points: "39.5,38.2 47.2,38.2 40.2,60.5 35.8,50.5" },
+      { id: "b_site", name: "Плент B", desc: "Точка Б вокруг фонтана. Удерживается за счет смоков и глухого удержания позиций.", points: "42.5,16.5 53.2,16.5 53.2,28.2 42.5,28.2" },
+      { id: "mid", name: "Мид", desc: "Центральный коридор, ведущий к ребрам и шорту.", points: "46.2,67.5 61.2,67.5 61.2,71.2 46.2,71.2" },
+      { id: "a_site", name: "Плент A", desc: "Зона А. Включает в себя дефолт, ковры, пит (пески) и библиотеку.", points: "77.2,65.2 86.2,65.2 86.2,78.2 77.2,78.2" }
+    ]
+  },
+  dust2: {
+    name: "Dust 2",
+    img: "2436117307_preview_Dust 2.jpg",
+    zones: [
+      { id: "b_site", name: "Плент B", desc: "Закрытый плент. Выходы только через туннель (темку) или двери Б.", points: "15.2,13.2 25.5,13.2 25.5,21.5 15.2,21.5" },
+      { id: "tunnels", name: "Туннели (Темка)", desc: "Верхняя и нижняя темка. Основное направление движения атаки на Б.", points: "4.2,46.5 25.2,46.5 25.2,54.2 4.2,54.2" },
+      { id: "mid", name: "Мид", desc: "Центр карты. Разделяет респавны и открывает вид на шорт через двери.", points: "42.5,50.2 49.5,50.2 49.5,63.5 42.5,63.5" },
+      { id: "a_long", name: "Длина (Лонг)", desc: "Длинная открытая дистанция. Рай для снайперов с AWP.", points: "84.2,32.5 93.5,32.5 93.5,59.2 84.2,59.2" },
+      { id: "a_site", name: "Плент A", desc: "Зона А на возвышении. Защищается с длины, шорта и кт-спавна.", points: "78.2,16.5 85.2,16.5 85.2,24.2 78.2,24.2" }
+    ]
+  },
+  overpass: { name: "Overpass", img: "2436117307_preview_overpass.jpg", zones: [] },
+  train: { name: "Train", img: "2436117307_preview_Train.jpg", zones: [] }
+};
+
+// ── TACTICAL MAPS COMPONENT ──────────────────────────────────────────────────
+function TacticalMaps() {
+  const [selectedMap, setSelectedMap] = useState("mirage");
+  const [activeZone, setActiveZone] = useState(null);
+  
+  const currentMap = mapsData[selectedMap] || mapsData.mirage;
+
+  return (
+    <div style={{background: C.card, border: `1px solid ${C.border}`, padding: "20px", borderRadius: "2px", animation: "up .4s ease both"}}>
+      <div style={{fontSize: "15px", letterSpacing: "2px", color: C.yellow, fontWeight: 700, marginBottom: "16px"}}>
+        🗺️ ИНТЕРАКТИВНЫЙ РАЗБОР КАРТ
+      </div>
+      
+      {/* Навигация по картам */}
+      <div style={{display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "20px"}}>
+        {Object.keys(mapsData).map(key => (
+          <button 
+            key={key} 
+            onClick={() => { setSelectedMap(key); setActiveZone(null); }}
+            style={{
+              padding: "8px 16px",
+              background: selectedMap === key ? "#f5c51822" : "transparent",
+              border: `1px solid ${selectedMap === key ? C.yellow : C.border}`,
+              color: selectedMap === key ? C.yellow : C.muted,
+              fontFamily: "'Courier New', monospace",
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "2px",
+              cursor: "pointer",
+              transition: "all .15s"
+            }}
+          >
+            {mapsData[key].name.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      <div className="maps-layout" style={{display: "grid", gridTemplateColumns: "1fr 320px", gap: "20px"}}>
+        {/* Интерактивное полотно карты */}
+        <div style={{position: "relative", border: `1px solid ${C.border}`, background: "#080805", display: "flex", alignItems: "center", justifyContent: "center"}}>
+          <div style={{position: "relative", width: "100%", maxWidth: "600px"}}>
+            <img 
+              src={currentMap.img} 
+              alt={currentMap.name} 
+              style={{width: "100%", height: "auto", display: "block", filter: "opacity(0.85)"}}
+            />
+            
+            {/* SVG оверлей для отрисовки векторов кликабельных зон поверх картинки */}
+            <svg 
+              viewBox="0 0 100 100" 
+              style={{position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "auto"}}
+            >
+              {arr(currentMap.zones).map(zone => (
+                <polygon
+                  key={zone.id}
+                  points={zone.points}
+                  className={`map-zone-poly ${activeZone?.id === zone.id ? "active" : ""}`}
+                  onMouseEnter={() => setActiveZone(zone)}
+                  onMouseLeave={() => setActiveZone(null)}
+                  onClick={() => setActiveZone(zone)}
+                />
+              ))}
+            </svg>
+          </div>
+        </div>
+
+        {/* Боковая панель информации об активной зоне */}
+        <div style={{display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#0a0a07", border: `1px solid ${C.border}`, padding: "16px"}}>
+          <div>
+            <div style={{fontSize: "11px", letterSpacing: "3px", color: C.muted, marginBottom: "8px"}}>ВЫБРАННАЯ ПОЗИЦИЯ</div>
+            {activeZone ? (
+              <div style={{animation: "fadeIn .2s ease"}}>
+                <div style={{fontSize: "20px", color: C.yellow, fontWeight: 700, marginBottom: "12px"}}>{activeZone.name}</div>
+                <div style={{fontSize: "13px", color: C.text, lineHeight: 1.6}}>{activeZone.desc}</div>
+              </div>
+            ) : (
+              <div style={{color: C.muted, fontSize: "13px", fontStyle: "italic", lineHeight: 1.6}}>
+                Наведи курсор мыши на цветной сектор карты или кликни по нему, чтобы получить тактическую сводку по позиции.
+              </div>
+            )}
+          </div>
+          
+          {currentMap.zones.length === 0 && (
+            <div style={{fontSize: "12px", color: C.orange, marginTop: "20px", borderTop: `1px dashed ${C.border}`, paddingTop: "12px"}}>
+              ⚠️ Разметка для этой карты находится в обработке ИИ. Скоро появится!
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Match History ─────────────────────────────────────────────────────────────
 function MatchHistory({faceit}) {
-  const [exp,setExp]           = useState(null);
+  const [exp,setExp] = useState(null);
   const [analyses,setAnalyses] = useState({});
   const [aiLoading,setAiLoading] = useState({});
   const matches = arr(faceit?.matches);
@@ -421,14 +572,12 @@ function MatchHistory({faceit}) {
       {matches.map((m,i)=>{
         const win=m.result==="1", ac=win?C.win:C.lose;
         const isExp=exp===i, ai=analyses[i], isAiLoading=aiLoading[i];
-
         return (
           <div key={i} style={{marginBottom:"3px"}}>
             <div className="match-row" onClick={()=>{
-              const opening=!isExp;
-              setExp(isExp?null:i);
-              if(opening) fetchAnalysis(m,i);
-            }} style={{
+              const opening=!isExp; setExp(isExp?null:i); if(opening) fetchAnalysis(m,i);
+            }}
+            style={{
               display:"grid",gridTemplateColumns:"3px 1fr 90px 78px 66px 48px",
               gap:"12px",padding:"14px 16px",cursor:"pointer",alignItems:"center",
               background:isExp?"#181810":C.card,border:`1px solid ${C.border}`,
@@ -455,12 +604,9 @@ function MatchHistory({faceit}) {
                 <div style={{fontSize:"11px",color:isExp?C.yellow:C.muted,marginTop:"2px"}}>{isExp?"▲":"▼"}</div>
               </div>
             </div>
-
             {isExp&&(
               <div style={{background:"#0f0f09",border:`1px solid ${C.border}`,borderTop:"none",
                 padding:"16px 20px",animation:"up .2s ease both"}}>
-
-                {/* Stats */}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(80px,1fr))",
                   gap:"4px",marginBottom:"16px"}}>
                   {[{l:"УБИЙСТВА",v:m.kills},{l:"СМЕРТИ",v:m.deaths},{l:"АССИСТЫ",v:m.assists||"—"},
@@ -472,61 +618,19 @@ function MatchHistory({faceit}) {
                     </div>
                   ))}
                 </div>
-
-                {/* AI loading */}
                 {isAiLoading&&(
                   <div style={{background:"#15150a",border:`1px solid ${C.yellow}33`,
                     borderLeft:`3px solid ${C.yellow}`,padding:"16px 18px"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"12px"}}>
-                      <div style={{display:"flex",gap:"4px"}}>
-                        {[0,1,2].map(k=><div key={k} style={{width:"6px",height:"6px",background:C.yellow,
-                          borderRadius:"50%",animation:`blink 1s ${k*.3}s infinite`}}/>)}
-                      </div>
-                      <span style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px",fontWeight:700}}>
-                        AI РАЗБИРАЕТ МАТЧ
-                      </span>
+                    <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+                      <div style={{width:"16px",height:"16px",border:"2px solid "+C.yellow,borderTopColor:"transparent",borderRadius:"50%",animation:"blink .8s infinite linear"}}/>
+                      <div style={{fontSize:"13px",color:C.yellow,fontFamily:"'Courier New',monospace",letterSpacing:"1px"}}>ИИ ГЕНЕРИРУЕТ ОТЧЕТ...</div>
                     </div>
-                    <Skel w="90%" h="14"/><Skel w="75%" h="14" mb={4}/><Skel w="60%" h="14"/>
                   </div>
                 )}
-
-                {/* AI result */}
                 {ai&&!isAiLoading&&(
-                  <div style={{background:"#15150a",border:`1px solid ${C.yellow}33`,
-                    borderLeft:`3px solid ${C.yellow}`,padding:"18px 20px",
-                    animation:"up .3s ease both"}}>
-                    <div style={{fontSize:"11px",letterSpacing:"3px",color:C.yellow,
-                      marginBottom:"14px",fontWeight:700}}>🤖 AI РАЗБОР МАТЧА</div>
-
-                    <div style={{fontSize:"15px",color:C.value,lineHeight:1.75,marginBottom:"16px"}}>
-                      {ai.verdict}
-                    </div>
-
-                    <div style={{marginBottom:"14px"}}>
-                      {arr(ai.mistakes).map((err,k)=>(
-                        <div key={k} style={{display:"flex",gap:"10px",
-                          alignItems:"flex-start",marginBottom:"8px"}}>
-                          <span style={{color:C.lose,fontSize:"15px",flexShrink:0,marginTop:"1px"}}>✗</span>
-                          <span style={{fontSize:"14px",color:C.label,lineHeight:1.65}}>{err}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {ai.bright&&(
-                      <div style={{display:"flex",gap:"10px",padding:"11px 14px",
-                        background:"#0f1a0f",border:`1px solid ${C.win}33`,marginBottom:"10px"}}>
-                        <span style={{color:C.win,fontSize:"15px",flexShrink:0}}>✓</span>
-                        <span style={{fontSize:"14px",color:C.win,lineHeight:1.65}}>{ai.bright}</span>
-                      </div>
-                    )}
-
-                    {ai.tip&&(
-                      <div style={{display:"flex",gap:"10px",padding:"11px 14px",
-                        background:C.yellow+"0a",border:`1px solid ${C.yellow}22`}}>
-                        <span style={{fontSize:"15px",flexShrink:0}}>💡</span>
-                        <span style={{fontSize:"14px",color:C.yellow,lineHeight:1.65}}>{ai.tip}</span>
-                      </div>
-                    )}
+                  <div style={{background:"#11110d",border:`1px solid ${C.border}`,padding:"20px",lineHeight:1.8,fontSize:"14px",color:C.text,whiteSpace:"pre-line",animation:"fadeIn .3s"}}>
+                    <div style={{fontSize:"11px",letterSpacing:"3px",color:C.yellow,fontWeight:700,marginBottom:"12px"}}>АНАЛИЗ НЕЙРОСЕТИ</div>
+                    {ai}
                   </div>
                 )}
               </div>
@@ -534,6 +638,104 @@ function MatchHistory({faceit}) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── LEADERBOARD COMPONENT ────────────────────────────────────────────────────
+function Leaderboard({myId, onProfile}) {
+  const [list,setList] = useState([]);
+  const [loading,setLoading] = useState(true);
+
+  useEffect(()=>{
+    fetch(`${BACKEND}/leaderboard`)
+      .then(r=>r.json())
+      .then(d=>{if(Array.isArray(d))setList(d);})
+      .catch(()=>{})
+      .finally(()=>setLoading(false));
+  },[]);
+
+  if(loading) return <div style={{padding:"40px",textAlign:"center",color:C.muted}}>ЗАГРУЗКА ЛИДЕРБОРДА...</div>;
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,animation:"up .4s ease both"}}>
+      <div style={{padding:"20px 24px",borderBottom:`1px solid ${C.border}`}}>
+        <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700}}>ТОП ИГРОКОВ СЕРВИСА</div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"50px 1fr 100px 80px",padding:"12px 24px",borderBottom:`1px solid ${C.border}`,fontSize:"11px",color:C.muted,letterSpacing:"1px"}}>
+        <div>РАНГ</div>
+        <div>ИГРОК</div>
+        <div style={{textAlign:"center"}}>FACEIT ELO</div>
+        <div style={{textAlign:"right"}}>K/D</div>
+      </div>
+      {list.map((u,idx)=>{
+        const isMe = u.steamid === myId;
+        const li = levelInfo(u.elo);
+        return (
+          <div key={idx} className="hov-row" onClick={()=>onProfile(u.steamid)} style={{
+            display:"grid",gridTemplateColumns:"50px 1fr 100px 80px",padding:"14px 24px",
+            alignItems:"center",cursor:"pointer",borderBottom:idx<list.length-1?`1px solid #1c1c12`:"none",
+            background:isMe?"#f5c5180c":"transparent"}}>
+            <div style={{fontSize:"14px",fontWeight:700,color:idx===0?C.yellow:idx===1?C.blue:idx===2?C.orange:C.muted}}>#{idx+1}</div>
+            <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+              <img src={u.avatar} alt="" style={{width:"28px",height:"28px",borderRadius:"2px",border:`1px solid ${LVL_COLOR[li.lvl]||C.border}`}}/>
+              <span style={{fontSize:"14px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:400}}>{u.username}</span>
+            </div>
+            <div style={{textAlign:"center",fontSize:"14px",color:LVL_COLOR[li.lvl]||C.text,fontWeight:700}}>{u.elo||"—"}</div>
+            <div style={{textAlign:"right",fontSize:"14px",color:C.text}}>{u.kd||"—"}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── КОРНЕВОЙ КОМПОНЕНТ APP ──────────────────────────────────────────────────
+export default function App() {
+  const [tab, setTab] = useState("overview");
+  const [source, setSource] = useState("faceit");
+  const [player, setPlayer] = useState({
+    username: "Игрок",
+    steamid: "76561198000000000",
+    faceit: { 
+      elo: 1650, 
+      lifetime: { kd: "1.18", winrate: "54", hs: "49", matches: "412", kr: "0.78", longest_streak: "8" },
+      matches: [
+        { map: "de_mirage", result: "1", score: "13:9", kd: "1.42", kills: "22", deaths: "14", hs: "50", mvps: "3" },
+        { map: "de_inferno", result: "0", score: "10:13", kd: "0.91", kills: "16", deaths: "19", hs: "42", mvps: "1" },
+        { map: "de_dust2", result: "1", score: "13:5", kd: "1.85", kills: "24", deaths: "11", hs: "55", mvps: "5" }
+      ]
+    }
+  });
+
+  return (
+    <div style={{background:C.bg, color:C.text, minHeight:"100vh", fontFamily:"sans-serif"}}>
+      <style>{css}</style>
+      
+      <div className="content-pad" style={{padding: "24px", maxWidth: "1100px", margin: "0 auto"}}>
+        {/* Шапка */}
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"24px", borderBottom:`1px solid ${C.border}`, paddingBottom:"16px"}}>
+          <div style={{fontSize:"20px", fontWeight:700, color:C.yellow, letterSpacing:"3px"}}>CS2 AI COACH</div>
+          <div style={{display:"flex", gap:"16px"}}>
+            <button onClick={() => setTab("overview")} style={{background:"transparent", border:"none", color:tab==="overview"?C.yellow:C.muted, cursor:"pointer", fontSize:"13px", fontWeight:700}}>ОБЗОР</button>
+            <button onClick={() => setTab("maps")} style={{background:"transparent", border:"none", color:tab==="maps"?C.yellow:C.muted, cursor:"pointer", fontSize:"13px", fontWeight:700}}>ТАКТИКА КАРТ</button>
+            <button onClick={() => setTab("leaderboard")} style={{background:"transparent", border:"none", color:tab==="leaderboard"?C.yellow:C.muted, cursor:"pointer", fontSize:"13px", fontWeight:700}}>ЛИДЕРБОРД</button>
+          </div>
+        </div>
+
+        <SourceToggle source={source} setSource={setSource} hasFaceit={!!player.faceit} />
+        
+        {tab === "overview" && (
+          <div style={{display:"flex", flexDirection:"column", gap:"20px"}}>
+            <HeroCard player={player} source={source} />
+            <ChartsSection faceit={player.faceit} />
+            <MatchHistory faceit={player.faceit} />
+          </div>
+        )}
+        
+        {tab === "maps" && <TacticalMaps />}
+        {tab === "leaderboard" && <Leaderboard myId={player.steamid} onProfile={()=>{}} />}
+      </div>
     </div>
   );
 }
