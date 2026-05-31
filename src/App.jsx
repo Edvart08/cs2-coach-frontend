@@ -740,112 +740,79 @@ function RecentMatchesOverview({faceit}) {
 // ── Progress History ───────────────────────────────────────────────────────────
 function ProgressHistory({player, source}) {
   const [history, setHistory] = useState([]);
-
   useEffect(()=>{
     if (!player?.steamid) return;
-    try{
-      const h = JSON.parse(localStorage.getItem(`cs2_rating_history_${player.steamid}`)||"[]");
-      setHistory(h);
-    }catch{}
+    try{ const h=JSON.parse(localStorage.getItem(`cs2_rating_history_${player.steamid}`)||"[]"); setHistory(h); }catch{}
   }, [player?.steamid]);
-
   if (history.length < 2) return null;
-
-  const first = history[0];
-  const last  = history[history.length-1];
-
-  function sigmoid(val, avgVal) {
-    const ratio = val / avgVal;
-    return Math.min(99, Math.max(1, Math.round(100/(1+Math.exp(-4*(ratio-1))))));
-  }
-  const avgByLevel = [
+  const first=history[0], last=history[history.length-1];
+  function sigmoid(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(v/a-1))))));}
+  const avgByLevel=[
     {kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},
     {kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},
     {kd:1.20,hs:42,wr:51},{kd:1.28,hs:44,wr:52},{kd:1.38,hs:46,wr:53},
     {kd:1.52,hs:48,wr:54},{kd:1.72,hs:52,wr:56},
   ];
-  function calcRating(s) {
-    const avg = avgByLevel[Math.min(s.lvl||0, 10)];
-    const kdP = sigmoid(s.kd, avg.kd);
-    const hsP = sigmoid(s.hs, avg.hs);
-    const wrP = sigmoid(s.wr, avg.wr);
-    return Math.min(99, Math.round(kdP*0.45 + hsP*0.25 + wrP*0.30));
+  function calcRating(s){
+    const avg=avgByLevel[Math.min(s.lvl||0,10)];
+    return Math.min(99,Math.round(sigmoid(s.kd,avg.kd)*0.45+sigmoid(s.hs,avg.hs)*0.25+sigmoid(s.wr,avg.wr)*0.30));
   }
-
-  const rFirst = calcRating(first);
-  const rLast  = calcRating(last);
-  const diff   = rLast - rFirst;
-  const diffColor = diff > 0 ? C.win : diff < 0 ? C.lose : C.muted;
-
-  const stats = [
-    {name:"K/D", f:first.kd?.toFixed(2), l:last.kd?.toFixed(2),
-     diff:((last.kd||0)-(first.kd||0)).toFixed(2), up:(last.kd||0)>=(first.kd||0)},
-    {name:"HS%", f:Math.round(first.hs||0)+"%", l:Math.round(last.hs||0)+"%",
-     diff:(Math.round(last.hs||0)-Math.round(first.hs||0))+"%", up:(last.hs||0)>=(first.hs||0)},
-    {name:"WR%", f:Math.round(first.wr||0)+"%", l:Math.round(last.wr||0)+"%",
-     diff:(Math.round(last.wr||0)-Math.round(first.wr||0))+"%", up:(last.wr||0)>=(first.wr||0)},
+  const rFirst=calcRating(first), rLast=calcRating(last), diff=rLast-rFirst;
+  const diffColor=diff>0?C.win:diff<0?C.lose:C.muted;
+  const diffLabel=diff>0?"РОСТ":diff<0?"ПАДЕНИЕ":"БЕЗ ИЗМЕНЕНИЙ";
+  const stats=[
+    {name:"K/D",f:first.kd?.toFixed(2),l:last.kd?.toFixed(2),diff:((last.kd||0)-(first.kd||0)).toFixed(2),up:(last.kd||0)>=(first.kd||0)},
+    {name:"HS%",f:Math.round(first.hs||0)+"%",l:Math.round(last.hs||0)+"%",diff:(Math.round(last.hs||0)-Math.round(first.hs||0))+"%",up:(last.hs||0)>=(first.hs||0)},
+    {name:"WR%",f:Math.round(first.wr||0)+"%",l:Math.round(last.wr||0)+"%",diff:(Math.round(last.wr||0)-Math.round(first.wr||0))+"%",up:(last.wr||0)>=(first.wr||0)},
   ];
-
-  // Мини-график рейтинга
-  const ratings = history.map(s=>calcRating(s));
-  const minR = Math.min(...ratings)-5, maxR = Math.max(...ratings)+5;
-  const W=100, H=40;
-  const pts = ratings.map((r,i)=>({
-    x:(i/(ratings.length-1||1))*W,
-    y:H-((r-minR)/(maxR-minR||1))*H,
-  }));
-  const polyline = pts.map(p=>`${p.x},${p.y}`).join(" ");
-
+  const ratings=history.map(s=>calcRating(s));
+  const minR=Math.min(...ratings)-5, maxR=Math.max(...ratings)+5;
+  const W=100,H=50;
+  const pts=ratings.map((r,i)=>({x:(i/(ratings.length-1||1))*W,y:H-((r-minR)/(maxR-minR||1))*H}));
+  const polyline=pts.map(p=>`${p.x},${p.y}`).join(" ");
+  const area=`${pts[0].x},${H} `+pts.map(p=>`${p.x},${p.y}`).join(" ")+` ${pts[pts.length-1].x},${H}`;
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
-      marginBottom:"3px",animation:"up .5s ease both"}}>
-      <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
-        📊 ИСТОРИЯ ПРОГРЕССА
+    <div style={{background:"#0f0f0b",border:`2px solid ${diffColor}44`,borderLeft:`4px solid ${diffColor}`,
+      padding:"20px 24px",marginBottom:"3px",animation:"up .5s ease both",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:"-30px",right:"-30px",width:"160px",height:"160px",
+        background:`radial-gradient(circle,${diffColor}12,transparent 70%)`,pointerEvents:"none"}}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"8px"}}>
+        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>📊 ИСТОРИЯ ПРОГРЕССА</span>
+        <span style={{fontSize:"11px",color:C.muted}}>{first.date} — {last.date}</span>
       </div>
-
-      <div style={{display:"flex",gap:"16px",alignItems:"center",flexWrap:"wrap",marginBottom:"16px"}}>
-        {/* Rating change */}
-        <div style={{display:"flex",alignItems:"baseline",gap:"8px"}}>
-          <span style={{fontSize:"36px",color:diffColor,fontWeight:900,lineHeight:1}}>
-            {diff>0?"+":""}{diff}
-          </span>
-          <span style={{fontSize:"14px",color:C.muted}}>рейтинг</span>
+      <div style={{display:"flex",alignItems:"center",gap:"20px",marginBottom:"16px",flexWrap:"wrap"}}>
+        <div style={{display:"flex",alignItems:"baseline",gap:"10px"}}>
+          <span style={{fontSize:"48px",color:diffColor,fontWeight:900,lineHeight:1}}>{diff>0?"+":""}{diff}</span>
+          <div>
+            <div style={{fontSize:"12px",color:diffColor,fontWeight:700,letterSpacing:"2px"}}>{diffLabel}</div>
+            <div style={{fontSize:"13px",color:C.muted,marginTop:"2px"}}>
+              <span style={{color:C.label,fontWeight:600}}>{rFirst}</span>
+              <span style={{margin:"0 8px",fontSize:"16px"}}>→</span>
+              <span style={{color:diffColor,fontWeight:800,fontSize:"18px"}}>{rLast}</span>
+            </div>
+          </div>
         </div>
-        <div style={{fontSize:"13px",color:C.muted}}>
-          <span style={{color:C.label}}>{rFirst}</span>
-          <span style={{margin:"0 8px"}}>→</span>
-          <span style={{color:diffColor,fontWeight:700}}>{rLast}</span>
-        </div>
-        <div style={{fontSize:"11px",color:C.muted,marginLeft:"auto"}}>
-          {first.date} — {last.date}
-        </div>
+        {ratings.length>2&&(
+          <div style={{flex:1,minWidth:"120px"}}>
+            <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"52px",display:"block"}} preserveAspectRatio="none">
+              <defs><linearGradient id="phGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={diffColor} stopOpacity="0.3"/>
+                <stop offset="100%" stopColor={diffColor} stopOpacity="0.02"/>
+              </linearGradient></defs>
+              <polygon points={area} fill="url(#phGrad)"/>
+              <polyline points={polyline} fill="none" stroke={diffColor} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
+              {pts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r={i===pts.length-1?"3":"1.5"} fill={i===pts.length-1?diffColor:diffColor+"99"}/>)}
+            </svg>
+          </div>
+        )}
       </div>
-
-      {/* Mini chart */}
-      {ratings.length > 2 && (
-        <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"44px",display:"block",marginBottom:"14px"}}
-          preserveAspectRatio="none">
-          <polyline points={polyline} fill="none" stroke={diffColor}
-            strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
-          {pts.map((p,i)=>(
-            <circle key={i} cx={p.x} cy={p.y} r={i===pts.length-1?"2.5":"1.5"}
-              fill={i===pts.length-1?diffColor:diffColor+"88"}/>
-          ))}
-        </svg>
-      )}
-
-      {/* Stat diffs */}
-      <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+      <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
         {stats.map((s,i)=>(
-          <div key={i} style={{flex:"1 1 80px",background:"#0d0d09",
-            border:`1px solid ${C.border}`,padding:"10px 12px",textAlign:"center"}}>
+          <div key={i} style={{flex:"1 1 80px",background:s.up?"#0a140a":"#140a0a",
+            border:`1px solid ${s.up?C.win+"33":C.lose+"33"}`,padding:"10px 12px",textAlign:"center"}}>
             <div style={{fontSize:"10px",color:C.muted,marginBottom:"4px",letterSpacing:"1px"}}>{s.name}</div>
-            <div style={{fontSize:"13px",color:C.label,marginBottom:"3px"}}>
-              {s.f} → <span style={{color:s.up?C.win:C.lose,fontWeight:700}}>{s.l}</span>
-            </div>
-            <div style={{fontSize:"11px",color:s.up?C.win:C.lose,fontWeight:700}}>
-              {parseFloat(s.diff)>0?"+":""}{s.diff}
-            </div>
+            <div style={{fontSize:"12px",color:C.label,marginBottom:"3px"}}>{s.f} → <span style={{color:s.up?C.win:C.lose,fontWeight:700}}>{s.l}</span></div>
+            <div style={{fontSize:"13px",color:s.up?C.win:C.lose,fontWeight:800}}>{parseFloat(s.diff)>0?"+":""}{s.diff}</div>
           </div>
         ))}
       </div>
@@ -855,77 +822,49 @@ function ProgressHistory({player, source}) {
 
 // ── Player Rating ──────────────────────────────────────────────────────────────
 function PlayerRating({player, source}) {
-  const fc = player?.faceit;
-  const cs2 = player?.cs2 || {};
-  const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
-  const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
-  const lvl = parseInt(fc?.level) || 0;
-  const matches = parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches) || 0;
-  const wrRaw = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
-  const wr = (wrRaw >= 99 && matches < 50) ? 65 : Math.min(wrRaw, 99);
-
-  const avgByLevel = [
-    {kd:0.75, hs:28, wr:43}, // lvl 0 / steam
-    {kd:0.82, hs:30, wr:44}, // lvl 1
-    {kd:0.92, hs:33, wr:46}, // lvl 2
-    {kd:1.00, hs:36, wr:48}, // lvl 3
-    {kd:1.06, hs:38, wr:49}, // lvl 4
-    {kd:1.12, hs:40, wr:50}, // lvl 5
-    {kd:1.20, hs:42, wr:51}, // lvl 6
-    {kd:1.28, hs:44, wr:52}, // lvl 7
-    {kd:1.38, hs:46, wr:53}, // lvl 8
-    {kd:1.52, hs:48, wr:54}, // lvl 9
-    {kd:1.72, hs:52, wr:56}, // lvl 10
+  const fc=player?.faceit, cs2=player?.cs2||{};
+  const kd=parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd)||0;
+  const hs=parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs)||0;
+  const lvl=parseInt(fc?.level)||0;
+  const matches=parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches)||0;
+  const wrRaw=parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate)||0;
+  const wr=(wrRaw>=99&&matches<50)?65:Math.min(wrRaw,99);
+  const avgByLevel=[
+    {kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},
+    {kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},
+    {kd:1.20,hs:42,wr:51},{kd:1.28,hs:44,wr:52},{kd:1.38,hs:46,wr:53},
+    {kd:1.52,hs:48,wr:54},{kd:1.72,hs:52,wr:56},
   ];
-  const avg = avgByLevel[Math.min(lvl, 10)];
-
-  // Нормальная percentile-формула: среднее = 50, отклонение логарифмическое
-  // Убирает эффект "100% WR = 99 рейтинг" при малом кол-ве матчей
-  function pct(val, avgVal, maxVal) {
-    // Нормализуем относительно avg (avg = 50 percentile)
-    // Используем sigmoid-подобную функцию
-    const ratio = val / avgVal;
-    // sigmoid: 1/(1+e^(-k*(x-1))) * 100, где k=4 даёт плавную кривую
-    const score = Math.round(100 / (1 + Math.exp(-4 * (ratio - 1))));
-    // Штраф за малое кол-во матчей — не доверяем WR при < 20 матчах
-    if (val === 100 && matches < 20) return Math.min(score, 65);
-    return Math.min(99, Math.max(1, score));
+  const avg=avgByLevel[Math.min(lvl,10)];
+  function pct(val,avgVal){
+    const score=Math.round(100/(1+Math.exp(-4*(val/avgVal-1))));
+    if(val===100&&matches<20)return Math.min(score,65);
+    return Math.min(99,Math.max(1,score));
   }
-
-  const kdPct   = pct(kd, avg.kd, 3.0);
-  const hsPct   = pct(hs, avg.hs, 80);
-  const wrPct   = pct(wr, avg.wr, 100);
-  const overall = Math.min(99, Math.round(kdPct*0.45 + hsPct*0.25 + wrPct*0.30));
-
-  const overallColor = overall>=70?C.win:overall>=45?C.yellow:C.orange;
-  const label = overall>=80?"ТОП ИГРОК":overall>=60?"ВЫШЕ СРЕДНЕГО":overall>=40?"СРЕДНИЙ УРОВЕНЬ":"ЕСТЬ КУДА РАСТИ";
-
-  const stats = [
-    {name:"K/D",  val:kd.toFixed(2), avg:avg.kd.toFixed(2), pct:kdPct,  color:C.blue},
-    {name:"HS%",  val:Math.round(hs)+"%", avg:avg.hs+"%",   pct:hsPct,  color:C.orange},
-    {name:"WR%",  val:Math.round(wr)+"%", avg:avg.wr+"%",   pct:wrPct,  color:"#aa88ff"},
+  const kdPct=pct(kd,avg.kd), hsPct=pct(hs,avg.hs), wrPct=pct(wr,avg.wr);
+  const overall=Math.min(99,Math.round(kdPct*0.45+hsPct*0.25+wrPct*0.30));
+  const overallColor=overall>=70?C.win:overall>=45?C.yellow:C.orange;
+  const label=overall>=80?"ТОП ИГРОК":overall>=60?"ВЫШЕ СРЕДНЕГО":overall>=40?"СРЕДНИЙ УРОВЕНЬ":"ЕСТЬ КУДА РАСТИ";
+  const stats=[
+    {name:"K/D",val:kd.toFixed(2),avg:avg.kd.toFixed(2),pct:kdPct,color:C.blue},
+    {name:"HS%",val:Math.round(hs)+"%",avg:avg.hs+"%",pct:hsPct,color:C.orange},
+    {name:"WR%",val:Math.round(wr)+"%",avg:avg.wr+"%",pct:wrPct,color:"#aa88ff"},
   ];
-
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
-      marginBottom:"3px",animation:"up .5s ease both"}}>
-      <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>
-        🏅 CS2 COACH РЕЙТИНГ
-      </div>
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>🏅 CS2 COACH РЕЙТИНГ</div>
       <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"16px"}}>
         <div style={{textAlign:"center",minWidth:"90px"}}>
-          <div style={{fontSize:"52px",color:overallColor,fontWeight:900,lineHeight:1}}>{overall}</div>
+          <div style={{fontSize:"56px",color:overallColor,fontWeight:900,lineHeight:1}}>{overall}</div>
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginTop:"4px"}}>из 100</div>
         </div>
         <div style={{flex:1}}>
-          <div style={{fontSize:"15px",color:overallColor,fontWeight:700,marginBottom:"6px"}}>{label}</div>
-          <div style={{fontSize:"13px",color:C.text,lineHeight:1.7}}>
-            Лучше чем <span style={{color:overallColor,fontWeight:700}}>{overall}%</span> игроков
-            {lvl>0?` уровня FACEIT ${lvl}`:" CS2"}
+          <div style={{fontSize:"13px",color:overallColor,fontWeight:700,marginBottom:"6px"}}>{label}</div>
+          <div style={{fontSize:"22px",color:C.value,fontWeight:800,lineHeight:1.2,marginBottom:"5px"}}>
+            Лучше чем <span style={{color:overallColor}}>{overall}%</span>
           </div>
-          {matches>0&&<div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>
-            на основе {matches} матчей
-          </div>}
+          <div style={{fontSize:"14px",color:C.muted}}>игроков{lvl>0?` уровня FACEIT ${lvl}`:" CS2"}</div>
+          {matches>0&&<div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>на основе {matches} матчей</div>}
         </div>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
@@ -933,14 +872,10 @@ function PlayerRating({player, source}) {
           <div key={i}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px",fontSize:"12px"}}>
               <span style={{color:C.muted}}>{s.name}</span>
-              <span>
-                <span style={{color:s.color,fontWeight:700}}>{s.val}</span>
-                <span style={{color:C.muted}}> / avg {s.avg}</span>
-              </span>
+              <span><span style={{color:s.color,fontWeight:700}}>{s.val}</span><span style={{color:C.muted}}> / avg {s.avg}</span></span>
             </div>
             <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
-              <div style={{height:"100%",width:`${s.pct}%`,
-                background:s.color,borderRadius:"2px",transition:"width 1s ease"}}/>
+              <div style={{height:"100%",width:`${s.pct}%`,background:s.color,borderRadius:"2px",transition:"width 1s ease"}}/>
             </div>
           </div>
         ))}
@@ -951,97 +886,93 @@ function PlayerRating({player, source}) {
 
 // ── Achievements ───────────────────────────────────────────────────────────────
 function Achievements({player, source}) {
-  const fc = player?.faceit;
-  const cs2 = player?.cs2 || {};
-  const kd      = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
-  const hs      = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
-  const wr      = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
-  const matches = parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches) || 0;
-  const wins    = parseInt(source==="faceit"?fc?.lifetime?.wins:cs2.wins) || 0;
-  const kills   = parseInt(cs2?.kills) || 0;
-  const mvps    = parseInt(cs2?.mvps) || 0;
-  const lvl     = parseInt(fc?.level) || 0;
-  const streak  = parseInt(fc?.lifetime?.longest_streak) || 0;
-
-  const all = [
-    {id:"headshot",  icon:"🎯", name:"HS Машина",      desc:"40%+ хедшотов",          done: hs>=40},
-    {id:"sniper",    icon:"🔭", name:"Снайпер",         desc:"50%+ хедшотов",          done: hs>=50},
-    {id:"fragger",   icon:"⚔️", name:"Фраггер",         desc:"K/D выше 1.0",           done: kd>=1.0},
-    {id:"elite",     icon:"💀", name:"Элита",           desc:"K/D выше 1.5",           done: kd>=1.5},
-    {id:"winner",    icon:"🏆", name:"Победитель",      desc:"50%+ побед",             done: wr>=50},
-    {id:"dominator", icon:"👑", name:"Доминатор",       desc:"60%+ побед",             done: wr>=60},
-    {id:"veteran",   icon:"🎖️", name:"Ветеран",         desc:"200+ матчей",            done: matches>=200},
-    {id:"grinder",   icon:"⚙️", name:"Гриндер",         desc:"500+ матчей",            done: matches>=500},
-    {id:"streak3",   icon:"🔥", name:"Серия побед",     desc:"3+ побед подряд",        done: streak>=3},
-    {id:"streak5",   icon:"💥", name:"Огненная серия",  desc:"5+ побед подряд",        done: streak>=5},
-    {id:"faceit5",   icon:"⚡", name:"FACEIT Pro",      desc:"FACEIT уровень 5+",      done: lvl>=5},
-    {id:"faceit8",   icon:"🌟", name:"FACEIT Элита",    desc:"FACEIT уровень 8+",      done: lvl>=8},
-    {id:"mvp100",    icon:"🥇", name:"MVP Коллекционер",desc:"100+ MVP",               done: mvps>=100},
-    {id:"kills1k",   icon:"🗡️", name:"1000 убийств",    desc:"1000+ убийств в CS2",   done: kills>=1000},
-    {id:"kills10k",  icon:"💣", name:"10000 убийств",   desc:"10000+ убийств в CS2",  done: kills>=10000},
+  const fc=player?.faceit, cs2=player?.cs2||{};
+  const kd=parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd)||0;
+  const hs=parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs)||0;
+  const wr=parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate)||0;
+  const matches=parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches)||0;
+  const kills=parseInt(cs2?.kills)||0;
+  const mvps=parseInt(cs2?.mvps)||0;
+  const lvl=parseInt(fc?.level)||0;
+  const streak=parseInt(fc?.lifetime?.longest_streak)||0;
+  const all=[
+    {id:"headshot",icon:"🎯",name:"HS Машина",   done:hs>=40,  val:Math.round(hs),   target:40,  unit:"%", color:C.orange},
+    {id:"sniper",  icon:"🔭",name:"Снайпер",      done:hs>=50,  val:Math.round(hs),   target:50,  unit:"%", color:C.orange},
+    {id:"fragger", icon:"⚔️",name:"Фраггер",      done:kd>=1.0, val:parseFloat(kd.toFixed(2)), target:1.0, unit:"", color:C.blue},
+    {id:"elite",   icon:"💀",name:"Элита",         done:kd>=1.5, val:parseFloat(kd.toFixed(2)), target:1.5, unit:"", color:C.blue},
+    {id:"winner",  icon:"🏆",name:"Победитель",   done:wr>=50,  val:Math.round(wr),   target:50,  unit:"%", color:C.win},
+    {id:"dominator",icon:"👑",name:"Доминатор",   done:wr>=60,  val:Math.round(wr),   target:60,  unit:"%", color:C.win},
+    {id:"veteran", icon:"🎖️",name:"Ветеран",      done:matches>=200, val:matches,     target:200, unit:"",  color:C.yellow},
+    {id:"grinder", icon:"⚙️",name:"Гриндер",      done:matches>=500, val:matches,     target:500, unit:"",  color:C.yellow},
+    {id:"streak3", icon:"🔥",name:"Серия побед",  done:streak>=3,    val:streak,      target:3,   unit:"",  color:C.lose},
+    {id:"streak5", icon:"💥",name:"Огн. серия",   done:streak>=5,    val:streak,      target:5,   unit:"",  color:C.lose},
+    {id:"faceit5", icon:"⚡",name:"FACEIT Pro",   done:lvl>=5,  val:lvl,             target:5,   unit:"",  color:"#ff8844"},
+    {id:"faceit8", icon:"🌟",name:"FACEIT Элита", done:lvl>=8,  val:lvl,             target:8,   unit:"",  color:"#ff8844"},
+    {id:"mvp100",  icon:"🥇",name:"MVP х100",     done:mvps>=100,    val:mvps,        target:100, unit:"",  color:C.yellow},
+    {id:"kills1k", icon:"🗡️",name:"1000 убийств", done:kills>=1000,  val:kills,      target:1000,unit:"",  color:"#aa88ff"},
+    {id:"kills10k",icon:"💣",name:"10к убийств",  done:kills>=10000, val:kills,      target:10000,unit:"", color:"#aa88ff"},
   ];
-
-  const unlocked = all.filter(a=>a.done);
-  const locked   = all.filter(a=>!a.done).slice(0, 4); // только 4 ближайших
-
-  if (!unlocked.length && !locked.length) return null;
-
+  const unlocked=all.filter(a=>a.done);
+  const locked=all.filter(a=>!a.done).slice(0,4);
+  if(!unlocked.length&&!locked.length)return null;
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
-      marginBottom:"3px",animation:"up .5s ease both"}}>
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"3px",animation:"up .5s ease both"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
-        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>
-          🏅 ДОСТИЖЕНИЯ
-        </span>
-        <span style={{fontSize:"11px",color:C.muted}}>
-          {unlocked.length} / {all.length}
-        </span>
+        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>🏅 ДОСТИЖЕНИЯ</span>
+        <span style={{fontSize:"11px",color:C.muted}}>{unlocked.length} / {all.length}</span>
       </div>
-
-      {/* Unlocked */}
       {unlocked.length>0&&(
         <div style={{display:"flex",flexWrap:"wrap",gap:"8px",marginBottom:locked.length?"14px":"0"}}>
           {unlocked.map(a=>(
-            <div key={a.id} title={a.desc} style={{
-              display:"flex",alignItems:"center",gap:"8px",
+            <div key={a.id} style={{display:"flex",alignItems:"center",gap:"8px",
               background:`linear-gradient(135deg,${C.yellow}18,${C.yellow}08)`,
-              border:`1px solid ${C.yellow}55`,
-              padding:"8px 14px",cursor:"default"}}>
+              border:`1px solid ${C.yellow}55`,padding:"8px 14px"}}>
               <span style={{fontSize:"18px"}}>{a.icon}</span>
               <div>
                 <div style={{fontSize:"12px",color:C.yellow,fontWeight:700,lineHeight:1.2}}>{a.name}</div>
-                <div style={{fontSize:"10px",color:C.muted,lineHeight:1.3}}>{a.desc}</div>
+                <div style={{fontSize:"10px",color:C.muted}}>{a.val}{a.unit} / {a.target}{a.unit}</div>
               </div>
             </div>
           ))}
         </div>
       )}
-
-      {/* Locked — следующие цели */}
       {locked.length>0&&(
         <>
-          <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>
-            СЛЕДУЮЩИЕ ЦЕЛИ:
-          </div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
-            {locked.map(a=>(
-              <div key={a.id} title={a.desc} style={{
-                display:"flex",alignItems:"center",gap:"8px",
-                background:"#0d0d09",border:`1px solid ${C.border}`,
-                padding:"8px 14px",opacity:0.5,cursor:"default"}}>
-                <span style={{fontSize:"18px",filter:"grayscale(1)"}}>{a.icon}</span>
-                <div>
-                  <div style={{fontSize:"12px",color:C.muted,fontWeight:700,lineHeight:1.2}}>{a.name}</div>
-                  <div style={{fontSize:"10px",color:C.muted,lineHeight:1.3}}>{a.desc}</div>
+          <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>СЛЕДУЮЩИЕ ЦЕЛИ:</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:"8px"}}>
+            {locked.map(a=>{
+              const prog=Math.min(99,Math.round((a.val/a.target)*100));
+              const remaining=a.target>a.val?Math.ceil(a.target-a.val):0;
+              return(
+                <div key={a.id} style={{background:"#0d0d09",border:`1px solid ${a.color}33`,padding:"12px 14px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
+                    <span style={{fontSize:"18px",filter:"grayscale(0.5)"}}>{a.icon}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:"12px",color:C.label,fontWeight:700}}>{a.name}</div>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px",marginTop:"1px"}}>
+                        <span style={{color:a.color,fontWeight:600}}>{a.val}{a.unit}</span>
+                        <span style={{color:C.muted}}>/ {a.target}{a.unit}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{height:"3px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${prog}%`,background:a.color,borderRadius:"2px",
+                      transition:"width 1s ease",boxShadow:`0 0 6px ${a.color}66`}}/>
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",marginTop:"4px",fontSize:"10px",color:C.muted}}>
+                    <span>{prog}%</span>
+                    <span>ещё {remaining}{a.unit}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
     </div>
   );
 }
+
 
 // ── ELO Chart ─────────────────────────────────────────────────────────────────
 function EloChart({faceit}) {
