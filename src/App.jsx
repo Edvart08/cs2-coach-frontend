@@ -599,6 +599,44 @@ function MapPool({faceit}) {
   );
 }
 
+function BestWorstMap({faceit}) {
+  const maps = arr(faceit?.maps).filter(m=>parseInt(m.matches)>=3)
+    .sort((a,b)=>parseFloat(b.winrate)-parseFloat(a.winrate));
+  if (!maps.length) return null;
+  const best = maps[0];
+  const worst = maps[maps.length-1];
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{background:"#0a150a",border:`1px solid ${C.win}44`,padding:"18px 20px"}}>
+        <div style={{fontSize:"10px",color:C.win,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>
+          🏆 ЛУЧШАЯ КАРТА
+        </div>
+        <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"6px"}}>{best.map}</div>
+        <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
+          <span style={{fontSize:"28px",color:C.win,fontWeight:700}}>{best.winrate}%</span>
+          <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7}}>
+            <div>{best.matches} матчей</div>
+            <div>K/D {best.kd}</div>
+          </div>
+        </div>
+      </div>
+      <div style={{background:"#150a0a",border:`1px solid ${C.lose}44`,padding:"18px 20px"}}>
+        <div style={{fontSize:"10px",color:C.lose,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>
+          ⚠️ ХУДШАЯ КАРТА
+        </div>
+        <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"6px"}}>{worst.map}</div>
+        <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
+          <span style={{fontSize:"28px",color:C.lose,fontWeight:700}}>{worst.winrate}%</span>
+          <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7}}>
+            <div>{worst.matches} матчей</div>
+            <div>K/D {worst.kd}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Search ────────────────────────────────────────────────────────────────────
 function SearchBar({onSelect}) {
   const [q,setQ]=useState(""), [res,setRes]=useState([]), [open,setOpen]=useState(false), [loading,setLoading]=useState(false);
@@ -871,11 +909,11 @@ function ScoreCards({player, source}) {
   ));
   const overallScore = Math.round((aimScore*0.6 + consistScore*0.4));
 
-  const ScoreRing = ({score,label,color}) => {
+  const ScoreRing = ({score, label, color, breakdown}) => {
     const r=28, circ=2*Math.PI*r, dash=circ*score/100;
     const scoreColor = score>=70?"#55ee55":score>=45?C.yellow:"#ff6655";
     return (
-      <div style={{textAlign:"center",padding:"16px 20px"}}>
+      <div style={{textAlign:"center",padding:"16px 20px",flex:"1 1 160px"}}>
         <div style={{position:"relative",width:"80px",height:"80px",margin:"0 auto 10px"}}>
           <svg width="80" height="80" viewBox="0 0 80 80">
             <circle cx="40" cy="40" r={r} fill="none" stroke={C.border} strokeWidth="5"/>
@@ -887,9 +925,19 @@ function ScoreCards({player, source}) {
             fontSize:"18px",color:scoreColor,fontWeight:700}}>{score}</div>
         </div>
         <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px"}}>{label}</div>
-        <div style={{fontSize:"13px",color:scoreColor,fontWeight:700,marginTop:"3px"}}>
+        <div style={{fontSize:"13px",color:scoreColor,fontWeight:700,marginTop:"3px",marginBottom:"6px"}}>
           {score>=80?"ОТЛИЧНО":score>=60?"ХОРОШО":score>=40?"СРЕДНЕ":"РАБОТАЙ"}
         </div>
+        {breakdown&&<div style={{fontSize:"10px",color:C.muted,lineHeight:1.6,
+          borderTop:`1px solid ${C.border}`,paddingTop:"6px",textAlign:"left"}}>
+          {breakdown.map((b,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",gap:"8px",
+              padding:"1px 0"}}>
+              <span style={{color:"#6a6450"}}>{b.label}</span>
+              <span style={{color:C.label,fontWeight:600}}>{b.val}</span>
+            </div>
+          ))}
+        </div>}
       </div>
     );
   };
@@ -897,9 +945,20 @@ function ScoreCards({player, source}) {
   return (
     <div style={{className:"score-rings",background:C.card,border:`1px solid ${C.border}`,
       display:"flex",justifyContent:"space-around",flexWrap:"wrap",marginBottom:"3px",animation:"up .5s ease both"}}>
-      <ScoreRing score={overallScore} label="ОБЩИЙ РЕЙТИНГ" color={C.yellow}/>
-      <ScoreRing score={aimScore} label="AIM SCORE"/>
-      <ScoreRing score={consistScore} label="CONSISTENCY"/>
+      <ScoreRing score={overallScore} label="ОБЩИЙ РЕЙТИНГ" color={C.yellow} breakdown={[
+        {label:"AIM × 60%",  val:aimScore},
+        {label:"CONST × 40%",val:consistScore},
+      ]}/>
+      <ScoreRing score={aimScore} label="AIM SCORE" breakdown={[
+        {label:"K/D",   val:kd.toFixed(2)},
+        {label:"HS%",   val:hs+"%"},
+        {label:"WR%",   val:wr+"%"},
+      ]}/>
+      <ScoreRing score={consistScore} label="CONSISTENCY" breakdown={[
+        {label:"WR%",    val:wr+"%"},
+        {label:"Матчи",  val:matches},
+        {label:"FACEIT", val:lvl>0?"lvl "+lvl:"—"},
+      ]}/>
     </div>
   );
 }
@@ -2945,6 +3004,7 @@ export default function App() {
               : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
             <HeroCard player={player} source={source}/>
             <ScoreCards player={player} source={source}/>
+            {source==="faceit"&&hasFaceit&&<BestWorstMap faceit={player.faceit}/>}
             {source==="faceit"&&hasFaceit
               ?<div style={{marginTop:"12px"}}><ChartsSection faceit={player.faceit}/></div>
               :source==="steam"&&!player.cs2?.private&&(
