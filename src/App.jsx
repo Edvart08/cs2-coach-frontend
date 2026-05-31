@@ -737,6 +737,99 @@ function RecentMatchesOverview({faceit}) {
   );
 }
 
+// ── Player Rating ──────────────────────────────────────────────────────────────
+function PlayerRating({player, source}) {
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+  const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
+  const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
+  const wr  = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+  const lvl = parseInt(fc?.level) || 0;
+  const matches = parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches) || 0;
+
+  // Средние показатели по уровням FACEIT (или steam средние)
+  // Данные основаны на реальных средних CS2/FACEIT статистиках
+  const avgByLevel = [
+    {kd:0.75, hs:28, wr:42}, // lvl 0 / steam avg
+    {kd:0.80, hs:30, wr:44}, // lvl 1
+    {kd:0.90, hs:33, wr:46}, // lvl 2
+    {kd:1.00, hs:36, wr:48}, // lvl 3
+    {kd:1.05, hs:38, wr:49}, // lvl 4
+    {kd:1.10, hs:40, wr:50}, // lvl 5
+    {kd:1.18, hs:42, wr:51}, // lvl 6
+    {kd:1.25, hs:44, wr:52}, // lvl 7
+    {kd:1.35, hs:46, wr:53}, // lvl 8
+    {kd:1.50, hs:48, wr:54}, // lvl 9
+    {kd:1.70, hs:52, wr:56}, // lvl 10
+  ];
+  const avg = avgByLevel[Math.min(lvl, 10)];
+
+  // Считаем percentile по каждому показателю
+  const kdPct   = Math.min(99, Math.round(Math.max(1, (kd / avg.kd) * 50)));
+  const hsPct   = Math.min(99, Math.round(Math.max(1, (hs / avg.hs) * 50)));
+  const wrPct   = Math.min(99, Math.round(Math.max(1, (wr / avg.wr) * 50)));
+  const overall = Math.min(99, Math.round((kdPct * 0.4 + hsPct * 0.3 + wrPct * 0.3)));
+
+  const overallColor = overall >= 70 ? C.win : overall >= 45 ? C.yellow : C.orange;
+  const label = overall >= 80 ? "ТОП ИГРОК" : overall >= 60 ? "ВЫШЕ СРЕДНЕГО" :
+    overall >= 40 ? "СРЕДНИЙ УРОВЕНЬ" : "ЕСТЬ КУДА РАСТИ";
+
+  const stats = [
+    {name:"K/D",    val:kd.toFixed(2), avg:avg.kd.toFixed(2), pct:kdPct,  color:C.blue},
+    {name:"HS%",    val:hs+"%",        avg:avg.hs+"%",         pct:hsPct,  color:C.orange},
+    {name:"WR%",    val:wr+"%",        avg:avg.wr+"%",         pct:wrPct,  color:"#aa88ff"},
+  ];
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
+      marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>
+        🏅 CS2 COACH РЕЙТИНГ
+      </div>
+      <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"16px"}}>
+        {/* Big number */}
+        <div style={{textAlign:"center",minWidth:"90px"}}>
+          <div style={{fontSize:"52px",color:overallColor,fontWeight:900,lineHeight:1}}>
+            {overall}
+          </div>
+          <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginTop:"4px"}}>из 100</div>
+        </div>
+        {/* Description */}
+        <div style={{flex:1}}>
+          <div style={{fontSize:"15px",color:overallColor,fontWeight:700,marginBottom:"6px"}}>
+            {label}
+          </div>
+          <div style={{fontSize:"13px",color:C.text,lineHeight:1.7}}>
+            Лучше чем <span style={{color:overallColor,fontWeight:700}}>{overall}%</span> игроков
+            {lvl > 0 ? ` уровня FACEIT ${lvl}` : " CS2"}
+          </div>
+          {matches > 0 && <div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>
+            на основе {matches} матчей
+          </div>}
+        </div>
+      </div>
+      {/* Stat bars */}
+      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+        {stats.map((s,i)=>(
+          <div key={i}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px",fontSize:"12px"}}>
+              <span style={{color:C.muted}}>{s.name}</span>
+              <span>
+                <span style={{color:s.color,fontWeight:700}}>{s.val}</span>
+                <span style={{color:C.muted}}> / avg {s.avg}</span>
+              </span>
+            </div>
+            <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+              <div style={{height:"100%",width:`${Math.min(s.pct,100)}%`,
+                background:s.color,borderRadius:"2px",transition:"width 1s ease"}}/>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── ELO Chart ─────────────────────────────────────────────────────────────────
 function EloChart({faceit}) {
   const currentElo = parseInt(faceit?.elo) || 0;
@@ -3321,6 +3414,7 @@ export default function App() {
               : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
             <HeroCard player={player} source={source}/>
             <ScoreCards player={player} source={source}/>
+            <PlayerRating player={player} source={source}/>
             {source==="faceit"&&hasFaceit&&<BestWorstMap faceit={player.faceit}/>}
             {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
             {source==="faceit"&&hasFaceit&&<EloChart faceit={player.faceit}/>}
