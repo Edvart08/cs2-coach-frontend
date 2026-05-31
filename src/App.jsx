@@ -737,6 +737,122 @@ function RecentMatchesOverview({faceit}) {
   );
 }
 
+// ── Progress History ───────────────────────────────────────────────────────────
+function ProgressHistory({player, source}) {
+  const [history, setHistory] = useState([]);
+
+  useEffect(()=>{
+    if (!player?.steamid) return;
+    try{
+      const h = JSON.parse(localStorage.getItem(`cs2_rating_history_${player.steamid}`)||"[]");
+      setHistory(h);
+    }catch{}
+  }, [player?.steamid]);
+
+  if (history.length < 2) return null;
+
+  const first = history[0];
+  const last  = history[history.length-1];
+
+  function sigmoid(val, avgVal) {
+    const ratio = val / avgVal;
+    return Math.min(99, Math.max(1, Math.round(100/(1+Math.exp(-4*(ratio-1))))));
+  }
+  const avgByLevel = [
+    {kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},
+    {kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},
+    {kd:1.20,hs:42,wr:51},{kd:1.28,hs:44,wr:52},{kd:1.38,hs:46,wr:53},
+    {kd:1.52,hs:48,wr:54},{kd:1.72,hs:52,wr:56},
+  ];
+  function calcRating(s) {
+    const avg = avgByLevel[Math.min(s.lvl||0, 10)];
+    const kdP = sigmoid(s.kd, avg.kd);
+    const hsP = sigmoid(s.hs, avg.hs);
+    const wrP = sigmoid(s.wr, avg.wr);
+    return Math.min(99, Math.round(kdP*0.45 + hsP*0.25 + wrP*0.30));
+  }
+
+  const rFirst = calcRating(first);
+  const rLast  = calcRating(last);
+  const diff   = rLast - rFirst;
+  const diffColor = diff > 0 ? C.win : diff < 0 ? C.lose : C.muted;
+
+  const stats = [
+    {name:"K/D", f:first.kd?.toFixed(2), l:last.kd?.toFixed(2),
+     diff:((last.kd||0)-(first.kd||0)).toFixed(2), up:(last.kd||0)>=(first.kd||0)},
+    {name:"HS%", f:Math.round(first.hs||0)+"%", l:Math.round(last.hs||0)+"%",
+     diff:(Math.round(last.hs||0)-Math.round(first.hs||0))+"%", up:(last.hs||0)>=(first.hs||0)},
+    {name:"WR%", f:Math.round(first.wr||0)+"%", l:Math.round(last.wr||0)+"%",
+     diff:(Math.round(last.wr||0)-Math.round(first.wr||0))+"%", up:(last.wr||0)>=(first.wr||0)},
+  ];
+
+  // Мини-график рейтинга
+  const ratings = history.map(s=>calcRating(s));
+  const minR = Math.min(...ratings)-5, maxR = Math.max(...ratings)+5;
+  const W=100, H=40;
+  const pts = ratings.map((r,i)=>({
+    x:(i/(ratings.length-1||1))*W,
+    y:H-((r-minR)/(maxR-minR||1))*H,
+  }));
+  const polyline = pts.map(p=>`${p.x},${p.y}`).join(" ");
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
+      marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
+        📊 ИСТОРИЯ ПРОГРЕССА
+      </div>
+
+      <div style={{display:"flex",gap:"16px",alignItems:"center",flexWrap:"wrap",marginBottom:"16px"}}>
+        {/* Rating change */}
+        <div style={{display:"flex",alignItems:"baseline",gap:"8px"}}>
+          <span style={{fontSize:"36px",color:diffColor,fontWeight:900,lineHeight:1}}>
+            {diff>0?"+":""}{diff}
+          </span>
+          <span style={{fontSize:"14px",color:C.muted}}>рейтинг</span>
+        </div>
+        <div style={{fontSize:"13px",color:C.muted}}>
+          <span style={{color:C.label}}>{rFirst}</span>
+          <span style={{margin:"0 8px"}}>→</span>
+          <span style={{color:diffColor,fontWeight:700}}>{rLast}</span>
+        </div>
+        <div style={{fontSize:"11px",color:C.muted,marginLeft:"auto"}}>
+          {first.date} — {last.date}
+        </div>
+      </div>
+
+      {/* Mini chart */}
+      {ratings.length > 2 && (
+        <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"44px",display:"block",marginBottom:"14px"}}
+          preserveAspectRatio="none">
+          <polyline points={polyline} fill="none" stroke={diffColor}
+            strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
+          {pts.map((p,i)=>(
+            <circle key={i} cx={p.x} cy={p.y} r={i===pts.length-1?"2.5":"1.5"}
+              fill={i===pts.length-1?diffColor:diffColor+"88"}/>
+          ))}
+        </svg>
+      )}
+
+      {/* Stat diffs */}
+      <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+        {stats.map((s,i)=>(
+          <div key={i} style={{flex:"1 1 80px",background:"#0d0d09",
+            border:`1px solid ${C.border}`,padding:"10px 12px",textAlign:"center"}}>
+            <div style={{fontSize:"10px",color:C.muted,marginBottom:"4px",letterSpacing:"1px"}}>{s.name}</div>
+            <div style={{fontSize:"13px",color:C.label,marginBottom:"3px"}}>
+              {s.f} → <span style={{color:s.up?C.win:C.lose,fontWeight:700}}>{s.l}</span>
+            </div>
+            <div style={{fontSize:"11px",color:s.up?C.win:C.lose,fontWeight:700}}>
+              {parseFloat(s.diff)>0?"+":""}{s.diff}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Player Rating ──────────────────────────────────────────────────────────────
 function PlayerRating({player, source}) {
   const fc = player?.faceit;
@@ -3399,6 +3515,22 @@ export default function App() {
       const newCount = analysisCount+1;
       setAnalysisCount(newCount);
       try{ localStorage.setItem("cs2_analysis_count",String(newCount)); }catch{}
+      // Сохраняем снапшот рейтинга для истории прогресса
+      try{
+        const kd  = parseFloat(statsPayload.kd)||0;
+        const hs  = parseFloat(statsPayload.hs)||0;
+        const wr  = parseFloat(statsPayload.winrate)||0;
+        const lvl = parseInt(player.faceit?.level)||0;
+        const snap = {date:new Date().toISOString().slice(0,10), kd, hs, wr, lvl,
+          matches:parseInt(statsPayload.matches)||0};
+        const hKey = `cs2_rating_history_${player.steamid}`;
+        const prev = JSON.parse(localStorage.getItem(hKey)||"[]");
+        // Один снапшот в день
+        const today = snap.date;
+        const filtered = prev.filter(s=>s.date!==today);
+        filtered.push(snap);
+        localStorage.setItem(hKey, JSON.stringify(filtered.slice(-30)));
+      }catch{}
       if (!isPro) setAiRemaining(r=>Math.max(0,r-1));
       fetch(`${BACKEND}/leaderboard/add`,{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({steamid:player.steamid,username:player.username,
@@ -3526,6 +3658,7 @@ export default function App() {
             <HeroCard player={player} source={source}/>
             <ScoreCards player={player} source={source}/>
             <PlayerRating player={player} source={source}/>
+            <ProgressHistory player={player} source={source}/>
             <Achievements player={player} source={source}/>
             {source==="faceit"&&hasFaceit&&<BestWorstMap faceit={player.faceit}/>}
             {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
