@@ -2365,93 +2365,108 @@ function AIVerdict({report, loading, onRefresh}) {
   const problems  = arr(report.problems);
 
   return (
-    <div style={{background:"#15140a",border:`2px solid ${C.yellow}44`,borderLeft:`4px solid ${C.yellow}`,
-      padding:"24px 28px",marginBottom:"16px",position:"relative",overflow:"hidden",animation:"up .4s ease both"}}>
-      {/* glow */}
-      <div style={{position:"absolute",top:"-40px",right:"-40px",width:"220px",height:"220px",
-        background:`radial-gradient(circle,${C.yellow}10,transparent 70%)`,pointerEvents:"none"}}/>
+    <div style={{position:"relative",overflow:"hidden",marginBottom:"16px",animation:"up .4s ease both"}}>
+      {/* Фоновое свечение */}
+      <div style={{position:"absolute",inset:0,
+        background:`radial-gradient(ellipse at 50% 0%,${C.yellow}0d 0%,transparent 65%)`,
+        pointerEvents:"none"}}/>
+      <div style={{position:"absolute",top:0,left:0,right:0,height:"3px",
+        background:`linear-gradient(90deg,transparent 0%,${C.yellow}88 30%,${C.yellow} 50%,${C.yellow}88 70%,transparent 100%)`}}/>
 
-      {/* Header row */}
-      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"18px",flexWrap:"wrap"}}>
-        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%"}}/>
-          <span style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>AI ВЕРДИКТ</span>
-        </div>
-        {report.role&&<span style={{padding:"3px 14px",background:rc+"22",color:rc,
-          border:`1px solid ${rc}55`,fontSize:"12px",letterSpacing:"2px",fontWeight:700}}>
-          {report.role}
-        </span>}
-        <button onClick={onRefresh} style={{marginLeft:"auto",background:"transparent",
-          border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",
-          fontSize:"11px",padding:"4px 12px",fontFamily:"inherit"}}>↻ обновить</button>
-      </div>
+      <div style={{background:"#12110a",border:`1px solid ${C.yellow}44`,padding:"28px 32px",position:"relative"}}>
 
-      {/* Verdict text */}
-      <div style={{fontSize:"16px",color:C.value,lineHeight:1.8,marginBottom:"20px"}}>
-        {report.verdict}
-      </div>
-
-      {/* Roast */}
-      {report.roast&&<div style={{background:"#1e1a08",border:`1px solid ${C.yellow}33`,
-        padding:"10px 16px",marginBottom:"20px",fontSize:"14px",color:C.yellow,
-        fontStyle:"italic",lineHeight:1.6}}>
-        💬 "{report.roast}"
-      </div>}
-
-      {/* Strengths + Problems */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"20px"}}>
-        {/* Сильные стороны */}
-        <div>
-          <div style={{fontSize:"11px",letterSpacing:"2px",color:C.win,fontWeight:700,
-            marginBottom:"8px",display:"flex",alignItems:"center",gap:"6px"}}>
-            <span>✓</span> СИЛЬНЫЕ СТОРОНЫ
+        {/* Header */}
+        <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px",flexWrap:"wrap"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <div style={{width:"10px",height:"10px",background:C.yellow,borderRadius:"50%",
+              boxShadow:`0 0 10px ${C.yellow}`}}/>
+            <span style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>
+              🤖 AI ТРЕНЕР · ПЕРСОНАЛЬНЫЙ РАЗБОР
+            </span>
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-            {strengths.length>0 ? strengths.map((s,i)=>(
-              <div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start",
-                background:"#0a1a0a",border:`1px solid ${C.win}33`,padding:"10px 12px"}}>
-                <span style={{color:C.win,fontSize:"14px",flexShrink:0}}>✓</span>
-                <span style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{s}</span>
-              </div>
-            )) : (
-              <div style={{fontSize:"13px",color:C.muted,padding:"10px"}}>Загружается...</div>
-            )}
-          </div>
+          {report.role&&(
+            <span style={{padding:"4px 16px",background:rc+"22",color:rc,
+              border:`1px solid ${rc}66`,fontSize:"12px",letterSpacing:"3px",fontWeight:800}}>
+              {report.role}
+            </span>
+          )}
+          <button onClick={onRefresh} style={{marginLeft:"auto",background:"transparent",
+            border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",
+            fontSize:"11px",padding:"5px 14px",fontFamily:"inherit",letterSpacing:"1px"}}>
+            ↻ обновить
+          </button>
         </div>
 
-        {/* Проблемы */}
-        <div>
-          <div style={{fontSize:"11px",letterSpacing:"2px",color:C.lose,fontWeight:700,
-            marginBottom:"8px",display:"flex",alignItems:"center",gap:"6px"}}>
-            <span>✗</span> ПРОБЛЕМЫ
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-            {problems.map((p,i)=>(
-              <div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start",
-                background:"#1a0a0a",border:`1px solid ${C.lose}33`,padding:"10px 12px"}}>
-                <span style={{color:C.lose,fontSize:"14px",flexShrink:0}}>✗</span>
-                <span style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{p}</span>
-              </div>
-            ))}
-          </div>
+        {/* VERDICT — главный элемент, крупный текст */}
+        <div style={{fontSize:"20px",color:C.value,lineHeight:1.75,marginBottom:"22px",
+          fontWeight:400,borderLeft:`3px solid ${C.yellow}`,paddingLeft:"18px",
+          borderRadius:"0 0 0 0"}}>
+          {report.verdict}
         </div>
-      </div>
 
-      {/* Priority */}
-      {report.priority&&(
-        <div style={{display:"flex",gap:"14px",alignItems:"flex-start",
-          background:"#0f180f",border:`1px solid ${C.win}55`,padding:"14px 18px"}}>
-          <span style={{fontSize:"20px",flexShrink:0}}>🎯</span>
+        {/* Roast */}
+        {report.roast&&(
+          <div style={{background:`linear-gradient(90deg,${C.yellow}12,transparent)`,
+            borderLeft:`3px solid ${C.yellow}66`,
+            padding:"12px 18px",marginBottom:"24px",
+            fontSize:"15px",color:C.yellow,fontStyle:"italic",lineHeight:1.6}}>
+            💬 "{report.roast}"
+          </div>
+        )}
+
+        {/* Strengths + Problems — крупнее */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"20px"}}>
           <div>
-            <div style={{fontSize:"11px",letterSpacing:"2px",color:C.win,fontWeight:700,marginBottom:"5px"}}>
-              СЛЕДУЮЩАЯ ЦЕЛЬ
+            <div style={{fontSize:"11px",letterSpacing:"3px",color:C.win,fontWeight:700,
+              marginBottom:"10px",display:"flex",alignItems:"center",gap:"8px"}}>
+              ✓ СИЛЬНЫЕ СТОРОНЫ
             </div>
-            <div style={{fontSize:"15px",color:C.value,lineHeight:1.6,fontWeight:500}}>
-              {report.priority}
+            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+              {strengths.length>0 ? strengths.map((s,i)=>(
+                <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",
+                  background:"#0a160a",border:`1px solid ${C.win}33`,padding:"12px 14px"}}>
+                  <span style={{color:C.win,fontSize:"16px",flexShrink:0,marginTop:"1px"}}>✓</span>
+                  <span style={{fontSize:"14px",color:C.text,lineHeight:1.6}}>{s}</span>
+                </div>
+              )) : <div style={{fontSize:"13px",color:C.muted,padding:"10px"}}>Загружается...</div>}
+            </div>
+          </div>
+
+          <div>
+            <div style={{fontSize:"11px",letterSpacing:"3px",color:C.lose,fontWeight:700,
+              marginBottom:"10px",display:"flex",alignItems:"center",gap:"8px"}}>
+              ✗ ПРОБЛЕМЫ
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+              {problems.map((p,i)=>(
+                <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",
+                  background:"#160a0a",border:`1px solid ${C.lose}33`,padding:"12px 14px"}}>
+                  <span style={{color:C.lose,fontSize:"16px",flexShrink:0,marginTop:"1px"}}>✗</span>
+                  <span style={{fontSize:"14px",color:C.text,lineHeight:1.6}}>{p}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      )}
+
+        {/* Priority — выделен сильнее */}
+        {report.priority&&(
+          <div style={{display:"flex",gap:"16px",alignItems:"flex-start",
+            background:`linear-gradient(90deg,${C.win}12,transparent)`,
+            border:`1px solid ${C.win}55`,borderLeft:`4px solid ${C.win}`,
+            padding:"16px 20px"}}>
+            <span style={{fontSize:"24px",flexShrink:0}}>🎯</span>
+            <div>
+              <div style={{fontSize:"11px",letterSpacing:"3px",color:C.win,fontWeight:700,marginBottom:"6px"}}>
+                СЛЕДУЮЩАЯ ЦЕЛЬ
+              </div>
+              <div style={{fontSize:"17px",color:C.value,lineHeight:1.6,fontWeight:600}}>
+                {report.priority}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
