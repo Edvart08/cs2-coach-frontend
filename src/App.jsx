@@ -736,6 +736,91 @@ function RecentMatchesOverview({faceit}) {
     </div>
   );
 }
+
+// ── ELO Chart ─────────────────────────────────────────────────────────────────
+function EloChart({faceit}) {
+  const currentElo = parseInt(faceit?.elo) || 0;
+  const matches = arr(faceit?.matches).slice().reverse();
+  if (!currentElo || matches.length < 2) return null;
+
+  const eloPoints = (() => {
+    let elo = currentElo;
+    const points = [elo];
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const change = parseInt(matches[i]?.elo_change) || 0;
+      elo -= change;
+      points.unshift(elo);
+    }
+    return points.slice(-13);
+  })();
+
+  const min = Math.min(...eloPoints) - 30;
+  const max = Math.max(...eloPoints) + 30;
+  const range = max - min || 1;
+  const W = 100, H = 100;
+  const pts = eloPoints.map((e,i)=>({
+    x:(i/(eloPoints.length-1))*W,
+    y:H-((e-min)/range)*H,
+    elo:e,
+  }));
+  const polyline = pts.map(p=>`${p.x},${p.y}`).join(" ");
+  const area = `${pts[0].x},${H} `+pts.map(p=>`${p.x},${p.y}`).join(" ")+` ${pts[pts.length-1].x},${H}`;
+  const first = eloPoints[0], last = eloPoints[eloPoints.length-1];
+  const diff = last - first;
+  const diffColor = diff >= 0 ? C.win : C.lose;
+  const li = levelInfo(currentElo);
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
+      marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",
+        flexWrap:"wrap",gap:"8px",marginBottom:"16px"}}>
+        <div>
+          <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"4px"}}>
+            📈 FACEIT ELO ГРАФИК
+          </div>
+          <div style={{display:"flex",alignItems:"baseline",gap:"10px"}}>
+            <span style={{fontSize:"26px",color:C.yellow,fontWeight:700}}>{currentElo}</span>
+            <span style={{fontSize:"13px",color:li.color,fontWeight:700}}>LVL {li.lvl}</span>
+          </div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:"12px",color:C.muted,marginBottom:"4px"}}>
+            последние {eloPoints.length-1} матчей
+          </div>
+          <div style={{fontSize:"18px",color:diffColor,fontWeight:700}}>
+            {diff>=0?"+":""}{diff} ELO
+          </div>
+          <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>
+            до LVL {Math.min(10,li.lvl+1)}: {li.toNext>0?li.toNext:"MAX"} ELO
+          </div>
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"80px",overflow:"visible",display:"block"}}
+        preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="eloGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={diffColor} stopOpacity="0.3"/>
+            <stop offset="100%" stopColor={diffColor} stopOpacity="0.02"/>
+          </linearGradient>
+        </defs>
+        <polygon points={area} fill="url(#eloGrad)"/>
+        <polyline points={polyline} fill="none" stroke={diffColor}
+          strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
+        {pts.map((p,i)=>(
+          <circle key={i} cx={p.x} cy={p.y}
+            r={i===pts.length-1?"2.8":"1.5"}
+            fill={i===pts.length-1?diffColor:diffColor+"99"}/>
+        ))}
+      </svg>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:"6px"}}>
+        <span style={{fontSize:"10px",color:C.muted}}>{eloPoints[0]} ELO</span>
+        <span style={{fontSize:"10px",color:C.muted}}>{currentElo} ELO</span>
+      </div>
+    </div>
+  );
+}
+
 function WeekGoal({player, source}) {
   const fc = player?.faceit;
   const cs2 = player?.cs2 || {};
@@ -3238,6 +3323,7 @@ export default function App() {
             <ScoreCards player={player} source={source}/>
             {source==="faceit"&&hasFaceit&&<BestWorstMap faceit={player.faceit}/>}
             {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
+            {source==="faceit"&&hasFaceit&&<EloChart faceit={player.faceit}/>}
             <WeekGoal player={player} source={source}/>
             <TodayRecs player={player} source={source}/>
             {source==="faceit"&&hasFaceit
