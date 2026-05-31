@@ -1872,114 +1872,153 @@ function LandingPage({onLogin}) {
 }
 
 // ── AI Report (автосводка) ────────────────────────────────────────────────────
-function AIReport({player, source}) {
-  const [report, setReport] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  const fc = player?.faceit;
-  const cs2 = player?.cs2 || {};
-
-  async function load() {
-    setLoading(true);
-    const stats = source === "faceit" && fc ? {
-      kd: fc.lifetime?.kd||"0", winrate: fc.lifetime?.winrate||"0",
-      hs: fc.lifetime?.hs||"0", matches: fc.lifetime?.matches||"0",
-      faceit_level: String(fc.level||""), faceit_elo: String(fc.elo||""),
-      maps: arr(fc.maps),
-    } : {
-      kd: cs2.kd||"0", winrate: cs2.winrate||"0",
-      hs: cs2.hs||"0", matches: cs2.matches||"0",
-      faceit_level: String(fc?.level||""), faceit_elo: String(fc?.elo||""),
-      maps: arr(fc?.maps),
-    };
-    try {
-      const r = await fetch(`${BACKEND}/ai-summary`, {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify(stats)
-      });
-      const d = await r.json();
-      if (d.result) { setReport(d.result); setLoaded(true); }
-    } catch {}
-    setLoading(false);
-  }
-
-  // Авто-загрузка при первом рендере
-  useEffect(() => { if (!loaded && !loading) load(); }, [player?.steamid, source]);
-
-  const roleColor = {ENTRY:C.lose, SUPPORT:C.blue, RIFLER:C.yellow, LURKER:"#aa88ff", AWP:"#44ddaa"};
-  const rc = roleColor[report?.role?.split(" ")[0]] || C.yellow;
-
+// ── AI Verdict — большой блок наверху обзора ─────────────────────────────────
+function AIVerdict({report, loading, onRefresh}) {
   if (loading) return (
-    <div style={{background:C.card,border:`2px solid ${C.yellow}`,padding:"28px",marginBottom:"16px",animation:"fadeIn .3s ease"}}>
-      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"16px"}}>
+    <div style={{background:"#15140a",border:`2px solid ${C.yellow}55`,padding:"28px",
+      marginBottom:"16px",animation:"fadeIn .3s ease"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"20px"}}>
         <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",animation:"pulse 1.5s infinite"}}/>
-        <span style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow}}>AI АНАЛИЗИРУЕТ ТВОЮ ИГРУ</span>
+        <span style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow}}>AI АНАЛИЗИРУЕТ ТВОЮ ИГРУ...</span>
       </div>
-      <Skel w="90%" h="18" mb={10}/><Skel w="70%" h="16" mb={10}/><Skel w="80%" h="16"/>
+      <Skel w="85%" h="20" mb={12}/><Skel w="65%" h="16" mb={20}/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+        <Skel w="100%" h="60"/><Skel w="100%" h="60"/>
+      </div>
     </div>
   );
 
   if (!report) return null;
 
+  const roleColor = {ENTRY:C.lose, SUPPORT:C.blue, RIFLER:C.yellow, LURKER:"#aa88ff", AWP:"#44ddaa"};
+  const rc = roleColor[report.role?.split(" ")[0]] || C.yellow;
+  const strengths = arr(report.strengths);
+  const problems  = arr(report.problems);
+
   return (
     <div style={{background:"#15140a",border:`2px solid ${C.yellow}44`,borderLeft:`4px solid ${C.yellow}`,
-      padding:"28px",marginBottom:"16px",position:"relative",overflow:"hidden",animation:"up .4s ease both"}}>
+      padding:"24px 28px",marginBottom:"16px",position:"relative",overflow:"hidden",animation:"up .4s ease both"}}>
       {/* glow */}
-      <div style={{position:"absolute",top:"-40px",right:"-40px",width:"200px",height:"200px",
-        background:`radial-gradient(circle,${C.yellow}12,transparent 70%)`,pointerEvents:"none"}}/>
+      <div style={{position:"absolute",top:"-40px",right:"-40px",width:"220px",height:"220px",
+        background:`radial-gradient(circle,${C.yellow}10,transparent 70%)`,pointerEvents:"none"}}/>
 
-      {/* Header */}
-      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px",flexWrap:"wrap"}}>
+      {/* Header row */}
+      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"18px",flexWrap:"wrap"}}>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
           <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%"}}/>
-          <span style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>AI REPORT</span>
+          <span style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>AI ВЕРДИКТ</span>
         </div>
-        {report.role&&<span style={{padding:"3px 14px",background:rc+"22",color:rc,border:`1px solid ${rc}55`,fontSize:"12px",letterSpacing:"2px",fontWeight:700}}>
+        {report.role&&<span style={{padding:"3px 14px",background:rc+"22",color:rc,
+          border:`1px solid ${rc}55`,fontSize:"12px",letterSpacing:"2px",fontWeight:700}}>
           {report.role}
         </span>}
-        <button onClick={load} style={{marginLeft:"auto",background:"transparent",border:`1px solid ${C.border}`,
-          color:C.muted,cursor:"pointer",fontSize:"11px",padding:"4px 12px",fontFamily:"inherit"}}>
-          ↻ обновить
-        </button>
+        <button onClick={onRefresh} style={{marginLeft:"auto",background:"transparent",
+          border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",
+          fontSize:"11px",padding:"4px 12px",fontFamily:"inherit"}}>↻ обновить</button>
       </div>
 
-      {/* Verdict */}
-      <div style={{fontSize:"17px",color:C.value,lineHeight:1.8,marginBottom:"20px",fontWeight:400}}>
+      {/* Verdict text */}
+      <div style={{fontSize:"16px",color:C.value,lineHeight:1.8,marginBottom:"20px"}}>
         {report.verdict}
       </div>
 
       {/* Roast */}
       {report.roast&&<div style={{background:"#1e1a08",border:`1px solid ${C.yellow}33`,
-        padding:"12px 18px",marginBottom:"20px",fontSize:"15px",color:C.yellow,
+        padding:"10px 16px",marginBottom:"20px",fontSize:"14px",color:C.yellow,
         fontStyle:"italic",lineHeight:1.6}}>
         💬 "{report.roast}"
       </div>}
 
-      {/* Problems */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:"8px",marginBottom:"20px"}}>
-        {arr(report.problems).map((p,i)=>(
-          <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",
-            background:"#1a1009",border:`1px solid ${C.lose}33`,padding:"12px 14px"}}>
-            <span style={{color:C.lose,fontSize:"16px",flexShrink:0}}>✗</span>
-            <span style={{fontSize:"14px",color:C.text,lineHeight:1.6}}>{p}</span>
+      {/* Strengths + Problems */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"20px"}}>
+        {/* Сильные стороны */}
+        <div>
+          <div style={{fontSize:"11px",letterSpacing:"2px",color:C.win,fontWeight:700,
+            marginBottom:"8px",display:"flex",alignItems:"center",gap:"6px"}}>
+            <span>✓</span> СИЛЬНЫЕ СТОРОНЫ
           </div>
-        ))}
+          <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+            {strengths.length>0 ? strengths.map((s,i)=>(
+              <div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start",
+                background:"#0a1a0a",border:`1px solid ${C.win}33`,padding:"10px 12px"}}>
+                <span style={{color:C.win,fontSize:"14px",flexShrink:0}}>✓</span>
+                <span style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{s}</span>
+              </div>
+            )) : (
+              <div style={{fontSize:"13px",color:C.muted,padding:"10px"}}>Загружается...</div>
+            )}
+          </div>
+        </div>
+
+        {/* Проблемы */}
+        <div>
+          <div style={{fontSize:"11px",letterSpacing:"2px",color:C.lose,fontWeight:700,
+            marginBottom:"8px",display:"flex",alignItems:"center",gap:"6px"}}>
+            <span>✗</span> ПРОБЛЕМЫ
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+            {problems.map((p,i)=>(
+              <div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start",
+                background:"#1a0a0a",border:`1px solid ${C.lose}33`,padding:"10px 12px"}}>
+                <span style={{color:C.lose,fontSize:"14px",flexShrink:0}}>✗</span>
+                <span style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{p}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Priority */}
-      {report.priority&&<div style={{display:"flex",gap:"12px",alignItems:"flex-start",
-        background:"#0f1a0f",border:`1px solid ${C.win}44`,padding:"14px 18px"}}>
-        <span style={{fontSize:"16px",flexShrink:0}}>🎯</span>
-        <div>
-          <div style={{fontSize:"12px",letterSpacing:"2px",color:C.win,marginBottom:"4px",fontWeight:700}}>
-            ГЛАВНЫЙ ПРИОРИТЕТ
+      {report.priority&&(
+        <div style={{display:"flex",gap:"14px",alignItems:"flex-start",
+          background:"#0f180f",border:`1px solid ${C.win}55`,padding:"14px 18px"}}>
+          <span style={{fontSize:"20px",flexShrink:0}}>🎯</span>
+          <div>
+            <div style={{fontSize:"11px",letterSpacing:"2px",color:C.win,fontWeight:700,marginBottom:"5px"}}>
+              СЛЕДУЮЩАЯ ЦЕЛЬ
+            </div>
+            <div style={{fontSize:"15px",color:C.value,lineHeight:1.6,fontWeight:500}}>
+              {report.priority}
+            </div>
           </div>
-          <div style={{fontSize:"15px",color:C.value,lineHeight:1.6}}>{report.priority}</div>
         </div>
-      </div>}
+      )}
     </div>
   );
+}
+
+
+function AIReport({player, source}) {
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+  async function load() {
+    setLoading(true);
+    const stats = source==="faceit"&&fc ? {
+      kd:fc.lifetime?.kd||"0", winrate:fc.lifetime?.winrate||"0",
+      hs:fc.lifetime?.hs||"0", matches:fc.lifetime?.matches||"0",
+      faceit_level:String(fc.level||""), faceit_elo:String(fc.elo||""),
+      maps:arr(fc.maps),
+    } : {
+      kd:cs2.kd||"0", winrate:cs2.winrate||"0",
+      hs:cs2.hs||"0", matches:cs2.matches||"0",
+      faceit_level:String(fc?.level||""), faceit_elo:String(fc?.elo||""),
+      maps:arr(fc?.maps),
+    };
+    try {
+      const r = await fetch(`${BACKEND}/ai-summary`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(stats)
+      });
+      const d = await r.json();
+      if(d.result){setReport(d.result);setLoaded(true);}
+    } catch {}
+    setLoading(false);
+  }
+  useEffect(()=>{if(!loaded&&!loading)load();},[player?.steamid,source]);
+  return <AIVerdict report={report} loading={loading} onRefresh={load}/>;
 }
 
 
@@ -2901,7 +2940,9 @@ export default function App() {
               analysisCount={analysisCount}
               onDismiss={()=>setShowChecklist(false)}/>}
             {source==="steam"&&player.cs2?.private&&<PrivateWarning/>}
-            {!player.cs2?.private&&(isPro||aiRemaining>0?<AIReport player={player} source={source}/>:<PaywallOverlay feature="AI Report" onUpgrade={()=>setShowProModal(true)}/>)}
+            {!player.cs2?.private&&(isPro||aiRemaining>0
+              ? <AIReport player={player} source={source}/>
+              : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
             <HeroCard player={player} source={source}/>
             <ScoreCards player={player} source={source}/>
             {source==="faceit"&&hasFaceit
