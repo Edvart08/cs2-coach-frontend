@@ -747,37 +747,46 @@ function PlayerRating({player, source}) {
   const lvl = parseInt(fc?.level) || 0;
   const matches = parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches) || 0;
 
-  // Средние показатели по уровням FACEIT (или steam средние)
-  // Данные основаны на реальных средних CS2/FACEIT статистиках
   const avgByLevel = [
-    {kd:0.75, hs:28, wr:42}, // lvl 0 / steam avg
-    {kd:0.80, hs:30, wr:44}, // lvl 1
-    {kd:0.90, hs:33, wr:46}, // lvl 2
+    {kd:0.75, hs:28, wr:43}, // lvl 0 / steam
+    {kd:0.82, hs:30, wr:44}, // lvl 1
+    {kd:0.92, hs:33, wr:46}, // lvl 2
     {kd:1.00, hs:36, wr:48}, // lvl 3
-    {kd:1.05, hs:38, wr:49}, // lvl 4
-    {kd:1.10, hs:40, wr:50}, // lvl 5
-    {kd:1.18, hs:42, wr:51}, // lvl 6
-    {kd:1.25, hs:44, wr:52}, // lvl 7
-    {kd:1.35, hs:46, wr:53}, // lvl 8
-    {kd:1.50, hs:48, wr:54}, // lvl 9
-    {kd:1.70, hs:52, wr:56}, // lvl 10
+    {kd:1.06, hs:38, wr:49}, // lvl 4
+    {kd:1.12, hs:40, wr:50}, // lvl 5
+    {kd:1.20, hs:42, wr:51}, // lvl 6
+    {kd:1.28, hs:44, wr:52}, // lvl 7
+    {kd:1.38, hs:46, wr:53}, // lvl 8
+    {kd:1.52, hs:48, wr:54}, // lvl 9
+    {kd:1.72, hs:52, wr:56}, // lvl 10
   ];
   const avg = avgByLevel[Math.min(lvl, 10)];
 
-  // Считаем percentile по каждому показателю
-  const kdPct   = Math.min(99, Math.round(Math.max(1, (kd / avg.kd) * 50)));
-  const hsPct   = Math.min(99, Math.round(Math.max(1, (hs / avg.hs) * 50)));
-  const wrPct   = Math.min(99, Math.round(Math.max(1, (wr / avg.wr) * 50)));
-  const overall = Math.min(99, Math.round((kdPct * 0.4 + hsPct * 0.3 + wrPct * 0.3)));
+  // Нормальная percentile-формула: среднее = 50, отклонение логарифмическое
+  // Убирает эффект "100% WR = 99 рейтинг" при малом кол-ве матчей
+  function pct(val, avgVal, maxVal) {
+    // Нормализуем относительно avg (avg = 50 percentile)
+    // Используем sigmoid-подобную функцию
+    const ratio = val / avgVal;
+    // sigmoid: 1/(1+e^(-k*(x-1))) * 100, где k=4 даёт плавную кривую
+    const score = Math.round(100 / (1 + Math.exp(-4 * (ratio - 1))));
+    // Штраф за малое кол-во матчей — не доверяем WR при < 20 матчах
+    if (val === 100 && matches < 20) return Math.min(score, 65);
+    return Math.min(99, Math.max(1, score));
+  }
 
-  const overallColor = overall >= 70 ? C.win : overall >= 45 ? C.yellow : C.orange;
-  const label = overall >= 80 ? "ТОП ИГРОК" : overall >= 60 ? "ВЫШЕ СРЕДНЕГО" :
-    overall >= 40 ? "СРЕДНИЙ УРОВЕНЬ" : "ЕСТЬ КУДА РАСТИ";
+  const kdPct   = pct(kd, avg.kd, 3.0);
+  const hsPct   = pct(hs, avg.hs, 80);
+  const wrPct   = pct(wr, avg.wr, 100);
+  const overall = Math.min(99, Math.round(kdPct*0.45 + hsPct*0.25 + wrPct*0.30));
+
+  const overallColor = overall>=70?C.win:overall>=45?C.yellow:C.orange;
+  const label = overall>=80?"ТОП ИГРОК":overall>=60?"ВЫШЕ СРЕДНЕГО":overall>=40?"СРЕДНИЙ УРОВЕНЬ":"ЕСТЬ КУДА РАСТИ";
 
   const stats = [
-    {name:"K/D",    val:kd.toFixed(2), avg:avg.kd.toFixed(2), pct:kdPct,  color:C.blue},
-    {name:"HS%",    val:hs+"%",        avg:avg.hs+"%",         pct:hsPct,  color:C.orange},
-    {name:"WR%",    val:wr+"%",        avg:avg.wr+"%",         pct:wrPct,  color:"#aa88ff"},
+    {name:"K/D",  val:kd.toFixed(2), avg:avg.kd.toFixed(2), pct:kdPct,  color:C.blue},
+    {name:"HS%",  val:Math.round(hs)+"%", avg:avg.hs+"%",   pct:hsPct,  color:C.orange},
+    {name:"WR%",  val:Math.round(wr)+"%", avg:avg.wr+"%",   pct:wrPct,  color:"#aa88ff"},
   ];
 
   return (
@@ -787,28 +796,21 @@ function PlayerRating({player, source}) {
         🏅 CS2 COACH РЕЙТИНГ
       </div>
       <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"16px"}}>
-        {/* Big number */}
         <div style={{textAlign:"center",minWidth:"90px"}}>
-          <div style={{fontSize:"52px",color:overallColor,fontWeight:900,lineHeight:1}}>
-            {overall}
-          </div>
+          <div style={{fontSize:"52px",color:overallColor,fontWeight:900,lineHeight:1}}>{overall}</div>
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginTop:"4px"}}>из 100</div>
         </div>
-        {/* Description */}
         <div style={{flex:1}}>
-          <div style={{fontSize:"15px",color:overallColor,fontWeight:700,marginBottom:"6px"}}>
-            {label}
-          </div>
+          <div style={{fontSize:"15px",color:overallColor,fontWeight:700,marginBottom:"6px"}}>{label}</div>
           <div style={{fontSize:"13px",color:C.text,lineHeight:1.7}}>
             Лучше чем <span style={{color:overallColor,fontWeight:700}}>{overall}%</span> игроков
-            {lvl > 0 ? ` уровня FACEIT ${lvl}` : " CS2"}
+            {lvl>0?` уровня FACEIT ${lvl}`:" CS2"}
           </div>
-          {matches > 0 && <div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>
+          {matches>0&&<div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>
             на основе {matches} матчей
           </div>}
         </div>
       </div>
-      {/* Stat bars */}
       <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
         {stats.map((s,i)=>(
           <div key={i}>
@@ -820,12 +822,106 @@ function PlayerRating({player, source}) {
               </span>
             </div>
             <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
-              <div style={{height:"100%",width:`${Math.min(s.pct,100)}%`,
+              <div style={{height:"100%",width:`${s.pct}%`,
                 background:s.color,borderRadius:"2px",transition:"width 1s ease"}}/>
             </div>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ── Achievements ───────────────────────────────────────────────────────────────
+function Achievements({player, source}) {
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+  const kd      = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
+  const hs      = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
+  const wr      = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+  const matches = parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches) || 0;
+  const wins    = parseInt(source==="faceit"?fc?.lifetime?.wins:cs2.wins) || 0;
+  const kills   = parseInt(cs2?.kills) || 0;
+  const mvps    = parseInt(cs2?.mvps) || 0;
+  const lvl     = parseInt(fc?.level) || 0;
+  const streak  = parseInt(fc?.lifetime?.longest_streak) || 0;
+
+  const all = [
+    {id:"headshot",  icon:"🎯", name:"HS Машина",      desc:"40%+ хедшотов",          done: hs>=40},
+    {id:"sniper",    icon:"🔭", name:"Снайпер",         desc:"50%+ хедшотов",          done: hs>=50},
+    {id:"fragger",   icon:"⚔️", name:"Фраггер",         desc:"K/D выше 1.0",           done: kd>=1.0},
+    {id:"elite",     icon:"💀", name:"Элита",           desc:"K/D выше 1.5",           done: kd>=1.5},
+    {id:"winner",    icon:"🏆", name:"Победитель",      desc:"50%+ побед",             done: wr>=50},
+    {id:"dominator", icon:"👑", name:"Доминатор",       desc:"60%+ побед",             done: wr>=60},
+    {id:"veteran",   icon:"🎖️", name:"Ветеран",         desc:"200+ матчей",            done: matches>=200},
+    {id:"grinder",   icon:"⚙️", name:"Гриндер",         desc:"500+ матчей",            done: matches>=500},
+    {id:"streak3",   icon:"🔥", name:"Серия побед",     desc:"3+ побед подряд",        done: streak>=3},
+    {id:"streak5",   icon:"💥", name:"Огненная серия",  desc:"5+ побед подряд",        done: streak>=5},
+    {id:"faceit5",   icon:"⚡", name:"FACEIT Pro",      desc:"FACEIT уровень 5+",      done: lvl>=5},
+    {id:"faceit8",   icon:"🌟", name:"FACEIT Элита",    desc:"FACEIT уровень 8+",      done: lvl>=8},
+    {id:"mvp100",    icon:"🥇", name:"MVP Коллекционер",desc:"100+ MVP",               done: mvps>=100},
+    {id:"kills1k",   icon:"🗡️", name:"1000 убийств",    desc:"1000+ убийств в CS2",   done: kills>=1000},
+    {id:"kills10k",  icon:"💣", name:"10000 убийств",   desc:"10000+ убийств в CS2",  done: kills>=10000},
+  ];
+
+  const unlocked = all.filter(a=>a.done);
+  const locked   = all.filter(a=>!a.done).slice(0, 4); // только 4 ближайших
+
+  if (!unlocked.length && !locked.length) return null;
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
+      marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>
+          🏅 ДОСТИЖЕНИЯ
+        </span>
+        <span style={{fontSize:"11px",color:C.muted}}>
+          {unlocked.length} / {all.length}
+        </span>
+      </div>
+
+      {/* Unlocked */}
+      {unlocked.length>0&&(
+        <div style={{display:"flex",flexWrap:"wrap",gap:"8px",marginBottom:locked.length?"14px":"0"}}>
+          {unlocked.map(a=>(
+            <div key={a.id} title={a.desc} style={{
+              display:"flex",alignItems:"center",gap:"8px",
+              background:`linear-gradient(135deg,${C.yellow}18,${C.yellow}08)`,
+              border:`1px solid ${C.yellow}55`,
+              padding:"8px 14px",cursor:"default"}}>
+              <span style={{fontSize:"18px"}}>{a.icon}</span>
+              <div>
+                <div style={{fontSize:"12px",color:C.yellow,fontWeight:700,lineHeight:1.2}}>{a.name}</div>
+                <div style={{fontSize:"10px",color:C.muted,lineHeight:1.3}}>{a.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Locked — следующие цели */}
+      {locked.length>0&&(
+        <>
+          <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>
+            СЛЕДУЮЩИЕ ЦЕЛИ:
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:"8px"}}>
+            {locked.map(a=>(
+              <div key={a.id} title={a.desc} style={{
+                display:"flex",alignItems:"center",gap:"8px",
+                background:"#0d0d09",border:`1px solid ${C.border}`,
+                padding:"8px 14px",opacity:0.5,cursor:"default"}}>
+                <span style={{fontSize:"18px",filter:"grayscale(1)"}}>{a.icon}</span>
+                <div>
+                  <div style={{fontSize:"12px",color:C.muted,fontWeight:700,lineHeight:1.2}}>{a.name}</div>
+                  <div style={{fontSize:"10px",color:C.muted,lineHeight:1.3}}>{a.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -3430,6 +3526,7 @@ export default function App() {
             <HeroCard player={player} source={source}/>
             <ScoreCards player={player} source={source}/>
             <PlayerRating player={player} source={source}/>
+            <Achievements player={player} source={source}/>
             {source==="faceit"&&hasFaceit&&<BestWorstMap faceit={player.faceit}/>}
             {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
             {source==="faceit"&&hasFaceit&&<EloChart faceit={player.faceit}/>}
