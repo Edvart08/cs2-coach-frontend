@@ -1138,14 +1138,51 @@ function TodayRecs({player, source}) {
   const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
   const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
   const wr  = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+  const matches = parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches) || 0;
+  const kills = parseInt(cs2?.kills) || 0;
 
+  // Каждая рекомендация знает какую ачивку она закрывает
   const recs = [];
-  recs.push({icon:"🎯", time:"15 мин", text:"Aim_botz: 500 убийств с места", cat:"AIM", color:C.lose});
-  if (hs < 40)  recs.push({icon:"💥", time:"20 мин", text:"Recoil Master: спрей AK и M4", cat:"МЕХАНИКА", color:C.orange});
-  if (kd < 1.0) recs.push({icon:"🏃", time:"15 мин", text:"Counter-strafe: стоп → выстрел", cat:"ДВИЖЕНИЕ", color:C.blue});
-  recs.push({icon:"🗺️", time:"20 мин", text:"Prefire Workshop: 10 позиций на лучшей карте", cat:"КАРТЫ", color:"#44ddaa"});
-  if (wr < 50)  recs.push({icon:"📹", time:"15 мин", text:"Пересмотри 1 проигранный раунд", cat:"АНАЛИЗ", color:"#aa88ff"});
-  else          recs.push({icon:"💣", time:"10 мин", text:"Выучи 1 новый смок или молотов", cat:"ГРАНАТЫ", color:C.yellow});
+
+  // AIM — всегда
+  recs.push({
+    icon:"🎯", time:"15 мин", cat:"AIM", color:C.lose,
+    text:"Aim_botz: 500 убийств с места",
+    unlock: hs < 40 ? {icon:"🎯", name:"HS Машина", pct:Math.round(hs/40*100)} : null,
+  });
+
+  // Recoil если HS низкий
+  if (hs < 40) recs.push({
+    icon:"💥", time:"20 мин", cat:"МЕХАНИКА", color:C.orange,
+    text:"Recoil Master: спрей AK и M4",
+    unlock: {icon:"🎯", name:"HS Машина", pct:Math.round(hs/40*100)},
+  });
+
+  // Counter-strafe если K/D плохой
+  if (kd < 1.0) recs.push({
+    icon:"🏃", time:"15 мин", cat:"ДВИЖЕНИЕ", color:C.blue,
+    text:"Counter-strafe: стоп → выстрел",
+    unlock: {icon:"⚔️", name:"Фраггер K/D>1.0", pct:Math.round(Math.min(99,kd/1.0*100))},
+  });
+
+  // Prefire — всегда
+  recs.push({
+    icon:"🗺️", time:"20 мин", cat:"КАРТЫ", color:"#44ddaa",
+    text:"Prefire Workshop: 10 позиций на лучшей карте",
+    unlock: null,
+  });
+
+  // Анализ или гранаты
+  if (wr < 50) recs.push({
+    icon:"📹", time:"15 мин", cat:"АНАЛИЗ", color:"#aa88ff",
+    text:"Пересмотри 1 проигранный раунд",
+    unlock: {icon:"🏆", name:"Победитель WR>50%", pct:Math.round(wr/50*100)},
+  });
+  else recs.push({
+    icon:"💣", time:"10 мин", cat:"ГРАНАТЫ", color:C.yellow,
+    text:"Выучи 1 новый смок или молотов",
+    unlock: null,
+  });
 
   const shown = recs.slice(0, 4);
 
@@ -1157,16 +1194,86 @@ function TodayRecs({player, source}) {
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"8px"}}>
         {shown.map((r,i)=>(
-          <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",
+          <div key={i} style={{display:"flex",flexDirection:"column",gap:"8px",
             background:"#0d0d09",border:`1px solid ${r.color}22`,padding:"12px 14px"}}>
-            <span style={{fontSize:"18px",flexShrink:0}}>{r.icon}</span>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
-                <span style={{fontSize:"10px",color:r.color,letterSpacing:"1px",fontWeight:700}}>{r.cat}</span>
-                <span style={{fontSize:"10px",color:C.muted}}>{r.time}</span>
+            <div style={{display:"flex",gap:"12px",alignItems:"flex-start"}}>
+              <span style={{fontSize:"18px",flexShrink:0}}>{r.icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
+                  <span style={{fontSize:"10px",color:r.color,letterSpacing:"1px",fontWeight:700}}>{r.cat}</span>
+                  <span style={{fontSize:"10px",color:C.muted}}>{r.time}</span>
+                </div>
+                <div style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{r.text}</div>
               </div>
-              <div style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{r.text}</div>
             </div>
+            {/* Связь с ачивкой */}
+            {r.unlock&&(
+              <div style={{display:"flex",alignItems:"center",gap:"8px",
+                background:"#141409",border:`1px solid ${C.yellow}22`,padding:"6px 10px"}}>
+                <span style={{fontSize:"13px"}}>{r.unlock.icon}</span>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:"2px"}}>
+                    <span style={{fontSize:"10px",color:C.yellow,fontWeight:600}}>{r.unlock.name}</span>
+                    <span style={{fontSize:"10px",color:C.muted}}>{r.unlock.pct}%</span>
+                  </div>
+                  <div style={{height:"2px",background:"#1a1a10",borderRadius:"1px",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${r.unlock.pct}%`,background:C.yellow,
+                      borderRadius:"1px",boxShadow:`0 0 4px ${C.yellow}88`}}/>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── What Changed ───────────────────────────────────────────────────────────────
+function WhatChanged({player, source}) {
+  const [history, setHistory] = useState([]);
+  useEffect(()=>{
+    if (!player?.steamid) return;
+    try{ const h=JSON.parse(localStorage.getItem(`cs2_rating_history_${player.steamid}`)||"[]"); setHistory(h); }catch{}
+  }, [player?.steamid]);
+
+  if (history.length < 2) return null;
+
+  // Берём последние 7 дней vs предыдущий снапшот
+  const last = history[history.length-1];
+  const prev = history[history.length-2];
+  const weekAgo = history.find(s=>{
+    const d = new Date(last.date) - new Date(s.date);
+    return d >= 6*24*60*60*1000;
+  }) || prev;
+
+  const kdDiff  = parseFloat(((last.kd||0)-(weekAgo.kd||0)).toFixed(2));
+  const hsDiff  = Math.round((last.hs||0)-(weekAgo.hs||0));
+  const wrDiff  = Math.round((last.wr||0)-(weekAgo.wr||0));
+
+  const changes = [
+    {label:"K/D", diff:kdDiff, fmt:(d)=>(d>0?"+":"")+d},
+    {label:"HS%", diff:hsDiff, fmt:(d)=>(d>0?"+":"")+d+"%"},
+    {label:"WR%", diff:wrDiff, fmt:(d)=>(d>0?"+":"")+d+"%"},
+  ].filter(c=>c.diff!==0);
+
+  if (!changes.length) return null;
+
+  return (
+    <div style={{background:"#0d0d09",border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.blue}`,
+      padding:"12px 18px",marginBottom:"3px",display:"flex",alignItems:"center",
+      gap:"16px",flexWrap:"wrap",animation:"up .4s ease both"}}>
+      <span style={{fontSize:"11px",color:C.blue,letterSpacing:"2px",fontWeight:700,flexShrink:0}}>
+        📈 С ПРОШЛОГО ВИЗИТА:
+      </span>
+      <div style={{display:"flex",gap:"12px",flexWrap:"wrap"}}>
+        {changes.map((c,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:"6px"}}>
+            <span style={{fontSize:"11px",color:C.muted}}>{c.label}</span>
+            <span style={{fontSize:"14px",color:c.diff>0?C.win:C.lose,fontWeight:700}}>
+              {c.fmt(c.diff)}
+            </span>
           </div>
         ))}
       </div>
@@ -3658,6 +3765,7 @@ export default function App() {
               ? <AIReport player={player} source={source}/>
               : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
             <HeroCard player={player} source={source}/>
+            <WhatChanged player={player} source={source}/>
             <ScoreCards player={player} source={source}/>
             <PlayerRating player={player} source={source}/>
             <ProgressHistory player={player} source={source}/>
