@@ -637,6 +637,102 @@ function BestWorstMap({faceit}) {
   );
 }
 
+// ── Week Goal ─────────────────────────────────────────────────────────────────
+function WeekGoal({player, source}) {
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+  const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
+  const wr  = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+  const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
+  const lvl = parseInt(fc?.level) || 0;
+
+  // Генерируем цель из статов
+  const goal = (() => {
+    if (kd < 0.8)  return {label:"Поднять K/D", from:kd.toFixed(2), to:(kd+0.15).toFixed(2), unit:"K/D", progress:Math.min(95,Math.round(kd/0.8*100))};
+    if (hs < 35)   return {label:"Улучшить прицел", from:hs+"%", to:(hs+8)+"%", unit:"HS%", progress:Math.min(95,Math.round(hs/35*100))};
+    if (wr < 48)   return {label:"Поднять WR", from:wr+"%", to:(Math.min(wr+6,60))+"%", unit:"WR%", progress:Math.min(95,Math.round(wr/48*100))};
+    if (kd < 1.2)  return {label:"Стабилизировать K/D", from:kd.toFixed(2), to:(kd+0.1).toFixed(2), unit:"K/D", progress:Math.min(95,Math.round((kd-0.8)/0.4*100))};
+    if (lvl > 0 && lvl < 10) return {label:`Подняться до FACEIT ${lvl+1}`, from:`lvl ${lvl}`, to:`lvl ${lvl+1}`, unit:"lvl", progress:Math.min(90,Math.round((fc?.elo||0)%1000/10))};
+    return {label:"Удержать форму", from:kd.toFixed(2), to:kd.toFixed(2), unit:"K/D", progress:85};
+  })();
+
+  const barColor = goal.progress >= 70 ? C.win : goal.progress >= 40 ? C.yellow : C.orange;
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
+      marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",
+        flexWrap:"wrap",gap:"12px",marginBottom:"14px"}}>
+        <div>
+          <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"4px"}}>
+            🎯 ЦЕЛЬ НЕДЕЛИ
+          </div>
+          <div style={{fontSize:"17px",color:C.value,fontWeight:700}}>{goal.label}</div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>
+            {goal.from} → <span style={{color:barColor,fontWeight:700}}>{goal.to}</span>
+          </div>
+          <div style={{fontSize:"13px",color:barColor,fontWeight:700}}>{goal.progress}%</div>
+        </div>
+      </div>
+      <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${goal.progress}%`,background:barColor,
+          borderRadius:"3px",transition:"width 1s ease",
+          boxShadow:`0 0 8px ${barColor}66`}}/>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:"6px",
+        fontSize:"11px",color:C.muted}}>
+        <span>Начало недели</span>
+        <span>Цель</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Today Recommendations ──────────────────────────────────────────────────────
+function TodayRecs({player, source}) {
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+  const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
+  const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
+  const wr  = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+
+  const recs = [];
+  recs.push({icon:"🎯", time:"15 мин", text:"Aim_botz: 500 убийств с места", cat:"AIM", color:C.lose});
+  if (hs < 40)  recs.push({icon:"💥", time:"20 мин", text:"Recoil Master: спрей AK и M4", cat:"МЕХАНИКА", color:C.orange});
+  if (kd < 1.0) recs.push({icon:"🏃", time:"15 мин", text:"Counter-strafe: стоп → выстрел", cat:"ДВИЖЕНИЕ", color:C.blue});
+  recs.push({icon:"🗺️", time:"20 мин", text:"Prefire Workshop: 10 позиций на лучшей карте", cat:"КАРТЫ", color:"#44ddaa"});
+  if (wr < 50)  recs.push({icon:"📹", time:"15 мин", text:"Пересмотри 1 проигранный раунд", cat:"АНАЛИЗ", color:"#aa88ff"});
+  else          recs.push({icon:"💣", time:"10 мин", text:"Выучи 1 новый смок или молотов", cat:"ГРАНАТЫ", color:C.yellow});
+
+  const shown = recs.slice(0, 4);
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
+      marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
+        📋 РЕКОМЕНДАЦИИ НА СЕГОДНЯ
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"8px"}}>
+        {shown.map((r,i)=>(
+          <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",
+            background:"#0d0d09",border:`1px solid ${r.color}22`,padding:"12px 14px"}}>
+            <span style={{fontSize:"18px",flexShrink:0}}>{r.icon}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
+                <span style={{fontSize:"10px",color:r.color,letterSpacing:"1px",fontWeight:700}}>{r.cat}</span>
+                <span style={{fontSize:"10px",color:C.muted}}>{r.time}</span>
+              </div>
+              <div style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{r.text}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Search ────────────────────────────────────────────────────────────────────
 function SearchBar({onSelect}) {
   const [q,setQ]=useState(""), [res,setRes]=useState([]), [open,setOpen]=useState(false), [loading,setLoading]=useState(false);
@@ -1270,7 +1366,7 @@ function Footer({onAbout, onPro, onLeaderboard}) {
   return (
     <footer style={{background:"#0d0d09",borderTop:`1px solid ${C.border}`,
       padding:"32px 24px 24px",marginTop:"32px"}}>
-      <div style={{maxWidth:"1100px",margin:"0 auto"}}>
+      <div style={{maxWidth:"1400px",margin:"0 auto"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",
           flexWrap:"wrap",gap:"24px",marginBottom:"28px"}}>
 
@@ -2965,7 +3061,7 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{className:"content-pad",maxWidth:"1100px",margin:"0 auto",padding:"28px 24px 80px",position:"relative",zIndex:5,minHeight:"calc(100vh - 200px)"}}>
+      <div style={{className:"content-pad",maxWidth:"1400px",margin:"0 auto",padding:"28px 24px 80px",position:"relative",zIndex:5,minHeight:"calc(100vh - 200px)"}}>
 
         {/* Page title */}
         <div style={{marginBottom:"24px"}}>
@@ -3005,6 +3101,8 @@ export default function App() {
             <HeroCard player={player} source={source}/>
             <ScoreCards player={player} source={source}/>
             {source==="faceit"&&hasFaceit&&<BestWorstMap faceit={player.faceit}/>}
+            <WeekGoal player={player} source={source}/>
+            <TodayRecs player={player} source={source}/>
             {source==="faceit"&&hasFaceit
               ?<div style={{marginTop:"12px"}}><ChartsSection faceit={player.faceit}/></div>
               :source==="steam"&&!player.cs2?.private&&(
