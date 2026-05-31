@@ -2644,9 +2644,9 @@ const DIFF_COLOR = {"Начинающий":C.win,"Средний":C.yellow,"Пр
 const MAP_IMAGES = {
   Mirage:  { src: "/maps/mirage.webp"  },
   Inferno: { src: "/maps/inferno.webp" },
-  Dust2:   { src: "/maps/dust2.webp"   },
-  Nuke:    { src: "/maps/nuke.webp"    },
-  Ancient: { src: "/maps/ancient.webp" },
+  Dust2:   { src: "/maps/Dust-2.webp"   },
+  Nuke:    { src: "/maps/Nuke.webp"    },
+  Ancient: { src: "/maps/Ancient.webp" },
   Anubis:  { src: "/maps/anubis.webp"  },
 };
 
