@@ -859,9 +859,10 @@ function PlayerRating({player, source}) {
   const cs2 = player?.cs2 || {};
   const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
   const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
-  const wr  = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
   const lvl = parseInt(fc?.level) || 0;
   const matches = parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches) || 0;
+  const wrRaw = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+  const wr = (wrRaw >= 99 && matches < 50) ? 65 : Math.min(wrRaw, 99);
 
   const avgByLevel = [
     {kd:0.75, hs:28, wr:43}, // lvl 0 / steam
@@ -1134,14 +1135,35 @@ function WeekGoal({player, source}) {
   const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
   const lvl = parseInt(fc?.level) || 0;
 
-  // Генерируем цель из статов
+  // Генерируем цель и прогресс из статов
+  // Прогресс = насколько ты уже достиг цели (от нижней границы к целевому значению)
   const goal = (() => {
-    if (kd < 0.8)  return {label:"Поднять K/D", from:kd.toFixed(2), to:(kd+0.15).toFixed(2), unit:"K/D", progress:Math.min(95,Math.round(kd/0.8*100))};
-    if (hs < 35)   return {label:"Улучшить прицел", from:hs+"%", to:(hs+8)+"%", unit:"HS%", progress:Math.min(95,Math.round(hs/35*100))};
-    if (wr < 48)   return {label:"Поднять WR", from:wr+"%", to:(Math.min(wr+6,60))+"%", unit:"WR%", progress:Math.min(95,Math.round(wr/48*100))};
-    if (kd < 1.2)  return {label:"Стабилизировать K/D", from:kd.toFixed(2), to:(kd+0.1).toFixed(2), unit:"K/D", progress:Math.min(95,Math.round((kd-0.8)/0.4*100))};
-    if (lvl > 0 && lvl < 10) return {label:`Подняться до FACEIT ${lvl+1}`, from:`lvl ${lvl}`, to:`lvl ${lvl+1}`, unit:"lvl", progress:Math.min(90,Math.round((fc?.elo||0)%1000/10))};
-    return {label:"Удержать форму", from:kd.toFixed(2), to:kd.toFixed(2), unit:"K/D", progress:85};
+    if (kd < 1.0) {
+      // Цель: поднять K/D до 1.0. Прогресс = kd/1.0
+      const target = kd < 0.7 ? 0.85 : kd < 0.85 ? 1.0 : 1.1;
+      const start  = kd < 0.7 ? 0.5  : kd < 0.85 ? 0.7 : 0.85;
+      const prog   = Math.min(95, Math.round((kd - start) / (target - start) * 100));
+      return {label: kd<0.85?"Поднять K/D":"Приблизиться к K/D 1.0",
+        from:kd.toFixed(2), to:target.toFixed(2), progress:Math.max(5,prog)};
+    }
+    if (hs < 40) {
+      const prog = Math.min(95, Math.round((hs - 20) / (40 - 20) * 100));
+      return {label:"Улучшить прицел до 40% HS", from:Math.round(hs)+"%", to:"40%", progress:Math.max(5,prog)};
+    }
+    if (wr < 52) {
+      const prog = Math.min(95, Math.round((wr - 40) / (52 - 40) * 100));
+      return {label:"Поднять WR выше 52%", from:Math.round(wr)+"%", to:"52%", progress:Math.max(5,prog)};
+    }
+    if (kd < 1.4) {
+      const prog = Math.min(95, Math.round((kd - 1.0) / (1.4 - 1.0) * 100));
+      return {label:"Закрепить K/D выше 1.4", from:kd.toFixed(2), to:"1.40", progress:Math.max(5,prog)};
+    }
+    if (lvl > 0 && lvl < 10) {
+      const eloInLevel = (fc?.elo||0) % 1000;
+      const prog = Math.min(90, Math.round(eloInLevel / 10));
+      return {label:`Подняться до FACEIT ${lvl+1}`, from:`lvl ${lvl}`, to:`lvl ${lvl+1}`, progress:Math.max(5,prog)};
+    }
+    return {label:"Удержать форму", from:kd.toFixed(2), to:kd.toFixed(2), progress:85};
   })();
 
   const barColor = goal.progress >= 70 ? C.win : goal.progress >= 40 ? C.yellow : C.orange;
