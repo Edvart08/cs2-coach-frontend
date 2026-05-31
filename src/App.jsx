@@ -2029,16 +2029,54 @@ function LandingPage({onLogin}) {
 // ── AI Report (автосводка) ────────────────────────────────────────────────────
 // ── AI Verdict — большой блок наверху обзора ─────────────────────────────────
 function AIVerdict({report, loading, onRefresh}) {
+  const [step, setStep] = useState(0);
+  const steps = [
+    "Анализируем статистику матчей...",
+    "Изучаем лучшие и худшие карты...",
+    "Ищем слабые стороны...",
+    "Формируем персональный вердикт...",
+  ];
+
+  useEffect(()=>{
+    if (!loading) return;
+    setStep(0);
+    const iv = setInterval(()=>setStep(s=>s<steps.length-1?s+1:s), 1800);
+    return ()=>clearInterval(iv);
+  }, [loading]);
+
   if (loading) return (
-    <div style={{background:"#15140a",border:`2px solid ${C.yellow}55`,padding:"28px",
-      marginBottom:"16px",animation:"fadeIn .3s ease"}}>
-      <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"20px"}}>
-        <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",animation:"pulse 1.5s infinite"}}/>
-        <span style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow}}>AI АНАЛИЗИРУЕТ ТВОЮ ИГРУ...</span>
+    <div style={{background:"#15140a",border:`2px solid ${C.yellow}55`,borderLeft:`4px solid ${C.yellow}`,
+      padding:"28px",marginBottom:"16px",animation:"fadeIn .3s ease"}}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"22px"}}>
+        <div style={{width:"9px",height:"9px",background:C.yellow,borderRadius:"50%",
+          animation:"pulse 1.2s infinite",boxShadow:`0 0 8px ${C.yellow}`}}/>
+        <span style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>🤖 AI ТРЕНЕР</span>
       </div>
-      <Skel w="85%" h="20" mb={12}/><Skel w="65%" h="16" mb={20}/>
+      {/* Animated steps */}
+      <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"24px"}}>
+        {steps.map((s,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:"10px",
+            opacity: i<=step?1:0.2, transition:"opacity .5s ease"}}>
+            <div style={{width:"6px",height:"6px",borderRadius:"50%",flexShrink:0,
+              background: i<step?C.win:i===step?C.yellow:C.border,
+              boxShadow: i===step?`0 0 6px ${C.yellow}`:i<step?`0 0 4px ${C.win}`:"none",
+              transition:"background .5s ease"}}/>
+            <span style={{fontSize:"13px",color:i<step?C.win:i===step?C.value:C.muted,
+              transition:"color .5s ease"}}>
+              {i<step?"✓ "+s:s}
+            </span>
+          </div>
+        ))}
+      </div>
+      {/* Skeleton preview */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
-        <Skel w="100%" h="60"/><Skel w="100%" h="60"/>
+        <div style={{background:"#1a180a",border:`1px solid ${C.yellow}22`,padding:"14px"}}>
+          <Skel w="60%" h="10" mb={10}/><Skel w="90%" h="14" mb={6}/><Skel w="75%" h="14"/>
+        </div>
+        <div style={{background:"#1a0f0f",border:`1px solid ${C.lose}22`,padding:"14px"}}>
+          <Skel w="60%" h="10" mb={10}/><Skel w="90%" h="14" mb={6}/><Skel w="75%" h="14"/>
+        </div>
       </div>
     </div>
   );
