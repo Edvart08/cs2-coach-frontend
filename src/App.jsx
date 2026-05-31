@@ -1964,56 +1964,105 @@ function ColdStartBanner({status}) {
 }
 
 // ── Share Modal ────────────────────────────────────────────────────────────────
-function ShareModal({steamid, onClose}) {
+function ShareModal({steamid, player, source, onClose}) {
   const shareUrl = `${BACKEND}/share/${steamid}`;
   const [copied, setCopied] = useState(false);
+
+  const fc  = player?.faceit;
+  const cs2 = player?.cs2 || {};
+  const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
+  const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
+  const wr  = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+  const lvl = parseInt(fc?.level) || 0;
+  const elo = fc?.elo || "";
+
+  // Считаем рейтинг
+  const avgByLevel = [
+    {kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},
+    {kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},
+    {kd:1.20,hs:42,wr:51},{kd:1.28,hs:44,wr:52},{kd:1.38,hs:46,wr:53},
+    {kd:1.52,hs:48,wr:54},{kd:1.72,hs:52,wr:56},
+  ];
+  const avg = avgByLevel[Math.min(lvl,10)];
+  function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(v/a-1))))));}
+  const rating = Math.min(99, Math.round(sig(kd,avg.kd)*0.45+sig(hs,avg.hs)*0.25+sig(wr,avg.wr)*0.30));
+  const rColor = rating>=70?C.win:rating>=45?C.yellow:C.orange;
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      prompt("Скопируй ссылку:", shareUrl);
-    }
+      setTimeout(()=>setCopied(false), 2500);
+    } catch { prompt("Скопируй ссылку:", shareUrl); }
   };
 
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
       zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn .2s ease"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.border}`,
-        borderTop:`2px solid ${C.yellow}`,maxWidth:"460px",width:"100%",padding:"32px",animation:"slideUp .3s ease"}}>
+        borderTop:`2px solid ${C.yellow}`,maxWidth:"500px",width:"100%",padding:"28px",animation:"slideUp .3s ease"}}>
+
         <div style={{fontSize:"14px",letterSpacing:"3px",color:C.yellow,fontWeight:700,marginBottom:"20px"}}>
           📤 ПОДЕЛИТЬСЯ ПРОФИЛЕМ
         </div>
-        <p style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>
-          Отправь эту ссылку другу или скинь в Discord — откроется красивая карточка с твоими статами и AI вердиктом.
-        </p>
 
-        {/* URL preview */}
-        <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"12px 16px",
-          marginBottom:"16px",fontSize:"13px",color:C.muted,wordBreak:"break-all",lineHeight:1.5}}>
+        {/* Превью карточки */}
+        <div style={{background:"#0d0d09",border:`1px solid ${C.yellow}44`,
+          borderTop:`3px solid ${C.yellow}`,padding:"20px",marginBottom:"20px",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:"-30px",right:"-30px",width:"140px",height:"140px",
+            background:`radial-gradient(circle,${C.yellow}12,transparent 70%)`,pointerEvents:"none"}}/>
+          <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"16px"}}>
+            {player?.avatar
+              ? <img src={player.avatar} alt="" style={{width:"52px",height:"52px",borderRadius:"3px",border:`2px solid ${C.yellow}66`}}/>
+              : <div style={{width:"52px",height:"52px",background:"#1a1a10",borderRadius:"3px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px"}}>👤</div>}
+            <div>
+              <div style={{fontSize:"16px",color:C.value,fontWeight:700}}>{player?.username||"Игрок"}</div>
+              <div style={{fontSize:"12px",color:C.muted,marginTop:"2px"}}>
+                {lvl>0?`FACEIT LVL ${lvl} · ${elo} ELO`:"Steam игрок"}
+              </div>
+            </div>
+            <div style={{marginLeft:"auto",textAlign:"center"}}>
+              <div style={{fontSize:"36px",color:rColor,fontWeight:900,lineHeight:1}}>{rating}</div>
+              <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>CS2 Coach</div>
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px"}}>
+            {[
+              {l:"K/D",   v:kd.toFixed(2),       c:C.blue},
+              {l:"HS%",   v:Math.round(hs)+"%",   c:C.orange},
+              {l:"WR%",   v:Math.round(wr)+"%",   c:"#aa88ff"},
+            ].map((s,i)=>(
+              <div key={i} style={{textAlign:"center",background:"#141409",
+                border:`1px solid ${C.border}`,padding:"10px 6px"}}>
+                <div style={{fontSize:"10px",color:C.muted,marginBottom:"3px",letterSpacing:"1px"}}>{s.l}</div>
+                <div style={{fontSize:"18px",color:s.c,fontWeight:700}}>{s.v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* URL */}
+        <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"10px 14px",
+          marginBottom:"14px",fontSize:"12px",color:C.muted,wordBreak:"break-all"}}>
           {shareUrl}
         </div>
 
-        <div style={{display:"flex",gap:"10px",flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
           <button onClick={copy} style={{
             flex:1,padding:"12px",background:copied?"#1a3a1a":C.yellow,
             color:copied?"#55aa55":"#080807",border:copied?`1px solid #55aa55`:"none",
-            cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit",
-            transition:"all .2s"}}>
-            {copied ? "✓ СКОПИРОВАНО!" : "📋 КОПИРОВАТЬ ССЫЛКУ"}
+            cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit",transition:"all .2s"}}>
+            {copied?"✓ СКОПИРОВАНО!":"📋 КОПИРОВАТЬ ССЫЛКУ"}
           </button>
           <a href={shareUrl} target="_blank" rel="noreferrer" style={{
-            padding:"12px 20px",background:"transparent",
-            color:C.label,border:`1px solid ${C.border}`,
-            textDecoration:"none",fontSize:"14px",fontFamily:"inherit",
-            display:"flex",alignItems:"center",gap:"6px"}}>
+            padding:"12px 18px",background:"transparent",color:C.label,
+            border:`1px solid ${C.border}`,textDecoration:"none",fontSize:"14px",
+            fontFamily:"inherit",display:"flex",alignItems:"center",gap:"6px"}}>
             👁 Открыть
           </a>
         </div>
 
-        <button onClick={onClose} style={{width:"100%",marginTop:"12px",padding:"10px",
+        <button onClick={onClose} style={{width:"100%",marginTop:"10px",padding:"10px",
           background:"transparent",border:`1px solid ${C.border}`,color:C.muted,
           cursor:"pointer",fontSize:"13px",fontFamily:"inherit"}}>
           Закрыть
@@ -3566,7 +3615,7 @@ export default function App() {
 
       {showPopup&&<SteamPopup onLogin={openSteam} onSkip={()=>setShowPopup(false)}/>}
       {profileView&&<ProfileModal steamid={profileView.steamid} nickname={profileView.nickname} onClose={()=>setProfileView(null)}/>}
-      {shareOpen&&player&&<ShareModal steamid={player.steamid} onClose={()=>setShareOpen(false)}/>}
+      {shareOpen&&player&&<ShareModal steamid={player.steamid} player={player} source={source} onClose={()=>setShareOpen(false)}/>}
       {showProModal&&<ProModal player={player} onClose={()=>setShowProModal(false)}
         onActivated={()=>{setIsPro(true);setAiRemaining(999);setShowProModal(false);}}/>}
       <ColdStartBanner status={serverStatus}/>
