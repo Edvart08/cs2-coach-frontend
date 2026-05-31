@@ -637,7 +637,105 @@ function BestWorstMap({faceit}) {
   );
 }
 
-// ── Week Goal ─────────────────────────────────────────────────────────────────
+// ── Recent Matches Overview ───────────────────────────────────────────────────
+function RecentMatchesOverview({faceit}) {
+  const [analyses, setAnalyses] = useState({});
+  const [aiLoading, setAiLoading] = useState({});
+  const matches = arr(faceit?.matches).slice(0, 5);
+  if (!matches.length) return null;
+
+  async function fetchAnalysis(m, i) {
+    if (analyses[i] || aiLoading[i]) return;
+    setAiLoading(l=>({...l,[i]:true}));
+    try {
+      const r = await fetch(`${BACKEND}/analyze-match`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          map:m.map||"Unknown", result:m.result||"0",
+          kills:m.kills||"0", deaths:m.deaths||"0",
+          assists:m.assists||"0", kd:m.kd||"0",
+          hs:m.hs||"0", adr:m.adr||"0",
+          mvps:m.mvps||"0", score:m.score||""
+        })
+      });
+      const d = await r.json();
+      if (d.result) setAnalyses(a=>({...a,[i]:d.result}));
+    } catch {}
+    setAiLoading(l=>({...l,[i]:false}));
+  }
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
+        display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>
+          🎮 ПОСЛЕДНИЕ МАТЧИ
+        </span>
+        <span style={{fontSize:"11px",color:C.muted}}>нажми → AI разбор</span>
+      </div>
+      {matches.map((m,i)=>{
+        const win = m.result==="1";
+        const ac = win ? C.win : C.lose;
+        const ai = analyses[i];
+        const isLoading = aiLoading[i];
+        const [open, setOpen] = useState(false);
+
+        return (
+          <div key={i} style={{borderBottom:i<matches.length-1?`1px solid ${C.border}`:"none"}}>
+            <div onClick={()=>{ setOpen(o=>!o); if(!open) fetchAnalysis(m,i); }}
+              style={{display:"grid", gridTemplateColumns:"4px 1fr 72px 60px 60px 60px",
+                gap:"10px", padding:"12px 16px", cursor:"pointer", alignItems:"center",
+                borderLeft:`4px solid ${ac}`, background:"transparent",
+                transition:"background .15s"}}
+              className="hov-row">
+              <div/>
+              <div>
+                <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
+                <div style={{fontSize:"11px",color:ac,marginTop:"2px",letterSpacing:"1px"}}>
+                  {win?"ПОБЕДА":"ПОРАЖЕНИЕ"}{m.score?` · ${m.score}`:""}
+                </div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"10px",color:C.muted,marginBottom:"2px"}}>K/D</div>
+                <div style={{fontSize:"15px",color:C.yellow,fontWeight:700}}>{m.kd||"—"}</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"10px",color:C.muted,marginBottom:"2px"}}>УБИЙСТВ</div>
+                <div style={{fontSize:"15px",color:C.label,fontWeight:600}}>{m.kills||"—"}</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"10px",color:C.muted,marginBottom:"2px"}}>HS%</div>
+                <div style={{fontSize:"15px",color:C.label,fontWeight:600}}>{m.hs||"—"}%</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"10px",color:C.muted,marginBottom:"2px"}}>ADR</div>
+                <div style={{fontSize:"15px",color:C.label,fontWeight:600}}>{m.adr||"—"}</div>
+              </div>
+            </div>
+            {/* AI разбор */}
+            {open&&<div style={{padding:"12px 20px 14px",background:"#0f0f0a",
+              borderTop:`1px solid ${C.border}`}}>
+              {isLoading?(
+                <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                  <div style={{width:"6px",height:"6px",borderRadius:"50%",background:C.yellow,
+                    animation:"pulse 1.2s infinite"}}/>
+                  <span style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px"}}>AI анализирует матч...</span>
+                </div>
+              ):ai?(
+                <div style={{fontSize:"13px",color:C.text,lineHeight:1.7,
+                  borderLeft:`2px solid ${C.yellow}`,paddingLeft:"12px"}}>
+                  🤖 {ai}
+                </div>
+              ):(
+                <div style={{fontSize:"12px",color:C.muted}}>Нажми ещё раз для AI разбора</div>
+              )}
+            </div>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 function WeekGoal({player, source}) {
   const fc = player?.faceit;
   const cs2 = player?.cs2 || {};
@@ -2644,9 +2742,9 @@ const DIFF_COLOR = {"Начинающий":C.win,"Средний":C.yellow,"Пр
 const MAP_IMAGES = {
   Mirage:  { src: "/maps/mirage.webp"  },
   Inferno: { src: "/maps/inferno.webp" },
-  Dust2:   { src: "/maps/Dust-2.webp"   },
-  Nuke:    { src: "/maps/Nuke.webp"    },
-  Ancient: { src: "/maps/Ancient.webp" },
+  Dust2:   { src: "/maps/dust2.webp"   },
+  Nuke:    { src: "/maps/nuke.webp"    },
+  Ancient: { src: "/maps/ancient.webp" },
   Anubis:  { src: "/maps/anubis.webp"  },
 };
 
@@ -3139,6 +3237,7 @@ export default function App() {
             <HeroCard player={player} source={source}/>
             <ScoreCards player={player} source={source}/>
             {source==="faceit"&&hasFaceit&&<BestWorstMap faceit={player.faceit}/>}
+            {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
             <WeekGoal player={player} source={source}/>
             <TodayRecs player={player} source={source}/>
             {source==="faceit"&&hasFaceit
