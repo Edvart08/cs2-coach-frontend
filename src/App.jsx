@@ -2019,23 +2019,79 @@ function MobileNav({tab, setTab}) {
 }
 
 // ── Streak Toast ──────────────────────────────────────────────────────────────
-function StreakToast({streak, onClose}) {
-  useEffect(()=>{ const t=setTimeout(onClose, 3500); return()=>clearTimeout(t); },[]);
-  const msg = streak>=30?"🔥 30 дней подряд! Легенда!":streak>=14?"🔥 2 недели подряд! Серьёзно!":streak>=7?"🔥 Неделя подряд! Огонь!":"🔥 "+streak+" дня подряд!";
+// ── Daily Streak Block ─────────────────────────────────────────────────────────
+function DailyStreak({streak}) {
+  if (!streak || streak < 1) return null;
+  const days = Math.min(streak, 7);
+  const milestones = [1,3,5,7];
+  const nextMilestone = milestones.find(m=>m>streak) || 7;
+  const streakColor = streak>=7?"#aa44ff":streak>=5?C.win:streak>=3?C.yellow:C.orange;
+  const label = streak>=7?"ЛЕГЕНДА 🏆":streak>=5?"ОГОНЬ 🔥":streak>=3?"ХОРОШО ⚡":"НАЧАЛО 🌱";
+
   return (
-    <div style={{position:"fixed",top:"70px",left:"50%",transform:"translateX(-50%)",
-      background:"#1a1408",border:`2px solid ${C.yellow}`,padding:"14px 24px",
-      zIndex:300,animation:"slideUp .4s ease",boxShadow:`0 4px 24px ${C.yellow}44`,
-      display:"flex",alignItems:"center",gap:"10px",whiteSpace:"nowrap"}}>
-      <span style={{fontSize:"22px"}}>🔥</span>
-      <div>
-        <div style={{fontSize:"14px",color:C.yellow,fontWeight:700}}>{msg}</div>
-        <div style={{fontSize:"12px",color:C.muted,marginTop:"2px"}}>Заходи завтра чтобы не потерять</div>
+    <div style={{background:C.card,border:`1px solid ${streakColor}44`,
+      borderLeft:`4px solid ${streakColor}`,
+      padding:"14px 18px",marginBottom:"10px",animation:"up .4s ease both",
+      display:"flex",alignItems:"center",gap:"16px",flexWrap:"wrap"}}>
+      {/* Big number */}
+      <div style={{textAlign:"center",minWidth:"60px"}}>
+        <div style={{fontSize:"36px",color:streakColor,fontWeight:900,lineHeight:1}}>{streak}</div>
+        <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>дней подряд</div>
       </div>
-      <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"16px",marginLeft:"8px"}}>✕</button>
+      {/* Info */}
+      <div style={{flex:1,minWidth:"140px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}>
+          <span style={{fontSize:"12px",color:streakColor,fontWeight:700,letterSpacing:"2px"}}>
+            🔥 СЕРИЯ ВХОДОВ · {label}
+          </span>
+          {streak < 7 && <span style={{fontSize:"11px",color:C.muted}}>
+            до {nextMilestone} дней: {nextMilestone - streak} осталось
+          </span>}
+        </div>
+        {/* Dots for 7 days */}
+        <div style={{display:"flex",gap:"5px"}}>
+          {Array.from({length:7}).map((_,i)=>(
+            <div key={i} style={{
+              flex:1, height:"6px", borderRadius:"3px",
+              background: i<streak ? streakColor : "#1a1a10",
+              boxShadow: i<streak ? `0 0 6px ${streakColor}88` : "none",
+              transition:"background .3s"
+            }}/>
+          ))}
+        </div>
+        <div style={{fontSize:"10px",color:C.muted,marginTop:"4px"}}>
+          {streak>=7 ? "🎉 Максимальная серия! Не останавливайся!" : `Заходи завтра чтобы не потерять серию`}
+        </div>
+      </div>
     </div>
   );
 }
+
+// ── Streak Toast ───────────────────────────────────────────────────────────────
+function StreakToast({streak, onClose}) {
+  useEffect(()=>{ const t=setTimeout(onClose, 4000); return()=>clearTimeout(t); },[]);
+  const msg = streak>=30?"👑 30 дней подряд! Ты легенда!":
+    streak>=14?"🔥 2 недели подряд! Невероятно!":
+    streak>=7?"🏆 Неделя подряд! Серия выполнена!":
+    streak>=3?`⚡ ${streak} дня подряд! Продолжай!`:
+    `🔥 День ${streak} — хорошее начало!`;
+  return (
+    <div style={{position:"fixed",top:"70px",left:"50%",transform:"translateX(-50%)",
+      background:"#1a1408",border:`2px solid ${C.yellow}`,padding:"14px 28px",
+      zIndex:300,animation:"slideUp .4s ease",boxShadow:`0 4px 30px ${C.yellow}55`,
+      display:"flex",alignItems:"center",gap:"12px",whiteSpace:"nowrap"}}>
+      <span style={{fontSize:"24px"}}>🔥</span>
+      <div>
+        <div style={{fontSize:"15px",color:C.yellow,fontWeight:700}}>{msg}</div>
+        <div style={{fontSize:"12px",color:C.muted,marginTop:"2px"}}>
+          {streak<7?`До серии 7 дней: ещё ${7-streak}`:"Заходи завтра — не прерывай!"}
+        </div>
+      </div>
+      <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"16px",marginLeft:"4px"}}>✕</button>
+    </div>
+  );
+}
+
 
 
 // ── Logo ─────────────────────────────────────────────────────────────────────
@@ -3933,6 +3989,24 @@ export default function App() {
                 faceit: d.faceit || p.faceit || null};
               setPlayer(fresh);
               try{localStorage.setItem("cs2_player_v3",JSON.stringify(fresh));}catch{}
+              // Автоснапшот рейтинга при каждом входе (раз в день)
+              try {
+                const fc2 = fresh.faceit;
+                const cs22 = fresh.cs2 || {};
+                const snapKd  = parseFloat(fc2?.lifetime?.kd || cs22.kd) || 0;
+                const snapHs  = parseFloat(fc2?.lifetime?.hs || cs22.hs) || 0;
+                const snapWr  = parseFloat(fc2?.lifetime?.winrate || cs22.winrate) || 0;
+                const snapLvl = parseInt(fc2?.level) || 0;
+                const snapMatches = parseInt(fc2?.lifetime?.matches || cs22.matches) || 0;
+                if (snapKd > 0 && snapMatches > 0) {
+                  const hKey = `cs2_rating_history_${fresh.steamid}`;
+                  const today = new Date().toISOString().slice(0,10);
+                  const prev = JSON.parse(localStorage.getItem(hKey)||"[]");
+                  const filtered = prev.filter(s=>s.date!==today);
+                  filtered.push({date:today, kd:snapKd, hs:snapHs, wr:snapWr, lvl:snapLvl, matches:snapMatches});
+                  localStorage.setItem(hKey, JSON.stringify(filtered.slice(-30)));
+                }
+              } catch {}
             }
           }).catch(()=>{});
         }
@@ -4149,6 +4223,7 @@ export default function App() {
               : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
             <HeroCard player={player} source={source}/>
             <WhatChanged player={player} source={source}/>
+            <DailyStreak streak={streak}/>
 
             {/* ── Вторичный блок: скоры ── */}
             <ScoreCards player={player} source={source}/>
