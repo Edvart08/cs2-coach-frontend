@@ -1845,7 +1845,7 @@ function Leaderboard({myId, onProfile}) {
     <div style={{textAlign:"center",padding:"70px",color:C.muted}}>
       <div style={{fontSize:"36px",marginBottom:"14px"}}>🏆</div>
       <div style={{fontSize:"13px",letterSpacing:"3px"}}>ТАБЛИЦА ПУСТА</div>
-      <div style={{fontSize:"13px",color:C.muted,marginTop:"8px"}}>Войди через Steam и сделай анализ</div>
+      <div style={{fontSize:"13px",color:C.muted,marginTop:"8px"}}>Данные появятся автоматически при следующем входе</div>
     </div>
   );
 
@@ -4157,6 +4157,45 @@ export default function App() {
     }
   },[]);
 
+  // ── Авто-синхронизация с лидербордом при каждом обновлении игрока ─────────
+  useEffect(()=>{
+    if (!player?.steamid) return;
+    const fc2 = player.faceit;
+    const cs22 = player.cs2 || {};
+    const lbKd = fc2?.lifetime?.kd || cs22.kd || "0";
+    const lbWr = fc2?.lifetime?.winrate || cs22.winrate || "0";
+    const lbHs = fc2?.lifetime?.hs || cs22.hs || "0";
+    const lbM  = fc2?.lifetime?.matches || cs22.matches || "0";
+    if (parseFloat(lbKd) <= 0 || parseInt(lbM) <= 0) return;
+
+    const lbKills = cs22.kills || "0";
+    const lbDeaths = cs22.deaths || "0";
+    const lbMvp = cs22.mvps || "0";
+    const lbPt = cs22.playtime || "0";
+    const lbLvl = parseInt(fc2?.level)||0;
+
+    const avgByLevel = [{kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},{kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},{kd:1.20,hs:42,wr:51},{kd:1.28,hs:44,wr:52},{kd:1.38,hs:46,wr:53},{kd:1.52,hs:48,wr:54},{kd:1.72,hs:52,wr:56}];
+    const avg = avgByLevel[Math.min(lbLvl,10)];
+    function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(parseFloat(v)/a-1))))));}
+    const lbOverall = Math.min(99,Math.round(sig(lbKd,avg.kd)*0.45+sig(lbHs,avg.hs)*0.25+sig(lbWr,avg.wr)*0.30));
+    const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
+    const levelLabel = coachLevels.find(l=>lbOverall<=l.max)?.name || "ВЕТЕРАН";
+
+    fetch(`${BACKEND}/leaderboard/add`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        steamid: player.steamid,
+        username: player.username,
+        avatar: player.avatar||"",
+        stats:{kd:lbKd, winrate:lbWr, hs:lbHs, matches:lbM,
+          rank: fc2?.elo?`FACEIT ${fc2.level}`:"Steam",
+          kills:lbKills, deaths:lbDeaths, mvp:lbMvp, playtime:lbPt},
+        level: levelLabel,
+        overall: String(lbOverall),
+      })
+    }).catch(()=>{});
+  },[player?.steamid, player?.faceit?.elo, player?.cs2?.matches]);
+
   // ── cold start wake-up ──────────────────────────────────────────────────────
   useEffect(()=>{
     const t = setTimeout(()=>setServerStatus('slow'), 2500);
@@ -4231,7 +4270,7 @@ export default function App() {
                 })();
                 const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
                 const levelLabel = coachLevels.find(l=>lbOverall<=l.max)?.name || "ВЕТЕРАН";
-                if (parseFloat(lbKd) > 0 && parseInt(lbM) > 0) {
+                if (parseFloat(lbKd) > 0 && parseInt(lbM) > 0 && fresh.steamid) {
                   fetch(`${BACKEND}/leaderboard/add`, {
                     method:"POST", headers:{"Content-Type":"application/json"},
                     body: JSON.stringify({
