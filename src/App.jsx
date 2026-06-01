@@ -1839,13 +1839,28 @@ function ProfileModal({steamid,nickname,onClose}) {
 function Leaderboard({myId, onProfile}) {
   const [data,setData]=useState(null);
   const [sortKey,setSortKey]=useState("kd");
-  useEffect(()=>{fetch(`${BACKEND}/leaderboard`).then(r=>r.json()).then(d=>setData(d.leaderboard||[])).catch(()=>setData([]));},[]);
+
+  function load() {
+    fetch(`${BACKEND}/leaderboard`)
+      .then(r=>r.json())
+      .then(d=>setData(d.leaderboard||[]))
+      .catch(()=>setData([]));
+  }
+
+  useEffect(()=>{ load(); },[]);
+
   if (!data) return <div style={{padding:"12px"}}>{[1,2,3,4,5].map(i=><Skel key={i} h="50"/>)}</div>;
   if (!data.length) return (
     <div style={{textAlign:"center",padding:"70px",color:C.muted}}>
       <div style={{fontSize:"36px",marginBottom:"14px"}}>🏆</div>
       <div style={{fontSize:"13px",letterSpacing:"3px"}}>ТАБЛИЦА ПУСТА</div>
-      <div style={{fontSize:"13px",color:C.muted,marginTop:"8px"}}>Данные появятся автоматически при следующем входе</div>
+      <div style={{fontSize:"13px",color:C.muted,marginTop:"8px",marginBottom:"20px"}}>
+        Данные появятся автоматически при следующем входе
+      </div>
+      <button onClick={load} style={{background:C.yellow,color:"#080807",border:"none",
+        padding:"10px 24px",cursor:"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
+        ↻ Обновить
+      </button>
     </div>
   );
 
@@ -1882,7 +1897,13 @@ function Leaderboard({myId, onProfile}) {
     <div style={{animation:"up .4s ease both"}}>
       {/* Sort buttons */}
       <div style={{marginBottom:"14px"}}>
-        <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>СОРТИРОВАТЬ ПО:</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
+          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px"}}>СОРТИРОВАТЬ ПО:</div>
+          <button onClick={load} style={{background:"transparent",border:`1px solid ${C.border}`,
+            color:C.muted,cursor:"pointer",fontSize:"11px",padding:"4px 12px",fontFamily:"inherit"}}>
+            ↻ обновить
+          </button>
+        </div>
         <div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>
           {SORTS.map(s=>{
             const active = sortKey===s.id;
@@ -4193,7 +4214,10 @@ export default function App() {
         level: levelLabel,
         overall: String(lbOverall),
       })
-    }).catch(()=>{});
+    })
+    .then(r=>r.json())
+    .then(d=>console.log("[LB] added:", player.username, "total:", d.total))
+    .catch(e=>console.error("[LB] error:", e));
   },[player?.steamid, player?.faceit?.elo, player?.cs2?.matches]);
 
   // ── cold start wake-up ──────────────────────────────────────────────────────
