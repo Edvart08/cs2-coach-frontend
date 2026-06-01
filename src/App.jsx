@@ -293,12 +293,12 @@ function HeroCard({player, source}) {
         )}
       </div>
 
-      {/* Stat strip */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:`1px solid ${C.border}`}}>
+      {/* Stat strip — второстепенная информация */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:`1px solid ${C.border}`,opacity:0.85}}>
         {stats.map((s,i)=>(
-          <div key={i} style={{padding:"16px 10px",textAlign:"center",borderLeft:i>0?`1px solid ${C.border}`:"none"}}>
-            <div style={{fontSize:"13px",color:C.label,letterSpacing:"1px",marginBottom:"7px"}}>{s.l}</div>
-            <div style={{fontSize:"24px",color:C.yellow,fontWeight:700}}>{s.v}</div>
+          <div key={i} style={{padding:"12px 10px",textAlign:"center",borderLeft:i>0?`1px solid ${C.border}`:"none"}}>
+            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"5px"}}>{s.l}</div>
+            <div style={{fontSize:"20px",color:C.label,fontWeight:700}}>{s.v}</div>
           </div>
         ))}
       </div>
@@ -850,20 +850,51 @@ function PlayerRating({player, source}) {
     {name:"HS%",val:Math.round(hs)+"%",avg:avg.hs+"%",pct:hsPct,color:C.orange},
     {name:"WR%",val:Math.round(wr)+"%",avg:avg.wr+"%",pct:wrPct,color:"#aa88ff"},
   ];
+
+  // Система уровней CS2 Coach
+  const coachLevels=[
+    {min:0,  max:19,  name:"НОВОБРАНЕЦ", icon:"🪖", color:"#8a8070", next:"Боец"},
+    {min:20, max:34,  name:"БОЕЦ",       icon:"⚔️", color:"#c8a060", next:"Снайпер"},
+    {min:35, max:49,  name:"СНАЙПЕР",    icon:"🔭", color:"#74c6f5", next:"Ветеран"},
+    {min:50, max:64,  name:"ВЕТЕРАН",    icon:"🎖️", color:"#f5c518", next:"Мастер"},
+    {min:65, max:79,  name:"МАСТЕР",     icon:"🏆", color:"#ff8844", next:"Элита"},
+    {min:80, max:89,  name:"ЭЛИТА",      icon:"💀", color:"#ff4466", next:"Легенда"},
+    {min:90, max:100, name:"ЛЕГЕНДА",    icon:"👑", color:"#aa44ff", next:null},
+  ];
+  const coachLvl = coachLevels.find(l=>overall>=l.min&&overall<=l.max)||coachLevels[0];
+  const nextLvl  = coachLevels.find(l=>l.min===coachLvl.max+1);
+  const lvlProg  = nextLvl ? Math.round((overall-coachLvl.min)/(coachLvl.max-coachLvl.min)*100) : 100;
+
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"3px",animation:"up .5s ease both"}}>
       <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>🏅 CS2 COACH РЕЙТИНГ</div>
       <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"16px"}}>
-        <div style={{textAlign:"center",minWidth:"90px"}}>
-          <div style={{fontSize:"56px",color:overallColor,fontWeight:900,lineHeight:1}}>{overall}</div>
-          <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginTop:"4px"}}>из 100</div>
+        {/* Уровень — иконка + название */}
+        <div style={{textAlign:"center",minWidth:"100px"}}>
+          <div style={{fontSize:"44px",lineHeight:1,marginBottom:"4px"}}>{coachLvl.icon}</div>
+          <div style={{fontSize:"13px",color:coachLvl.color,fontWeight:800,letterSpacing:"1px"}}>{coachLvl.name}</div>
+          <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{overall} / 100</div>
         </div>
         <div style={{flex:1}}>
-          <div style={{fontSize:"13px",color:overallColor,fontWeight:700,marginBottom:"6px"}}>{label}</div>
           <div style={{fontSize:"22px",color:C.value,fontWeight:800,lineHeight:1.2,marginBottom:"5px"}}>
-            Лучше чем <span style={{color:overallColor}}>{overall}%</span>
+            Лучше чем <span style={{color:coachLvl.color}}>{overall}%</span>
           </div>
-          <div style={{fontSize:"14px",color:C.muted}}>игроков{lvl>0?` уровня FACEIT ${lvl}`:" CS2"}</div>
+          <div style={{fontSize:"14px",color:C.muted,marginBottom:"10px"}}>игроков{lvl>0?` уровня FACEIT ${lvl}`:" CS2"}</div>
+          {/* Прогресс до следующего уровня */}
+          {nextLvl&&<>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:"10px",color:C.muted,marginBottom:"4px"}}>
+              <span>{coachLvl.name}</span>
+              <span style={{color:nextLvl?coachLevels.find(l=>l.name===coachLvl.next)?.color||C.yellow:C.yellow}}>
+                → {coachLvl.next}
+              </span>
+            </div>
+            <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden",marginBottom:"4px"}}>
+              <div style={{height:"100%",width:`${lvlProg}%`,background:coachLvl.color,
+                borderRadius:"2px",transition:"width 1s ease",boxShadow:`0 0 6px ${coachLvl.color}88`}}/>
+            </div>
+            <div style={{fontSize:"10px",color:C.muted}}>ещё {coachLvl.max+1-overall} очков до {coachLvl.next}</div>
+          </>}
+          {!nextLvl&&<div style={{fontSize:"12px",color:"#aa44ff",fontWeight:700}}>⭐ Максимальный уровень</div>}
           {matches>0&&<div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>на основе {matches} матчей</div>}
         </div>
       </div>
@@ -1148,6 +1179,7 @@ function TodayRecs({player, source}) {
   recs.push({
     icon:"🎯", time:"15 мин", cat:"AIM", color:C.lose,
     text:"Aim_botz: 500 убийств с места",
+    why: hs<40 ? `HS% ${Math.round(hs)}% — ниже цели 40%` : `Поддерживай точность стрельбы`,
     unlock: hs < 40 ? {icon:"🎯", name:"HS Машина", pct:Math.round(hs/40*100)} : null,
   });
 
@@ -1155,6 +1187,7 @@ function TodayRecs({player, source}) {
   if (hs < 40) recs.push({
     icon:"💥", time:"20 мин", cat:"МЕХАНИКА", color:C.orange,
     text:"Recoil Master: спрей AK и M4",
+    why: `HS% ${Math.round(hs)}% — не хватает ${40-Math.round(hs)}% до достижения`,
     unlock: {icon:"🎯", name:"HS Машина", pct:Math.round(hs/40*100)},
   });
 
@@ -1162,6 +1195,7 @@ function TodayRecs({player, source}) {
   if (kd < 1.0) recs.push({
     icon:"🏃", time:"15 мин", cat:"ДВИЖЕНИЕ", color:C.blue,
     text:"Counter-strafe: стоп → выстрел",
+    why: `K/D ${kd.toFixed(2)} — до Фраггера не хватает ${(1.0-kd).toFixed(2)}`,
     unlock: {icon:"⚔️", name:"Фраггер K/D>1.0", pct:Math.round(Math.min(99,kd/1.0*100))},
   });
 
@@ -1169,6 +1203,7 @@ function TodayRecs({player, source}) {
   recs.push({
     icon:"🗺️", time:"20 мин", cat:"КАРТЫ", color:"#44ddaa",
     text:"Prefire Workshop: 10 позиций на лучшей карте",
+    why: `Знание позиций = меньше смертей на карте`,
     unlock: null,
   });
 
@@ -1176,11 +1211,13 @@ function TodayRecs({player, source}) {
   if (wr < 50) recs.push({
     icon:"📹", time:"15 мин", cat:"АНАЛИЗ", color:"#aa88ff",
     text:"Пересмотри 1 проигранный раунд",
+    why: `WR ${Math.round(wr)}% — разбор раундов поднимет понимание игры`,
     unlock: {icon:"🏆", name:"Победитель WR>50%", pct:Math.round(wr/50*100)},
   });
   else recs.push({
     icon:"💣", time:"10 мин", cat:"ГРАНАТЫ", color:C.yellow,
     text:"Выучи 1 новый смок или молотов",
+    why: `Utility = больше влияния на раунд без риска`,
     unlock: null,
   });
 
@@ -1203,7 +1240,8 @@ function TodayRecs({player, source}) {
                   <span style={{fontSize:"10px",color:r.color,letterSpacing:"1px",fontWeight:700}}>{r.cat}</span>
                   <span style={{fontSize:"10px",color:C.muted}}>{r.time}</span>
                 </div>
-                <div style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{r.text}</div>
+                <div style={{fontSize:"13px",color:C.text,lineHeight:1.4,marginBottom:"4px"}}>{r.text}</div>
+                {r.why&&<div style={{fontSize:"11px",color:C.muted,fontStyle:"italic",lineHeight:1.4}}>→ {r.why}</div>}
               </div>
             </div>
             {/* Связь с ачивкой */}
@@ -3766,13 +3804,23 @@ export default function App() {
               : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
             <HeroCard player={player} source={source}/>
             <WhatChanged player={player} source={source}/>
+
+            {/* ── Вторичный блок: скоры ── */}
             <ScoreCards player={player} source={source}/>
+
+            {/* ── Первичный: рейтинг + прогресс ── */}
             <PlayerRating player={player} source={source}/>
             <ProgressHistory player={player} source={source}/>
+
+            {/* ── Прогрессия ── */}
             <Achievements player={player} source={source}/>
             {source==="faceit"&&hasFaceit&&<BestWorstMap faceit={player.faceit}/>}
+
+            {/* ── Матчи и аналитика ── */}
             {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
             {source==="faceit"&&hasFaceit&&<EloChart faceit={player.faceit}/>}
+
+            {/* ── Действия ── */}
             <WeekGoal player={player} source={source}/>
             <TodayRecs player={player} source={source}/>
             {source==="faceit"&&hasFaceit
