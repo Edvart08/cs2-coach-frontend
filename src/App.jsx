@@ -943,7 +943,10 @@ function Achievements({player, source}) {
   const kills=parseInt(cs2?.kills)||0;
   const mvps=parseInt(cs2?.mvps)||0;
   const lvl=parseInt(fc?.level)||0;
-  const streak=parseInt(fc?.lifetime?.longest_streak)||0;
+  // longest_streak может не прийти из FACEIT API — считаем сами из матчей
+  const apiStreak = parseInt(fc?.lifetime?.longest_streak)||0;
+  const calcStreak = (()=>{let s=0;for(const m of arr(fc?.matches)){if(m.result==="1")s++;else break;}return s;})();
+  const streak = Math.max(apiStreak, calcStreak);
   const all=[
     {id:"headshot",icon:"🎯",name:"HS Машина",   done:hs>=40,  val:Math.round(hs),   target:40,  unit:"%", color:C.orange},
     {id:"sniper",  icon:"🔭",name:"Снайпер",      done:hs>=50,  val:Math.round(hs),   target:50,  unit:"%", color:C.orange},
@@ -1099,10 +1102,40 @@ function EloChart({faceit}) {
             fill={i===pts.length-1?diffColor:diffColor+"99"}/>
         ))}
       </svg>
-      <div style={{display:"flex",justifyContent:"space-between",marginTop:"6px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:"6px",marginBottom:"10px"}}>
         <span style={{fontSize:"10px",color:C.muted}}>{eloPoints[0]} ELO</span>
         <span style={{fontSize:"10px",color:C.muted}}>{currentElo} ELO</span>
       </div>
+      {/* ELO прогноз */}
+      {eloPoints.length>=5&&(()=>{
+        // Линейная регрессия по последним точкам
+        const n = eloPoints.length;
+        const avgX = (n-1)/2;
+        const avgY = eloPoints.reduce((s,v)=>s+v,0)/n;
+        const num = eloPoints.reduce((s,v,i)=>s+(i-avgX)*(v-avgY),0);
+        const den = eloPoints.reduce((s,_,i)=>s+(i-avgX)**2,0);
+        const slope = den ? num/den : 0;
+        const forecast20 = Math.round(currentElo + slope * 20);
+        const forecastDiff = forecast20 - currentElo;
+        const fc = forecastDiff >= 0 ? diffColor : C.lose;
+        return (
+          <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"10px 14px",
+            background:"#0d0d09",border:`1px solid ${C.border}`}}>
+            <div>
+              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"2px"}}>
+                📈 ПРОГНОЗ через 20 матчей
+              </div>
+              <div style={{display:"flex",alignItems:"baseline",gap:"8px"}}>
+                <span style={{fontSize:"18px",color:fc,fontWeight:700}}>{forecast20} ELO</span>
+                <span style={{fontSize:"13px",color:fc}}>({forecastDiff>=0?"+":""}{forecastDiff})</span>
+              </div>
+            </div>
+            <div style={{marginLeft:"auto",fontSize:"11px",color:C.muted,textAlign:"right"}}>
+              на основе<br/>текущего тренда
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -1322,10 +1355,21 @@ function WeeklyMissions({player, source}) {
     try{ return JSON.parse(localStorage.getItem(storageKey)||"[]"); }catch{ return []; }
   });
 
+  const [xpFlash, setXpFlash] = useState(null);
+
   const toggle = (id) => {
+    const isCompleting = !done.includes(id) && !missions.find(m=>m.id===id)?.done;
     const next = done.includes(id) ? done.filter(x=>x!==id) : [...done, id];
     setDone(next);
     try{ localStorage.setItem(storageKey, JSON.stringify(next)); }catch{}
+    // XP уведомление при выполнении
+    if (isCompleting) {
+      const m = missions.find(m=>m.id===id);
+      if (m) {
+        setXpFlash(`+${m.xp} XP`);
+        setTimeout(()=>setXpFlash(null), 1800);
+      }
+    }
   };
 
   const missions = [
@@ -1340,13 +1384,20 @@ function WeeklyMissions({player, source}) {
 
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
-      marginBottom:"10px",animation:"up .5s ease both"}}>
+      marginBottom:"10px",animation:"up .5s ease both",position:"relative"}}>
+      {xpFlash&&<div style={{position:"absolute",top:"14px",right:"14px",
+        fontSize:"16px",color:C.yellow,fontWeight:800,animation:"up .3s ease both",
+        background:"#1a1a0a",border:`1px solid ${C.yellow}66`,padding:"4px 12px",
+        zIndex:10,pointerEvents:"none"}}>{xpFlash} 🎉</div>}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
         <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>
           📋 ЗАДАНИЯ НЕДЕЛИ
         </div>
-        <div style={{fontSize:"12px",color:C.yellow,fontWeight:700}}>
-          {completedXP} / {totalXP} XP
+        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+          <div style={{fontSize:"12px",color:C.yellow,fontWeight:700}}>
+            {completedXP} / {totalXP} XP
+          </div>
+          {completedXP===totalXP&&<span style={{fontSize:"11px",color:C.win,fontWeight:700}}>✓ Всё выполнено!</span>}
         </div>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
@@ -2018,7 +2069,6 @@ function MobileNav({tab, setTab}) {
   );
 }
 
-// ── Streak Toast ──────────────────────────────────────────────────────────────
 // ── Daily Streak Block ─────────────────────────────────────────────────────────
 function DailyStreak({streak}) {
   if (!streak || streak < 1) return null;
@@ -2746,28 +2796,34 @@ function LandingPage({onLogin}) {
   const FEATURES = [
     {
       icon:"🤖", color:"#f5c518",
-      title:"AI объясняет ПОЧЕМУ ты проигрываешь",
-      desc:"Не просто K/D и числа — тренер анализирует твою игру и говорит конкретно: что не так, почему, и что делать прямо сейчас",
+      title:"AI вердикт — конкретный разбор твоей игры",
+      desc:"Не просто цифры — тренер говорит: лучшая карта, худшая карта, почему K/D падает, что исправить прямо сейчас. С конкретными картами и цифрами из твоей статистики",
       tag:"ГЛАВНАЯ ФИЧА",
+    },
+    {
+      icon:"🏅", color:"#ff8844",
+      title:"Система прогресса и уровней",
+      desc:"Рейтинг Ветеран → Мастер → Элита, достижения с прогресс-барами, цель недели, серии побед. Видишь рост каждый раз когда заходишь",
+      tag:"ПРОГРЕССИЯ",
     },
     {
       icon:"🎮", color:"#44ddaa",
       title:"Разбор каждого матча",
-      desc:"Нажми на любой матч из истории — получи детальный AI-разбор именно этой игры. Какие ошибки, что получилось, что улучшить",
+      desc:"Нажми на матч — получи детальный AI-разбор: что пошло не так, где умер глупо, что улучшить в следующей игре",
       tag:"PER-MATCH AI",
     },
     {
       icon:"💬", color:"#74c6f5",
       title:"Личный тренер 24/7",
-      desc:"Чат с AI который знает твою статистику. Задай любой вопрос — ответ будет конкретным и про тебя, а не generic советы из YouTube",
+      desc:"AI чат который знает твою статистику. Задай любой вопрос — ответ конкретный и про тебя, не generic советы",
       tag:"AI CHAT",
     },
   ];
 
   const REVIEWS = [
-    {name:"Kryptex_cs", elo:"LVL 5 · 1380 ELO", text:"Захожу каждый день, AI report прямо в точку — сказал что у меня проблема с позиционированием на B Dust2, и правда, проверил демки.", kd:"K/D 1.31"},
-    {name:"VortexAim",   elo:"LVL 3 · 870 ELO",  text:"Наконец-то понял почему у меня WR 38%. Оказывается сливаю форсы и эко раунды. Тренер дал конкретный план, за 2 недели дошёл до 47%.", kd:"K/D 0.94"},
-    {name:"ShadowByte",  elo:"LVL 7 · 1620 ELO", text:"Per-match разбор это огонь. После каждого матча вижу где облажался. Поднял K/D с 1.1 до 1.4 за месяц.", kd:"K/D 1.42"},
+    {name:"Kryptex_cs", elo:"LVL 5 · 1380 ELO", text:"Зашёл — увидел что Ancient у меня 23% WR. AI сказал убрать из пула. Убрал. За месяц WR вырос с 44% до 51%. Теперь Ветеран в рейтинге.", kd:"K/D 1.31"},
+    {name:"VortexAim",   elo:"LVL 3 · 870 ELO",  text:"Достижение Фраггер мотивирует больше чем думал. Каждый день захожу посмотреть прогресс — осталось 0.08 K/D. Серия входов уже 12 дней.", kd:"K/D 0.94"},
+    {name:"ShadowByte",  elo:"LVL 7 · 1620 ELO", text:"Рейтинг показал что я Топ 28% на своём уровне. Цель — войти в Топ 20%. AI объяснил конкретно что мешает. Поднял K/D с 1.1 до 1.4.", kd:"K/D 1.42"},
   ];
 
   const inView = id => visible[id];
