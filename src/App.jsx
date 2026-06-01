@@ -1008,31 +1008,32 @@ function Achievements({player, source}) {
       )}
       {locked.length>0&&(
         <>
-          <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>СЛЕДУЮЩИЕ ЦЕЛИ:</div>
-          <div className="ach-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:"8px"}}>
+          <button onClick={()=>{}} style={{
+            fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px",
+            background:"transparent",border:"none",cursor:"default",padding:0,fontFamily:"inherit",
+            display:"block",textAlign:"left"}}>
+            СЛЕДУЮЩИЕ ЦЕЛИ:
+          </button>
+          <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
             {locked.map(a=>{
               const prog=Math.min(99,Math.round((a.val/a.target)*100));
               const remaining=a.target>a.val?Math.ceil(a.target-a.val):0;
               return(
-                <div key={a.id} style={{background:"#0d0d09",border:`1px solid ${a.color}33`,padding:"12px 14px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}}>
-                    <span style={{fontSize:"18px",filter:"grayscale(0.5)"}}>{a.icon}</span>
+                <div key={a.id} style={{flex:"1 1 160px",background:"#0d0d09",
+                  border:`1px solid ${a.color}33`,padding:"10px 12px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
+                    <span style={{fontSize:"15px",filter:"grayscale(0.5)"}}>{a.icon}</span>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:"12px",color:C.label,fontWeight:700}}>{a.name}</div>
-                      <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px",marginTop:"1px"}}>
-                        <span style={{color:a.color,fontWeight:600}}>{a.val}{a.unit}</span>
-                        <span style={{color:C.muted}}>/ {a.target}{a.unit}</span>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px"}}>
+                        <span style={{color:C.label,fontWeight:700}}>{a.name}</span>
+                        <span style={{color:a.color,fontWeight:600}}>{prog}%</span>
                       </div>
                     </div>
                   </div>
-                  <div style={{height:"3px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${prog}%`,background:a.color,borderRadius:"2px",
-                      transition:"width 1s ease",boxShadow:`0 0 6px ${a.color}66`}}/>
+                  <div style={{height:"2px",background:"#1a1a10",borderRadius:"1px",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${prog}%`,background:a.color,borderRadius:"1px"}}/>
                   </div>
-                  <div style={{display:"flex",justifyContent:"space-between",marginTop:"4px",fontSize:"10px",color:C.muted}}>
-                    <span>{prog}%</span>
-                    <span>ещё {remaining}{a.unit}</span>
-                  </div>
+                  <div style={{fontSize:"10px",color:C.muted,marginTop:"3px"}}>ещё {remaining}{a.unit}</div>
                 </div>
               );
             })}
@@ -2473,7 +2474,7 @@ function MobileNav({tab, setTab}) {
 }
 
 // ── Day Action — главное действие дня ─────────────────────────────────────────
-function DayAction({player, source}) {
+function DayAction({player, source, streak}) {
   const fc = player?.faceit;
   const cs2 = player?.cs2 || {};
   const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd)||0;
@@ -2553,6 +2554,23 @@ function DayAction({player, source}) {
           </div>
         ))}
       </div>
+      {streak>0&&(
+        <div style={{marginTop:"12px",paddingTop:"12px",borderTop:`1px solid ${C.border}44`,
+          display:"flex",alignItems:"center",gap:"12px"}}>
+          <span style={{fontSize:"13px",color:streak>=7?"#aa44ff":streak>=3?C.win:C.yellow,fontWeight:700}}>
+            🔥 {streak} {streak===1?"день":"дней"} подряд
+          </span>
+          <div style={{flex:1,display:"flex",gap:"3px"}}>
+            {Array.from({length:7}).map((_,i)=>(
+              <div key={i} style={{flex:1,height:"3px",borderRadius:"1px",
+                background:i<streak?(streak>=7?"#aa44ff":streak>=3?C.win:C.yellow):"#1a1a10"}}/>
+            ))}
+          </div>
+          {streak<7
+            ?<span style={{fontSize:"11px",color:C.muted}}>до 7: ещё {7-streak}</span>
+            :<span style={{fontSize:"11px",color:"#aa44ff"}}>MAX 🏆</span>}
+        </div>
+      )}
     </div>
   );
 }
@@ -4941,16 +4959,11 @@ export default function App() {
             {/* 2. Hero */}
             <HeroCard player={player} source={source}/>
 
-            {/* 3. Главное действие дня */}
-            <DayAction player={player} source={source}/>
-
-            {/* 3. Что изменилось + Daily Streak */}
-            <WhatChanged player={player} source={source}/>
-            <DailyStreak streak={streak}/>
+            {/* 3. Главное действие + Streak в одном */}
+            <DayAction player={player} source={source} streak={streak}/>
 
             {/* 4. Coach Rating + уровень */}
             <PlayerRating player={player} source={source}/>
-            <ProgressHistory player={player} source={source}/>
 
             {/* 5. Достижения */}
             <Achievements player={player} source={source}/>
@@ -4958,16 +4971,10 @@ export default function App() {
             {/* 6. Последние матчи */}
             {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
 
-            {/* 7. Цель недели */}
-            <WeekGoal player={player} source={source}/>
-
-            {/* 8. Рекомендации */}
+            {/* 7. Рекомендации */}
             <TodayRecs player={player} source={source}/>
 
-            {/* Weekly Report — только кнопка, не автоматически */}
-            {source==="faceit"&&hasFaceit&&<WeeklyReport player={player} source={source} isPro={isPro} onUpgrade={()=>setShowProModal(true)}/>}
-
-            {/* ScoreCards — свернутые "Дополнительные метрики" */}
+            {/* Свёрнутое: дополнительные метрики */}
             <ScoreCardsCollapsible player={player} source={source}/>
 
             {/* Steam stats */}
