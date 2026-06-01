@@ -892,18 +892,19 @@ function PlayerRating({player, source}) {
           </div>
           <div style={{fontSize:"14px",color:C.muted,marginBottom:"10px"}}>игроков{lvl>0?` уровня FACEIT ${lvl}`:" CS2"}</div>
           {/* Прогресс до следующего уровня */}
+          {/* XP прогресс до следующего уровня */}
           {nextLvl&&<>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:"10px",color:C.muted,marginBottom:"4px"}}>
-              <span>{coachLvl.name}</span>
-              <span style={{color:nextLvl?coachLevels.find(l=>l.name===coachLvl.next)?.color||C.yellow:C.yellow}}>
-                → {coachLvl.next}
-              </span>
+              <span style={{color:coachLvl.color,fontWeight:700}}>{overall*10} XP</span>
+              <span>{(coachLvl.max+1)*10} XP → <span style={{color:coachLevels.find(l=>l.name===coachLvl.next)?.color||C.yellow}}>{coachLvl.next}</span></span>
             </div>
-            <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden",marginBottom:"4px"}}>
+            <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden",marginBottom:"4px"}}>
               <div style={{height:"100%",width:`${lvlProg}%`,background:coachLvl.color,
-                borderRadius:"2px",transition:"width 1s ease",boxShadow:`0 0 6px ${coachLvl.color}88`}}/>
+                borderRadius:"3px",transition:"width 1s ease",boxShadow:`0 0 6px ${coachLvl.color}88`}}/>
             </div>
-            <div style={{fontSize:"10px",color:C.muted}}>ещё {coachLvl.max+1-overall} очков до {coachLvl.next}</div>
+            <div style={{fontSize:"11px",color:C.muted}}>
+              ещё <span style={{color:coachLvl.color,fontWeight:700}}>{(coachLvl.max+1-overall)*10} XP</span> до {coachLvl.next}
+            </div>
           </>}
           {!nextLvl&&<div style={{fontSize:"12px",color:"#aa44ff",fontWeight:700}}>⭐ Максимальный уровень</div>}
           {matches>0&&<div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>на основе {matches} матчей</div>}
@@ -1168,6 +1169,288 @@ function WeekGoal({player, source}) {
         fontSize:"11px",color:C.muted}}>
         <span>Начало недели</span>
         <span>Цель</span>
+      </div>
+    </div>
+  );
+}
+
+function WeekGoal({player, source}) {
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+  const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
+  const wr  = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+  const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
+  const lvl = parseInt(fc?.level) || 0;
+  const matches = parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches) || 0;
+  const kills = parseInt(cs2?.kills || 0);
+  const deaths = parseInt(cs2?.deaths || 1);
+
+  const goal = (() => {
+    if (kd < 1.0) {
+      const target = kd < 0.7 ? 0.85 : kd < 0.85 ? 1.0 : 1.1;
+      const start  = kd < 0.7 ? 0.5  : kd < 0.85 ? 0.7 : 0.85;
+      const prog   = Math.min(95, Math.round((kd - start) / (target - start) * 100));
+      // Считаем сколько убийств нужно чтобы поднять K/D
+      const kdGap = target - kd;
+      const killsNeeded = Math.round(kdGap * Math.max(deaths, 100));
+      return {
+        label: kd<0.85 ? "Поднять K/D" : "Приблизиться к K/D 1.0",
+        from:kd.toFixed(2), to:target.toFixed(2), progress:Math.max(5,prog),
+        details:[
+          `${(kdGap).toFixed(2)} K/D до цели`,
+          `≈ ${killsNeeded} убийств без лишних смертей`,
+        ],
+        unlock:{icon:"⚔️", name:"Фраггер", done:kd>=1.0},
+      };
+    }
+    if (hs < 40) {
+      const prog = Math.min(95, Math.round((hs - 20) / (40 - 20) * 100));
+      return {
+        label:"Улучшить прицел до 40% HS", from:Math.round(hs)+"%", to:"40%", progress:Math.max(5,prog),
+        details:[`${40-Math.round(hs)}% HS до цели`, `Тренируй Recoil Master каждый день`],
+        unlock:{icon:"🎯", name:"HS Машина", done:hs>=40},
+      };
+    }
+    if (wr < 52) {
+      const prog = Math.min(95, Math.round((wr - 40) / (52 - 40) * 100));
+      return {
+        label:"Поднять WR выше 52%", from:Math.round(wr)+"%", to:"52%", progress:Math.max(5,prog),
+        details:[`${52-Math.round(wr)}% WR до цели`, `Разбирай проигранные раунды`],
+        unlock:{icon:"🏆", name:"Победитель", done:wr>=52},
+      };
+    }
+    if (kd < 1.4) {
+      const prog = Math.min(95, Math.round((kd - 1.0) / (1.4 - 1.0) * 100));
+      return {
+        label:"Закрепить K/D выше 1.4", from:kd.toFixed(2), to:"1.40", progress:Math.max(5,prog),
+        details:[`${(1.4-kd).toFixed(2)} K/D до цели`, `Фокус на trade kills`],
+        unlock:{icon:"💀", name:"Элита", done:kd>=1.4},
+      };
+    }
+    if (lvl > 0 && lvl < 10) {
+      const eloInLevel = (fc?.elo||0) % 1000;
+      const prog = Math.min(90, Math.round(eloInLevel / 10));
+      return {
+        label:`Подняться до FACEIT ${lvl+1}`, from:`lvl ${lvl}`, to:`lvl ${lvl+1}`, progress:Math.max(5,prog),
+        details:[`${1000-eloInLevel} ELO до следующего уровня`, `Держи WR выше 55%`],
+        unlock:{icon:"⚡", name:`FACEIT LVL ${lvl+1}`, done:false},
+      };
+    }
+    return {label:"Удержать форму", from:kd.toFixed(2), to:kd.toFixed(2), progress:85, details:[], unlock:null};
+  })();
+
+  const barColor = goal.progress >= 70 ? C.win : goal.progress >= 40 ? C.yellow : C.orange;
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
+      marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",
+        flexWrap:"wrap",gap:"12px",marginBottom:"12px"}}>
+        <div>
+          <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"4px"}}>
+            🎯 ЦЕЛЬ НЕДЕЛИ
+          </div>
+          <div style={{fontSize:"18px",color:C.value,fontWeight:700}}>{goal.label}</div>
+          <div style={{fontSize:"13px",color:C.muted,marginTop:"2px"}}>
+            {goal.from} → <span style={{color:barColor,fontWeight:700}}>{goal.to}</span>
+          </div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:"28px",color:barColor,fontWeight:900,lineHeight:1}}>{goal.progress}%</div>
+          <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>выполнено</div>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{height:"8px",background:"#1a1a10",borderRadius:"4px",overflow:"hidden",marginBottom:"12px"}}>
+        <div style={{height:"100%",width:`${goal.progress}%`,background:barColor,
+          borderRadius:"4px",transition:"width 1s ease",
+          boxShadow:`0 0 10px ${barColor}66`}}/>
+      </div>
+
+      {/* Details + unlock */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"10px"}}>
+        {goal.details?.length>0&&(
+          <div style={{display:"flex",flexDirection:"column",gap:"3px"}}>
+            {goal.details.map((d,i)=>(
+              <div key={i} style={{fontSize:"12px",color:C.muted}}>• {d}</div>
+            ))}
+          </div>
+        )}
+        {goal.unlock&&(
+          <div style={{display:"flex",alignItems:"center",gap:"8px",
+            background:C.yellow+"0d",border:`1px solid ${C.yellow}22`,padding:"6px 12px"}}>
+            <span>{goal.unlock.icon}</span>
+            <span style={{fontSize:"11px",color:C.yellow}}>→ достижение <b>{goal.unlock.name}</b></span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Streaks ───────────────────────────────────────────────────────────────────
+function Streaks({player, source}) {
+  const fc = player?.faceit;
+  const hs = parseFloat(source==="faceit"?fc?.lifetime?.hs:(player?.cs2?.hs)) || 0;
+  const matches = arr(fc?.matches);
+  if (!matches.length) return null;
+
+  // Текущая серия побед
+  let winStreak = 0;
+  for (const m of matches) {
+    if (m.result === "1") winStreak++;
+    else break;
+  }
+
+  // Серия с HS > 40%
+  let hsStreak = 0;
+  for (const m of matches) {
+    if (parseFloat(m.hs||0) >= 40) hsStreak++;
+    else break;
+  }
+
+  // K/D > 1.0 подряд
+  let kdStreak = 0;
+  for (const m of matches) {
+    if (parseFloat(m.kd||0) >= 1.0) kdStreak++;
+    else break;
+  }
+
+  const streaks = [
+    winStreak > 0 && {icon:"🔥", label:"Винстрик", val:winStreak, max:5, color:C.lose,
+      desc:winStreak>=5?"🔥 Огненная серия!":winStreak>=3?"Горячая полоса":"Продолжай выигрывать"},
+    hsStreak > 0 && {icon:"🎯", label:"HS > 40%", val:hsStreak, max:5, color:C.orange,
+      desc:`${hsStreak} матч${hsStreak===1?"":"а"} с хорошим прицелом`},
+    kdStreak > 0 && {icon:"⚔️", label:"K/D > 1.0", val:kdStreak, max:5, color:C.blue,
+      desc:`${kdStreak} матч${kdStreak===1?"":"а"} выше нуля`},
+  ].filter(Boolean);
+
+  if (!streaks.length) return null;
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px 20px",
+      marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"12px"}}>
+        🔥 ТЕКУЩИЕ СЕРИИ
+      </div>
+      <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+        {streaks.map((s,i)=>(
+          <div key={i} style={{flex:"1 1 140px",background:"#0d0d09",
+            border:`1px solid ${s.color}44`,padding:"12px 14px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
+              <span style={{fontSize:"20px"}}>{s.icon}</span>
+              <div>
+                <div style={{fontSize:"13px",color:s.color,fontWeight:700}}>{s.label}</div>
+                <div style={{fontSize:"11px",color:C.muted}}>{s.desc}</div>
+              </div>
+              <div style={{marginLeft:"auto",fontSize:"28px",color:s.color,fontWeight:900,lineHeight:1}}>
+                {s.val}
+              </div>
+            </div>
+            {/* Dots */}
+            <div style={{display:"flex",gap:"4px"}}>
+              {Array.from({length:s.max}).map((_,j)=>(
+                <div key={j} style={{flex:1,height:"4px",borderRadius:"2px",
+                  background:j<s.val?s.color:"#1a1a10",
+                  boxShadow:j<s.val?`0 0 4px ${s.color}88`:"none",
+                  transition:"background .3s"}}/>
+              ))}
+            </div>
+            {s.val >= s.max&&<div style={{fontSize:"10px",color:s.color,marginTop:"4px",fontWeight:700}}>
+              🔥 СЕРИЯ {s.max}+!
+            </div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Weekly Missions ────────────────────────────────────────────────────────────
+function WeeklyMissions({player, source}) {
+  const fc = player?.faceit;
+  const cs2 = player?.cs2 || {};
+  const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd) || 0;
+  const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs) || 0;
+  const wr  = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate) || 0;
+  const matches = arr(fc?.matches);
+
+  // Миссии на основе данных за последние матчи
+  const recentWins = matches.slice(0,10).filter(m=>m.result==="1").length;
+  const recentGoodHS = matches.slice(0,10).filter(m=>parseFloat(m.hs||0)>=45).length;
+  const recentGoodKD = matches.slice(0,10).filter(m=>parseFloat(m.kd||0)>=1.0).length;
+
+  // Получаем номер недели для сброса
+  const weekNum = Math.floor(Date.now() / (7*24*60*60*1000));
+  const storageKey = `cs2_missions_${player?.steamid}_${weekNum}`;
+  const [done, setDone] = useState(()=>{
+    try{ return JSON.parse(localStorage.getItem(storageKey)||"[]"); }catch{ return []; }
+  });
+
+  const toggle = (id) => {
+    const next = done.includes(id) ? done.filter(x=>x!==id) : [...done, id];
+    setDone(next);
+    try{ localStorage.setItem(storageKey, JSON.stringify(next)); }catch{}
+  };
+
+  const missions = [
+    {id:"m1", text:"Сыграть 5 матчей на этой неделе",     xp:10, done:matches.length>=5||recentWins>=3},
+    {id:"m2", text:"Выиграть 3 матча подряд",              xp:15, done:recentWins>=3},
+    {id:"m3", text:"HS% выше 45% в двух матчах",           xp:10, done:recentGoodHS>=2},
+    {id:"m4", text:"K/D выше 1.0 в трёх матчах",          xp:15, done:recentGoodKD>=3},
+  ];
+
+  const completedXP = missions.filter(m=>m.done||done.includes(m.id)).reduce((s,m)=>s+m.xp,0);
+  const totalXP = missions.reduce((s,m)=>s+m.xp,0);
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
+      marginBottom:"3px",animation:"up .5s ease both"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+        <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>
+          📋 ЗАДАНИЯ НЕДЕЛИ
+        </div>
+        <div style={{fontSize:"12px",color:C.yellow,fontWeight:700}}>
+          {completedXP} / {totalXP} XP
+        </div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+        {missions.map((m,i)=>{
+          const isDone = m.done || done.includes(m.id);
+          return (
+            <div key={m.id} onClick={()=>toggle(m.id)}
+              style={{display:"flex",alignItems:"center",gap:"12px",padding:"10px 14px",
+                background:isDone?"#0a140a":"#0d0d09",
+                border:`1px solid ${isDone?C.win+"44":C.border}`,
+                cursor:"pointer",transition:"all .15s"}}>
+              <div style={{width:"20px",height:"20px",borderRadius:"3px",flexShrink:0,
+                background:isDone?C.win:"transparent",
+                border:`2px solid ${isDone?C.win:C.muted}`,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:"12px",transition:"all .2s"}}>
+                {isDone&&"✓"}
+              </div>
+              <div style={{flex:1,fontSize:"13px",
+                color:isDone?C.win:C.text,
+                textDecoration:isDone?"line-through":"none",
+                opacity:isDone?0.7:1}}>
+                {m.text}
+              </div>
+              <div style={{fontSize:"11px",color:isDone?C.win:C.yellow,fontWeight:700,
+                background:isDone?C.win+"18":C.yellow+"18",
+                border:`1px solid ${isDone?C.win+"44":C.yellow+"44"}`,
+                padding:"2px 8px"}}>
+                +{m.xp} XP
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {/* XP bar */}
+      <div style={{marginTop:"12px",height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${Math.round(completedXP/totalXP*100)}%`,
+          background:C.yellow,borderRadius:"2px",transition:"width .5s ease"}}/>
       </div>
     </div>
   );
@@ -3862,6 +4145,8 @@ export default function App() {
 
             {/* ── Действия ── */}
             <WeekGoal player={player} source={source}/>
+            {source==="faceit"&&hasFaceit&&<Streaks player={player} source={source}/>}
+            {source==="faceit"&&hasFaceit&&<WeeklyMissions player={player} source={source}/>}
             <TodayRecs player={player} source={source}/>
             {source==="faceit"&&hasFaceit
               ?<div style={{marginTop:"12px"}}><ChartsSection faceit={player.faceit}/></div>
