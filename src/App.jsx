@@ -59,6 +59,18 @@ const css = `
     .score-rings{flex-direction:row !important;justify-content:space-around !important;}
     .chat-panel{width:100% !important;right:0 !important;bottom:64px !important;}
     .search-bar{display:none !important;}
+    /* Новые блоки на мобиле */
+    .verdict-grid{grid-template-columns:1fr !important;}
+    .rating-row{flex-direction:column !important;align-items:flex-start !important;gap:10px !important;}
+    .rating-big{font-size:42px !important;}
+    .rating-pct{font-size:18px !important;}
+    .ach-grid{grid-template-columns:1fr 1fr !important;}
+    .rec-grid{grid-template-columns:1fr !important;}
+    .progress-row{flex-direction:column !important;}
+    .elo-chart{height:60px !important;}
+    .best-worst{grid-template-columns:1fr !important;}
+    .recent-match-grid{grid-template-columns:4px 1fr 60px 50px 50px !important;}
+    .recent-match-adr{display:none !important;}
   }
   @media(min-width:769px){
     .mobile-nav{display:none !important;}
@@ -606,7 +618,7 @@ function BestWorstMap({faceit}) {
   const best = maps[0];
   const worst = maps[maps.length-1];
   return (
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"3px",animation:"up .5s ease both"}}>
+    <div className="best-worst" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"3px",animation:"up .5s ease both"}}>
       <div style={{background:"#0a150a",border:`1px solid ${C.win}44`,padding:"18px 20px"}}>
         <div style={{fontSize:"10px",color:C.win,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>
           🏆 ЛУЧШАЯ КАРТА
@@ -683,11 +695,10 @@ function RecentMatchesOverview({faceit}) {
         return (
           <div key={i} style={{borderBottom:i<matches.length-1?`1px solid ${C.border}`:"none"}}>
             <div onClick={()=>{ setOpen(o=>!o); if(!open) fetchAnalysis(m,i); }}
-              style={{display:"grid", gridTemplateColumns:"4px 1fr 72px 60px 60px 60px",
+              className="hov-row recent-match-grid" style={{display:"grid", gridTemplateColumns:"4px 1fr 72px 60px 60px 60px",
                 gap:"10px", padding:"12px 16px", cursor:"pointer", alignItems:"center",
                 borderLeft:`4px solid ${ac}`, background:"transparent",
-                transition:"background .15s"}}
-              className="hov-row">
+                transition:"background .15s"}}>
               <div/>
               <div>
                 <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
@@ -780,7 +791,7 @@ function ProgressHistory({player, source}) {
         <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>📊 ИСТОРИЯ ПРОГРЕССА</span>
         <span style={{fontSize:"11px",color:C.muted}}>{first.date} — {last.date}</span>
       </div>
-      <div style={{display:"flex",alignItems:"center",gap:"20px",marginBottom:"16px",flexWrap:"wrap"}}>
+      <div className="progress-row" style={{display:"flex",alignItems:"center",gap:"20px",marginBottom:"16px",flexWrap:"wrap"}}>
         <div style={{display:"flex",alignItems:"baseline",gap:"10px"}}>
           <span style={{fontSize:"48px",color:diffColor,fontWeight:900,lineHeight:1}}>{diff>0?"+":""}{diff}</span>
           <div>
@@ -868,7 +879,7 @@ function PlayerRating({player, source}) {
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"3px",animation:"up .5s ease both"}}>
       <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>🏅 CS2 COACH РЕЙТИНГ</div>
-      <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"16px"}}>
+      <div className="rating-row" style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"16px"}}>
         {/* Уровень — иконка + название */}
         <div style={{textAlign:"center",minWidth:"100px"}}>
           <div style={{fontSize:"44px",lineHeight:1,marginBottom:"4px"}}>{coachLvl.icon}</div>
@@ -876,7 +887,7 @@ function PlayerRating({player, source}) {
           <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{overall} / 100</div>
         </div>
         <div style={{flex:1}}>
-          <div style={{fontSize:"22px",color:C.value,fontWeight:800,lineHeight:1.2,marginBottom:"5px"}}>
+          <div className="rating-pct" style={{fontSize:"22px",color:C.value,fontWeight:800,lineHeight:1.2,marginBottom:"5px"}}>
             Лучше чем <span style={{color:coachLvl.color}}>{overall}%</span>
           </div>
           <div style={{fontSize:"14px",color:C.muted,marginBottom:"10px"}}>игроков{lvl>0?` уровня FACEIT ${lvl}`:" CS2"}</div>
@@ -970,7 +981,7 @@ function Achievements({player, source}) {
       {locked.length>0&&(
         <>
           <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>СЛЕДУЮЩИЕ ЦЕЛИ:</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:"8px"}}>
+          <div className="ach-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:"8px"}}>
             {locked.map(a=>{
               const prog=Math.min(99,Math.round((a.val/a.target)*100));
               const remaining=a.target>a.val?Math.ceil(a.target-a.val):0;
@@ -1229,7 +1240,7 @@ function TodayRecs({player, source}) {
       <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
         📋 РЕКОМЕНДАЦИИ НА СЕГОДНЯ
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"8px"}}>
+      <div className="rec-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:"8px"}}>
         {shown.map((r,i)=>(
           <div key={i} style={{display:"flex",flexDirection:"column",gap:"8px",
             background:"#0d0d09",border:`1px solid ${r.color}22`,padding:"12px 14px"}}>
@@ -2663,7 +2674,7 @@ function LandingPage({onLogin}) {
 
 // ── AI Report (автосводка) ────────────────────────────────────────────────────
 // ── AI Verdict — большой блок наверху обзора ─────────────────────────────────
-function AIVerdict({report, loading, onRefresh}) {
+function AIVerdict({report, loading, onRefresh, cacheDate}) {
   const [step, setStep] = useState(0);
   const steps = [
     "Анализируем статистику матчей...",
@@ -2754,6 +2765,7 @@ function AIVerdict({report, loading, onRefresh}) {
             fontSize:"11px",padding:"5px 14px",fontFamily:"inherit",letterSpacing:"1px"}}>
             ↻ обновить
           </button>
+          {cacheDate&&<span style={{fontSize:"10px",color:C.muted}}>от {cacheDate}</span>}
         </div>
 
         {/* VERDICT — главный элемент, крупный текст */}
@@ -2774,7 +2786,7 @@ function AIVerdict({report, loading, onRefresh}) {
         )}
 
         {/* Strengths + Problems — крупнее */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"20px"}}>
+        <div className="verdict-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"20px"}}>
           <div>
             <div style={{fontSize:"11px",letterSpacing:"3px",color:C.win,fontWeight:700,
               marginBottom:"10px",display:"flex",alignItems:"center",gap:"8px"}}>
@@ -2835,20 +2847,42 @@ function AIReport({player, source}) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [cacheDate, setCacheDate] = useState(null);
   const fc = player?.faceit;
   const cs2 = player?.cs2 || {};
+  const cacheKey = `cs2_verdict_${player?.steamid}_${source}`;
+
+  // Загружаем кэш при входе
+  useEffect(()=>{
+    if (!player?.steamid) return;
+    try {
+      const cached = JSON.parse(localStorage.getItem(cacheKey)||"null");
+      if (cached?.result && cached?.date) {
+        setReport(cached.result);
+        setCacheDate(cached.date);
+        setLoaded(true);
+      } else {
+        load();
+      }
+    } catch { load(); }
+  }, [player?.steamid, source]);
+
   async function load() {
     setLoading(true);
+    const recentMatches = arr(fc?.matches).slice(0,5).map(m=>({
+      map:m.map||"", result:m.result||"0",
+      kd:m.kd||"0", hs:m.hs||"0", adr:m.adr||"0",
+    }));
     const stats = source==="faceit"&&fc ? {
       kd:fc.lifetime?.kd||"0", winrate:fc.lifetime?.winrate||"0",
       hs:fc.lifetime?.hs||"0", matches:fc.lifetime?.matches||"0",
-      faceit_level:String(fc.level||""), faceit_elo:String(fc.elo||""),
-      maps:arr(fc.maps),
+      rank:"", faceit_level:String(fc.level||""), faceit_elo:String(fc.elo||""),
+      maps:arr(fc.maps), recent_matches:recentMatches,
     } : {
       kd:cs2.kd||"0", winrate:cs2.winrate||"0",
       hs:cs2.hs||"0", matches:cs2.matches||"0",
-      faceit_level:String(fc?.level||""), faceit_elo:String(fc?.elo||""),
-      maps:arr(fc?.maps),
+      rank:"", faceit_level:String(fc?.level||""), faceit_elo:String(fc?.elo||""),
+      maps:arr(fc?.maps), recent_matches:[],
     };
     try {
       const r = await fetch(`${BACKEND}/ai-summary`,{
@@ -2856,12 +2890,18 @@ function AIReport({player, source}) {
         body:JSON.stringify(stats)
       });
       const d = await r.json();
-      if(d.result){setReport(d.result);setLoaded(true);}
+      if(d.result){
+        setReport(d.result);
+        setLoaded(true);
+        const today = new Date().toISOString().slice(0,10);
+        setCacheDate(today);
+        try{ localStorage.setItem(cacheKey, JSON.stringify({result:d.result, date:today})); }catch{}
+      }
     } catch {}
     setLoading(false);
   }
-  useEffect(()=>{if(!loaded&&!loading)load();},[player?.steamid,source]);
-  return <AIVerdict report={report} loading={loading} onRefresh={load}/>;
+
+  return <AIVerdict report={report} loading={loading} onRefresh={load} cacheDate={cacheDate}/>;
 }
 
 
