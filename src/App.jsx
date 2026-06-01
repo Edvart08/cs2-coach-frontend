@@ -2455,6 +2455,7 @@ function ProModal({player, onClose, onActivated}) {
   const [loading,setLoading] = useState(false);
   const [msg,setMsg]         = useState(null);
   const [payLoading,setPayLoading] = useState(null);
+  const [selPlan,setSelPlan] = useState("year");
 
   async function activate() {
     if (!key.trim()||!player?.steamid) return;
@@ -2480,56 +2481,138 @@ function ProModal({player, onClose, onActivated}) {
     setPayLoading(null);
   }
 
-  const PLANS=[{period:"МЕСЯЦ",price:"299 ₽",sub:"~$3.3",plan:"month"},{period:"ГОД",price:"1990 ₽",sub:"~$22 · экономия 40%",best:true,plan:"year"}];
-  const FREE_F=["1 AI Report в день","5 AI запросов в день","Базовые статы","История матчей","Лидерборд"];
-  const PRO_F=["Безлимитные AI Reports","Безлимитный AI чат","AI разбор каждого матча","Без дневных лимитов","Pro значок","Приоритетная поддержка"];
+  const PRO_F = [
+    {icon:"🤖", title:"AI разбор после каждой игры",   desc:"Что сделал не так — конкретно, с картами и цифрами"},
+    {icon:"💬", title:"Безлимитный AI чат",             desc:"Спрашивай тренера сколько угодно, без дневных лимитов"},
+    {icon:"📈", title:"Персональный прогресс",          desc:"История рейтинга, рост K/D, достижения разблокированы"},
+    {icon:"🎯", title:"Анализ слабых карт",             desc:"AI находит твои худшие карты и говорит что конкретно исправить"},
+    {icon:"⚡", title:"PRO значок в лидерборде",        desc:"Выделяйся среди других игроков"},
+    {icon:"🎧", title:"Приоритетная поддержка",         desc:"Ответ в течение часа, прямая связь с тренером"},
+  ];
+
+  const plans = {
+    month: {period:"МЕСЯЦ", price:"299 ₽", sub:"~$3.3 · отмена в любой момент", plan:"month"},
+    year:  {period:"ГОД",   price:"1990 ₽", sub:"~$22 · экономия 40%", plan:"year", badge:"ВЫГОДНО"},
+  };
+  const p = plans[selPlan];
 
   return(
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn .2s ease"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.yellow}55`,borderTop:`3px solid ${C.yellow}`,maxWidth:"520px",width:"100%",maxHeight:"90vh",overflowY:"auto",animation:"slideUp .3s ease",boxShadow:`0 8px 60px ${C.yellow}18`}}>
-        <div style={{padding:"22px 24px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div><div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"4px"}}>⚡ CS2 AI ТРЕНЕР PRO</div><div style={{fontSize:"20px",color:C.value,fontWeight:700}}>Убери ограничения</div></div>
-          <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",width:"28px",height:"28px",fontSize:"14px"}}>✕</button>
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn .2s ease"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.yellow}55`,
+        borderTop:`3px solid ${C.yellow}`,maxWidth:"500px",width:"100%",maxHeight:"92vh",
+        overflowY:"auto",animation:"slideUp .3s ease",boxShadow:`0 12px 80px ${C.yellow}22`}}>
+
+        {/* Header */}
+        <div style={{padding:"24px 24px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div>
+            <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"6px"}}>⚡ CS2 AI ТРЕНЕР PRO</div>
+            <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"4px"}}>Стань лучше быстрее</div>
+            <div style={{fontSize:"13px",color:C.muted}}>AI тренер который знает твою игру лично</div>
+          </div>
+          <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",width:"30px",height:"30px",fontSize:"14px",flexShrink:0}}>✕</button>
         </div>
-        <div style={{display:"flex",margin:"18px 24px 0",gap:"3px"}}>
+
+        {/* Tabs */}
+        <div style={{display:"flex",margin:"18px 24px 0",gap:"4px"}}>
           {[["plans","Тарифы"],["activate","Ввести ключ"]].map(([t,l])=>(
-            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"9px",background:tab===t?C.yellow+"22":"transparent",border:`1px solid ${tab===t?C.yellow+"66":C.border}`,color:tab===t?C.yellow:C.muted,cursor:"pointer",fontSize:"13px",fontFamily:"inherit",fontWeight:tab===t?700:400}}>{l}</button>
+            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"9px",
+              background:tab===t?C.yellow+"22":"transparent",
+              border:`1px solid ${tab===t?C.yellow+"66":C.border}`,
+              color:tab===t?C.yellow:C.muted,cursor:"pointer",
+              fontSize:"13px",fontFamily:"inherit",fontWeight:tab===t?700:400}}>{l}</button>
           ))}
         </div>
-        <div style={{padding:"20px 24px 24px"}}>
+
+        <div style={{padding:"20px 24px 28px"}}>
           {tab==="plans"&&<>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"20px"}}>
-              <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
-                <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"12px"}}>FREE</div>
-                {FREE_F.map((f,i)=><div key={i} style={{fontSize:"13px",color:C.label,marginBottom:"7px",display:"flex",gap:"8px"}}><span style={{color:C.muted}}>—</span>{f}</div>)}
-              </div>
-              <div style={{background:"#1a1a0a",border:`2px solid ${C.yellow}44`,padding:"16px",position:"relative"}}>
-                <div style={{position:"absolute",top:"-1px",right:"12px",background:C.yellow,color:"#080807",fontSize:"10px",fontWeight:700,padding:"2px 10px",letterSpacing:"2px"}}>PRO</div>
-                <div style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px"}}>PRO</div>
-                {PRO_F.map((f,i)=><div key={i} style={{fontSize:"13px",color:C.value,marginBottom:"7px",display:"flex",gap:"8px"}}><span style={{color:C.win}}>✓</span>{f}</div>)}
-              </div>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"20px"}}>
-              {PLANS.map((p,i)=>(
-                <div key={i} style={{background:p.best?"#1a1a0a":"#111109",border:`${p.best?2:1}px solid ${p.best?C.yellow+"66":C.border}`,padding:"16px",textAlign:"center",position:"relative"}}>
-                  {p.best&&<div style={{position:"absolute",top:"-1px",left:"50%",transform:"translateX(-50%)",background:C.yellow,color:"#080807",fontSize:"10px",fontWeight:700,padding:"2px 12px",letterSpacing:"1px",whiteSpace:"nowrap"}}>ВЫГОДНО</div>}
-                  <div style={{fontSize:"12px",color:C.muted,marginBottom:"6px",marginTop:p.best?"8px":0}}>{p.period}</div>
-                  <div style={{fontSize:"26px",color:C.yellow,fontWeight:700,marginBottom:"6px"}}>{p.price}</div>
-                  <div style={{fontSize:"11px",color:C.muted,marginBottom:"14px"}}>{p.sub}</div>
-                  <button onClick={()=>startPayment(p.plan)} disabled={payLoading===p.plan} style={{width:"100%",padding:"10px",background:payLoading===p.plan?"#1a1a0e":C.yellow,color:"#080807",border:"none",cursor:"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
-                    {payLoading===p.plan?"...":"ОПЛАТИТЬ"}
-                  </button>
+            {/* PRO фичи — нормально описанные */}
+            <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"20px"}}>
+              {PRO_F.map((f,i)=>(
+                <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",
+                  padding:"10px 14px",background:"#0d0d09",border:`1px solid ${C.border}`}}>
+                  <span style={{fontSize:"18px",flexShrink:0}}>{f.icon}</span>
+                  <div>
+                    <div style={{fontSize:"13px",color:C.value,fontWeight:700,marginBottom:"2px"}}>{f.title}</div>
+                    <div style={{fontSize:"12px",color:C.muted,lineHeight:1.5}}>{f.desc}</div>
+                  </div>
+                  <span style={{marginLeft:"auto",color:C.win,fontSize:"14px",flexShrink:0}}>✓</span>
                 </div>
               ))}
             </div>
-            <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7,background:"#111109",border:`1px solid ${C.border}`,padding:"12px 14px"}}>После оплаты получишь ключ активации. Введи его во вкладке "Ввести ключ".</div>
+
+            {/* План выбор */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"16px"}}>
+              {Object.entries(plans).map(([key,p])=>(
+                <div key={key} onClick={()=>setSelPlan(key)}
+                  style={{padding:"14px",textAlign:"center",cursor:"pointer",position:"relative",
+                    background:selPlan===key?"#1a1a0a":"#111109",
+                    border:`${selPlan===key?2:1}px solid ${selPlan===key?C.yellow+"88":C.border}`,
+                    transition:"all .15s"}}>
+                  {p.badge&&<div style={{position:"absolute",top:"-1px",left:"50%",transform:"translateX(-50%)",
+                    background:C.yellow,color:"#080807",fontSize:"9px",fontWeight:700,
+                    padding:"2px 10px",letterSpacing:"1px",whiteSpace:"nowrap"}}>{p.badge}</div>}
+                  <div style={{fontSize:"11px",color:C.muted,marginBottom:"4px",marginTop:p.badge?"8px":0}}>{p.period}</div>
+                  <div style={{fontSize:"24px",color:selPlan===key?C.yellow:C.label,fontWeight:700,marginBottom:"3px"}}>{p.price}</div>
+                  <div style={{fontSize:"10px",color:C.muted}}>{p.sub}</div>
+                  {selPlan===key&&<div style={{position:"absolute",bottom:"6px",right:"8px",
+                    fontSize:"12px",color:C.yellow}}>✓</div>}
+                </div>
+              ))}
+            </div>
+
+            {/* CTA кнопка */}
+            <button onClick={()=>startPayment(p.plan)} disabled={!!payLoading}
+              style={{width:"100%",padding:"15px",background:payLoading?C.yellow+"88":C.yellow,
+                color:"#080807",border:"none",cursor:payLoading?"not-allowed":"pointer",
+                fontSize:"15px",fontWeight:800,fontFamily:"inherit",letterSpacing:"1px",
+                marginBottom:"12px",transition:"opacity .2s"}}>
+              {payLoading?"ОТКРЫВАЮ ОПЛАТУ...":
+                `ПОЛУЧИТЬ PRO — ${plans[selPlan].price}`}
+            </button>
+
+            {/* Social proof */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",
+              marginBottom:"14px"}}>
+              <div style={{display:"flex"}}>
+                {["🟡","🟠","🔴","🟣","🔵"].map((c,i)=>(
+                  <div key={i} style={{width:"22px",height:"22px",borderRadius:"50%",
+                    background:C.card,border:`2px solid ${C.border}`,
+                    marginLeft:i?"-6px":"0",display:"flex",alignItems:"center",
+                    justifyContent:"center",fontSize:"10px"}}>{c}</div>
+                ))}
+              </div>
+              <span style={{fontSize:"12px",color:C.muted}}>
+                <span style={{color:C.yellow,fontWeight:700}}>127 игроков</span> уже PRO
+              </span>
+            </div>
+
+            <div style={{fontSize:"11px",color:C.muted,textAlign:"center",lineHeight:1.6}}>
+              После оплаты получишь ключ активации во вкладке "Ввести ключ"
+            </div>
           </>}
+
           {tab==="activate"&&<>
-            <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>Формат: <span style={{color:C.yellow,fontFamily:"monospace"}}>CS2PRO-XXXX-XXXX-XXXX</span></div>
-            <input value={key} onChange={e=>setKey(e.target.value)} placeholder="CS2PRO-XXXX-XXXX-XXXX"
-              style={{width:"100%",background:"#111109",border:`1px solid ${msg?.ok===false?C.lose:C.border}`,color:C.yellow,fontSize:"16px",padding:"13px 16px",fontFamily:"'Consolas',monospace",letterSpacing:"2px",marginBottom:"10px"}}/>
-            {msg&&<div style={{fontSize:"13px",color:msg.ok?C.win:C.lose,marginBottom:"12px",padding:"10px 14px",background:msg.ok?"#0f1a0f":"#1a0f0f",border:`1px solid ${msg.ok?C.win+"33":C.lose+"33"}`}}>{msg.text}</div>}
-            <button onClick={activate} disabled={loading||!key.trim()||!player} style={{width:"100%",padding:"14px",background:loading?"#1a1a0e":C.yellow,color:"#080807",border:"none",cursor:loading?"not-allowed":"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>
+            <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"8px"}}>
+              Формат ключа:
+            </div>
+            <div style={{fontSize:"13px",color:C.yellow,fontFamily:"monospace",
+              background:"#111109",border:`1px solid ${C.border}`,
+              padding:"10px 14px",marginBottom:"16px",letterSpacing:"2px"}}>
+              CS2PRO-XXXX-XXXX-XXXX
+            </div>
+            <input value={key} onChange={e=>setKey(e.target.value.toUpperCase())}
+              placeholder="CS2PRO-XXXX-XXXX-XXXX"
+              style={{width:"100%",background:"#111109",
+                border:`1px solid ${msg?.ok===false?C.lose:C.border}`,
+                color:C.yellow,fontSize:"16px",padding:"14px 16px",
+                fontFamily:"'Consolas',monospace",letterSpacing:"2px",marginBottom:"10px"}}/>
+            {msg&&<div style={{fontSize:"13px",color:msg.ok?C.win:C.lose,marginBottom:"12px",
+              padding:"10px 14px",background:msg.ok?"#0f1a0f":"#1a0f0f",
+              border:`1px solid ${msg.ok?C.win+"33":C.lose+"33"}`}}>{msg.text}</div>}
+            <button onClick={activate} disabled={loading||!key.trim()||!player}
+              style={{width:"100%",padding:"14px",background:loading?C.yellow+"88":C.yellow,
+                color:"#080807",border:"none",cursor:loading?"not-allowed":"pointer",
+                fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>
               {loading?"АКТИВИРУЮ...":"АКТИВИРОВАТЬ PRO"}
             </button>
           </>}
