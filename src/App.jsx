@@ -1026,6 +1026,152 @@ function Achievements({player, source}) {
 }
 
 
+// ── Weekly Report ─────────────────────────────────────────────────────────────
+function WeeklyReport({player, source, isPro, onUpgrade}) {
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const fc  = player?.faceit;
+  const cs2 = player?.cs2 || {};
+
+  // Берём историю из localStorage
+  const history = (() => {
+    try{ return JSON.parse(localStorage.getItem(`cs2_rating_history_${player?.steamid}`)||"[]"); }
+    catch{ return []; }
+  })();
+
+  if (history.length < 2) return null;
+
+  const first = history[0];
+  const last  = history[history.length-1];
+
+  // ELO изменение
+  const eloPoints = (() => {
+    const matches = arr(fc?.matches).slice().reverse();
+    let elo = parseInt(fc?.elo)||0;
+    const pts = [elo];
+    for (const m of matches) {
+      const ch = parseInt(m.elo_change)||0;
+      elo -= ch;
+      pts.unshift(elo);
+    }
+    return pts;
+  })();
+  const eloChange = eloPoints.length >= 2 ? eloPoints[eloPoints.length-1] - eloPoints[0] : 0;
+
+  async function generate() {
+    if (!isPro) { onUpgrade(); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`${BACKEND}/weekly-report`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          kd_start: String(first.kd||0), kd_end: String(last.kd||0),
+          hs_start: String(Math.round(first.hs||0)), hs_end: String(Math.round(last.hs||0)),
+          wr_start: String(Math.round(first.wr||0)), wr_end: String(Math.round(last.wr||0)),
+          matches_played: String(source==="faceit"?fc?.lifetime?.matches:cs2.matches||0),
+          wins: String(cs2.wins||0),
+          faceit_level: String(fc?.level||""),
+          elo_change: String(eloChange),
+        })
+      });
+      const d = await r.json();
+      if (d.result) { setReport(d.result); setOpen(true); }
+    } catch {}
+    setLoading(false);
+  }
+
+  const verdictColor = report?.verdict==="РОСТ"?C.win:report?.verdict==="ПАДЕНИЕ"?C.lose:C.yellow;
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px",animation:"up .5s ease both"}}>
+      {/* Header — кликабельный */}
+      <div onClick={()=>report?setOpen(o=>!o):generate()}
+        style={{padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",
+          cursor:"pointer",borderBottom:open?`1px solid ${C.border}`:"none"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+          <span style={{fontSize:"16px"}}>📊</span>
+          <div>
+            <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>
+              НЕДЕЛЬНЫЙ ОТЧЁТ
+            </div>
+            <div style={{fontSize:"12px",color:C.muted,marginTop:"2px"}}>
+              {first.date} — {last.date}
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+          {!isPro&&<span style={{fontSize:"11px",background:C.yellow,color:"#080807",
+            padding:"2px 8px",fontWeight:700}}>PRO</span>}
+          {report&&<span style={{fontSize:"12px",color:verdictColor,fontWeight:700}}>
+            {report.verdict}
+          </span>}
+          {loading
+            ? <span style={{fontSize:"12px",color:C.muted}}>генерирую...</span>
+            : <span style={{color:C.muted,fontSize:"14px"}}>{open?"▲":"▼"}</span>}
+        </div>
+      </div>
+
+      {/* Report content */}
+      {open&&report&&(
+        <div style={{padding:"18px 20px",animation:"up .3s ease both"}}>
+          {/* Verdict badge */}
+          <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"16px"}}>
+            <div style={{padding:"4px 16px",background:verdictColor+"22",
+              border:`1px solid ${verdictColor}55`,
+              fontSize:"13px",color:verdictColor,fontWeight:700,letterSpacing:"2px"}}>
+              {report.verdict==="РОСТ"?"📈":report.verdict==="ПАДЕНИЕ"?"📉":"➡️"} {report.verdict}
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div style={{fontSize:"15px",color:C.value,lineHeight:1.75,marginBottom:"16px",
+            borderLeft:`3px solid ${C.yellow}`,paddingLeft:"14px"}}>
+            {report.summary}
+          </div>
+
+          {/* Highlight + Concern */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"16px"}}>
+            <div style={{background:"#0a160a",border:`1px solid ${C.win}33`,padding:"12px 14px"}}>
+              <div style={{fontSize:"10px",color:C.win,letterSpacing:"2px",fontWeight:700,marginBottom:"6px"}}>
+                ✓ ЛУЧШЕЕ ЗА НЕДЕЛЮ
+              </div>
+              <div style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{report.highlight}</div>
+            </div>
+            <div style={{background:"#160a0a",border:`1px solid ${C.lose}33`,padding:"12px 14px"}}>
+              <div style={{fontSize:"10px",color:C.lose,letterSpacing:"2px",fontWeight:700,marginBottom:"6px"}}>
+                ✗ ГЛАВНАЯ ПРОБЛЕМА
+              </div>
+              <div style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{report.concern}</div>
+            </div>
+          </div>
+
+          {/* Next week goal */}
+          <div style={{display:"flex",gap:"14px",alignItems:"flex-start",
+            background:"#0f180f",border:`1px solid ${C.win}44`,
+            borderLeft:`4px solid ${C.win}`,padding:"14px 16px"}}>
+            <span style={{fontSize:"20px"}}>🎯</span>
+            <div>
+              <div style={{fontSize:"10px",color:C.win,letterSpacing:"2px",fontWeight:700,marginBottom:"4px"}}>
+                ЦЕЛЬ НА СЛЕДУЮЩУЮ НЕДЕЛЮ
+              </div>
+              <div style={{fontSize:"15px",color:C.value,fontWeight:600}}>{report.next_week_goal}</div>
+            </div>
+          </div>
+
+          <button onClick={generate} disabled={loading}
+            style={{marginTop:"12px",background:"transparent",border:`1px solid ${C.border}`,
+              color:C.muted,cursor:"pointer",fontSize:"11px",padding:"6px 14px",
+              fontFamily:"inherit"}}>
+            ↻ Обновить отчёт
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── ELO Chart ─────────────────────────────────────────────────────────────────
 function EloChart({faceit}) {
   const currentElo = parseInt(faceit?.elo) || 0;
@@ -4295,6 +4441,7 @@ export default function App() {
             {/* ── Матчи и аналитика ── */}
             {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
             {source==="faceit"&&hasFaceit&&<EloChart faceit={player.faceit}/>}
+            {source==="faceit"&&hasFaceit&&<WeeklyReport player={player} source={source} isPro={isPro} onUpgrade={()=>setShowProModal(true)}/>}
 
             {/* ── Действия ── */}
             <WeekGoal player={player} source={source}/>
