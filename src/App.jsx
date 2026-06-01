@@ -4209,6 +4209,44 @@ export default function App() {
                   localStorage.setItem(hKey, JSON.stringify(filtered.slice(-30)));
                 }
               } catch {}
+              // Авто-добавление в лидерборд при каждом входе
+              try {
+                const fc2 = fresh.faceit;
+                const cs22 = fresh.cs2 || {};
+                const lbKd  = fc2?.lifetime?.kd || cs22.kd || "0";
+                const lbWr  = fc2?.lifetime?.winrate || cs22.winrate || "0";
+                const lbHs  = fc2?.lifetime?.hs || cs22.hs || "0";
+                const lbM   = fc2?.lifetime?.matches || cs22.matches || "0";
+                const lbKills = cs22.kills || "0";
+                const lbDeaths = cs22.deaths || "0";
+                const lbMvp = cs22.mvps || "0";
+                const lbPt  = cs22.playtime || "0";
+                const lbLvl = parseInt(fc2?.level)||0;
+                // Считаем уровень для label
+                const lbOverall = (() => {
+                  const avgByLevel = [{kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},{kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},{kd:1.20,hs:42,wr:51},{kd:1.28,hs:44,wr:52},{kd:1.38,hs:46,wr:53},{kd:1.52,hs:48,wr:54},{kd:1.72,hs:52,wr:56}];
+                  const avg = avgByLevel[Math.min(lbLvl,10)];
+                  function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(parseFloat(v)/a-1))))));}
+                  return Math.min(99,Math.round(sig(lbKd,avg.kd)*0.45+sig(lbHs,avg.hs)*0.25+sig(lbWr,avg.wr)*0.30));
+                })();
+                const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
+                const levelLabel = coachLevels.find(l=>lbOverall<=l.max)?.name || "ВЕТЕРАН";
+                if (parseFloat(lbKd) > 0 && parseInt(lbM) > 0) {
+                  fetch(`${BACKEND}/leaderboard/add`, {
+                    method:"POST", headers:{"Content-Type":"application/json"},
+                    body: JSON.stringify({
+                      steamid: fresh.steamid,
+                      username: fresh.username,
+                      avatar: fresh.avatar||"",
+                      stats: {kd:lbKd, winrate:lbWr, hs:lbHs, matches:lbM,
+                        rank: fc2?.elo ? `FACEIT ${fc2.level}` : "Steam",
+                        kills:lbKills, deaths:lbDeaths, mvp:lbMvp, playtime:lbPt},
+                      level: levelLabel,
+                      overall: String(lbOverall),
+                    })
+                  }).catch(()=>{});
+                }
+              } catch {}
             }
           }).catch(()=>{});
         }
@@ -4233,6 +4271,31 @@ export default function App() {
           .then(d=>{ setIsPro(d.pro||false); setAiRemaining(d.remaining??FREE_DAILY); })
           .catch(()=>{});
       }
+      // Авто-добавление в лидерборд при первом входе
+      try {
+        const fc2 = p.faceit;
+        const cs22 = p.cs2 || {};
+        const lbKd = fc2?.lifetime?.kd || cs22.kd || "0";
+        const lbWr = fc2?.lifetime?.winrate || cs22.winrate || "0";
+        const lbHs = fc2?.lifetime?.hs || cs22.hs || "0";
+        const lbM  = fc2?.lifetime?.matches || cs22.matches || "0";
+        const lbLvl = parseInt(fc2?.level)||0;
+        const avgByLevel = [{kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},{kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},{kd:1.20,hs:42,wr:51},{kd:1.28,hs:44,wr:52},{kd:1.38,hs:46,wr:53},{kd:1.52,hs:48,wr:54},{kd:1.72,hs:52,wr:56}];
+        const avg = avgByLevel[Math.min(lbLvl,10)];
+        function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(parseFloat(v)/a-1))))));}
+        const lbOverall = Math.min(99,Math.round(sig(lbKd,avg.kd)*0.45+sig(lbHs,avg.hs)*0.25+sig(lbWr,avg.wr)*0.30));
+        const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
+        const levelLabel = coachLevels.find(l=>lbOverall<=l.max)?.name || "ВЕТЕРАН";
+        if (parseFloat(lbKd) > 0 && parseInt(lbM) > 0) {
+          fetch(`${BACKEND}/leaderboard/add`,{method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({steamid:p.steamid, username:p.username, avatar:p.avatar||"",
+              stats:{kd:lbKd, winrate:lbWr, hs:lbHs, matches:lbM,
+                rank:fc2?.elo?`FACEIT ${fc2.level}`:"Steam",
+                kills:cs22.kills||"0", deaths:cs22.deaths||"0", mvp:cs22.mvps||"0", playtime:cs22.playtime||"0"},
+              level:levelLabel, overall:String(lbOverall)})
+          }).catch(()=>{});
+        }
+      } catch {}
     };
     window.addEventListener("message", handler);
     return ()=>window.removeEventListener("message", handler);
