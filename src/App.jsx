@@ -276,6 +276,7 @@ function HeroCard({player, source}) {
               FACEIT: {fc.nickname}
             </div>
           )}
+          {/* Форма + серия */}
           {form.length>0&&(
             <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"6px"}}>
               <span style={{fontSize:"13px",color:C.muted,marginRight:"3px"}}>ФОРМА</span>
@@ -284,6 +285,11 @@ function HeroCard({player, source}) {
                   fontSize:"11px",fontWeight:700,background:w?"#1a361a":"#361a1a",
                   color:w?C.win:C.lose,border:`1px solid ${w?"#2d5a2d":"#5a2d2d"}`}}>{w?"W":"L"}</div>
               ))}
+              {(()=>{
+                let streak=0;
+                for(const w of form){if(w)streak++;else break;}
+                return streak>=2?<span style={{marginLeft:"8px",fontSize:"12px",color:C.lose,fontWeight:700}}>🔥 {streak} подряд</span>:null;
+              })()}
             </div>
           )}
         </div>
@@ -1816,9 +1822,11 @@ function ScoreCards({player, source}) {
   const ScoreRing = ({score, label, color, breakdown}) => {
     const r=28, circ=2*Math.PI*r, dash=circ*score/100;
     const scoreColor = score>=70?"#55ee55":score>=45?C.yellow:"#ff6655";
+    // "Топ X%" — чем выше score тем лучше топ
+    const topPct = Math.max(1, 100 - score);
     return (
       <div style={{textAlign:"center",padding:"16px 20px",flex:"1 1 160px"}}>
-        <div style={{position:"relative",width:"80px",height:"80px",margin:"0 auto 10px"}}>
+        <div style={{position:"relative",width:"80px",height:"80px",margin:"0 auto 8px"}}>
           <svg width="80" height="80" viewBox="0 0 80 80">
             <circle cx="40" cy="40" r={r} fill="none" stroke={C.border} strokeWidth="5"/>
             <circle cx="40" cy="40" r={r} fill="none" stroke={scoreColor} strokeWidth="5"
@@ -1829,8 +1837,11 @@ function ScoreCards({player, source}) {
             fontSize:"18px",color:scoreColor,fontWeight:700}}>{score}</div>
         </div>
         <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px"}}>{label}</div>
-        <div style={{fontSize:"13px",color:scoreColor,fontWeight:700,marginTop:"3px",marginBottom:"6px"}}>
+        <div style={{fontSize:"13px",color:scoreColor,fontWeight:700,marginTop:"2px"}}>
           {score>=80?"ОТЛИЧНО":score>=60?"ХОРОШО":score>=40?"СРЕДНЕ":"РАБОТАЙ"}
+        </div>
+        <div style={{fontSize:"11px",color:scoreColor,marginTop:"2px",marginBottom:"6px",opacity:0.8}}>
+          Топ {topPct}%
         </div>
         {breakdown&&<div style={{fontSize:"10px",color:C.muted,lineHeight:1.6,
           borderTop:`1px solid ${C.border}`,paddingTop:"6px",textAlign:"left"}}>
