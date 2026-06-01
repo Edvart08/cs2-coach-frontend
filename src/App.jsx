@@ -244,7 +244,7 @@ function HeroCard({player, source}) {
     : [{l:"K/D",v:cs2.kd||"—"},{l:"WIN%",v:cs2.winrate?(cs2.winrate+"%"):"—"},{l:"HS%",v:cs2.hs?(cs2.hs+"%"):"—"},{l:"МАТЧИ",v:cs2.matches||"—"}];
 
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"3px",position:"relative",overflow:"hidden"}}>
+    <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px",position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",top:"-40px",right:"-30px",width:"240px",height:"240px",
         background:`radial-gradient(circle,${isFaceit?C.orange:C.blue}18,transparent 70%)`,
         animation:"glow 4s ease-in-out infinite",pointerEvents:"none"}}/>
@@ -354,7 +354,7 @@ function ChartsSection({faceit}) {
   return (
     <div style={{animation:"up .4s ease both"}}>
       <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>ДИНАМИКА МАТЧЕЙ</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:"3px",marginBottom:"3px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:"3px",marginBottom:"10px"}}>
         <Chart title="K/D RATIO" data={kdData} color={C.yellow}/>
         <Chart title="HEADSHOT %" data={hsData} color={C.orange} unit="%"/>
         {adrData.length>1&&<Chart title="ADR" data={adrData} color="#44ddaa"/>}
@@ -441,7 +441,7 @@ function MatchHistory({faceit}) {
         const isExp=exp===i, ai=analyses[i], isAiLoading=aiLoading[i];
 
         return (
-          <div key={i} style={{marginBottom:"3px"}}>
+          <div key={i} style={{marginBottom:"10px"}}>
             <div className="match-row" onClick={()=>{
               const opening=!isExp;
               setExp(isExp?null:i);
@@ -457,15 +457,15 @@ function MatchHistory({faceit}) {
                 <div style={{fontSize:"12px",color:ac,marginTop:"2px"}}>{win?"ПОБЕДА":"ПОРАЖЕНИЕ"} · {m.score}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"11px",color:C.label,marginBottom:"3px"}}>K/D</div>
+                <div style={{fontSize:"11px",color:C.label,marginBottom:"10px"}}>K/D</div>
                 <div style={{fontSize:"16px",color:C.yellow,fontWeight:700}}>{m.kd}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"11px",color:C.label,marginBottom:"3px"}}>K–D</div>
+                <div style={{fontSize:"11px",color:C.label,marginBottom:"10px"}}>K–D</div>
                 <div style={{fontSize:"14px",color:C.text}}>{m.kills}–{m.deaths}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"11px",color:C.label,marginBottom:"3px"}}>HS%</div>
+                <div style={{fontSize:"11px",color:C.label,marginBottom:"10px"}}>HS%</div>
                 <div style={{fontSize:"14px",color:C.text}}>{m.hs}%</div>
               </div>
               <div style={{textAlign:"center"}}>
@@ -485,7 +485,7 @@ function MatchHistory({faceit}) {
                     {l:"ADR",v:m.adr||"—"},{l:"K/R",v:m.kr||"—"},{l:"MVP",v:m.mvps||"0"}].map((st,j)=>(
                     <div key={j} style={{background:C.card,border:`1px solid ${C.border}`,
                       padding:"9px 10px",textAlign:"center"}}>
-                      <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"3px"}}>{st.l}</div>
+                      <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"10px"}}>{st.l}</div>
                       <div style={{fontSize:"16px",color:C.yellow,fontWeight:700}}>{st.v}</div>
                     </div>
                   ))}
@@ -624,7 +624,7 @@ function BestWorstMap({faceit}) {
   const best = maps[0];
   const worst = maps[maps.length-1];
   return (
-    <div className="best-worst" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"3px",animation:"up .5s ease both"}}>
+    <div className="best-worst" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{background:"#0a150a",border:`1px solid ${C.win}44`,padding:"18px 20px"}}>
         <div style={{fontSize:"10px",color:C.win,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>
           🏆 ЛУЧШАЯ КАРТА
@@ -683,7 +683,7 @@ function RecentMatchesOverview({faceit}) {
   }
 
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"3px",animation:"up .5s ease both"}}>
+    <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
         display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>
@@ -790,7 +790,7 @@ function ProgressHistory({player, source}) {
   const area=`${pts[0].x},${H} `+pts.map(p=>`${p.x},${p.y}`).join(" ")+` ${pts[pts.length-1].x},${H}`;
   return (
     <div style={{background:"#0f0f0b",border:`2px solid ${diffColor}44`,borderLeft:`4px solid ${diffColor}`,
-      padding:"20px 24px",marginBottom:"3px",animation:"up .5s ease both",position:"relative",overflow:"hidden"}}>
+      padding:"20px 24px",marginBottom:"10px",animation:"up .5s ease both",position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",top:"-30px",right:"-30px",width:"160px",height:"160px",
         background:`radial-gradient(circle,${diffColor}12,transparent 70%)`,pointerEvents:"none"}}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"8px"}}>
@@ -828,7 +828,7 @@ function ProgressHistory({player, source}) {
           <div key={i} style={{flex:"1 1 80px",background:s.up?"#0a140a":"#140a0a",
             border:`1px solid ${s.up?C.win+"33":C.lose+"33"}`,padding:"10px 12px",textAlign:"center"}}>
             <div style={{fontSize:"10px",color:C.muted,marginBottom:"4px",letterSpacing:"1px"}}>{s.name}</div>
-            <div style={{fontSize:"12px",color:C.label,marginBottom:"3px"}}>{s.f} → <span style={{color:s.up?C.win:C.lose,fontWeight:700}}>{s.l}</span></div>
+            <div style={{fontSize:"12px",color:C.label,marginBottom:"10px"}}>{s.f} → <span style={{color:s.up?C.win:C.lose,fontWeight:700}}>{s.l}</span></div>
             <div style={{fontSize:"13px",color:s.up?C.win:C.lose,fontWeight:800}}>{parseFloat(s.diff)>0?"+":""}{s.diff}</div>
           </div>
         ))}
@@ -883,7 +883,7 @@ function PlayerRating({player, source}) {
   const lvlProg  = nextLvl ? Math.round((overall-coachLvl.min)/(coachLvl.max-coachLvl.min)*100) : 100;
 
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"3px",animation:"up .5s ease both"}}>
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>🏅 CS2 COACH РЕЙТИНГ</div>
       <div className="rating-row" style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"16px"}}>
         {/* Уровень — иконка + название */}
@@ -965,7 +965,7 @@ function Achievements({player, source}) {
   const locked=all.filter(a=>!a.done).slice(0,4);
   if(!unlocked.length&&!locked.length)return null;
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"3px",animation:"up .5s ease both"}}>
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
         <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>🏅 ДОСТИЖЕНИЯ</span>
         <span style={{fontSize:"11px",color:C.muted}}>{unlocked.length} / {all.length}</span>
@@ -1058,7 +1058,7 @@ function EloChart({faceit}) {
 
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
-      marginBottom:"3px",animation:"up .5s ease both"}}>
+      marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",
         flexWrap:"wrap",gap:"8px",marginBottom:"16px"}}>
         <div>
@@ -1177,7 +1177,7 @@ function WeekGoal({player, source}) {
 
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
-      marginBottom:"3px",animation:"up .5s ease both"}}>
+      marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",
         flexWrap:"wrap",gap:"12px",marginBottom:"12px"}}>
         <div>
@@ -1264,7 +1264,7 @@ function Streaks({player, source}) {
 
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px 20px",
-      marginBottom:"3px",animation:"up .5s ease both"}}>
+      marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"12px"}}>
         🔥 ТЕКУЩИЕ СЕРИИ
       </div>
@@ -1340,7 +1340,7 @@ function WeeklyMissions({player, source}) {
 
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
-      marginBottom:"3px",animation:"up .5s ease both"}}>
+      marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
         <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>
           📋 ЗАДАНИЯ НЕДЕЛИ
@@ -1453,7 +1453,7 @@ function TodayRecs({player, source}) {
 
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",
-      marginBottom:"3px",animation:"up .5s ease both"}}>
+      marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
         📋 РЕКОМЕНДАЦИИ НА СЕГОДНЯ
       </div>
@@ -1528,7 +1528,7 @@ function WhatChanged({player, source}) {
 
   return (
     <div style={{background:"#0d0d09",border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.blue}`,
-      padding:"12px 18px",marginBottom:"3px",display:"flex",alignItems:"center",
+      padding:"12px 18px",marginBottom:"10px",display:"flex",alignItems:"center",
       gap:"16px",flexWrap:"wrap",animation:"up .4s ease both"}}>
       <span style={{fontSize:"11px",color:C.blue,letterSpacing:"2px",fontWeight:700,flexShrink:0}}>
         📈 С ПРОШЛОГО ВИЗИТА:
@@ -1621,7 +1621,7 @@ function ProfileModal({steamid,nickname,onClose}) {
                 <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"6px 0 14px"}}>ИСТОРИЯ РАЗБОРОВ</div>
                 {data.history.map((h,i)=>{
                   const lc=ANALYSIS_COLOR[h.result?.level]||C.yellow;
-                  return <div key={i} style={{background:"#111109",border:`1px solid ${C.border}`,borderLeft:`2px solid ${lc}`,padding:"13px 16px",marginBottom:"3px"}}>
+                  return <div key={i} style={{background:"#111109",border:`1px solid ${C.border}`,borderLeft:`2px solid ${lc}`,padding:"13px 16px",marginBottom:"10px"}}>
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}>
                       <span style={{fontSize:"11px",color:lc,letterSpacing:"2px"}}>{h.result?.level?.toUpperCase()}</span>
                       <span style={{fontSize:"11px",color:C.muted}}>{fmt(h.timestamp)}</span>
@@ -1761,7 +1761,7 @@ function HistoryTab({steamid}) {
       {data.map((h,i)=>{
         const lc=ANALYSIS_COLOR[h.result?.level]||C.yellow, isExp=exp===i;
         return (
-          <div key={i} style={{marginBottom:"3px"}}>
+          <div key={i} style={{marginBottom:"10px"}}>
             <div onClick={()=>setExp(isExp?null:i)} className="hov-row" style={{
               background:C.card,border:`1px solid ${C.border}`,borderLeft:`3px solid ${lc}`,
               padding:"16px 20px",cursor:"pointer",transition:"background .15s"}}>
@@ -1859,7 +1859,7 @@ function ScoreCards({player, source}) {
 
   return (
     <div style={{className:"score-rings",background:C.card,border:`1px solid ${C.border}`,
-      display:"flex",justifyContent:"space-around",flexWrap:"wrap",marginBottom:"3px",animation:"up .5s ease both"}}>
+      display:"flex",justifyContent:"space-around",flexWrap:"wrap",marginBottom:"10px",animation:"up .5s ease both"}}>
       <ScoreRing score={overallScore} label="ОБЩИЙ РЕЙТИНГ" color={C.yellow} breakdown={[
         {label:"AIM × 60%",  val:aimScore},
         {label:"CONST × 40%",val:consistScore},
@@ -2100,7 +2100,7 @@ function AboutModal({onClose}) {
           <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
             <Logo size={40}/>
             <div>
-              <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"3px"}}>О СЕРВИСЕ</div>
+              <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"10px"}}>О СЕРВИСЕ</div>
               <div style={{fontSize:"18px",color:C.value,fontWeight:700}}>CS2 AI Тренер</div>
             </div>
           </div>
@@ -2365,7 +2365,7 @@ function ShareModal({steamid, player, source, onClose}) {
             ].map((s,i)=>(
               <div key={i} style={{textAlign:"center",background:"#141409",
                 border:`1px solid ${C.border}`,padding:"10px 6px"}}>
-                <div style={{fontSize:"10px",color:C.muted,marginBottom:"3px",letterSpacing:"1px"}}>{s.l}</div>
+                <div style={{fontSize:"10px",color:C.muted,marginBottom:"10px",letterSpacing:"1px"}}>{s.l}</div>
                 <div style={{fontSize:"18px",color:s.c,fontWeight:700}}>{s.v}</div>
               </div>
             ))}
@@ -4173,7 +4173,7 @@ export default function App() {
 
             {analysis&&(
               <div style={{animation:"up .4s ease both"}}>
-                <div style={{background:C.card,border:`1px solid ${C.border}`,borderLeft:`4px solid ${lc}`,padding:"24px 26px",marginBottom:"3px"}}>
+                <div style={{background:C.card,border:`1px solid ${C.border}`,borderLeft:`4px solid ${lc}`,padding:"24px 26px",marginBottom:"10px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"14px",flexWrap:"wrap"}}>
                     <span style={{padding:"5px 16px",fontSize:"12px",letterSpacing:"3px",fontWeight:700,background:lc+"20",color:lc,border:`1px solid ${lc}55`}}>
                       {analysis.level?.toUpperCase()}
@@ -4188,7 +4188,7 @@ export default function App() {
                 </div>
 
                 {analysis.mapInsights?.length>0&&(
-                  <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:"3px"}}>
+                  <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"20px 22px",marginBottom:"10px"}}>
                     <div style={{fontSize:"12px",letterSpacing:"3px",color:C.yellow,marginBottom:"12px"}}>🗺️ ИНСАЙТЫ ПО КАРТАМ</div>
                     {analysis.mapInsights.map((mi,i)=>(
                       <div key={i} style={{fontSize:"14px",color:C.value,lineHeight:1.7,marginBottom:"7px",paddingLeft:"14px",borderLeft:`2px solid ${C.yellow}44`}}>{mi}</div>
@@ -4196,7 +4196,7 @@ export default function App() {
                   </div>
                 )}
 
-                <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:"3px"}}>
+                <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:"10px"}}>
                   {[["weak","❌ СЛАБЫЕ"],["strong","✅ СИЛЬНЫЕ"],["plan","📋 ПЛАН"]].map(([t,l])=>(
                     <button key={t} onClick={()=>setSubTab(t)} style={{
                       padding:"12px 20px",background:"transparent",
@@ -4231,7 +4231,7 @@ export default function App() {
                 {subTab==="plan"&&(
                   <div style={{animation:"up .25s ease both"}}>
                     {analysis.plan?.map((day,i)=>(
-                      <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"3px",display:"flex",gap:"18px",alignItems:"flex-start"}}>
+                      <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px",display:"flex",gap:"18px",alignItems:"flex-start"}}>
                         <div style={{minWidth:"32px",height:"32px",background:C.yellow+"18",border:`1px solid ${C.yellow}44`,color:C.yellow,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:700,flexShrink:0}}>{i+1}</div>
                         <div style={{fontSize:"15px",color:C.value,lineHeight:1.8}}>{day}</div>
                       </div>
