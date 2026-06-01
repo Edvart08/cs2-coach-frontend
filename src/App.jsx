@@ -2557,85 +2557,6 @@ function DayAction({player, source}) {
   );
 }
 
-// ── Day Action — главное действие дня ─────────────────────────────────────────
-function DayAction({player, source}) {
-  const fc = player?.faceit;
-  const cs2 = player?.cs2 || {};
-  const kd  = parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd)||0;
-  const hs  = parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs)||0;
-  const wr  = parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate)||0;
-
-  const target = (() => {
-    if (kd < 1.0) return {
-      icon:"⚔️", name:"Фраггер", progress:Math.round(Math.min(99,kd/1.0*100)),
-      left:(1.0-kd).toFixed(2)+" K/D",
-      actions:["500 убийств в Aim Botz · 15 мин","Counter-strafe тренировка · 15 мин"],
-      xp:25, color:C.blue,
-    };
-    if (hs < 40) return {
-      icon:"🎯", name:"HS Машина", progress:Math.round(Math.min(99,hs/40*100)),
-      left:(40-Math.round(hs))+"% HS",
-      actions:["Recoil Master: спрей AK · 20 мин","Aim Botz: только хедшоты · 15 мин"],
-      xp:20, color:C.orange,
-    };
-    if (wr < 50) return {
-      icon:"🏆", name:"Победитель", progress:Math.round(Math.min(99,wr/50*100)),
-      left:(50-Math.round(wr))+"% WR",
-      actions:["Разбери последний проигрыш · 15 мин","Prefire Workshop: лучшая карта · 20 мин"],
-      xp:20, color:C.win,
-    };
-    return {
-      icon:"💀", name:"Элита", progress:Math.round(Math.min(99,kd/1.5*100)),
-      left:(1.5-kd).toFixed(2)+" K/D",
-      actions:["Aim Botz: 1000 убийств · 20 мин","Prefire Workshop · 20 мин"],
-      xp:30, color:C.lose,
-    };
-  })();
-
-  return (
-    <div style={{background:"linear-gradient(135deg,#1a1a0a,#141409)",
-      border:`2px solid ${target.color}44`,borderLeft:`4px solid ${target.color}`,
-      padding:"20px 22px",marginBottom:"10px",animation:"up .4s ease both",position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",top:"-20px",right:"-20px",width:"120px",height:"120px",
-        background:`radial-gradient(circle,${target.color}12,transparent 70%)`,pointerEvents:"none"}}/>
-      <div style={{fontSize:"11px",color:target.color,letterSpacing:"3px",fontWeight:700,marginBottom:"12px"}}>
-        ⚡ ГЛАВНОЕ ДЕЙСТВИЕ СЕГОДНЯ
-      </div>
-      <div style={{display:"flex",gap:"16px",alignItems:"flex-start",flexWrap:"wrap",marginBottom:"14px"}}>
-        <div style={{flex:1,minWidth:"160px"}}>
-          <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"4px"}}>
-            {target.icon} До достижения <span style={{color:target.color}}>{target.name}</span>
-          </div>
-          <div style={{fontSize:"13px",color:C.muted,marginBottom:"10px"}}>
-            осталось <span style={{color:target.color,fontWeight:700}}>{target.left}</span>
-          </div>
-          <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden",marginBottom:"6px"}}>
-            <div style={{height:"100%",width:`${target.progress}%`,background:target.color,
-              borderRadius:"3px",boxShadow:`0 0 8px ${target.color}66`,transition:"width 1s ease"}}/>
-          </div>
-          <div style={{fontSize:"11px",color:C.muted}}>{target.progress}% выполнено</div>
-        </div>
-        <div style={{background:target.color+"18",border:`1px solid ${target.color}33`,
-          padding:"8px 16px",display:"flex",alignItems:"center",gap:"8px",alignSelf:"flex-start"}}>
-          <span style={{fontSize:"16px"}}>⭐</span>
-          <span style={{fontSize:"14px",color:target.color,fontWeight:700}}>+{target.xp} XP</span>
-        </div>
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-        {target.actions.map((a,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"center",gap:"10px",
-            background:"#0d0d09",padding:"9px 12px",border:`1px solid ${C.border}`}}>
-            <div style={{width:"18px",height:"18px",borderRadius:"3px",flexShrink:0,
-              border:`2px solid ${target.color}66`,
-              display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:"10px",color:target.color}}>{i+1}</div>
-            <span style={{fontSize:"13px",color:C.text}}>{a}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ── Daily Streak Block ─────────────────────────────────────────────────────────
 function DailyStreak({streak}) {
@@ -2704,31 +2625,6 @@ function NotificationToast({notifications, onClose}) {
           </div>
           <button onClick={onClose} style={{background:"transparent",border:"none",
             color:"#6a6450",cursor:"pointer",fontSize:"14px",flexShrink:0}}>✕</button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Notification Toast ────────────────────────────────────────────────────────
-function NotificationToast({notifications, onClose}) {
-  useEffect(()=>{ const t=setTimeout(onClose, 5000); return()=>clearTimeout(t); },[]);
-  if (!notifications?.length) return null;
-  return (
-    <div style={{position:"fixed",top:"70px",left:"50%",transform:"translateX(-50%)",
-      zIndex:310,display:"flex",flexDirection:"column",gap:"6px",
-      minWidth:"280px",maxWidth:"400px",animation:"slideUp .4s ease"}}>
-      {notifications.map((n,i)=>(
-        <div key={i} style={{background:"#1a1a0a",border:`2px solid ${n.color||C.yellow}`,
-          padding:"12px 20px",boxShadow:`0 4px 20px ${n.color||C.yellow}33`,
-          display:"flex",alignItems:"center",gap:"10px"}}>
-          <span style={{fontSize:"20px"}}>{n.icon}</span>
-          <div style={{flex:1}}>
-            <div style={{fontSize:"13px",color:n.color||C.yellow,fontWeight:700}}>{n.title}</div>
-            <div style={{fontSize:"12px",color:C.muted,marginTop:"2px"}}>{n.text}</div>
-          </div>
-          <button onClick={onClose} style={{background:"transparent",border:"none",
-            color:C.muted,cursor:"pointer",fontSize:"14px",flexShrink:0}}>✕</button>
         </div>
       ))}
     </div>
