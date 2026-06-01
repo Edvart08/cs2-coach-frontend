@@ -1787,49 +1787,267 @@ function SearchBar({onSelect}) {
 }
 
 // ── Profile Modal ─────────────────────────────────────────────────────────────
-function ProfileModal({steamid,nickname,onClose}) {
-  const [data,setData]=useState(null);
-  useEffect(()=>{
-    const url=steamid?`${BACKEND}/profile/${steamid}`:`${BACKEND}/faceit/by-nickname/${encodeURIComponent(nickname)}`;
-    fetch(url).then(r=>r.json()).then(setData).catch(()=>setData({}));
-  },[steamid,nickname]);
+function ProfileModal({steamid, nickname, onClose}) {
+  const [data, setData] = useState(null);
+  const [aiReport, setAiReport] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
-  const fc=steamid?data?.faceit:data;
-  const pl=steamid?data:{username:data?.nickname||nickname,avatar:fc?.avatar||"",country:fc?.country,cs2:{},faceit:fc};
+  useEffect(()=>{
+    const url = steamid
+      ? `${BACKEND}/profile/${steamid}`
+      : `${BACKEND}/faceit/by-nickname/${encodeURIComponent(nickname)}`;
+    fetch(url).then(r=>r.json()).then(setData).catch(()=>setData({}));
+  },[steamid, nickname]);
+
+  const fc = steamid ? data?.faceit : data;
+  const cs2 = data?.cs2 || {};
+  const pl = steamid
+    ? data
+    : {username:data?.nickname||nickname, avatar:fc?.avatar||"", country:fc?.country, cs2:{}, faceit:fc};
+
+  // Считаем рейтинг
+  const calcRating = (p) => {
+    if (!p) return {overall:0, label:"—", color:C.muted, lvlName:"НОВОБРАНЕЦ"};
+    const f = p.faceit; const c = p.cs2||{};
+    const kd = parseFloat(f?.lifetime?.kd||c.kd)||0;
+    const hs = parseFloat(f?.lifetime?.hs||c.hs)||0;
+    const wr = parseFloat(f?.lifetime?.winrate||c.winrate)||0;
+    const lvl = parseInt(f?.level)||0;
+    const avgByLevel=[{kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},{kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},{kd:1.20,hs:42,wr:51},{kd:1.28,hs:44,wr:52},{kd:1.38,hs:46,wr:53},{kd:1.52,hs:48,wr:54},{kd:1.72,hs:52,wr:56}];
+    const avg = avgByLevel[Math.min(lvl,10)];
+    function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(v/a-1))))));}
+    const overall = Math.min(99,Math.round(sig(kd,avg.kd)*0.45+sig(hs,avg.hs)*0.25+sig(wr,avg.wr)*0.30));
+    const color = overall>=70?C.win:overall>=45?C.yellow:C.orange;
+    const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
+    const lvlName = coachLevels.find(l=>overall<=l.max)?.name||"ЛЕГЕНДА";
+    return {overall, color, lvlName, kd:kd.toFixed(2), hs:Math.round(hs), wr:Math.round(wr)};
+  };
+  const rating = calcRating(pl);
+
+  const maps = arr(fc?.maps).sort((a,b)=>parseFloat(b.winrate)-parseFloat(a.winrate));
+  const bestMap = maps[0]; const worstMap = maps[maps.length-1];
+  const recentMatches = arr(fc?.matches).slice(0,5);
+  const matchCount = parseInt(fc?.lifetime?.matches||cs2.matches)||0;
 
   return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:500,
-      display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn .2s ease"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.border}`,
-        borderTop:`2px solid ${C.yellow}`,maxWidth:"680px",width:"100%",maxHeight:"88vh",overflowY:"auto",animation:"slideUp .3s ease"}}>
-        <div style={{padding:"20px 24px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{fontSize:"12px",letterSpacing:"3px",color:C.yellow}}>ПРОФИЛЬ ИГРОКА</span>
-          <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,color:C.label,cursor:"pointer",width:"26px",height:"26px",fontFamily:"monospace",fontSize:"14px"}}>✕</button>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.96)",zIndex:500,
+      overflowY:"auto",animation:"fadeIn .2s ease"}}>
+      <div style={{maxWidth:"960px",margin:"0 auto",padding:"0 0 60px"}}>
+
+        {/* Top bar */}
+        <div style={{position:"sticky",top:0,zIndex:10,background:"rgba(10,10,7,0.95)",
+          borderBottom:`1px solid ${C.border}`,padding:"14px 24px",
+          display:"flex",justifyContent:"space-between",alignItems:"center",backdropFilter:"blur(8px)"}}>
+          <span style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>
+            👤 ПРОФИЛЬ ИГРОКА
+          </span>
+          <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
+            color:C.label,cursor:"pointer",padding:"6px 16px",fontSize:"13px",fontFamily:"inherit"}}>
+            ✕ Закрыть
+          </button>
         </div>
-        {!data?<div style={{padding:"32px"}}><Skel w="60%" h="22"/><Skel w="40%" h="16"/><div style={{marginTop:"20px"}}><Skel h="60"/><Skel h="60"/></div></div>
-        :data.steamid||fc?(
+
+        {!data ? (
+          <div style={{padding:"40px"}}>
+            <Skel w="60%" h="24" mb={12}/><Skel w="40%" h="16" mb={24}/>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
+              <Skel h="80"/><Skel h="80"/><Skel h="80"/>
+            </div>
+          </div>
+        ) : !(data.steamid||fc) ? (
+          <div style={{padding:"80px",textAlign:"center",color:C.muted,fontSize:"15px"}}>
+            Профиль не найден
+          </div>
+        ) : (
           <div>
-            {pl&&<HeroCard player={pl} source={fc?"faceit":"steam"}/>}
-            {arr(fc?.matches).length>0&&<div style={{padding:"4px 16px"}}><ChartsSection faceit={fc}/></div>}
-            {arr(fc?.matches).length>0&&<div style={{padding:"0 16px 16px"}}><MatchHistory faceit={fc}/></div>}
-            {arr(fc?.maps).length>0&&<div style={{padding:"0 16px 20px"}}><MapPool faceit={fc}/></div>}
-            {steamid&&data.history?.length>0&&(
-              <div style={{padding:"0 16px 20px"}}>
-                <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"6px 0 14px"}}>ИСТОРИЯ РАЗБОРОВ</div>
-                {data.history.map((h,i)=>{
+            {/* ── Hero ── */}
+            <div style={{background:`linear-gradient(180deg,#1a1a0a 0%,${C.bg} 100%)`,
+              padding:"32px 28px 24px",borderBottom:`1px solid ${C.border}`,
+              position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:"-60px",right:"-60px",width:"300px",height:"300px",
+                background:`radial-gradient(circle,${rating.color}0e,transparent 70%)`,pointerEvents:"none"}}/>
+
+              <div style={{display:"flex",gap:"24px",alignItems:"flex-start",flexWrap:"wrap"}}>
+                {/* Avatar */}
+                <div style={{position:"relative",flexShrink:0}}>
+                  {pl?.avatar
+                    ? <img src={pl.avatar} alt="" style={{width:"96px",height:"96px",borderRadius:"4px",border:`3px solid ${rating.color}66`}}/>
+                    : <div style={{width:"96px",height:"96px",background:"#1a1a10",borderRadius:"4px",
+                        border:`3px solid ${rating.color}66`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"36px"}}>👤</div>}
+                  {fc?.level&&<div style={{position:"absolute",bottom:"-8px",left:"50%",transform:"translateX(-50%)",
+                    background:LVL_COLOR[fc.level]||C.yellow,color:"#080807",
+                    fontSize:"10px",fontWeight:700,padding:"2px 8px",whiteSpace:"nowrap"}}>
+                    LVL {fc.level}
+                  </div>}
+                </div>
+
+                {/* Name + meta */}
+                <div style={{flex:1,minWidth:"200px"}}>
+                  <div style={{fontSize:"28px",color:C.value,fontWeight:700,marginBottom:"4px"}}>
+                    {pl?.username}
+                    {pl?.country&&<span style={{fontSize:"16px",marginLeft:"10px"}}>{pl.country}</span>}
+                  </div>
+                  <div style={{fontSize:"13px",color:C.muted,marginBottom:"12px"}}>
+                    {fc?.elo&&<span style={{color:LVL_COLOR[fc.level]||C.yellow,fontWeight:700,marginRight:"12px"}}>
+                      ⚡ {fc.elo} ELO
+                    </span>}
+                    {data?.steam_level&&<span style={{marginRight:"12px"}}>Steam Lvl {data.steam_level}</span>}
+                    {matchCount>0&&<span>{matchCount} матчей</span>}
+                  </div>
+                  {/* Win streak */}
+                  {(()=>{
+                    let s=0; for(const m of recentMatches){if(m.result==="1")s++;else break;}
+                    return s>=2?<div style={{display:"inline-flex",alignItems:"center",gap:"6px",
+                      background:"#1a1008",border:`1px solid ${C.lose}44`,padding:"4px 12px",marginBottom:"8px"}}>
+                      <span style={{fontSize:"14px"}}>🔥</span>
+                      <span style={{fontSize:"13px",color:C.lose,fontWeight:700}}>{s} побед подряд</span>
+                    </div>:null;
+                  })()}
+                </div>
+
+                {/* Rating */}
+                <div style={{textAlign:"center",background:"#0d0d09",border:`1px solid ${rating.color}44`,
+                  padding:"16px 24px",minWidth:"140px"}}>
+                  <div style={{fontSize:"42px",color:rating.color,fontWeight:900,lineHeight:1}}>{rating.overall}</div>
+                  <div style={{fontSize:"11px",color:rating.color,fontWeight:700,letterSpacing:"2px",marginTop:"4px"}}>{rating.lvlName}</div>
+                  <div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>CS2 Coach Rating</div>
+                  <div style={{fontSize:"12px",color:rating.color,marginTop:"4px"}}>
+                    Топ {Math.max(1,100-rating.overall)}%
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats row */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(90px,1fr))",
+                gap:"1px",background:C.border,marginTop:"20px",border:`1px solid ${C.border}`}}>
+                {[
+                  {l:"K/D",   v:rating.kd,              c:C.yellow},
+                  {l:"WIN%",  v:rating.wr+"%",           c:C.win},
+                  {l:"HS%",   v:rating.hs+"%",           c:C.orange},
+                  {l:"МАТЧИ", v:matchCount||"—",         c:C.label},
+                  {l:"ELO",   v:fc?.elo||"—",            c:LVL_COLOR[fc?.level]||C.yellow},
+                  {l:"УБИЙСТВ",v:cs2.kills||"—",         c:C.label},
+                ].map((s,i)=>(
+                  <div key={i} style={{padding:"14px 10px",textAlign:"center",background:C.bg}}>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"5px"}}>{s.l}</div>
+                    <div style={{fontSize:"20px",color:s.c,fontWeight:700}}>{s.v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Best / Worst карта ── */}
+            {maps.length>=2&&(
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1px",
+                background:C.border,borderBottom:`1px solid ${C.border}`}}>
+                <div style={{background:"#0a160a",padding:"18px 20px"}}>
+                  <div style={{fontSize:"10px",color:C.win,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>🏆 ЛУЧШАЯ КАРТА</div>
+                  <div style={{fontSize:"20px",color:C.value,fontWeight:700,marginBottom:"4px"}}>{bestMap.map}</div>
+                  <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
+                    <span style={{fontSize:"26px",color:C.win,fontWeight:700}}>{bestMap.winrate}%</span>
+                    <span style={{fontSize:"12px",color:C.muted}}>{bestMap.matches} матчей · K/D {bestMap.kd}</span>
+                  </div>
+                </div>
+                <div style={{background:"#160a0a",padding:"18px 20px"}}>
+                  <div style={{fontSize:"10px",color:C.lose,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>⚠️ ХУДШАЯ КАРТА</div>
+                  <div style={{fontSize:"20px",color:C.value,fontWeight:700,marginBottom:"4px"}}>{worstMap.map}</div>
+                  <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
+                    <span style={{fontSize:"26px",color:C.lose,fontWeight:700}}>{worstMap.winrate}%</span>
+                    <span style={{fontSize:"12px",color:C.muted}}>{worstMap.matches} матчей · K/D {worstMap.kd}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Последние матчи ── */}
+            {recentMatches.length>0&&(
+              <div style={{padding:"20px 24px",borderBottom:`1px solid ${C.border}`}}>
+                <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
+                  🎮 ПОСЛЕДНИЕ МАТЧИ
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                  {recentMatches.map((m,i)=>{
+                    const win=m.result==="1";
+                    const ac=win?C.win:C.lose;
+                    return(
+                      <div key={i} style={{display:"grid",gridTemplateColumns:"4px 1fr 70px 60px 60px 60px",
+                        gap:"10px",alignItems:"center",padding:"12px 14px",
+                        background:"#0d0d09",borderLeft:`4px solid ${ac}`}}>
+                        <div/>
+                        <div>
+                          <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
+                          <div style={{fontSize:"11px",color:ac}}>{win?"ПОБЕДА":"ПОРАЖЕНИЕ"}{m.score?` · ${m.score}`:""}</div>
+                        </div>
+                        {[{l:"K/D",v:m.kd},{l:"KILLS",v:m.kills},{l:"HS%",v:m.hs?m.hs+"%":"-"},{l:"ADR",v:m.adr}].map((s,j)=>(
+                          <div key={j} style={{textAlign:"center"}}>
+                            <div style={{fontSize:"9px",color:C.muted,marginBottom:"2px"}}>{s.l}</div>
+                            <div style={{fontSize:"15px",color:C.label,fontWeight:600}}>{s.v||"—"}</div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Карты полная статистика ── */}
+            {maps.length>0&&(
+              <div style={{padding:"20px 24px",borderBottom:`1px solid ${C.border}`}}>
+                <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
+                  🗺️ СТАТИСТИКА КАРТ
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                  {maps.map((m,i)=>{
+                    const wr=parseFloat(m.winrate)||0;
+                    const barColor=wr>=55?C.win:wr>=45?C.yellow:C.lose;
+                    return(
+                      <div key={i} style={{display:"grid",gridTemplateColumns:"120px 1fr 60px 60px 60px",
+                        gap:"10px",alignItems:"center",padding:"10px 14px",background:"#0d0d09"}}>
+                        <div style={{fontSize:"13px",color:C.value,fontWeight:700}}>{m.map}</div>
+                        <div>
+                          <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                            <div style={{height:"100%",width:`${wr}%`,background:barColor,borderRadius:"2px"}}/>
+                          </div>
+                        </div>
+                        {[{l:"WR%",v:m.winrate+"%",c:barColor},{l:"K/D",v:m.kd,c:C.label},{l:"М",v:m.matches,c:C.muted}].map((s,j)=>(
+                          <div key={j} style={{textAlign:"center"}}>
+                            <div style={{fontSize:"9px",color:C.muted,marginBottom:"2px"}}>{s.l}</div>
+                            <div style={{fontSize:"14px",color:s.c,fontWeight:600}}>{s.v}</div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── История разборов (только свой профиль) ── */}
+            {steamid&&data?.history?.length>0&&(
+              <div style={{padding:"20px 24px"}}>
+                <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
+                  📋 ИСТОРИЯ РАЗБОРОВ
+                </div>
+                {data.history.slice(0,5).map((h,i)=>{
                   const lc=ANALYSIS_COLOR[h.result?.level]||C.yellow;
-                  return <div key={i} style={{background:"#111109",border:`1px solid ${C.border}`,borderLeft:`2px solid ${lc}`,padding:"13px 16px",marginBottom:"10px"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}>
-                      <span style={{fontSize:"11px",color:lc,letterSpacing:"2px"}}>{h.result?.level?.toUpperCase()}</span>
-                      <span style={{fontSize:"11px",color:C.muted}}>{fmt(h.timestamp)}</span>
+                  return(
+                    <div key={i} style={{background:"#111109",border:`1px solid ${C.border}`,
+                      borderLeft:`3px solid ${lc}`,padding:"14px 16px",marginBottom:"8px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}>
+                        <span style={{fontSize:"11px",color:lc,letterSpacing:"2px",fontWeight:700}}>
+                          {h.result?.level?.toUpperCase()}
+                        </span>
+                        <span style={{fontSize:"11px",color:C.muted}}>{fmt(h.timestamp)}</span>
+                      </div>
+                      <div style={{fontSize:"13px",color:C.label,lineHeight:1.6}}>{h.result?.overall}</div>
                     </div>
-                    <div style={{fontSize:"14px",color:C.label,lineHeight:1.6}}>{h.result?.overall}</div>
-                  </div>;
+                  );
                 })}
               </div>
             )}
           </div>
-        ):<div style={{padding:"40px",textAlign:"center",color:C.muted,fontSize:"13px"}}>Профиль не найден</div>}
+        )}
       </div>
     </div>
   );
