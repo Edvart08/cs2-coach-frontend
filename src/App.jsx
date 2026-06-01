@@ -617,6 +617,24 @@ function MapPool({faceit}) {
   );
 }
 
+// ── ScoreCards Collapsible ─────────────────────────────────────────────────────
+function ScoreCardsCollapsible({player, source}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{marginBottom:"10px"}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{
+        width:"100%",background:C.card,border:`1px solid ${C.border}`,
+        color:C.muted,cursor:"pointer",padding:"12px 20px",
+        display:"flex",justifyContent:"space-between",alignItems:"center",
+        fontFamily:"inherit",fontSize:"12px",letterSpacing:"2px"}}>
+        <span>📊 ДОПОЛНИТЕЛЬНЫЕ МЕТРИКИ</span>
+        <span style={{fontSize:"14px"}}>{open?"▲":"▼"}</span>
+      </button>
+      {open&&<ScoreCards player={player} source={source}/>}
+    </div>
+  );
+}
+
 function BestWorstMap({faceit}) {
   const maps = arr(faceit?.maps).filter(m=>parseInt(m.matches)>=3)
     .sort((a,b)=>parseFloat(b.winrate)-parseFloat(a.winrate));
@@ -4767,44 +4785,47 @@ export default function App() {
             {!player.cs2?.private&&(isPro||aiRemaining>0
               ? <AIReport player={player} source={source}/>
               : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
+
+            {/* 2. Hero */}
             <HeroCard player={player} source={source}/>
+
+            {/* 3. Что изменилось + Daily Streak */}
             <WhatChanged player={player} source={source}/>
             <DailyStreak streak={streak}/>
 
-            {/* ── Вторичный блок: скоры ── */}
-            <ScoreCards player={player} source={source}/>
-
-            {/* ── Первичный: рейтинг + прогресс ── */}
+            {/* 4. Coach Rating + уровень */}
             <PlayerRating player={player} source={source}/>
             <ProgressHistory player={player} source={source}/>
 
-            {/* ── Прогрессия ── */}
+            {/* 5. Достижения */}
             <Achievements player={player} source={source}/>
-            {source==="faceit"&&hasFaceit&&<BestWorstMap faceit={player.faceit}/>}
 
-            {/* ── Матчи и аналитика ── */}
+            {/* 6. Последние матчи */}
             {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
-            {source==="faceit"&&hasFaceit&&<EloChart faceit={player.faceit}/>}
+
+            {/* 7. Цель недели */}
+            <WeekGoal player={player} source={source}/>
+
+            {/* 8. Рекомендации */}
+            <TodayRecs player={player} source={source}/>
+
+            {/* Weekly Report — только кнопка, не автоматически */}
             {source==="faceit"&&hasFaceit&&<WeeklyReport player={player} source={source} isPro={isPro} onUpgrade={()=>setShowProModal(true)}/>}
 
-            {/* ── Действия ── */}
-            <WeekGoal player={player} source={source}/>
-            {source==="faceit"&&hasFaceit&&<Streaks player={player} source={source}/>}
-            {source==="faceit"&&hasFaceit&&<WeeklyMissions player={player} source={source}/>}
-            <TodayRecs player={player} source={source}/>
-            {source==="faceit"&&hasFaceit
-              ?<div style={{marginTop:"12px"}}><ChartsSection faceit={player.faceit}/></div>
-              :source==="steam"&&!player.cs2?.private&&(
-                <div style={{marginTop:"12px",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:"3px"}}>
-                  {[{l:"УБИЙСТВА",v:player.cs2?.kills},{l:"СМЕРТИ",v:player.cs2?.deaths},{l:"ПОБЕДЫ",v:player.cs2?.wins},{l:"MVP",v:player.cs2?.mvps}].map((s,i)=>(
-                    <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"16px",textAlign:"center"}}>
-                      <div style={{fontSize:"13px",color:C.label,letterSpacing:"1px",marginBottom:"7px"}}>{s.l}</div>
-                      <div style={{fontSize:"24px",color:C.yellow,fontWeight:700}}>{s.v||"—"}</div>
-                    </div>
-                  ))}
-                </div>
-              )
-            }
+            {/* ScoreCards — свернутые "Дополнительные метрики" */}
+            <ScoreCardsCollapsible player={player} source={source}/>
+
+            {/* Steam stats */}
+            {source==="steam"&&!player.cs2?.private&&(
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:"3px",marginBottom:"10px"}}>
+                {[{l:"УБИЙСТВА",v:player.cs2?.kills},{l:"СМЕРТИ",v:player.cs2?.deaths},{l:"ПОБЕДЫ",v:player.cs2?.wins},{l:"MVP",v:player.cs2?.mvps}].map((s,i)=>(
+                  <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"16px",textAlign:"center"}}>
+                    <div style={{fontSize:"13px",color:C.label,letterSpacing:"1px",marginBottom:"7px"}}>{s.l}</div>
+                    <div style={{fontSize:"24px",color:C.yellow,fontWeight:700}}>{s.v||"—"}</div>
+                  </div>
+                ))}
+              </div>
+            )}
             {source==="faceit"&&!hasFaceit&&(
               <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"30px",textAlign:"center",color:C.muted,marginTop:"12px",fontSize:"13px",lineHeight:1.7}}>
                 FACEIT профиль не найден.<br/>
@@ -4952,16 +4973,41 @@ export default function App() {
         )}
 
         {mainTab==="matches"&&(!player?<LandingPage onLogin={openSteam}/>:player
-          ?<><SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>{source==="faceit"?<MatchHistory faceit={player.faceit}/>:
-            <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"28px 24px",textAlign:"center"}}>
+          ?<>
+            <SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>
+            {source==="faceit"&&hasFaceit&&<>
+              {/* ELO График */}
+              <EloChart faceit={player.faceit}/>
+              {/* Серии */}
+              <Streaks player={player} source={source}/>
+              {/* Задания недели */}
+              <WeeklyMissions player={player} source={source}/>
+              {/* История матчей */}
+              <MatchHistory faceit={player.faceit}/>
+              {/* FACEIT графики */}
+              <div style={{marginTop:"10px"}}><ChartsSection faceit={player.faceit}/></div>
+            </>}
+            {source!=="faceit"&&<div style={{background:C.card,border:`1px solid ${C.border}`,padding:"28px 24px",textAlign:"center"}}>
               <div style={{fontSize:"24px",marginBottom:"10px"}}>⚡</div>
               <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"8px"}}>Переключись на FACEIT</div>
-              <div style={{fontSize:"14px",color:C.label,lineHeight:1.7}}>История матчей доступна только через FACEIT. Нажми кнопку ⚡ FACEIT выше.</div>
-            </div>}</>
+              <div style={{fontSize:"14px",color:C.label,lineHeight:1.7}}>История матчей доступна только через FACEIT.</div>
+            </div>}
+          </>
           :<div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>Войди через Steam</div>)}
 
         {mainTab==="maps"&&(!player?<LandingPage onLogin={openSteam}/>:player
-          ?<><SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>{source==="faceit"?<MapPool faceit={player.faceit}/>:<div style={{textAlign:"center",padding:"50px",color:C.muted,fontSize:"13px"}}>Статистика карт доступна только через ⚡ FACEIT</div>}</>
+          ?<>
+            <SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>
+            {source==="faceit"&&hasFaceit&&<>
+              {/* Best/Worst карта */}
+              <BestWorstMap faceit={player.faceit}/>
+              {/* Полная статистика карт */}
+              <MapPool faceit={player.faceit}/>
+            </>}
+            {source!=="faceit"&&<div style={{textAlign:"center",padding:"50px",color:C.muted,fontSize:"13px"}}>
+              Статистика карт доступна только через ⚡ FACEIT
+            </div>}
+          </>
           :<div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>Войди через Steam</div>)}
 
         {mainTab==="history"&&(!player?<LandingPage onLogin={openSteam}/>:player
