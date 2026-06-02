@@ -1822,12 +1822,12 @@ function FriendsTab({myPlayer, source}) {
       {/* Поиск */}
       <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px"}}>
         <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
-          👥 ДОБАВИТЬ ДРУГА
+          👥 НАЙТИ ДРУГА
         </div>
         <div style={{display:"flex",gap:"8px",marginBottom:"12px"}}>
           <input value={search} onChange={e=>setSearch(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&doSearch()}
-            placeholder="Введи FACEIT никнейм..."
+            placeholder="Введи никнейм игрока..."
             style={{flex:1,background:"#111109",border:`1px solid ${C.border}`,
               color:C.value,padding:"10px 14px",fontSize:"14px",fontFamily:"inherit"}}/>
           <button onClick={doSearch} disabled={searching}
@@ -1867,7 +1867,7 @@ function FriendsTab({myPlayer, source}) {
         <div style={{textAlign:"center",padding:"60px",color:C.muted}}>
           <div style={{fontSize:"36px",marginBottom:"14px"}}>👥</div>
           <div style={{fontSize:"14px",marginBottom:"6px",color:C.label}}>Друзей пока нет</div>
-          <div style={{fontSize:"13px"}}>Найди друга по FACEIT никнейму и сравни статистику</div>
+          <div style={{fontSize:"13px"}}>Найди друга по никнейму и сравни статистику</div>
         </div>
       ):(
         <div>
