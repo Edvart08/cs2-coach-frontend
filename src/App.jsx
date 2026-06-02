@@ -1763,6 +1763,219 @@ function WhatChanged({player, source}) {
   );
 }
 
+// ── Friends Tab ───────────────────────────────────────────────────────────────
+function FriendsTab({myPlayer, source}) {
+  const STORAGE_KEY = `cs2_friends_${myPlayer?.steamid||"guest"}`;
+  const [friends, setFriends] = useState(()=>{
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch{ return []; }
+  });
+  const [search, setSearch] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchResult, setSearchResult] = useState(null);
+  const [searchErr, setSearchErr] = useState(null);
+  const [loadingFriends, setLoadingFriends] = useState({});
+
+  function saveFriends(f) {
+    setFriends(f);
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(f)); }catch{}
+  }
+
+  async function doSearch() {
+    if (!search.trim()) return;
+    setSearching(true); setSearchResult(null); setSearchErr(null);
+    try {
+      const r = await fetch(`${BACKEND}/faceit/by-nickname/${encodeURIComponent(search.trim())}`);
+      const d = await r.json();
+      if (d?.nickname) setSearchResult(d);
+      else setSearchErr("Игрок не найден");
+    } catch { setSearchErr("Ошибка поиска"); }
+    setSearching(false);
+  }
+
+  function addFriend(f) {
+    if (friends.find(x=>x.id===f.id)) return;
+    saveFriends([...friends, {id:f.id, nickname:f.nickname, avatar:f.avatar, level:f.level, elo:f.elo, country:f.country, kd:f.lifetime?.kd, wr:f.lifetime?.winrate, hs:f.lifetime?.hs, matches:f.lifetime?.matches, addedAt:Date.now()}]);
+    setSearchResult(null); setSearch("");
+  }
+
+  function removeFriend(id) {
+    saveFriends(friends.filter(f=>f.id!==id));
+  }
+
+  // Считаем рейтинг для сравнения
+  function calcRating(kd, hs, wr, lvl) {
+    const avgByLevel=[{kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},{kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},{kd:1.20,hs:42,wr:51},{kd:1.28,hs:44,wr:52},{kd:1.38,hs:46,wr:53},{kd:1.52,hs:48,wr:54},{kd:1.72,hs:52,wr:56}];
+    const avg = avgByLevel[Math.min(parseInt(lvl)||0, 10)];
+    function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(parseFloat(v||0)/a-1))))));}
+    return Math.min(99,Math.round(sig(kd,avg.kd)*0.45+sig(hs,avg.hs)*0.25+sig(wr,avg.wr)*0.30));
+  }
+
+  const myKd = parseFloat(source==="faceit"?myPlayer?.faceit?.lifetime?.kd:myPlayer?.cs2?.kd)||0;
+  const myHs = parseFloat(source==="faceit"?myPlayer?.faceit?.lifetime?.hs:myPlayer?.cs2?.hs)||0;
+  const myWr = parseFloat(source==="faceit"?myPlayer?.faceit?.lifetime?.winrate:myPlayer?.cs2?.winrate)||0;
+  const myLvl = parseInt(myPlayer?.faceit?.level)||0;
+  const myRating = calcRating(myKd, myHs, myWr, myLvl);
+  const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
+
+  return (
+    <div style={{animation:"up .4s ease both"}}>
+      {/* Поиск */}
+      <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px"}}>
+        <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
+          👥 ДОБАВИТЬ ДРУГА
+        </div>
+        <div style={{display:"flex",gap:"8px",marginBottom:"12px"}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&doSearch()}
+            placeholder="Введи FACEIT никнейм..."
+            style={{flex:1,background:"#111109",border:`1px solid ${C.border}`,
+              color:C.value,padding:"10px 14px",fontSize:"14px",fontFamily:"inherit"}}/>
+          <button onClick={doSearch} disabled={searching}
+            style={{padding:"10px 20px",background:C.yellow,color:"#080807",border:"none",
+              cursor:searching?"not-allowed":"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
+            {searching?"...":"Найти"}
+          </button>
+        </div>
+        {searchErr&&<div style={{fontSize:"13px",color:C.lose,marginBottom:"8px"}}>{searchErr}</div>}
+        {searchResult&&(
+          <div style={{display:"flex",alignItems:"center",gap:"14px",padding:"14px 16px",
+            background:"#0d0d09",border:`1px solid ${C.border}`}}>
+            {searchResult.avatar
+              ? <img src={searchResult.avatar} alt="" style={{width:"44px",height:"44px",borderRadius:"3px"}}/>
+              : <div style={{width:"44px",height:"44px",background:"#1a1a10",borderRadius:"3px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px"}}>👤</div>}
+            <div style={{flex:1}}>
+              <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>{searchResult.nickname}</div>
+              <div style={{fontSize:"12px",color:C.muted,marginTop:"2px"}}>
+                {searchResult.level&&<span style={{color:LVL_COLOR[searchResult.level]||C.yellow,marginRight:"10px"}}>LVL {searchResult.level}</span>}
+                {searchResult.elo&&<span>{searchResult.elo} ELO</span>}
+              </div>
+            </div>
+            <button onClick={()=>addFriend(searchResult)}
+              disabled={!!friends.find(f=>f.id===searchResult.id)}
+              style={{padding:"8px 18px",background:friends.find(f=>f.id===searchResult.id)?"#1a1a10":C.yellow,
+                color:friends.find(f=>f.id===searchResult.id)?C.muted:"#080807",
+                border:`1px solid ${friends.find(f=>f.id===searchResult.id)?C.border:C.yellow}`,
+                cursor:"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
+              {friends.find(f=>f.id===searchResult.id)?"Уже добавлен":"+ Добавить"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Список друзей */}
+      {friends.length===0?(
+        <div style={{textAlign:"center",padding:"60px",color:C.muted}}>
+          <div style={{fontSize:"36px",marginBottom:"14px"}}>👥</div>
+          <div style={{fontSize:"14px",marginBottom:"6px",color:C.label}}>Друзей пока нет</div>
+          <div style={{fontSize:"13px"}}>Найди друга по FACEIT никнейму и сравни статистику</div>
+        </div>
+      ):(
+        <div>
+          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>
+            {friends.length} {friends.length===1?"ДРУГ":"ДРУГА/ДРУЗЕЙ"} · СРАВНЕНИЕ
+          </div>
+
+          {/* Моя карточка */}
+          {myPlayer&&(
+            <div style={{background:"#15140a",border:`2px solid ${C.yellow}44`,borderLeft:`4px solid ${C.yellow}`,
+              padding:"14px 18px",marginBottom:"8px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
+                <div style={{position:"relative"}}>
+                  {myPlayer.avatar
+                    ? <img src={myPlayer.avatar} alt="" style={{width:"44px",height:"44px",borderRadius:"3px",border:`2px solid ${C.yellow}66`}}/>
+                    : <div style={{width:"44px",height:"44px",background:"#1a1a10",borderRadius:"3px",fontSize:"20px",display:"flex",alignItems:"center",justifyContent:"center"}}>👤</div>}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"3px"}}>
+                    <span style={{fontSize:"15px",color:C.yellow,fontWeight:700}}>{myPlayer.username}</span>
+                    <span style={{fontSize:"10px",background:C.yellow,color:"#080807",padding:"1px 6px",fontWeight:700}}>ВЫ</span>
+                  </div>
+                  <div style={{fontSize:"12px",color:C.muted}}>
+                    {myLvl>0&&<span style={{color:LVL_COLOR[myLvl]||C.yellow,marginRight:"8px"}}>LVL {myLvl}</span>}
+                    {myPlayer.faceit?.elo&&<span>{myPlayer.faceit.elo} ELO</span>}
+                  </div>
+                </div>
+                <div style={{textAlign:"center",minWidth:"80px"}}>
+                  <div style={{fontSize:"28px",color:C.yellow,fontWeight:900,lineHeight:1}}>{myRating}</div>
+                  <div style={{fontSize:"10px",color:C.yellow}}>{coachLevels.find(l=>myRating<=l.max)?.name||"ЛЕГЕНДА"}</div>
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"6px",marginTop:"10px"}}>
+                {[{l:"K/D",v:myKd.toFixed(2),c:C.blue},{l:"HS%",v:Math.round(myHs)+"%",c:C.orange},{l:"WR%",v:Math.round(myWr)+"%",c:"#aa88ff"}].map((s,i)=>(
+                  <div key={i} style={{textAlign:"center",background:"#111109",padding:"6px"}}>
+                    <div style={{fontSize:"9px",color:C.muted,marginBottom:"2px"}}>{s.l}</div>
+                    <div style={{fontSize:"15px",color:s.c,fontWeight:700}}>{s.v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Карточки друзей */}
+          {friends.map(f=>{
+            const fRating = calcRating(f.kd, f.hs, f.wr, f.level);
+            const ratingDiff = fRating - myRating;
+            const diffColor = ratingDiff > 0 ? C.lose : ratingDiff < 0 ? C.win : C.muted;
+            const diffLabel = ratingDiff > 0 ? `▲ +${ratingDiff}` : ratingDiff < 0 ? `▼ ${ratingDiff}` : "=";
+            const stats = [
+              {l:"K/D",  my:myKd.toFixed(2), fr:parseFloat(f.kd||0).toFixed(2), better:parseFloat(f.kd||0)<myKd, c:C.blue},
+              {l:"HS%",  my:Math.round(myHs)+"%", fr:Math.round(parseFloat(f.hs||0))+"%", better:parseFloat(f.hs||0)<myHs, c:C.orange},
+              {l:"WR%",  my:Math.round(myWr)+"%", fr:Math.round(parseFloat(f.wr||0))+"%", better:parseFloat(f.wr||0)<myWr, c:"#aa88ff"},
+            ];
+            return (
+              <div key={f.id} style={{background:C.card,border:`1px solid ${C.border}`,
+                padding:"14px 18px",marginBottom:"8px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"10px"}}>
+                  {f.avatar
+                    ? <img src={f.avatar} alt="" style={{width:"44px",height:"44px",borderRadius:"3px"}}/>
+                    : <div style={{width:"44px",height:"44px",background:"#1a1a10",borderRadius:"3px",fontSize:"20px",display:"flex",alignItems:"center",justifyContent:"center"}}>👤</div>}
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"3px"}}>{f.nickname}</div>
+                    <div style={{fontSize:"12px",color:C.muted}}>
+                      {f.level&&<span style={{color:LVL_COLOR[f.level]||C.yellow,marginRight:"8px"}}>LVL {f.level}</span>}
+                      {f.elo&&<span>{f.elo} ELO · {f.matches} матчей</span>}
+                    </div>
+                  </div>
+                  <div style={{textAlign:"center",minWidth:"80px"}}>
+                    <div style={{fontSize:"28px",color:diffColor,fontWeight:900,lineHeight:1}}>{fRating}</div>
+                    <div style={{fontSize:"11px",color:diffColor,fontWeight:700}}>{diffLabel}</div>
+                    <div style={{fontSize:"9px",color:C.muted,marginTop:"1px"}}>{coachLevels.find(l=>fRating<=l.max)?.name||"ЛЕГЕНДА"}</div>
+                  </div>
+                  <button onClick={()=>removeFriend(f.id)}
+                    style={{background:"transparent",border:`1px solid ${C.border}`,color:C.muted,
+                      cursor:"pointer",fontSize:"11px",padding:"4px 10px",fontFamily:"inherit"}}>
+                    ✕
+                  </button>
+                </div>
+                {/* Сравнение статов */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"6px"}}>
+                  {stats.map((s,i)=>(
+                    <div key={i} style={{background:"#0d0d09",padding:"8px 10px",
+                      border:`1px solid ${s.better?C.win+"33":C.lose+"33"}`}}>
+                      <div style={{fontSize:"9px",color:C.muted,marginBottom:"4px",textAlign:"center"}}>{s.l}</div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:"4px",alignItems:"center"}}>
+                        <div style={{textAlign:"center"}}>
+                          <div style={{fontSize:"13px",color:C.yellow,fontWeight:700}}>{s.my}</div>
+                          <div style={{fontSize:"9px",color:C.muted}}>ты</div>
+                        </div>
+                        <div style={{fontSize:"11px",color:C.muted}}>vs</div>
+                        <div style={{textAlign:"center"}}>
+                          <div style={{fontSize:"13px",color:s.better?C.lose:C.win,fontWeight:700}}>{s.fr}</div>
+                          <div style={{fontSize:"9px",color:C.muted}}>друг</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Search ────────────────────────────────────────────────────────────────────
 function SearchBar({onSelect}) {
   const [q,setQ]=useState(""), [res,setRes]=useState([]), [open,setOpen]=useState(false), [loading,setLoading]=useState(false);
@@ -4930,7 +5143,7 @@ export default function App() {
 
         {/* Main tabs */}
         <div style={{className:"desktop-nav",display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:"22px",flexWrap:"wrap"}}>
-          {[["overview","ОБЗОР"],["coach","🎯 ТРЕНЕР"],["practice","📚 ПРАКТИКА"],["matches","🎮 МАТЧИ"],["maps","🗺️ КАРТЫ"],["history","📋 ИСТОРИЯ"],["leaderboard","🏆 ЛИДЕРЫ"]].map(([t,l])=>(
+          {[["overview","ОБЗОР"],["coach","🎯 ТРЕНЕР"],["practice","📚 ПРАКТИКА"],["matches","🎮 МАТЧИ"],["maps","🗺️ КАРТЫ"],["history","📋 ИСТОРИЯ"],["leaderboard","🏆 ЛИДЕРЫ"],["friends","👥 ДРУЗЬЯ"]].map(([t,l])=>(
             <button key={t} onClick={()=>setMainTab(t)} style={{
               padding:"11px 18px",background:"transparent",
               color:mainTab===t?C.yellow:C.muted,border:"none",
@@ -5178,6 +5391,7 @@ export default function App() {
 
         {mainTab==="practice"&&<PracticeTab player={player}/>}
         {mainTab==="leaderboard"&&<Leaderboard myId={player?.steamid} onProfile={sid=>setProfileView({steamid:sid})}/>}
+        {mainTab==="friends"&&(!player?<LandingPage onLogin={openSteam}/>:<FriendsTab myPlayer={player} source={source}/>)}
       </div>
 
       <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${C.yellow},transparent)`}}/>
