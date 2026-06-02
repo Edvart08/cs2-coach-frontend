@@ -3838,6 +3838,7 @@ function LandingPage({onLogin}) {
 // ── AI Verdict — большой блок наверху обзора ─────────────────────────────────
 function AIVerdict({report, loading, onRefresh, cacheDate}) {
   const [step, setStep] = useState(0);
+  const [expanded, setExpanded] = useState(false);
   const steps = [
     "Анализируем статистику матчей...",
     "Изучаем лучшие и худшие карты...",
@@ -3930,75 +3931,88 @@ function AIVerdict({report, loading, onRefresh, cacheDate}) {
           {cacheDate&&<span style={{fontSize:"10px",color:C.muted}}>от {cacheDate}</span>}
         </div>
 
-        {/* VERDICT — главный элемент, крупный текст */}
-        <div style={{fontSize:"20px",color:C.value,lineHeight:1.75,marginBottom:"22px",
-          fontWeight:400,borderLeft:`3px solid ${C.yellow}`,paddingLeft:"18px",
-          borderRadius:"0 0 0 0"}}>
+
+        {/* VERDICT — главный вывод */}
+        <div style={{fontSize:"20px",color:C.value,lineHeight:1.75,marginBottom:"14px",
+          fontWeight:400,borderLeft:`3px solid ${C.yellow}`,paddingLeft:"18px"}}>
           {report.verdict}
         </div>
 
-        {/* Roast */}
-        {report.roast&&(
-          <div style={{background:`linear-gradient(90deg,${C.yellow}12,transparent)`,
-            borderLeft:`3px solid ${C.yellow}66`,
-            padding:"12px 18px",marginBottom:"24px",
-            fontSize:"15px",color:C.yellow,fontStyle:"italic",lineHeight:1.6}}>
-            💬 "{report.roast}"
-          </div>
-        )}
+        {/* Кнопка раскрытия */}
+        <button onClick={()=>setExpanded(o=>!o)} style={{
+          width:"100%",background:"#0d0d09",border:`1px solid ${C.border}44`,
+          color:C.muted,cursor:"pointer",padding:"9px",fontFamily:"inherit",
+          fontSize:"12px",letterSpacing:"2px",marginBottom:expanded?"16px":"0",
+          display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+          {expanded ? "▲ Свернуть" : `▼ Полный разбор — стороны, проблемы, цель`}
+        </button>
 
-        {/* Strengths + Problems — крупнее */}
-        <div className="verdict-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"20px"}}>
-          <div>
-            <div style={{fontSize:"11px",letterSpacing:"3px",color:C.win,fontWeight:700,
-              marginBottom:"10px",display:"flex",alignItems:"center",gap:"8px"}}>
-              ✓ СИЛЬНЫЕ СТОРОНЫ
+        {expanded&&<>
+          {report.roast&&(
+            <div style={{background:`linear-gradient(90deg,${C.yellow}12,transparent)`,
+              borderLeft:`3px solid ${C.yellow}66`,marginTop:"12px",
+              padding:"12px 18px",marginBottom:"16px",
+              fontSize:"15px",color:C.yellow,fontStyle:"italic",lineHeight:1.6}}>
+              💬 "{report.roast}"
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-              {strengths.length>0 ? strengths.map((s,i)=>(
-                <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",
-                  background:"#0a160a",border:`1px solid ${C.win}33`,padding:"12px 14px"}}>
-                  <span style={{color:C.win,fontSize:"16px",flexShrink:0,marginTop:"1px"}}>✓</span>
-                  <span style={{fontSize:"14px",color:C.text,lineHeight:1.6}}>{s}</span>
-                </div>
-              )) : <div style={{fontSize:"13px",color:C.muted,padding:"10px"}}>Загружается...</div>}
-            </div>
-          </div>
+          )}
 
-          <div>
-            <div style={{fontSize:"11px",letterSpacing:"3px",color:C.lose,fontWeight:700,
-              marginBottom:"10px",display:"flex",alignItems:"center",gap:"8px"}}>
-              ✗ ПРОБЛЕМЫ
+          {(report.best_map||report.worst_map)&&(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"16px"}}>
+              {report.best_map&&<div style={{background:"#0a160a",border:`1px solid ${C.win}44`,padding:"12px 14px"}}>
+                <div style={{fontSize:"10px",color:C.win,letterSpacing:"2px",fontWeight:700,marginBottom:"5px"}}>🏆 ЛУЧШАЯ КАРТА</div>
+                <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>{report.best_map.name||report.best_map}</div>
+                {report.best_map.wr&&<div style={{fontSize:"13px",color:C.win}}>{report.best_map.wr}% WR</div>}
+                {report.best_map.tip&&<div style={{fontSize:"11px",color:C.muted,marginTop:"3px"}}>{report.best_map.tip}</div>}
+              </div>}
+              {report.worst_map&&<div style={{background:"#160a0a",border:`1px solid ${C.lose}44`,padding:"12px 14px"}}>
+                <div style={{fontSize:"10px",color:C.lose,letterSpacing:"2px",fontWeight:700,marginBottom:"5px"}}>⚠️ ХУДШАЯ КАРТА</div>
+                <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>{report.worst_map.name||report.worst_map}</div>
+                {report.worst_map.wr&&<div style={{fontSize:"13px",color:C.lose}}>{report.worst_map.wr}% WR</div>}
+                {report.worst_map.tip&&<div style={{fontSize:"11px",color:C.muted,marginTop:"3px"}}>{report.worst_map.tip}</div>}
+              </div>}
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-              {problems.map((p,i)=>(
-                <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",
-                  background:"#160a0a",border:`1px solid ${C.lose}33`,padding:"12px 14px"}}>
-                  <span style={{color:C.lose,fontSize:"16px",flexShrink:0,marginTop:"1px"}}>✗</span>
-                  <span style={{fontSize:"14px",color:C.text,lineHeight:1.6}}>{p}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+          )}
 
-        {/* Priority — выделен сильнее */}
-        {report.priority&&(
-          <div style={{display:"flex",gap:"16px",alignItems:"flex-start",
-            background:`linear-gradient(90deg,${C.win}12,transparent)`,
-            border:`1px solid ${C.win}55`,borderLeft:`4px solid ${C.win}`,
-            padding:"16px 20px"}}>
-            <span style={{fontSize:"24px",flexShrink:0}}>🎯</span>
+          <div className="verdict-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"14px"}}>
             <div>
-              <div style={{fontSize:"11px",letterSpacing:"3px",color:C.win,fontWeight:700,marginBottom:"6px"}}>
-                СЛЕДУЮЩАЯ ЦЕЛЬ
+              <div style={{fontSize:"11px",letterSpacing:"3px",color:C.win,fontWeight:700,marginBottom:"8px"}}>✓ СИЛЬНЫЕ СТОРОНЫ</div>
+              <div style={{display:"flex",flexDirection:"column",gap:"5px"}}>
+                {strengths.length>0?strengths.map((s,i)=>(
+                  <div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start",
+                    background:"#0a160a",border:`1px solid ${C.win}33`,padding:"10px 12px"}}>
+                    <span style={{color:C.win,flexShrink:0}}>✓</span>
+                    <span style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{s}</span>
+                  </div>
+                )):<div style={{fontSize:"13px",color:C.muted,padding:"8px"}}>Загружается...</div>}
               </div>
-              <div style={{fontSize:"17px",color:C.value,lineHeight:1.6,fontWeight:600}}>
-                {report.priority}
+            </div>
+            <div>
+              <div style={{fontSize:"11px",letterSpacing:"3px",color:C.lose,fontWeight:700,marginBottom:"8px"}}>✗ ПРОБЛЕМЫ</div>
+              <div style={{display:"flex",flexDirection:"column",gap:"5px"}}>
+                {problems.map((p,i)=>(
+                  <div key={i} style={{display:"flex",gap:"10px",alignItems:"flex-start",
+                    background:"#160a0a",border:`1px solid ${C.lose}33`,padding:"10px 12px"}}>
+                    <span style={{color:C.lose,flexShrink:0}}>✗</span>
+                    <span style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{p}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        )}
+
+          {report.priority&&(
+            <div style={{display:"flex",gap:"14px",alignItems:"flex-start",
+              background:`linear-gradient(90deg,${C.win}12,transparent)`,
+              border:`1px solid ${C.win}55`,borderLeft:`4px solid ${C.win}`,padding:"14px 18px"}}>
+              <span style={{fontSize:"22px",flexShrink:0}}>🎯</span>
+              <div>
+                <div style={{fontSize:"11px",letterSpacing:"3px",color:C.win,fontWeight:700,marginBottom:"5px"}}>СЛЕДУЮЩАЯ ЦЕЛЬ</div>
+                <div style={{fontSize:"16px",color:C.value,lineHeight:1.6,fontWeight:600}}>{report.priority}</div>
+              </div>
+            </div>
+          )}
+        </>}
       </div>
     </div>
   );
@@ -5172,20 +5186,17 @@ export default function App() {
             {/* 2. Hero */}
             <HeroCard player={player} source={source}/>
 
-            {/* 3. Главное действие + Streak в одном */}
-            <DayAction player={player} source={source} streak={streak}/>
-
-            {/* 4. Coach Rating + уровень */}
+            {/* 3. Coach Rating — главный KPI */}
             <PlayerRating player={player} source={source}/>
+
+            {/* 4. Главное действие + Streak */}
+            <DayAction player={player} source={source} streak={streak}/>
 
             {/* 5. Достижения */}
             <Achievements player={player} source={source}/>
 
             {/* 6. Последние матчи */}
             {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
-
-            {/* 7. Рекомендации */}
-            <TodayRecs player={player} source={source}/>
 
             {/* Свёрнутое: дополнительные метрики */}
             <ScoreCardsCollapsible player={player} source={source}/>
