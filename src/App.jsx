@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 const BACKEND = "https://cs2-coach-backend.onrender.com";
 const FREE_WEEKLY = 1;
@@ -1041,8 +1042,8 @@ function AchievementModal({a, onClose}) {
   const remaining = a.target > a.val ? Math.ceil(a.target - a.val) : 0;
   const CAT_COLOR = {AIM:C.lose, МЕХАНИКА:C.orange, КАРТЫ:"#44ddaa", ТАКТИКА:C.yellow, АНАЛИЗ:"#aa88ff", ПРАКТИКА:C.orange, ПСИХОЛОГИЯ:"#dd88ff", РЕЖИМ:C.muted};
 
-  return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:600,
+  return createPortal(
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:9999,
       display:"flex",alignItems:"center",justifyContent:"center",padding:"16px",animation:"up .2s ease"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${a.color}66`,
         width:"100%",maxWidth:"460px",maxHeight:"90vh",overflowY:"auto"}}>
@@ -1105,11 +1106,12 @@ function AchievementModal({a, onClose}) {
           })}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
-// ── Achievements ───────────────────────────────────────────────────────────────
+// ── Achievements ─────────────────────────────────────────────────────────────
 function Achievements({player, source}) {
   const [modal, setModal] = useState(null);
   const fc=player?.faceit, cs2=player?.cs2||{};
