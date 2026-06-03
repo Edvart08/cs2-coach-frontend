@@ -79,6 +79,14 @@ const css = `
 `;
 
 const arr = x => Array.isArray(x) ? x : [];
+// WR cap: если матчей мало — показываем "~50%" вместо неправдоподобного 100%/0%
+// matches=undefined означаем lifetime WR — там порог выше (20)
+const capWR = (wr, matches, threshold = 20) => {
+  const w = parseFloat(wr) || 0;
+  const m = parseInt(matches) || 0;
+  if (m > 0 && m < threshold) return { val: 50, approx: true };
+  return { val: Math.min(w, 99), approx: false };
+};
 const flag = cc => {
   if(!cc||cc.length!==2) return "";
   try{return cc.toUpperCase().replace(/./g,c=>String.fromCodePoint(127397+c.charCodeAt()));}catch{return"";}
@@ -239,9 +247,13 @@ function HeroCard({player, source}) {
   const isFaceit = source === "faceit";
   const accentColor = isFaceit ? C.orange : C.blue;
 
+  const heroWR = isFaceit
+    ? capWR(fc?.lifetime?.winrate, fc?.lifetime?.matches)
+    : capWR(cs2.winrate, cs2.matches);
+  const heroWRStr = heroWR.val ? (heroWR.approx ? `~${heroWR.val}%` : `${heroWR.val}%`) : "—";
   const stats = isFaceit
-    ? [{l:"K/D",v:fc?.lifetime?.kd||"—"},{l:"WIN%",v:fc?.lifetime?.winrate?(fc.lifetime.winrate+"%"):"—"},{l:"HS%",v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—"},{l:"МАТЧИ",v:fc?.lifetime?.matches||"—"}]
-    : [{l:"K/D",v:cs2.kd||"—"},{l:"WIN%",v:cs2.winrate?(cs2.winrate+"%"):"—"},{l:"HS%",v:cs2.hs?(cs2.hs+"%"):"—"},{l:"МАТЧИ",v:cs2.matches||"—"}];
+    ? [{l:"K/D",v:fc?.lifetime?.kd||"—"},{l:"WIN%",v:heroWRStr},{l:"HS%",v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—"},{l:"МАТЧИ",v:fc?.lifetime?.matches||"—"}]
+    : [{l:"K/D",v:cs2.kd||"—"},{l:"WIN%",v:heroWRStr},{l:"HS%",v:cs2.hs?(cs2.hs+"%"):"—"},{l:"МАТЧИ",v:cs2.matches||"—"}];
 
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px",position:"relative",overflow:"hidden"}}>
@@ -570,18 +582,23 @@ function MapPool({faceit}) {
     </div>
   );
   const best=maps[0], worst=maps[maps.length-1];
-  const bans=maps.filter(m=>parseFloat(m.winrate)<45).slice(-2);
+  const bans=maps.filter(m=>parseFloat(m.winrate)<45&&parseInt(m.matches)>=5).slice(-2);
+  // helper для отображения WR карты
+  const mapWRStr = m => {
+    const c = capWR(m.winrate, m.matches, 5);
+    return c.approx ? `~${c.val}%` : `${c.val}%`;
+  };
   return (
     <div style={{animation:"up .4s ease both"}}>
       <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>ПУЛ КАРТ · FACEIT</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:"3px",marginBottom:"12px"}}>
         <div style={{background:"#0d1a0d",border:`1px solid #1e3a1e`,padding:"16px 18px"}}>
           <div style={{fontSize:"11px",color:"#55aa55",letterSpacing:"2px",marginBottom:"5px"}}>ЛУЧШАЯ</div>
-          <div style={{fontSize:"18px",color:"#66dd66",fontWeight:700}}>{best.map} · {best.winrate}%</div>
+          <div style={{fontSize:"18px",color:"#66dd66",fontWeight:700}}>{best.map} · {mapWRStr(best)}</div>
         </div>
         <div style={{background:"#1a0d0d",border:`1px solid #3a1e1e`,padding:"16px 18px"}}>
           <div style={{fontSize:"11px",color:"#cc5555",letterSpacing:"2px",marginBottom:"5px"}}>ХУДШАЯ</div>
-          <div style={{fontSize:"18px",color:C.lose,fontWeight:700}}>{worst.map} · {worst.winrate}%</div>
+          <div style={{fontSize:"18px",color:C.lose,fontWeight:700}}>{worst.map} · {mapWRStr(worst)}</div>
         </div>
         {bans.length>0&&(
           <div style={{background:"#1a1408",border:`1px solid #3a2e14`,padding:"16px 18px"}}>
@@ -595,7 +612,8 @@ function MapPool({faceit}) {
         <div>КАРТА</div><div>WINRATE</div><div>МАТЧИ</div><div>K/D</div>
       </div>
       {maps.map((m,i)=>{
-        const wr=parseFloat(m.winrate)||0;
+        const capped = capWR(m.winrate, m.matches, 5);
+        const wr = capped.val;
         const wc=wr>=55?"#55cc66":wr>=45?C.yellow:C.lose;
         return (
           <div key={i} className="hov-row" style={{display:"grid",gridTemplateColumns:"1fr 110px 80px 70px",
@@ -606,7 +624,7 @@ function MapPool({faceit}) {
               <div style={{flex:1,height:"5px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
                 <div style={{height:"100%",width:`${wr}%`,background:wc,transition:"width .8s ease"}}/>
               </div>
-              <span style={{fontSize:"13px",color:wc,fontWeight:700,minWidth:"34px"}}>{m.winrate}%</span>
+              <span style={{fontSize:"13px",color:wc,fontWeight:700,minWidth:"38px"}}>{capped.approx?`~${wr}%`:`${wr}%`}</span>
             </div>
             <div style={{fontSize:"13px",color:C.label}}>{m.matches}</div>
             <div style={{fontSize:"13px",color:C.label}}>{m.kd}</div>
@@ -641,6 +659,8 @@ function BestWorstMap({faceit}) {
   if (!maps.length) return null;
   const best = maps[0];
   const worst = maps[maps.length-1];
+  const bWR = capWR(best.winrate, best.matches, 5);
+  const wWR = capWR(worst.winrate, worst.matches, 5);
   return (
     <div className="best-worst" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{background:"#0a150a",border:`1px solid ${C.win}44`,padding:"18px 20px"}}>
@@ -649,7 +669,7 @@ function BestWorstMap({faceit}) {
         </div>
         <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"6px"}}>{best.map}</div>
         <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
-          <span style={{fontSize:"28px",color:C.win,fontWeight:700}}>{best.winrate}%</span>
+          <span style={{fontSize:"28px",color:C.win,fontWeight:700}}>{bWR.approx?`~${bWR.val}%`:`${bWR.val}%`}</span>
           <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7}}>
             <div>{best.matches} матчей</div>
             <div>K/D {best.kd}</div>
@@ -662,7 +682,7 @@ function BestWorstMap({faceit}) {
         </div>
         <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"6px"}}>{worst.map}</div>
         <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
-          <span style={{fontSize:"28px",color:C.lose,fontWeight:700}}>{worst.winrate}%</span>
+          <span style={{fontSize:"28px",color:C.lose,fontWeight:700}}>{wWR.approx?`~${wWR.val}%`:`${wWR.val}%`}</span>
           <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7}}>
             <div>{worst.matches} матчей</div>
             <div>K/D {worst.kd}</div>
@@ -2058,6 +2078,8 @@ function ProfileModal({steamid, nickname, onClose}) {
 
   const maps = arr(fc?.maps).sort((a,b)=>parseFloat(b.winrate)-parseFloat(a.winrate));
   const bestMap = maps[0]; const worstMap = maps[maps.length-1];
+  const bmWR = bestMap ? capWR(bestMap.winrate, bestMap.matches, 5) : null;
+  const wmWR = worstMap ? capWR(worstMap.winrate, worstMap.matches, 5) : null;
   const recentMatches = arr(fc?.matches).slice(0,5);
   const matchCount = parseInt(fc?.lifetime?.matches||cs2.matches)||0;
 
@@ -2176,7 +2198,7 @@ function ProfileModal({steamid, nickname, onClose}) {
                   <div style={{fontSize:"10px",color:C.win,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>🏆 ЛУЧШАЯ КАРТА</div>
                   <div style={{fontSize:"20px",color:C.value,fontWeight:700,marginBottom:"4px"}}>{bestMap.map}</div>
                   <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
-                    <span style={{fontSize:"26px",color:C.win,fontWeight:700}}>{bestMap.winrate}%</span>
+                    <span style={{fontSize:"26px",color:C.win,fontWeight:700}}>{bmWR?.approx?`~${bmWR.val}%`:`${bmWR?.val??bestMap.winrate}%`}</span>
                     <span style={{fontSize:"12px",color:C.muted}}>{bestMap.matches} матчей · K/D {bestMap.kd}</span>
                   </div>
                 </div>
@@ -2184,7 +2206,7 @@ function ProfileModal({steamid, nickname, onClose}) {
                   <div style={{fontSize:"10px",color:C.lose,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>⚠️ ХУДШАЯ КАРТА</div>
                   <div style={{fontSize:"20px",color:C.value,fontWeight:700,marginBottom:"4px"}}>{worstMap.map}</div>
                   <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
-                    <span style={{fontSize:"26px",color:C.lose,fontWeight:700}}>{worstMap.winrate}%</span>
+                    <span style={{fontSize:"26px",color:C.lose,fontWeight:700}}>{wmWR?.approx?`~${wmWR.val}%`:`${wmWR?.val??worstMap.winrate}%`}</span>
                     <span style={{fontSize:"12px",color:C.muted}}>{worstMap.matches} матчей · K/D {worstMap.kd}</span>
                   </div>
                 </div>
@@ -2231,7 +2253,9 @@ function ProfileModal({steamid, nickname, onClose}) {
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
                   {maps.map((m,i)=>{
-                    const wr=parseFloat(m.winrate)||0;
+                    const capped=capWR(m.winrate,m.matches,5);
+                    const wr=capped.val;
+                    const wrStr=capped.approx?`~${wr}%`:`${wr}%`;
                     const barColor=wr>=55?C.win:wr>=45?C.yellow:C.lose;
                     return(
                       <div key={i} style={{display:"grid",gridTemplateColumns:"120px 1fr 60px 60px 60px",
@@ -2242,7 +2266,7 @@ function ProfileModal({steamid, nickname, onClose}) {
                             <div style={{height:"100%",width:`${wr}%`,background:barColor,borderRadius:"2px"}}/>
                           </div>
                         </div>
-                        {[{l:"WR%",v:m.winrate+"%",c:barColor},{l:"K/D",v:m.kd,c:C.label},{l:"М",v:m.matches,c:C.muted}].map((s,j)=>(
+                        {[{l:"WR%",v:wrStr,c:barColor},{l:"K/D",v:m.kd,c:C.label},{l:"М",v:m.matches,c:C.muted}].map((s,j)=>(
                           <div key={j} style={{textAlign:"center"}}>
                             <div style={{fontSize:"9px",color:C.muted,marginBottom:"2px"}}>{s.l}</div>
                             <div style={{fontSize:"14px",color:s.c,fontWeight:600}}>{s.v}</div>
