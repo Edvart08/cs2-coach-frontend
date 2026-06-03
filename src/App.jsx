@@ -79,14 +79,6 @@ const css = `
 `;
 
 const arr = x => Array.isArray(x) ? x : [];
-// WR cap: если матчей мало — показываем "~50%" вместо неправдоподобного 100%/0%
-// matches=undefined означаем lifetime WR — там порог выше (20)
-const capWR = (wr, matches, threshold = 20) => {
-  const w = parseFloat(wr) || 0;
-  const m = parseInt(matches) || 0;
-  if (m > 0 && m < threshold) return { val: 50, approx: true };
-  return { val: Math.min(w, 99), approx: false };
-};
 const flag = cc => {
   if(!cc||cc.length!==2) return "";
   try{return cc.toUpperCase().replace(/./g,c=>String.fromCodePoint(127397+c.charCodeAt()));}catch{return"";}
@@ -247,13 +239,9 @@ function HeroCard({player, source}) {
   const isFaceit = source === "faceit";
   const accentColor = isFaceit ? C.orange : C.blue;
 
-  const heroWR = isFaceit
-    ? capWR(fc?.lifetime?.winrate, fc?.lifetime?.matches)
-    : capWR(cs2.winrate, cs2.matches);
-  const heroWRStr = heroWR.val ? (heroWR.approx ? `~${heroWR.val}%` : `${heroWR.val}%`) : "—";
   const stats = isFaceit
-    ? [{l:"K/D",v:fc?.lifetime?.kd||"—"},{l:"WIN%",v:heroWRStr},{l:"HS%",v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—"},{l:"МАТЧИ",v:fc?.lifetime?.matches||"—"}]
-    : [{l:"K/D",v:cs2.kd||"—"},{l:"WIN%",v:heroWRStr},{l:"HS%",v:cs2.hs?(cs2.hs+"%"):"—"},{l:"МАТЧИ",v:cs2.matches||"—"}];
+    ? [{l:"K/D",v:fc?.lifetime?.kd||"—"},{l:"WIN%",v:fc?.lifetime?.winrate?(fc.lifetime.winrate+"%"):"—"},{l:"HS%",v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—"},{l:"МАТЧИ",v:fc?.lifetime?.matches||"—"}]
+    : [{l:"K/D",v:cs2.kd||"—"},{l:"WIN%",v:cs2.winrate?(cs2.winrate+"%"):"—"},{l:"HS%",v:cs2.hs?(cs2.hs+"%"):"—"},{l:"МАТЧИ",v:cs2.matches||"—"}];
 
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px",position:"relative",overflow:"hidden"}}>
@@ -582,23 +570,18 @@ function MapPool({faceit}) {
     </div>
   );
   const best=maps[0], worst=maps[maps.length-1];
-  const bans=maps.filter(m=>parseFloat(m.winrate)<45&&parseInt(m.matches)>=5).slice(-2);
-  // helper для отображения WR карты
-  const mapWRStr = m => {
-    const c = capWR(m.winrate, m.matches, 5);
-    return c.approx ? `~${c.val}%` : `${c.val}%`;
-  };
+  const bans=maps.filter(m=>parseFloat(m.winrate)<45).slice(-2);
   return (
     <div style={{animation:"up .4s ease both"}}>
       <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>ПУЛ КАРТ · FACEIT</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:"3px",marginBottom:"12px"}}>
         <div style={{background:"#0d1a0d",border:`1px solid #1e3a1e`,padding:"16px 18px"}}>
           <div style={{fontSize:"11px",color:"#55aa55",letterSpacing:"2px",marginBottom:"5px"}}>ЛУЧШАЯ</div>
-          <div style={{fontSize:"18px",color:"#66dd66",fontWeight:700}}>{best.map} · {mapWRStr(best)}</div>
+          <div style={{fontSize:"18px",color:"#66dd66",fontWeight:700}}>{best.map} · {best.winrate}%</div>
         </div>
         <div style={{background:"#1a0d0d",border:`1px solid #3a1e1e`,padding:"16px 18px"}}>
           <div style={{fontSize:"11px",color:"#cc5555",letterSpacing:"2px",marginBottom:"5px"}}>ХУДШАЯ</div>
-          <div style={{fontSize:"18px",color:C.lose,fontWeight:700}}>{worst.map} · {mapWRStr(worst)}</div>
+          <div style={{fontSize:"18px",color:C.lose,fontWeight:700}}>{worst.map} · {worst.winrate}%</div>
         </div>
         {bans.length>0&&(
           <div style={{background:"#1a1408",border:`1px solid #3a2e14`,padding:"16px 18px"}}>
@@ -612,8 +595,7 @@ function MapPool({faceit}) {
         <div>КАРТА</div><div>WINRATE</div><div>МАТЧИ</div><div>K/D</div>
       </div>
       {maps.map((m,i)=>{
-        const capped = capWR(m.winrate, m.matches, 5);
-        const wr = capped.val;
+        const wr=parseFloat(m.winrate)||0;
         const wc=wr>=55?"#55cc66":wr>=45?C.yellow:C.lose;
         return (
           <div key={i} className="hov-row" style={{display:"grid",gridTemplateColumns:"1fr 110px 80px 70px",
@@ -624,7 +606,7 @@ function MapPool({faceit}) {
               <div style={{flex:1,height:"5px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
                 <div style={{height:"100%",width:`${wr}%`,background:wc,transition:"width .8s ease"}}/>
               </div>
-              <span style={{fontSize:"13px",color:wc,fontWeight:700,minWidth:"38px"}}>{capped.approx?`~${wr}%`:`${wr}%`}</span>
+              <span style={{fontSize:"13px",color:wc,fontWeight:700,minWidth:"34px"}}>{m.winrate}%</span>
             </div>
             <div style={{fontSize:"13px",color:C.label}}>{m.matches}</div>
             <div style={{fontSize:"13px",color:C.label}}>{m.kd}</div>
@@ -659,8 +641,6 @@ function BestWorstMap({faceit}) {
   if (!maps.length) return null;
   const best = maps[0];
   const worst = maps[maps.length-1];
-  const bWR = capWR(best.winrate, best.matches, 5);
-  const wWR = capWR(worst.winrate, worst.matches, 5);
   return (
     <div className="best-worst" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{background:"#0a150a",border:`1px solid ${C.win}44`,padding:"18px 20px"}}>
@@ -669,7 +649,7 @@ function BestWorstMap({faceit}) {
         </div>
         <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"6px"}}>{best.map}</div>
         <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
-          <span style={{fontSize:"28px",color:C.win,fontWeight:700}}>{bWR.approx?`~${bWR.val}%`:`${bWR.val}%`}</span>
+          <span style={{fontSize:"28px",color:C.win,fontWeight:700}}>{best.winrate}%</span>
           <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7}}>
             <div>{best.matches} матчей</div>
             <div>K/D {best.kd}</div>
@@ -682,7 +662,7 @@ function BestWorstMap({faceit}) {
         </div>
         <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"6px"}}>{worst.map}</div>
         <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
-          <span style={{fontSize:"28px",color:C.lose,fontWeight:700}}>{wWR.approx?`~${wWR.val}%`:`${wWR.val}%`}</span>
+          <span style={{fontSize:"28px",color:C.lose,fontWeight:700}}>{worst.winrate}%</span>
           <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7}}>
             <div>{worst.matches} матчей</div>
             <div>K/D {worst.kd}</div>
@@ -971,8 +951,167 @@ function PlayerRating({player, source}) {
   );
 }
 
+// ── Achievement Modal ─────────────────────────────────────────────────────────
+function AchievementModal({a, onClose}) {
+  // тренировки под каждое достижение
+  const tips = {
+    headshot: [
+      {cat:"AIM",      dur:"20 мин", task:"Aim_botz: 500 убийств только в голову, без спрея — пока не выйдет уверенно"},
+      {cat:"МЕХАНИКА", dur:"15 мин", task:"Recoil Master workshop: отработай первые 5 пуль AK47 — они дают больше всего хедшотов"},
+      {cat:"ПРАКТИКА", dur:"10 мин", task:"Deathmatch: стреляй только пистолетом — заставляет прицеливаться точнее"},
+    ],
+    sniper: [
+      {cat:"AIM",      dur:"20 мин", task:"Aim_botz headshot only: минимум 300 убийств подряд с точностью выше 60%"},
+      {cat:"МЕХАНИКА", dur:"15 мин", task:"Переключись на AWP на 1 deathmatch-сессию — учит ставить прицел на уровень головы"},
+      {cat:"АНАЛИЗ",   dur:"10 мин", task:"Посмотри демо: найди 3 момента где стрелял в тело — понять почему прицел был низко"},
+    ],
+    fragger: [
+      {cat:"МЕХАНИКА", dur:"15 мин", task:"Counter-strafe практика: движение → стоп → выстрел. Цель — 0 пуль в движении"},
+      {cat:"AIM",      dur:"20 мин", task:"Deathmatch 15 минут: фокус только на первый выстрел, не спрей"},
+      {cat:"ТАКТИКА",  dur:"10 мин", task:"Играй агрессивнее на входе — больше дуэлей = больше шансов поднять K/D"},
+    ],
+    elite: [
+      {cat:"AIM",      dur:"25 мин", task:"Aim_botz: 1000 убийств ежедневно — без этого K/D 1.5+ не даётся"},
+      {cat:"МЕХАНИКА", dur:"20 мин", task:"Micro-adjustments: стреляй по маленьким движущимся мишеням в workshop"},
+      {cat:"АНАЛИЗ",   dur:"15 мин", task:"Разбери 5 смертей из последнего матча — найди паттерн где проигрываешь дуэли"},
+    ],
+    winner: [
+      {cat:"ТАКТИКА",  dur:"15 мин", task:"Учи utility на 1 карте: 2 смока, 1 молотов, 1 флэш — и применяй каждый раунд"},
+      {cat:"АНАЛИЗ",   dur:"20 мин", task:"Посмотри 1 проигранный матч: найди раунды где команда проигрывала из-за позиций"},
+      {cat:"ТАКТИКА",  dur:"10 мин", task:"Не rush B каждый раунд — чередуй атаки, читай мини-карту, реагируй на ротации"},
+    ],
+    dominator: [
+      {cat:"ТАКТИКА",  dur:"20 мин", task:"Изучи 3 стандартные раскидки на лучшей карте — смок мидл, смок CT, молотов на кит"},
+      {cat:"АНАЛИЗ",   dur:"15 мин", task:"После каждого проигранного раунда: 1 вывод почему проиграли, 1 исправление"},
+      {cat:"ТАКТИКА",  dur:"10 мин", task:"Играй IGL роль 1 матч: давай callouts, предлагай стратегии — понимание игры растёт"},
+    ],
+    veteran: [
+      {cat:"РЕЖИМ",    dur:"—",      task:"Ставь себе цель: минимум 3 матча в день. Главное — регулярность, не результат"},
+      {cat:"ТАКТИКА",  dur:"15 мин", task:"Каждый день — 1 новая раскидка на любой карте. За 200 матчей это 200 инструментов"},
+      {cat:"АНАЛИЗ",   dur:"10 мин", task:"Веди заметки: после каждого матча 1 строчка — что сделал хорошо, что исправить"},
+    ],
+    grinder: [
+      {cat:"РЕЖИМ",    dur:"—",      task:"Уже 500 матчей — ты гриндер. Теперь фокус на качестве: играй медленнее, думай больше"},
+      {cat:"АНАЛИЗ",   dur:"20 мин", task:"Разбери своё худшее соотношение K/D за последние 20 матчей — найди общий паттерн"},
+      {cat:"ТАКТИКА",  dur:"15 мин", task:"Пробуй новые позиции и углы — 500 матчей на одних и тех же точках = потолок"},
+    ],
+    streak3: [
+      {cat:"ПСИХОЛОГИЯ",dur:"—",     task:"Серия 3+ побед: не меняй стиль игры, не force-buy — сохраняй темп"},
+      {cat:"AIM",       dur:"15 мин", task:"Перед каждым матчем серии: 10 минут aim warmup — не прыгать в игру холодным"},
+      {cat:"ТАКТИКА",   dur:"10 мин", task:"Играй на своей лучшей карте пока идёт серия — не экспериментируй"},
+    ],
+    streak5: [
+      {cat:"ПСИХОЛОГИЯ",dur:"—",     task:"Серия 5+ — ты в зоне. Главное правило: стоп если проиграл 2 подряд, отдохни"},
+      {cat:"AIM",       dur:"20 мин", task:"Ежедневный warmup стал твоим ритуалом — не пропускай его во время серии"},
+      {cat:"ТАКТИКА",   dur:"10 мин", task:"Анализируй что делаешь правильно сейчас — запомни это состояние игры"},
+    ],
+    faceit5: [
+      {cat:"ТАКТИКА",   dur:"15 мин", task:"На уровне 5+ противники знают базовые раскидки — учи нестандартные позиции"},
+      {cat:"AIM",       dur:"20 мин", task:"Aim_botz ежедневно: на этом уровне механика решает половину дуэлей"},
+      {cat:"АНАЛИЗ",    dur:"15 мин", task:"Смотри демо игроков уровня 7-8 на своей роли — копируй позиционирование"},
+    ],
+    faceit8: [
+      {cat:"АНАЛИЗ",    dur:"20 мин", task:"На уровне 8+ нужен разбор каждого матча: 3 ошибки и 1 что сделал хорошо"},
+      {cat:"ТАКТИКА",   dur:"20 мин", task:"Изучи все раскидки на 2 основных картах до автоматизма — без этого уровень 10 закрыт"},
+      {cat:"AIM",       dur:"15 мин", task:"Переключись на Aimlabs / KovaaK's — workshop aim_botz уже не даёт прогресса на этом уровне"},
+    ],
+    mvp100: [
+      {cat:"ТАКТИКА",   dur:"15 мин", task:"MVP = первый в команде. Фокус: entry fragging, открывать раунды, не ждать"},
+      {cat:"АНАЛИЗ",    dur:"10 мин", task:"После каждого матча: был ли ты полезен команде или просто стрелял? MVP — это вклад"},
+      {cat:"ТАКТИКА",   dur:"10 мин", task:"Учи раскидки под entry: 1 смок + 1 флэш на каждую карту — даёт больше MVP"},
+    ],
+    kills1k: [
+      {cat:"AIM",       dur:"20 мин", task:"1000 убийств — хорошее начало. Aim_botz: 500 фрагов ежедневно для роста механики"},
+      {cat:"МЕХАНИКА",  dur:"15 мин", task:"Работай над counter-strafe — точность в движении даёт +20% к фрагам"},
+      {cat:"РЕЖИМ",     dur:"—",      task:"Ставь цель: 2000 убийств за следующие 3 месяца = ~22 матча в неделю"},
+    ],
+    kills10k: [
+      {cat:"АНАЛИЗ",    dur:"20 мин", task:"10к убийств — ты ветеран. Теперь считай ADR и impact, не просто kills"},
+      {cat:"ТАКТИКА",   dur:"15 мин", task:"На этом опыте учи IGL: давай callouts, читай игру соперника, выигрывай тактически"},
+      {cat:"РЕЖИМ",     dur:"—",      task:"Делай перерыв каждые 2 часа — с таким количеством часов важна свежесть восприятия"},
+    ],
+  };
+
+  const trainings = tips[a.id] || [
+    {cat:"AIM",     dur:"20 мин", task:"Aim_botz: ежедневная разминка 500 убийств"},
+    {cat:"АНАЛИЗ",  dur:"15 мин", task:"Разбери последний проигранный матч — найди 1 паттерн ошибок"},
+    {cat:"ТАКТИКА", dur:"10 мин", task:"Выучи 1 новую раскидку на лучшей карте"},
+  ];
+  const prog = Math.min(99, Math.round((a.val / a.target) * 100));
+  const remaining = a.target > a.val ? Math.ceil(a.target - a.val) : 0;
+  const CAT_COLOR = {AIM:C.lose, МЕХАНИКА:C.orange, КАРТЫ:"#44ddaa", ТАКТИКА:C.yellow, АНАЛИЗ:"#aa88ff", ПРАКТИКА:C.orange, ПСИХОЛОГИЯ:"#dd88ff", РЕЖИМ:C.muted};
+
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:600,
+      display:"flex",alignItems:"center",justifyContent:"center",padding:"16px",animation:"up .2s ease"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${a.color}66`,
+        width:"100%",maxWidth:"460px",maxHeight:"90vh",overflowY:"auto"}}>
+
+        {/* Шапка */}
+        <div style={{padding:"22px 24px 16px",borderBottom:`1px solid ${C.border}`,
+          background:`linear-gradient(135deg,${a.color}18,transparent)`}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+            <div style={{display:"flex",gap:"14px",alignItems:"center"}}>
+              <span style={{fontSize:"36px"}}>{a.icon}</span>
+              <div>
+                <div style={{fontSize:"16px",color:a.done?C.yellow:C.value,fontWeight:700,marginBottom:"3px"}}>{a.name}</div>
+                <div style={{fontSize:"11px",color:a.done?a.color:C.muted,letterSpacing:"1px"}}>
+                  {a.done ? "✅ ВЫПОЛНЕНО" : `${a.val}${a.unit} из ${a.target}${a.unit}`}
+                </div>
+              </div>
+            </div>
+            <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,
+              fontSize:"20px",cursor:"pointer",padding:"0 4px",lineHeight:1}}>✕</button>
+          </div>
+
+          {/* Прогресс-бар */}
+          {!a.done && (
+            <div style={{marginTop:"16px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px",color:C.muted,marginBottom:"5px"}}>
+                <span>Прогресс</span>
+                <span style={{color:a.color,fontWeight:700}}>{prog}%</span>
+              </div>
+              <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${prog}%`,background:a.color,borderRadius:"3px",transition:"width .6s ease"}}/>
+              </div>
+              <div style={{fontSize:"12px",color:C.muted,marginTop:"6px"}}>
+                ещё <span style={{color:C.value,fontWeight:700}}>{remaining}{a.unit}</span> до цели
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Тренировки */}
+        <div style={{padding:"18px 24px"}}>
+          <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
+            КАК ВЫПОЛНИТЬ:
+          </div>
+          {trainings.map((t,i)=>{
+            const cc = CAT_COLOR[t.cat] || C.yellow;
+            return (
+              <div key={i} style={{display:"flex",gap:"12px",padding:"12px 14px",marginBottom:"6px",
+                background:"#0d0d09",borderLeft:`3px solid ${cc}`,border:`1px solid ${C.border}`,
+                borderLeft:`3px solid ${cc}`}}>
+                <div style={{flexShrink:0,paddingTop:"2px"}}>
+                  <span style={{padding:"2px 8px",background:cc+"22",color:cc,
+                    fontSize:"9px",letterSpacing:"2px",fontWeight:700,whiteSpace:"nowrap"}}>{t.cat}</span>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:"11px",color:C.muted,marginBottom:"3px"}}>{t.dur}</div>
+                  <div style={{fontSize:"13px",color:C.text,lineHeight:1.6}}>{t.task}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Achievements ───────────────────────────────────────────────────────────────
 function Achievements({player, source}) {
+  const [modal, setModal] = useState(null);
   const fc=player?.faceit, cs2=player?.cs2||{};
   const kd=parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd)||0;
   const hs=parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs)||0;
@@ -981,7 +1120,6 @@ function Achievements({player, source}) {
   const kills=parseInt(cs2?.kills)||0;
   const mvps=parseInt(cs2?.mvps)||0;
   const lvl=parseInt(fc?.level)||0;
-  // longest_streak может не прийти из FACEIT API — считаем сами из матчей
   const apiStreak = parseInt(fc?.lifetime?.longest_streak)||0;
   const calcStreak = (()=>{let s=0;for(const m of arr(fc?.matches)){if(m.result==="1")s++;else break;}return s;})();
   const streak = Math.max(apiStreak, calcStreak);
@@ -1006,61 +1144,69 @@ function Achievements({player, source}) {
   const locked=all.filter(a=>!a.done).slice(0,4);
   if(!unlocked.length&&!locked.length)return null;
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px",animation:"up .5s ease both"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
-        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>🏅 ДОСТИЖЕНИЯ</span>
-        <span style={{fontSize:"11px",color:C.muted}}>{unlocked.length} / {all.length}</span>
-      </div>
-      {unlocked.length>0&&(
-        <div style={{display:"flex",flexWrap:"wrap",gap:"8px",marginBottom:locked.length?"14px":"0"}}>
-          {unlocked.map(a=>(
-            <div key={a.id} style={{display:"flex",alignItems:"center",gap:"8px",
-              background:`linear-gradient(135deg,${C.yellow}18,${C.yellow}08)`,
-              border:`1px solid ${C.yellow}55`,padding:"8px 14px"}}>
-              <span style={{fontSize:"18px"}}>{a.icon}</span>
-              <div>
-                <div style={{fontSize:"12px",color:C.yellow,fontWeight:700,lineHeight:1.2}}>{a.name}</div>
-                <div style={{fontSize:"10px",color:C.muted}}>{a.val}{a.unit} / {a.target}{a.unit}</div>
-              </div>
-            </div>
-          ))}
+    <>
+      {modal&&<AchievementModal a={modal} onClose={()=>setModal(null)}/>}
+      <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px",animation:"up .5s ease both"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+          <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>🏅 ДОСТИЖЕНИЯ</span>
+          <span style={{fontSize:"11px",color:C.muted}}>{unlocked.length} / {all.length}</span>
         </div>
-      )}
-      {locked.length>0&&(
-        <>
-          <button onClick={()=>{}} style={{
-            fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px",
-            background:"transparent",border:"none",cursor:"default",padding:0,fontFamily:"inherit",
-            display:"block",textAlign:"left"}}>
-            СЛЕДУЮЩИЕ ЦЕЛИ:
-          </button>
-          <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
-            {locked.map(a=>{
-              const prog=Math.min(99,Math.round((a.val/a.target)*100));
-              const remaining=a.target>a.val?Math.ceil(a.target-a.val):0;
-              return(
-                <div key={a.id} style={{flex:"1 1 160px",background:"#0d0d09",
-                  border:`1px solid ${a.color}33`,padding:"10px 12px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
-                    <span style={{fontSize:"15px",filter:"grayscale(0.5)"}}>{a.icon}</span>
-                    <div style={{flex:1}}>
-                      <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px"}}>
-                        <span style={{color:C.label,fontWeight:700}}>{a.name}</span>
-                        <span style={{color:a.color,fontWeight:600}}>{prog}%</span>
+        {unlocked.length>0&&(
+          <div style={{display:"flex",flexWrap:"wrap",gap:"8px",marginBottom:locked.length?"14px":"0"}}>
+            {unlocked.map(a=>(
+              <div key={a.id} onClick={()=>setModal(a)}
+                style={{display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",
+                  background:`linear-gradient(135deg,${C.yellow}18,${C.yellow}08)`,
+                  border:`1px solid ${C.yellow}55`,padding:"8px 14px",
+                  transition:"border-color .15s,transform .1s"}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=C.yellow;e.currentTarget.style.transform="translateY(-1px)";}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor=C.yellow+"55";e.currentTarget.style.transform="";}}>
+                <span style={{fontSize:"18px"}}>{a.icon}</span>
+                <div>
+                  <div style={{fontSize:"12px",color:C.yellow,fontWeight:700,lineHeight:1.2}}>{a.name}</div>
+                  <div style={{fontSize:"10px",color:C.muted}}>{a.val}{a.unit} / {a.target}{a.unit}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {locked.length>0&&(
+          <>
+            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>СЛЕДУЮЩИЕ ЦЕЛИ:</div>
+            <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+              {locked.map(a=>{
+                const prog=Math.min(99,Math.round((a.val/a.target)*100));
+                const remaining=a.target>a.val?Math.ceil(a.target-a.val):0;
+                return(
+                  <div key={a.id} onClick={()=>setModal(a)}
+                    style={{flex:"1 1 160px",background:"#0d0d09",cursor:"pointer",
+                      border:`1px solid ${a.color}33`,padding:"10px 12px",
+                      transition:"border-color .15s,transform .1s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=a.color+"88";e.currentTarget.style.transform="translateY(-1px)";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=a.color+"33";e.currentTarget.style.transform="";}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
+                      <span style={{fontSize:"15px",filter:"grayscale(0.5)"}}>{a.icon}</span>
+                      <div style={{flex:1}}>
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px"}}>
+                          <span style={{color:C.label,fontWeight:700}}>{a.name}</span>
+                          <span style={{color:a.color,fontWeight:600}}>{prog}%</span>
+                        </div>
                       </div>
                     </div>
+                    <div style={{height:"2px",background:"#1a1a10",borderRadius:"1px",overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${prog}%`,background:a.color,borderRadius:"1px"}}/>
+                    </div>
+                    <div style={{fontSize:"10px",color:C.muted,marginTop:"3px"}}>
+                      ещё {remaining}{a.unit} · <span style={{color:a.color}}>нажми → как получить</span>
+                    </div>
                   </div>
-                  <div style={{height:"2px",background:"#1a1a10",borderRadius:"1px",overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${prog}%`,background:a.color,borderRadius:"1px"}}/>
-                  </div>
-                  <div style={{fontSize:"10px",color:C.muted,marginTop:"3px"}}>ещё {remaining}{a.unit}</div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -2078,8 +2224,6 @@ function ProfileModal({steamid, nickname, onClose}) {
 
   const maps = arr(fc?.maps).sort((a,b)=>parseFloat(b.winrate)-parseFloat(a.winrate));
   const bestMap = maps[0]; const worstMap = maps[maps.length-1];
-  const bmWR = bestMap ? capWR(bestMap.winrate, bestMap.matches, 5) : null;
-  const wmWR = worstMap ? capWR(worstMap.winrate, worstMap.matches, 5) : null;
   const recentMatches = arr(fc?.matches).slice(0,5);
   const matchCount = parseInt(fc?.lifetime?.matches||cs2.matches)||0;
 
@@ -2198,7 +2342,7 @@ function ProfileModal({steamid, nickname, onClose}) {
                   <div style={{fontSize:"10px",color:C.win,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>🏆 ЛУЧШАЯ КАРТА</div>
                   <div style={{fontSize:"20px",color:C.value,fontWeight:700,marginBottom:"4px"}}>{bestMap.map}</div>
                   <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
-                    <span style={{fontSize:"26px",color:C.win,fontWeight:700}}>{bmWR?.approx?`~${bmWR.val}%`:`${bmWR?.val??bestMap.winrate}%`}</span>
+                    <span style={{fontSize:"26px",color:C.win,fontWeight:700}}>{bestMap.winrate}%</span>
                     <span style={{fontSize:"12px",color:C.muted}}>{bestMap.matches} матчей · K/D {bestMap.kd}</span>
                   </div>
                 </div>
@@ -2206,7 +2350,7 @@ function ProfileModal({steamid, nickname, onClose}) {
                   <div style={{fontSize:"10px",color:C.lose,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>⚠️ ХУДШАЯ КАРТА</div>
                   <div style={{fontSize:"20px",color:C.value,fontWeight:700,marginBottom:"4px"}}>{worstMap.map}</div>
                   <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
-                    <span style={{fontSize:"26px",color:C.lose,fontWeight:700}}>{wmWR?.approx?`~${wmWR.val}%`:`${wmWR?.val??worstMap.winrate}%`}</span>
+                    <span style={{fontSize:"26px",color:C.lose,fontWeight:700}}>{worstMap.winrate}%</span>
                     <span style={{fontSize:"12px",color:C.muted}}>{worstMap.matches} матчей · K/D {worstMap.kd}</span>
                   </div>
                 </div>
@@ -2253,9 +2397,7 @@ function ProfileModal({steamid, nickname, onClose}) {
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
                   {maps.map((m,i)=>{
-                    const capped=capWR(m.winrate,m.matches,5);
-                    const wr=capped.val;
-                    const wrStr=capped.approx?`~${wr}%`:`${wr}%`;
+                    const wr=parseFloat(m.winrate)||0;
                     const barColor=wr>=55?C.win:wr>=45?C.yellow:C.lose;
                     return(
                       <div key={i} style={{display:"grid",gridTemplateColumns:"120px 1fr 60px 60px 60px",
@@ -2266,7 +2408,7 @@ function ProfileModal({steamid, nickname, onClose}) {
                             <div style={{height:"100%",width:`${wr}%`,background:barColor,borderRadius:"2px"}}/>
                           </div>
                         </div>
-                        {[{l:"WR%",v:wrStr,c:barColor},{l:"K/D",v:m.kd,c:C.label},{l:"М",v:m.matches,c:C.muted}].map((s,j)=>(
+                        {[{l:"WR%",v:m.winrate+"%",c:barColor},{l:"K/D",v:m.kd,c:C.label},{l:"М",v:m.matches,c:C.muted}].map((s,j)=>(
                           <div key={j} style={{textAlign:"center"}}>
                             <div style={{fontSize:"9px",color:C.muted,marginBottom:"2px"}}>{s.l}</div>
                             <div style={{fontSize:"14px",color:s.c,fontWeight:600}}>{s.v}</div>
