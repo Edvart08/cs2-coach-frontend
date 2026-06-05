@@ -65,6 +65,7 @@ const css = `
   .match-row:hover{background:#181810 !important;}
   /* ── Mobile ── */
   @media(max-width:768px){
+    :root{--mob-offset:60px;}
     .desktop-nav{display:none !important;}
     .mobile-nav{display:flex !important;}
     .topbar-search{display:none !important;}
@@ -92,6 +93,10 @@ const css = `
     .best-worst{grid-template-columns:1fr !important;}
     .recent-match-grid{grid-template-columns:4px 1fr 60px 50px 50px !important;}
     .recent-match-adr{display:none !important;}
+    /* О нас — технологии и конфиденциальность в одну колонку */
+    .about-tech-grid{grid-template-columns:1fr !important;}
+    /* Лидерборд — обрезать длинные значения */
+    .lb-val{max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   }
   @media(min-width:769px){
     .mobile-nav{display:none !important;}
@@ -2567,7 +2572,7 @@ function Leaderboard({myId, onProfile}) {
       </div>
 
       <div style={{fontSize:"12px",color:C.muted,marginBottom:"10px"}}>Нажми на игрока — откроется профиль</div>
-      <div style={{display:"grid",gridTemplateColumns:"40px 1fr 110px 100px",gap:"2px",
+      <div className="lb-grid" style={{display:"grid",gridTemplateColumns:"40px 1fr 110px 100px",gap:"2px",
         padding:"8px 14px",fontSize:"11px",letterSpacing:"2px",color:C.muted,borderBottom:`1px solid ${C.border}`}}>
         <div>#</div><div>ИГРОК</div><div>УРОВЕНЬ</div>
         <div style={{textAlign:"right"}}>{SORTS.find(s=>s.id===sortKey)?.label?.toUpperCase()}</div>
@@ -2577,7 +2582,7 @@ function Leaderboard({myId, onProfile}) {
         const isMe=myId&&p.steamid===myId;
         const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":null;
         return (
-          <div key={p.steamid||i} className="hov-row" onClick={()=>onProfile(p.steamid)} style={{
+          <div key={p.steamid||i} className="hov-row lb-grid" onClick={()=>onProfile(p.steamid)} style={{
             display:"grid",gridTemplateColumns:"40px 1fr 110px 100px",gap:"2px",
             padding:"12px 14px",cursor:"pointer",borderBottom:`1px solid ${C.border}`,
             background:isMe?"#1a1a08":C.card,borderLeft:isMe?`3px solid ${C.yellow}`:`3px solid transparent`,
@@ -2594,7 +2599,7 @@ function Leaderboard({myId, onProfile}) {
               fontSize:"10px",letterSpacing:"1px",display:"inline-flex",alignItems:"center",height:"fit-content",alignSelf:"center"}}>
               {p.level}
             </div>
-            <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,textAlign:"right",alignSelf:"center"}}>
+            <div className="lb-val" style={{fontSize:"14px",color:C.yellow,fontWeight:700,textAlign:"right",alignSelf:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
               {valFor(p)}
             </div>
           </div>
@@ -3247,7 +3252,7 @@ function AboutModal({onClose}) {
             ))}
           </div>
 
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"20px"}}>
+          <div className="about-tech-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"20px"}}>
             <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
               <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>ТЕХНОЛОГИИ</div>
               {["Steam Web API","FACEIT Open API","Groq AI (LLaMA 3.3)","React + FastAPI"].map((t,i)=>(
@@ -5708,7 +5713,7 @@ export default function App() {
       {/* Support button */}
       {player&&<a href="https://t.me/cs2coach_support" target="_blank" rel="noreferrer"
         title="Поддержка в Telegram"
-        style={{position:"fixed",bottom:"92px",right:"24px",width:"48px",height:"48px",
+        style={{position:"fixed",bottom:"calc(60px + var(--mob-offset, 0px))",right:"24px",width:"48px",height:"48px",
           background:"#0d1520",border:`1px solid ${C.blue}55`,borderRadius:"50%",
           display:"flex",alignItems:"center",justifyContent:"center",
           textDecoration:"none",fontSize:"20px",zIndex:199,
@@ -5722,7 +5727,7 @@ export default function App() {
 
       {/* Support & Chat bubbles */}
       <button onClick={()=>setSupportOpen(o=>!o)} style={{
-        position:"fixed",bottom:"94px",right:"24px",width:"48px",height:"48px",
+        position:"fixed",bottom:"calc(116px + var(--mob-offset, 0px))",right:"24px",width:"48px",height:"48px",
         background:supportOpen?"#1b6090":"#0d0d09",color:C.blue,
         border:`2px solid ${C.blue}`,borderRadius:"50%",cursor:"pointer",
         fontSize:"20px",boxShadow:`0 4px 16px ${C.blue}33`,zIndex:199,
@@ -5732,7 +5737,7 @@ export default function App() {
       </button>
       {player&&<>
         <button onClick={()=>{ setChatOpen(o=>!o); try{localStorage.setItem("cs2_chat_done","1");}catch{} }} style={{
-          position:"fixed",bottom:"24px",right:"24px",width:"52px",height:"52px",
+          position:"fixed",bottom:player?"72px":"24px",right:"24px",width:"52px",height:"52px",
           background:chatOpen?C.yellow:"#1a1a0e",color:chatOpen?"#080807":C.yellow,
           border:`2px solid ${C.yellow}`,borderRadius:"50%",cursor:"pointer",
           fontSize:"24px",boxShadow:`0 4px 20px ${C.yellow}44`,zIndex:200,
