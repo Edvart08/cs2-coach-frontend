@@ -5017,7 +5017,26 @@ export default function App() {
       })
     })
     .then(r=>r.json())
-    .then(d=>console.log("[LB] added:", player.username, "total:", d.total))
+    .then(d=>{
+      console.log("[LB] added:", player.username, "rank:", d.rank, "total:", d.total);
+      if (!d.rank || !d.total) return;
+      const lbKey = `cs2_lb_rank_${player.steamid}`;
+      const prevRank = parseInt(localStorage.getItem(lbKey)||"0");
+      if (prevRank && prevRank !== d.rank) {
+        const improved = d.rank < prevRank;
+        const diff = Math.abs(prevRank - d.rank);
+        setNotifications(n => [...n, {
+          icon: improved ? "📈" : "📉",
+          title: improved
+            ? `Ты поднялся на ${diff} ${diff===1?"место":"мест"} в лидерборде!`
+            : `Ты опустился на ${diff} ${diff===1?"место":"мест"} в лидерборде`,
+          text: `${prevRank} → ${d.rank} место из ${d.total}`,
+          color: improved ? C.win : C.lose,
+        }]);
+        setTimeout(()=>setShowNotifications(true), 3000);
+      }
+      localStorage.setItem(lbKey, String(d.rank));
+    })
     .catch(e=>console.error("[LB] error:", e));
   },[player?.steamid, player?.faceit?.elo, player?.cs2?.matches]);
 
