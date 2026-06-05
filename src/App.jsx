@@ -259,10 +259,14 @@ function HeroCard({player, source}) {
   const eloCount = useCountUp(elo);
   const isFaceit = source === "faceit";
   const accentColor = isFaceit ? C.orange : C.blue;
+  const heroMatches = parseInt(isFaceit ? fc?.lifetime?.matches : cs2?.matches) || 0;
+  const heroWRRaw = parseFloat(isFaceit ? fc?.lifetime?.winrate : cs2?.winrate) || 0;
+  const heroWRVal = !isFaceit && heroMatches >= 100 && heroWRRaw > 80 ? 80 : Math.min(heroWRRaw, 99);
+  const heroWRStr = heroWRVal ? `${heroWRVal}%` : "—";
 
   const stats = isFaceit
     ? [{l:"K/D",v:fc?.lifetime?.kd||"—"},{l:"WIN%",v:fc?.lifetime?.winrate?(fc.lifetime.winrate+"%"):"—"},{l:"HS%",v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—"},{l:"МАТЧИ",v:fc?.lifetime?.matches||"—"}]
-    : [{l:"K/D",v:cs2.kd||"—"},{l:"WIN%",v:cs2.winrate?(cs2.winrate+"%"):"—"},{l:"HS%",v:cs2.hs?(cs2.hs+"%"):"—"},{l:"МАТЧИ",v:cs2.matches||"—"}];
+    : [{l:"K/D",v:cs2.kd||"—"},{l:"WIN%",v:heroWRStr},{l:"HS%",v:cs2.hs?(cs2.hs+"%"):"—"},{l:"МАТЧИ",v:cs2.matches||"—"}];
 
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px",position:"relative",overflow:"hidden"}}>
@@ -884,7 +888,8 @@ function PlayerRating({player, source}) {
   const lvl=parseInt(fc?.level)||0;
   const matches=parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches)||0;
   const wrRaw=parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate)||0;
-  const wr=(wrRaw>=99&&matches<50)?65:Math.min(wrRaw,99);
+  // Steam WR иногда неправдоподобен: капируем 80% при 100+ матчах
+  const wr=source==="steam"&&matches>=100&&wrRaw>80 ? 80 : (wrRaw>=99&&matches<50)?65:Math.min(wrRaw,99);
   const avgByLevel=[
     {kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},
     {kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},
