@@ -97,6 +97,11 @@ const css = `
     .about-tech-grid{grid-template-columns:1fr !important;}
     /* Лидерборд — обрезать длинные значения */
     .lb-val{max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    /* FAB кнопки — поднять над MobileNav (высота ~60px) */
+    .fab-chat{bottom:80px !important;}
+    .fab-support{bottom:152px !important;}
+    /* Чат панель — не вылезать за левый край */
+    .chat-panel{width:calc(100vw - 16px) !important;right:8px !important;left:8px !important;bottom:148px !important;}
   }
   @media(min-width:769px){
     .mobile-nav{display:none !important;}
@@ -4613,7 +4618,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
   const QUICK = ["Почему я умираю первым?","Как апнуть FACEIT?","Что тренировать?","Лучшая карта для меня?"];
 
   return (
-    <div style={{className:"chat-panel",position:"fixed",bottom:"80px",right:"24px",width:"380px",maxHeight:"550px",
+    <div className="chat-panel" style={{position:"fixed",bottom:"80px",right:"24px",width:"380px",maxHeight:"550px",
       background:C.card,border:`1px solid ${C.yellow}55`,boxShadow:`0 8px 40px rgba(0,0,0,0.7), 0 0 20px ${C.yellow}18`,
       display:"flex",flexDirection:"column",zIndex:200,animation:"slideUp .3s ease"}}>
       {/* Header */}
@@ -5710,42 +5715,33 @@ export default function App() {
       {/* Mobile nav */}
       {player&&<MobileNav tab={mainTab} setTab={setMainTab}/>}
 
-      {/* Support button */}
-      {player&&<a href="https://t.me/cs2coach_support" target="_blank" rel="noreferrer"
-        title="Поддержка в Telegram"
-        style={{position:"fixed",bottom:"calc(60px + var(--mob-offset, 0px))",right:"24px",width:"48px",height:"48px",
-          background:"#0d1520",border:`1px solid ${C.blue}55`,borderRadius:"50%",
-          display:"flex",alignItems:"center",justifyContent:"center",
-          textDecoration:"none",fontSize:"20px",zIndex:199,
-          boxShadow:`0 4px 16px ${C.blue}33`,transition:"all .2s"}}
-        onMouseEnter={e=>{e.currentTarget.style.background="#162030";e.currentTarget.style.boxShadow=`0 4px 24px ${C.blue}66`;}}
-        onMouseLeave={e=>{e.currentTarget.style.background="#0d1520";e.currentTarget.style.boxShadow=`0 4px 16px ${C.blue}33`;}}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill={C.blue}>
-          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/>
-        </svg>
-      </a>}
-
-      {/* Support & Chat bubbles */}
-      <button onClick={()=>setSupportOpen(o=>!o)} style={{
-        position:"fixed",bottom:"calc(116px + var(--mob-offset, 0px))",right:"24px",width:"48px",height:"48px",
-        background:supportOpen?"#1b6090":"#0d0d09",color:C.blue,
-        border:`2px solid ${C.blue}`,borderRadius:"50%",cursor:"pointer",
-        fontSize:"20px",boxShadow:`0 4px 16px ${C.blue}33`,zIndex:199,
-        transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}
-        title="Поддержка">
-        💬
-      </button>
+      {/* Support & Chat bubbles — стопкой снизу вверх */}
+      {/* 🤖 AI тренер — самая нижняя кнопка */}
       {player&&<>
-        <button onClick={()=>{ setChatOpen(o=>!o); try{localStorage.setItem("cs2_chat_done","1");}catch{} }} style={{
-          position:"fixed",bottom:player?"72px":"24px",right:"24px",width:"52px",height:"52px",
-          background:chatOpen?C.yellow:"#1a1a0e",color:chatOpen?"#080807":C.yellow,
-          border:`2px solid ${C.yellow}`,borderRadius:"50%",cursor:"pointer",
-          fontSize:"24px",boxShadow:`0 4px 20px ${C.yellow}44`,zIndex:200,
-          transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <button onClick={()=>{ setChatOpen(o=>!o); try{localStorage.setItem("cs2_chat_done","1");}catch{} }}
+          className="fab-chat"
+          style={{
+            position:"fixed",bottom:"24px",right:"24px",width:"52px",height:"52px",
+            background:chatOpen?C.yellow:"#1a1a0e",color:chatOpen?"#080807":C.yellow,
+            border:`2px solid ${C.yellow}`,borderRadius:"50%",cursor:"pointer",
+            fontSize:"24px",boxShadow:`0 4px 20px ${C.yellow}44`,zIndex:200,
+            transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}>
           {chatOpen?"✕":"🤖"}
         </button>
         {chatOpen&&<ChatPanel player={player} source={source} isPro={isPro} aiRemaining={aiRemaining} onClose={()=>setChatOpen(false)}/>}
       </>}
+      {/* 💬 Поддержка — выше на 64px */}
+      <button onClick={()=>setSupportOpen(o=>!o)}
+        className="fab-support"
+        style={{
+          position:"fixed",bottom:"96px",right:"24px",width:"48px",height:"48px",
+          background:supportOpen?"#1b6090":"#0d0d09",color:C.blue,
+          border:`2px solid ${C.blue}`,borderRadius:"50%",cursor:"pointer",
+          fontSize:"20px",boxShadow:`0 4px 16px ${C.blue}33`,zIndex:199,
+          transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}
+        title="Поддержка">
+        💬
+      </button>
     </div>
   );
 }
