@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 // ── PostHog Analytics ─────────────────────────────────────────────────────────
-// Замени на свой ключ с posthog.com (бесплатно)
-const PH_KEY = "YOUR_POSTHOG_KEY";
-const PH_HOST = "https://eu.i.posthog.com";
+// Вставь сюда свой ключ: posthog.com → Settings → Project API Key
+const PH_KEY = "phc_maMsR3miBxUvchHy9yTFykNfZg8FWM49WauSYRNnDgZS";
+const PH_HOST = "https://us.i.posthog.com"; // US регион (us.posthog.com)
 (function initPostHog() {
   try {
     if (!PH_KEY || PH_KEY === "YOUR_POSTHOG_KEY") return;
