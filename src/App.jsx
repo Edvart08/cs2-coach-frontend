@@ -1,6 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
+// ── PostHog Analytics ─────────────────────────────────────────────────────────
+// Замени на свой ключ с posthog.com (бесплатно)
+const PH_KEY = "YOUR_POSTHOG_KEY";
+const PH_HOST = "https://eu.i.posthog.com";
+(function initPostHog() {
+  try {
+    if (!PH_KEY || PH_KEY === "YOUR_POSTHOG_KEY") return;
+    const s = document.createElement("script");
+    s.src = `${PH_HOST}/static/array.js`;
+    s.async = true;
+    s.onload = () => {
+      window.posthog?.init(PH_KEY, { api_host: PH_HOST, capture_pageview: true });
+    };
+    document.head.appendChild(s);
+  } catch {}
+})();
+function track(event, props = {}) {
+  try { window.posthog?.capture(event, props); } catch {}
+}
+
 const BACKEND = "https://cs2-coach-backend.onrender.com";
 const FREE_WEEKLY = 1;
 
@@ -1156,7 +1176,7 @@ function Achievements({player, source}) {
         {unlocked.length>0&&(
           <div style={{display:"flex",flexWrap:"wrap",gap:"8px",marginBottom:locked.length?"14px":"0"}}>
             {unlocked.map(a=>(
-              <div key={a.id} onClick={()=>setModal(a)}
+              <div key={a.id} onClick={()=>{ setModal(a); track("achievement_opened",{id:a.id,done:true}); }}
                 style={{display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",
                   background:`linear-gradient(135deg,${C.yellow}18,${C.yellow}08)`,
                   border:`1px solid ${C.yellow}55`,padding:"8px 14px",
@@ -1180,7 +1200,7 @@ function Achievements({player, source}) {
                 const prog=Math.min(99,Math.round((a.val/a.target)*100));
                 const remaining=a.target>a.val?Math.ceil(a.target-a.val):0;
                 return(
-                  <div key={a.id} onClick={()=>setModal(a)}
+                  <div key={a.id} onClick={()=>{ setModal(a); track("achievement_opened",{id:a.id,done:false}); }}
                     style={{flex:"1 1 160px",background:"#0d0d09",cursor:"pointer",
                       border:`1px solid ${a.color}33`,padding:"10px 12px",
                       transition:"border-color .15s,transform .1s"}}
@@ -2952,6 +2972,23 @@ function DayAction({player, source, streak}) {
             :<span style={{fontSize:"11px",color:"#aa44ff"}}>MAX 🏆</span>}
         </div>
       )}
+
+      {/* Квест на завтра */}
+      <div style={{marginTop:"10px",paddingTop:"10px",borderTop:`1px solid ${C.border}44`,
+        display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+        <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",flexShrink:0}}>🎯 ЗАВТРА:</div>
+        <div style={{flex:1,fontSize:"12px",color:C.label}}>
+          {kd<1.0
+            ? <>Доведи K/D до <span style={{color:C.blue,fontWeight:700}}>1.0</span> — сыграй {Math.max(1,Math.ceil((1.0-kd)*10))} матча фокусируясь на дуэлях</>
+            : hs<40
+            ? <>Подними HS% до <span style={{color:C.orange,fontWeight:700}}>40%</span> — 20 мин Aim Botz только в голову</>
+            : wr<50
+            ? <>Выиграй <span style={{color:C.win,fontWeight:700}}>{Math.max(1,Math.ceil((50-wr)/5))} матча</span> — сыграй только на лучшей карте</>
+            : <>Удержи серию: сыграй <span style={{color:C.yellow,fontWeight:700}}>1 матч</span> и поддержи текущий уровень</>
+          }
+        </div>
+        <div style={{fontSize:"11px",color:C.yellow,fontWeight:700,flexShrink:0}}>+{target.xp} XP</div>
+      </div>
     </div>
   );
 }
@@ -3006,6 +3043,55 @@ function DailyStreak({streak}) {
 }
 
 // ── Notification Toast ────────────────────────────────────────────────────────
+// ── Onboarding Modal ──────────────────────────────────────────────────────────
+function OnboardingModal({onClose, onGoTab}) {
+  const [step, setStep] = useState(0);
+  const steps = [
+    { icon:"🎯", title:"Твой AI-вердикт готов", text:"Смотри главный вывод вверху — AI разобрал твою игру и нашёл главную проблему", action:"Понятно →" },
+    { icon:"⚡", title:"Главное действие сегодня", text:"Блок «ГЛАВНОЕ ДЕЙСТВИЕ» показывает что именно тренировать сегодня для роста рейтинга", action:"Дальше →" },
+    { icon:"🏅", title:"Достижения и XP", text:"Нажми на любое достижение — увидишь конкретные тренировки как его выполнить", action:"Дальше →" },
+    { icon:"👥", title:"Сравни себя с другими", text:"Во вкладке ЛИДЕРЫ — таблица игроков. В ДРУЗЬЯ — добавь ников и сравни статы", action:"Дальше →" },
+    { icon:"🔥", title:"Возвращайся каждый день", text:"Ежедневный вход сохраняет серию. 7 дней подряд — особый бейдж. Удачи в рейтинговых!", action:"Начать играть 🎮" },
+  ];
+  const s = steps[step];
+  const isLast = step === steps.length - 1;
+
+  return createPortal(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:9999,
+      display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"up .3s ease"}}>
+      <div style={{background:C.card,border:`2px solid ${C.yellow}55`,width:"100%",maxWidth:"420px",
+        padding:"32px 28px",textAlign:"center",position:"relative"}}>
+
+        {/* Прогресс точки */}
+        <div style={{display:"flex",justifyContent:"center",gap:"6px",marginBottom:"24px"}}>
+          {steps.map((_,i)=>(
+            <div key={i} style={{width:i===step?"20px":"6px",height:"6px",borderRadius:"3px",
+              background:i<=step?C.yellow:C.border,transition:"all .3s"}}/>
+          ))}
+        </div>
+
+        <div style={{fontSize:"48px",marginBottom:"16px"}}>{s.icon}</div>
+        <div style={{fontSize:"18px",color:C.value,fontWeight:700,marginBottom:"10px"}}>{s.title}</div>
+        <div style={{fontSize:"14px",color:C.text,lineHeight:1.7,marginBottom:"28px"}}>{s.text}</div>
+
+        <button onClick={()=>{ if(isLast){ track("onboarding_completed"); onClose(); } else setStep(s=>s+1); }}
+          style={{background:C.yellow,color:"#080807",border:"none",padding:"12px 32px",
+            cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit",width:"100%",
+            letterSpacing:"1px"}}>
+          {s.action}
+        </button>
+
+        <button onClick={()=>{ track("onboarding_skipped",{step}); onClose(); }}
+          style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",
+            fontSize:"12px",marginTop:"12px",fontFamily:"inherit",display:"block",width:"100%"}}>
+          Пропустить
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function NotificationToast({notifications, onClose}) {
   useEffect(()=>{ const t=setTimeout(onClose, 5000); return()=>clearTimeout(t); },[]);
   if (!notifications?.length) return null;
@@ -4900,6 +4986,7 @@ export default function App() {
   const [aiRemaining,setAiRemaining]   = useState(FREE_WEEKLY);
   const [showProModal,setShowProModal] = useState(false);
   const [showChecklist,setShowChecklist] = useState(true);
+  const [showOnboarding,setShowOnboarding] = useState(false);
   const [analysisCount,setAnalysisCount] = useState(
     ()=>{ try{ return parseInt(localStorage.getItem("cs2_analysis_count")||"0"); }catch{ return 0; } }
   );
@@ -5226,6 +5313,13 @@ export default function App() {
       for(let i=0;i<3;i++){try{result=await call();break;}catch(e){le=e;if(i<2)await new Promise(r=>setTimeout(r,700));}}
       if (!result) throw le;
       setAnalysis(result); setSubTab("weak");
+      track("analysis_generated", { source, level: result.level, steamid: player.steamid });
+      // Онбординг для новичков (первый анализ)
+      const obKey = `cs2_onboarding_${player.steamid}`;
+      if (!localStorage.getItem(obKey)) {
+        setTimeout(() => setShowOnboarding(true), 800);
+        localStorage.setItem(obKey, "1");
+      }
       const newCount = analysisCount+1;
       setAnalysisCount(newCount);
       try{ localStorage.setItem("cs2_analysis_count",String(newCount)); }catch{}
@@ -5345,7 +5439,7 @@ export default function App() {
         {/* Main tabs */}
         <div style={{className:"desktop-nav",display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:"22px",flexWrap:"wrap"}}>
           {[["overview","ОБЗОР"],["coach","🎯 ТРЕНЕР"],["practice","📚 ПРАКТИКА"],["matches","🎮 МАТЧИ"],["maps","🗺️ КАРТЫ"],["history","📋 ИСТОРИЯ"],["leaderboard","🏆 ЛИДЕРЫ"],["friends","👥 ДРУЗЬЯ"]].map(([t,l])=>(
-            <button key={t} onClick={()=>setMainTab(t)} style={{
+            <button key={t} onClick={()=>{ setMainTab(t); track("tab_opened",{tab:t}); }} style={{
               padding:"11px 18px",background:"transparent",
               color:mainTab===t?C.yellow:C.muted,border:"none",
               borderBottom:`2px solid ${mainTab===t?C.yellow:"transparent"}`,
@@ -5601,6 +5695,7 @@ export default function App() {
       {showStreakToast&&<StreakToast streak={streak} onClose={()=>setShowStreakToast(false)}/>}
       {/* Notifications */}
       {showNotifications&&notifications.length>0&&<NotificationToast notifications={notifications} onClose={()=>setShowNotifications(false)}/>}
+      {showOnboarding&&<OnboardingModal onClose={()=>setShowOnboarding(false)} onGoTab={setMainTab}/>}
 
       {/* Mobile nav */}
       {player&&<MobileNav tab={mainTab} setTab={setMainTab}/>}
