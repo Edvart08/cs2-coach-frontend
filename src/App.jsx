@@ -4859,7 +4859,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
           <button onClick={send} disabled={loading||!input.trim()}
             style={{padding:"9px 14px",background:C.yellow,color:"#080807",border:"none",
               cursor:loading||!input.trim()?"not-allowed":"pointer",fontSize:"14px",opacity:(loading||!input.trim())?0.5:1}}>
-            ➤
+            {"→"}
           </button>
         </div>
       </>}
