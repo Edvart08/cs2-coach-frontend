@@ -1916,6 +1916,162 @@ function TodayRecs({player, source}) {
 }
 
 // ── What Changed ───────────────────────────────────────────────────────────────
+// ── Section Title ─────────────────────────────────────────────────────────────
+function SectionTitle({icon, label, sub}) {
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:"10px",margin:"22px 0 10px",
+      borderBottom:`1px solid ${C.border}`,paddingBottom:"8px"}}>
+      <span style={{fontSize:"16px"}}>{icon}</span>
+      <div>
+        <div style={{fontSize:"11px",color:C.yellow,fontWeight:700,letterSpacing:"3px"}}>{label}</div>
+        {sub&&<div style={{fontSize:"11px",color:C.muted,marginTop:"1px"}}>{sub}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── Week Comparison — сравнение двух периодов ─────────────────────────────────
+function WeekComparison({player}) {
+  const [period, setPeriod] = useState("week"); // week | month | all
+  const [history, setHistory] = useState([]);
+
+  useEffect(()=>{
+    if (!player?.steamid) return;
+    try { setHistory(JSON.parse(localStorage.getItem(`cs2_rating_history_${player.steamid}`)||"[]")); } catch {}
+  },[player?.steamid]);
+
+  if (history.length < 2) return null;
+
+  const now = history[history.length-1];
+
+  // Находим точку сравнения в зависимости от периода
+  const getCompare = () => {
+    const nowDate = new Date(now.date);
+    if (period === "week") {
+      const target = new Date(nowDate - 7*24*60*60*1000);
+      return history.slice().reverse().find(s => new Date(s.date) <= target) || history[0];
+    }
+    if (period === "month") {
+      const target = new Date(nowDate - 30*24*60*60*1000);
+      return history.slice().reverse().find(s => new Date(s.date) <= target) || history[0];
+    }
+    return history[0]; // all time
+  };
+
+  const prev = getCompare();
+  if (!prev || prev.date === now.date) return null;
+
+  const stats = [
+    { label:"K/D",  prev:parseFloat(prev.kd||0), now:parseFloat(now.kd||0), fmt:(v)=>v.toFixed(2), color:C.blue },
+    { label:"HS%",  prev:parseFloat(prev.hs||0), now:parseFloat(now.hs||0), fmt:(v)=>Math.round(v)+"%", color:C.orange },
+    { label:"WR%",  prev:parseFloat(prev.wr||0), now:parseFloat(now.wr||0), fmt:(v)=>Math.round(v)+"%", color:"#aa88ff" },
+  ];
+
+  const periodLabel = period==="week"?"7 дней":period==="month"?"30 дней":"За всё время";
+  const diffDays = Math.round((new Date(now.date)-new Date(prev.date))/(24*60*60*1000));
+
+  // Рейтинг тогда и сейчас
+  const avgByLevel=[{kd:0.75,hs:28,wr:43},{kd:0.82,hs:30,wr:44},{kd:0.92,hs:33,wr:46},{kd:1.00,hs:36,wr:48},{kd:1.06,hs:38,wr:49},{kd:1.12,hs:40,wr:50},{kd:1.20,hs:42,wr:51},{kd:1.28,hs:44,wr:52},{kd:1.38,hs:46,wr:53},{kd:1.52,hs:48,wr:54},{kd:1.72,hs:52,wr:56}];
+  function calcR(s){
+    const avg=avgByLevel[Math.min(s.lvl||0,10)];
+    function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(v/a-1))))));}
+    return Math.min(99,Math.round(sig(s.kd,avg.kd)*0.45+sig(s.hs,avg.hs)*0.25+sig(s.wr,avg.wr)*0.30));
+  }
+  const rPrev = calcR(prev), rNow = calcR(now);
+  const rDiff = rNow - rPrev;
+  const rColor = rDiff > 0 ? C.win : rDiff < 0 ? C.lose : C.muted;
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px",animation:"up .5s ease both"}}>
+      {/* Заголовок + переключатель */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px",flexWrap:"wrap",gap:"8px"}}>
+        <div>
+          <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"2px"}}>
+            📊 СРАВНЕНИЕ ПЕРИОДОВ
+          </div>
+          <div style={{fontSize:"11px",color:C.muted}}>
+            {prev.date} → {now.date} ({diffDays} дней)
+          </div>
+        </div>
+        <div style={{display:"flex",gap:"4px"}}>
+          {[["week","7 дн"],["month","30 дн"],["all","Всё"]].map(([p,l])=>(
+            <button key={p} onClick={()=>setPeriod(p)} style={{
+              padding:"4px 10px",background:period===p?C.yellow+"22":"transparent",
+              border:`1px solid ${period===p?C.yellow+"66":C.border}`,
+              color:period===p?C.yellow:C.muted,cursor:"pointer",
+              fontSize:"11px",fontFamily:"inherit",fontWeight:period===p?700:400}}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Рейтинг тогда vs сейчас */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"20px",
+        marginBottom:"16px",padding:"14px",background:"#0d0d09",border:`1px solid ${C.border}`}}>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:"11px",color:C.muted,marginBottom:"4px"}}>{prev.date}</div>
+          <div style={{fontSize:"32px",color:C.muted,fontWeight:900,lineHeight:1}}>{rPrev}</div>
+          <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>рейтинг</div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
+          <div style={{fontSize:"24px",color:rColor,fontWeight:900}}>
+            {rDiff > 0 ? `+${rDiff}` : rDiff === 0 ? "=" : rDiff}
+          </div>
+          <div style={{fontSize:"10px",color:rColor,fontWeight:700,letterSpacing:"1px"}}>
+            {rDiff > 0 ? "ПРОГРЕСС ▲" : rDiff < 0 ? "СПАД ▼" : "БЕЗ ИЗМЕНЕНИЙ"}
+          </div>
+          <div style={{fontSize:"9px",color:C.muted}}>за {diffDays} дней</div>
+        </div>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:"11px",color:C.muted,marginBottom:"4px"}}>{now.date}</div>
+          <div style={{fontSize:"32px",color:rColor,fontWeight:900,lineHeight:1}}>{rNow}</div>
+          <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>рейтинг</div>
+        </div>
+      </div>
+
+      {/* Статы по показателям */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"6px"}}>
+        {stats.map((s,i)=>{
+          const diff = s.now - s.prev;
+          const dc = diff > 0 ? C.win : diff < 0 ? C.lose : C.muted;
+          const pct = s.prev > 0 ? ((diff/s.prev)*100).toFixed(1) : "0";
+          return (
+            <div key={i} style={{background:"#0d0d09",padding:"10px 12px",border:`1px solid ${s.color}22`,textAlign:"center"}}>
+              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"6px"}}>{s.label}</div>
+              <div style={{display:"flex",justifyContent:"space-around",alignItems:"center",marginBottom:"6px"}}>
+                <span style={{fontSize:"13px",color:C.muted}}>{s.fmt(s.prev)}</span>
+                <span style={{fontSize:"10px",color:C.muted}}>→</span>
+                <span style={{fontSize:"15px",color:dc,fontWeight:700}}>{s.fmt(s.now)}</span>
+              </div>
+              <div style={{fontSize:"12px",color:dc,fontWeight:700}}>
+                {diff > 0 ? "+" : ""}{s.fmt(diff)} <span style={{fontSize:"10px",opacity:.7}}>({diff>0?"+":""}{pct}%)</span>
+              </div>
+              {/* Мини-бар */}
+              <div style={{marginTop:"6px",height:"3px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${Math.min(100,Math.max(0,(s.now/Math.max(s.prev,s.now))*100))}%`,
+                  background:s.color,borderRadius:"2px",transition:"width .8s ease"}}/>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Инсайт */}
+      {rDiff !== 0 && (
+        <div style={{marginTop:"10px",padding:"10px 14px",
+          background:rDiff>0?"#0a140a":"#140a0a",
+          border:`1px solid ${rColor}33`,fontSize:"13px",color:rColor,lineHeight:1.5}}>
+          {rDiff > 0
+            ? `✓ За ${diffDays} дней рейтинг вырос на ${rDiff} пунктов — ${rDiff>=10?"отличный прогресс!":rDiff>=5?"хорошая динамика":"небольшой рост"}`
+            : `→ За ${diffDays} дней рейтинг упал на ${Math.abs(rDiff)} пунктов. ${stats.find(s=>s.now<s.prev)?.label||"K/D"} просел — сфокусируйся на нём`
+          }
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WhatChanged({player, source}) {
   const [history, setHistory] = useState([]);
   useEffect(()=>{
@@ -5813,30 +5969,43 @@ export default function App() {
               analysisCount={analysisCount}
               onDismiss={()=>setShowChecklist(false)}/>}
             {source==="steam"&&player.cs2?.private&&<PrivateWarning/>}
+
+            {/* ── СЕКЦИЯ 1: Профиль ── */}
+            <SectionTitle icon="👤" label="ПРОФИЛЬ"/>
+            <HeroCard player={player} source={source}/>
+
+            {/* ── СЕКЦИЯ 2: AI Вердикт ── */}
+            <SectionTitle icon="🤖" label="AI ВЕРДИКТ" sub="персональный разбор твоей игры"/>
             {!player.cs2?.private&&(isPro||aiRemaining>0
               ? <AIReport player={player} source={source}/>
               : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
 
-            {/* 2. Hero */}
-            <HeroCard player={player} source={source}/>
-
-            {/* 3. Coach Rating — главный KPI */}
+            {/* ── СЕКЦИЯ 3: Рейтинг ── */}
+            <SectionTitle icon="🏅" label="РЕЙТИНГ" sub="Coach Rating на основе твоей статистики"/>
             <PlayerRating player={player} source={source}/>
 
-            {/* 4. Главное действие + Streak */}
+            {/* ── СЕКЦИЯ 4: Цель и тренировка ── */}
+            <SectionTitle icon="⚡" label="СЕГОДНЯ" sub="главное действие для роста"/>
             <DayAction player={player} source={source} streak={streak}/>
 
-            {/* 5. Достижения */}
+            {/* ── СЕКЦИЯ 5: Прогресс ── */}
+            <SectionTitle icon="📈" label="ПРОГРЕСС" sub="как ты изменился"/>
+            <WeekComparison player={player}/>
+            <ProgressHistory player={player} source={source}/>
+
+            {/* ── СЕКЦИЯ 6: Последние матчи (FACEIT) ── */}
+            {source==="faceit"&&hasFaceit&&<>
+              <SectionTitle icon="🎮" label="ПОСЛЕДНИЕ МАТЧИ" sub="нажми → AI разбор"/>
+              <RecentMatchesOverview faceit={player.faceit}/>
+            </>}
+
+            {/* ── СЕКЦИЯ 7: Достижения ── */}
+            <SectionTitle icon="🏆" label="ДОСТИЖЕНИЯ"/>
             <Achievements player={player} source={source}/>
 
-            {/* 6. Последние матчи */}
-            {source==="faceit"&&hasFaceit&&<RecentMatchesOverview faceit={player.faceit}/>}
-
-            {/* Свёрнутое: дополнительные метрики */}
-            <ScoreCardsCollapsible player={player} source={source}/>
-
-            {/* Steam stats */}
-            {source==="steam"&&!player.cs2?.private&&(
+            {/* ── Steam статы (только Steam режим) ── */}
+            {source==="steam"&&!player.cs2?.private&&<>
+              <SectionTitle icon="🎮" label="СТАТИСТИКА STEAM"/>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:"3px",marginBottom:"10px"}}>
                 {[{l:"УБИЙСТВА",v:player.cs2?.kills},{l:"СМЕРТИ",v:player.cs2?.deaths},{l:"ПОБЕДЫ",v:player.cs2?.wins},{l:"MVP",v:player.cs2?.mvps}].map((s,i)=>(
                   <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"16px",textAlign:"center"}}>
@@ -5845,7 +6014,11 @@ export default function App() {
                   </div>
                 ))}
               </div>
-            )}
+            </>}
+
+            {/* ── Свёрнутое: дополнительные метрики ── */}
+            <ScoreCardsCollapsible player={player} source={source}/>
+
             {source==="faceit"&&!hasFaceit&&(
               <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"30px",textAlign:"center",color:C.muted,marginTop:"12px",fontSize:"13px",lineHeight:1.7}}>
                 FACEIT профиль не найден.<br/>
