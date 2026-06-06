@@ -3635,8 +3635,8 @@ function ProModal({player, onClose, onActivated}) {
   };
   const p = plans[selPlan];
 
-  return(
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn .2s ease"}}>
+  return createPortal(
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.93)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn .2s ease"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:C.card,border:`1px solid ${C.yellow}55`,
         borderTop:`3px solid ${C.yellow}`,maxWidth:"500px",width:"100%",maxHeight:"92vh",
         overflowY:"auto",animation:"slideUp .3s ease",boxShadow:`0 12px 80px ${C.yellow}22`}}>
@@ -3781,7 +3781,8 @@ function ProModal({player, onClose, onActivated}) {
           </>}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -4623,6 +4624,8 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
   });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState("chat"); // chat | faq
+  const [supportMode, setSupportMode] = useState(false);
   const endRef = useRef(null);
   const fc = player?.faceit;
   const cs2 = player?.cs2 || {};
@@ -4635,18 +4638,98 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
   } : {kd:cs2.kd, winrate:cs2.winrate, hs:cs2.hs, matches:cs2.matches,
        faceit_level:String(fc?.level||""), faceit_elo:String(fc?.elo||"")};
 
+  // FAQ — автоответы на частые вопросы
+  const FAQ_AUTO = [
+    {
+      q: "У меня активна Pro версия",
+      keywords: ["про активна","pro активна","pro версия","активирован про","про активирован","показывает про"],
+      answer: isPro
+        ? "✅ Да, у тебя активна PRO версия! Все функции доступны: безлимитный AI разбор, приоритетная поддержка и PRO значок в лидерборде."
+        : "Не вижу активной PRO подписки на твоём аккаунте. Попробуй:\n1. Выйди и войди снова через Steam\n2. Если оплатил — подожди 1-2 минуты и обнови страницу\n3. Если проблема осталась — я передам в поддержку"
+    },
+    {
+      q: "Как активировать PRO?",
+      keywords: ["как активировать","активировать про","ввести ключ","у меня есть ключ"],
+      answer: "Для активации PRO:\n1. Нажми кнопку **⚡ PRO** в шапке сайта\n2. Выбери вкладку **\"Ввести ключ\"**\n3. Введи ключ в формате CS2PRO-XXXX-XXXX-XXXX\n\nЕсли ключа нет — выбери тариф и оплати картой через ЮКассу."
+    },
+    {
+      q: "Данные не загружаются",
+      keywords: ["не загружается","не грузит","пустой профиль","нет данных","ошибка загрузки"],
+      answer: "Если данные не загружаются:\n1. Убедись что профиль Steam **открыт** (Настройки → Конфиденциальность → Публичный)\n2. Статистика CS2 должна быть открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — опиши проблему, передам в поддержку."
+    },
+    {
+      q: "FACEIT не подключается",
+      keywords: ["faceit не","не подключается faceit","нет faceit","не видит faceit"],
+      answer: "Если FACEIT не подключается:\n1. Убедись что в FACEIT привязан тот же Steam аккаунт\n2. Подожди 30 секунд — данные грузятся параллельно\n3. Если аккаунт новый (менее 10 матчей) — статистика может быть недоступна"
+    },
+    {
+      q: "Как работает Coach Rating?",
+      keywords: ["coach rating","рейтинг тренера","как считается рейтинг","что значит рейтинг"],
+      answer: "Coach Rating считается по формуле:\n• K/D — 45% веса\n• HS% — 25% веса\n• WR% — 30% веса\n\nКаждый показатель сравнивается со средним для твоего уровня FACEIT. Результат — от 1 до 99, показывает % игроков которых ты обгоняешь."
+    },
+    {
+      q: "Лимит анализов",
+      keywords: ["лимит","закончился","израсходовал","нет разборов","сколько разборов"],
+      answer: `Бесплатно: 1 AI разбор в неделю.\n\nС PRO: безлимитно.\n\nТвой текущий остаток: ${isPro?"безлимит (PRO)":aiRemaining+" разбора(ов) на этой неделе"}`
+    },
+  ];
+
+  function checkFAQ(text) {
+    const lower = text.toLowerCase();
+    return FAQ_AUTO.find(f => f.keywords.some(k => lower.includes(k)));
+  }
+
+  async function escalateToSupport(userMsg) {
+    setSupportMode(true);
+    const steamid = player?.steamid||"";
+    const username = player?.username||"Аноним";
+    const proStatus = isPro?"PRO активен":"Бесплатный";
+    const detail = `Пользователь: ${username}\nSteam ID: ${steamid}\nСтатус: ${proStatus}\nFACEIT: ${fc?.level?"Уровень "+fc.level+" · "+fc.elo+" ELO":"нет"}\nK/D: ${stats.kd||"?"} · WR: ${stats.winrate||"?"}% · HS: ${stats.hs||"?"}%\nМатчей: ${stats.matches||"?"}\n\nВопрос: ${userMsg}`;
+    try {
+      await fetch(`${BACKEND}/support`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({message: detail, steamid, username})
+      });
+    } catch {}
+    setMsgs(m=>[...m, {role:"assistant", content:"📨 Передал твой вопрос живому оператору. Обычно отвечаем в течение нескольких часов. Следи за ответом здесь — я уведомлю когда придёт ответ."}]);
+  }
+
   async function send() {
     const q = input.trim(); if (!q || loading) return;
-    // Проверяем: если просят AI разбор и лимит исчерпан
+    const newMsgs = [...msgs, {role:"user", content:q}];
+    setMsgs(newMsgs); setInput(""); setLoading(true);
+
+    // Сначала проверяем FAQ
+    const faqMatch = checkFAQ(q);
+    if (faqMatch) {
+      await new Promise(r=>setTimeout(r,600)); // имитация "печатает..."
+      setMsgs(m=>[...m, {role:"assistant", content:faqMatch.answer}]);
+      // Предлагаем поддержку если вопрос про PRO и не помогло
+      if (faqMatch.keywords.some(k=>k.includes("про")||k.includes("pro"))) {
+        setTimeout(()=>{
+          setMsgs(m=>[...m, {role:"assistant", content:"Это помогло? Если нет — нажми кнопку ниже и я передам твой вопрос оператору поддержки.", meta:"support_offer"}]);
+        }, 1000);
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Если явно просит поддержку
+    const wantsSupport = ["поддержка","оператор","живой человек","помогите","не работает","проблема"].some(k=>q.toLowerCase().includes(k));
+    if (wantsSupport) {
+      await escalateToSupport(q);
+      setLoading(false);
+      return;
+    }
+
+    // Иначе — AI тренер
     const analysisKeywords = ["разбор","проанализируй","анализ моей игры","разбери мою","analyze"];
     const wantsAnalysis = analysisKeywords.some(k=>q.toLowerCase().includes(k));
     if (wantsAnalysis && !isPro && aiRemaining<=0) {
       setMsgs(m=>[...m,{role:"user",content:q},{role:"assistant",content:"⚡ Еженедельный лимит бесплатных разборов исчерпан. Вернись на следующей неделе или активируй Pro для безлимитного доступа."}]);
-      setInput("");
+      setLoading(false);
       return;
     }
-    const newMsgs = [...msgs, {role:"user",content:q}];
-    setMsgs(newMsgs); setInput(""); setLoading(true);
     try {
       const r = await fetch(`${BACKEND}/chat`, {
         method:"POST", headers:{"Content-Type":"application/json"},
@@ -4658,27 +4741,131 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
     setLoading(false);
   }
 
+  const FAQ_LIST = [
+    {q:"Как активировать PRO?", icon:"⚡"},
+    {q:"У меня активна Pro версия", icon:"🔍"},
+    {q:"Данные не загружаются", icon:"📊"},
+    {q:"FACEIT не подключается", icon:"🎮"},
+    {q:"Как работает Coach Rating?", icon:"🏆"},
+    {q:"Лимит анализов", icon:"📋"},
+  ];
+
   const QUICK = ["Почему я умираю первым?","Как апнуть FACEIT?","Что тренировать?","Лучшая карта для меня?"];
 
   return (
-    <div className="chat-panel" style={{position:"fixed",bottom:"80px",right:"24px",width:"380px",maxHeight:"550px",
+    <div className="chat-panel" style={{position:"fixed",bottom:"80px",right:"24px",width:"380px",maxHeight:"580px",
       background:C.card,border:`1px solid ${C.yellow}55`,boxShadow:`0 8px 40px rgba(0,0,0,0.7), 0 0 20px ${C.yellow}18`,
       display:"flex",flexDirection:"column",zIndex:200,animation:"slideUp .3s ease"}}>
+
       {/* Header */}
-      <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",background:"#181408"}}>
-        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
-          <span style={{fontSize:"13px",color:C.yellow,fontWeight:700,letterSpacing:"2px"}}>AI ТРЕНЕР</span>
+      <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,background:"#181408",flexShrink:0}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+            <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
+            <span style={{fontSize:"13px",color:C.yellow,fontWeight:700,letterSpacing:"2px"}}>AI ТРЕНЕР</span>
+          </div>
+          <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+            <button onClick={()=>setMsgs(CHAT_INIT)} title="Очистить" style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"13px",opacity:.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=.6}>🗑</button>
+            <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
+          </div>
         </div>
-        <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
-          <button onClick={()=>setMsgs(CHAT_INIT)} title="Очистить историю" style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"13px",lineHeight:1,padding:"2px 6px",opacity:.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=.6}>🗑</button>
-          <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
+        {/* Табы */}
+        <div style={{display:"flex",gap:"4px"}}>
+          {[["chat","💬 Чат"],["faq","❓ FAQ"]].map(([t,l])=>(
+            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"5px",background:tab===t?C.yellow+"22":"transparent",
+              border:`1px solid ${tab===t?C.yellow+"66":C.border}`,color:tab===t?C.yellow:C.muted,
+              cursor:"pointer",fontSize:"11px",fontFamily:"inherit",letterSpacing:"1px"}}>{l}</button>
+          ))}
         </div>
       </div>
 
-      {/* Messages */}
-      <div style={{flex:1,overflowY:"auto",padding:"16px",display:"flex",flexDirection:"column",gap:"10px"}}>
-        {msgs.map((m,i)=>(
+      {/* FAQ tab */}
+      {tab==="faq"&&(
+        <div style={{flex:1,overflowY:"auto",padding:"12px",display:"flex",flexDirection:"column",gap:"6px"}}>
+          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>ЧАСТЫЕ ВОПРОСЫ — нажми чтобы получить ответ</div>
+          {FAQ_LIST.map((f,i)=>(
+            <button key={i} onClick={()=>{ setTab("chat"); setInput(f.q); setTimeout(()=>{ setInput(""); send(); },50); const q=f.q; const faqMatch=checkFAQ(q); if(faqMatch){ setMsgs(m=>[...m,{role:"user",content:q},{role:"assistant",content:faqMatch.answer}]); } }}
+              style={{display:"flex",alignItems:"center",gap:"10px",padding:"10px 12px",
+                background:"#0d0d09",border:`1px solid ${C.border}`,cursor:"pointer",
+                textAlign:"left",color:C.text,fontSize:"13px",fontFamily:"inherit",
+                transition:"border-color .15s"}}
+              onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"44"}
+              onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+              <span style={{fontSize:"16px"}}>{f.icon}</span>
+              <span>{f.q}</span>
+              <span style={{marginLeft:"auto",color:C.muted,fontSize:"10px"}}>→</span>
+            </button>
+          ))}
+          <button onClick={()=>{ setTab("chat"); escalateToSupport("Нужна помощь оператора"); }}
+            style={{marginTop:"8px",padding:"10px",background:"#0d1520",border:`1px solid ${C.blue}44`,
+              color:C.blue,cursor:"pointer",fontSize:"12px",fontFamily:"inherit",letterSpacing:"1px"}}>
+            📨 СВЯЗАТЬСЯ С ПОДДЕРЖКОЙ
+          </button>
+        </div>
+      )}
+
+      {/* Chat tab */}
+      {tab==="chat"&&<>
+        <div style={{flex:1,overflowY:"auto",padding:"14px",display:"flex",flexDirection:"column",gap:"10px"}}>
+          {msgs.map((m,i)=>(
+            <div key={i}>
+              <div style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+                <div style={{maxWidth:"85%",padding:"10px 13px",fontSize:"13px",lineHeight:1.6,
+                  background:m.role==="user"?"#1a1a0e":m.role==="system"?"transparent":"#0d0d09",
+                  border:m.role==="system"?"none":`1px solid ${m.role==="user"?C.yellow+"33":C.border}`,
+                  color:m.role==="system"?C.muted:C.text,
+                  whiteSpace:"pre-line"}}>
+                  {m.content}
+                </div>
+              </div>
+              {/* Кнопка вызова поддержки */}
+              {m.meta==="support_offer"&&(
+                <div style={{display:"flex",justifyContent:"flex-start",marginTop:"6px"}}>
+                  <button onClick={()=>{ const lastUser=msgs.filter(x=>x.role==="user").slice(-1)[0]?.content||""; escalateToSupport(lastUser); }}
+                    style={{padding:"7px 14px",background:"#0d1520",border:`1px solid ${C.blue}44`,
+                      color:C.blue,cursor:"pointer",fontSize:"12px",fontFamily:"inherit"}}>
+                    📨 Вызвать поддержку
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {loading&&<div style={{display:"flex",gap:"4px",padding:"10px"}}>
+            {[0,1,2].map(i=><div key={i} style={{width:"6px",height:"6px",background:C.yellow,borderRadius:"50%",animation:`bounce .8s ${i*.2}s infinite`}}/>)}
+          </div>}
+          <div ref={endRef}/>
+        </div>
+
+        {/* Quick replies */}
+        {msgs.length<3&&(
+          <div style={{padding:"0 14px 8px",display:"flex",flexWrap:"wrap",gap:"5px"}}>
+            {QUICK.map((q,i)=>(
+              <button key={i} onClick={()=>{setInput(q);}}
+                style={{padding:"5px 10px",background:"#0d0d09",border:`1px solid ${C.border}`,
+                  color:C.label,cursor:"pointer",fontSize:"11px",fontFamily:"inherit"}}>
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Input */}
+        <div style={{padding:"12px 14px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"8px",flexShrink:0}}>
+          <input value={input} onChange={e=>setInput(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&(e.preventDefault(),send())}
+            placeholder="Спроси тренера..."
+            style={{flex:1,background:"#0d0d09",border:`1px solid ${C.border}`,color:C.text,
+              padding:"9px 12px",fontFamily:"inherit",fontSize:"13px",outline:"none"}}/>
+          <button onClick={send} disabled={loading||!input.trim()}
+            style={{padding:"9px 14px",background:C.yellow,color:"#080807",border:"none",
+              cursor:loading||!input.trim()?"not-allowed":"pointer",fontSize:"14px",opacity:(loading||!input.trim())?0.5:1}}>
+            ➤
+          </button>
+        </div>
+      </>}
+    </div>
+  );
+}        {msgs.map((m,i)=>(
           <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
             <div style={{maxWidth:"85%",padding:"10px 14px",
               background:m.role==="user"?C.yellow+"22":"#1e1e12",
@@ -4705,21 +4892,6 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
         ))}
       </div>}
 
-      {/* Input */}
-      <div style={{padding:"12px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"8px"}}>
-        <input value={input} onChange={e=>setInput(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&send()}
-          placeholder="Спроси тренера..."
-          style={{flex:1,background:"#111109",border:`1px solid ${C.border}`,color:C.value,
-            fontSize:"14px",padding:"9px 12px",fontFamily:"inherit"}}/>
-        <button onClick={send} disabled={loading||!input.trim()} style={{
-          padding:"9px 16px",background:loading||!input.trim()?"#1a1a0e":C.yellow,
-          color:"#080807",border:"none",cursor:loading||!input.trim()?"not-allowed":"pointer",
-          fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>→</button>
-      </div>
-    </div>
-  );
-}
 
 
 // ── Practice Tab ──────────────────────────────────────────────────────────────
@@ -5077,11 +5249,33 @@ export default function App() {
         if (player?.steamid) {
           fetch(`${BACKEND}/pro/${player.steamid}`)
             .then(r=>r.json())
-            .then(d=>{ if(d.pro){ setIsPro(true); setAiRemaining(999); } })
+            .then(d=>{
+              if(d.pro){
+                setIsPro(true);
+                setAiRemaining(999);
+                setShowProModal(false);
+                // Показываем красивое уведомление
+                setNotifications(n=>[...n, {
+                  icon:"⚡",
+                  title:"PRO активирован!",
+                  text:"Безлимитный AI разбор и все PRO функции доступны",
+                  color:C.yellow,
+                }]);
+                setTimeout(()=>setShowNotifications(true), 300);
+              } else {
+                // ЮКасса иногда медленная — повторяем через 5 сек
+                setTimeout(()=>{
+                  fetch(`${BACKEND}/pro/${player.steamid}`)
+                    .then(r=>r.json())
+                    .then(d2=>{
+                      if(d2.pro){ setIsPro(true); setAiRemaining(999); setShowProModal(false); }
+                    });
+                }, 5000);
+              }
+            })
             .catch(()=>{});
         }
-        setShowProModal(true);
-      }, 500);
+      }, 1500);
     }
   },[]);
 
