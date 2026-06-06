@@ -2318,9 +2318,11 @@ function ProfileModal({steamid, nickname, onClose}) {
 
                 {/* Name + meta */}
                 <div style={{flex:1,minWidth:"200px"}}>
-                  <div style={{fontSize:"28px",color:C.value,fontWeight:700,marginBottom:"4px"}}>
+                  <div style={{fontSize:"28px",color:C.value,fontWeight:700,marginBottom:"4px",display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
                     {pl?.username}
-                    {pl?.country&&<span style={{fontSize:"16px",marginLeft:"10px"}}>{pl.country}</span>}
+                    {pl?.country&&<span style={{fontSize:"16px"}}>{pl.country}</span>}
+                    {data?.is_pro&&<span style={{fontSize:"11px",color:C.yellow,background:C.yellow+"22",
+                      border:`1px solid ${C.yellow}66`,padding:"3px 10px",letterSpacing:"2px",fontWeight:800}}>⚡ PRO</span>}
                   </div>
                   <div style={{fontSize:"13px",color:C.muted,marginBottom:"12px"}}>
                     {fc?.elo&&<span style={{color:LVL_COLOR[fc.level]||C.yellow,fontWeight:700,marginRight:"12px"}}>
@@ -2599,6 +2601,8 @@ function Leaderboard({myId, onProfile}) {
               <span style={{fontSize:"14px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                 {p.username}{isMe?" (ты)":""}
               </span>
+              {p.is_pro&&<span style={{fontSize:"9px",color:C.yellow,background:C.yellow+"22",
+                border:`1px solid ${C.yellow}44`,padding:"1px 5px",letterSpacing:"1px",flexShrink:0}}>PRO</span>}
             </div>
             <div style={{padding:"3px 8px",background:lc+"18",color:lc,border:`1px solid ${lc}33`,
               fontSize:"10px",letterSpacing:"1px",display:"inline-flex",alignItems:"center",height:"fit-content",alignSelf:"center"}}>
@@ -5684,13 +5688,14 @@ export default function App() {
                 </span>}
               </div>
               {isPro
-                ? <div style={{display:"flex",alignItems:"center",gap:"6px",
+                ? <button onClick={()=>setShowProModal(true)} style={{
+                    display:"flex",alignItems:"center",gap:"6px",
                     padding:"5px 14px",background:`linear-gradient(135deg,${C.yellow}33,#ff880022)`,
-                    border:`1px solid ${C.yellow}88`,cursor:"default"}}>
+                    border:`1px solid ${C.yellow}88`,cursor:"pointer",fontFamily:"inherit"}}>
                     <span style={{fontSize:"13px"}}>⚡</span>
                     <span style={{fontSize:"12px",color:C.yellow,fontWeight:800,letterSpacing:"2px"}}>PRO</span>
                     <span style={{fontSize:"10px",color:C.yellow+"99"}}>АКТИВЕН</span>
-                  </div>
+                  </button>
                 : <button onClick={()=>setShowProModal(true)} style={{
                     padding:"5px 12px",background:C.yellow+"18",border:`1px solid ${C.yellow}44`,
                     color:C.yellow,cursor:"pointer",fontSize:"11px",fontWeight:700,
