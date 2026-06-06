@@ -535,13 +535,12 @@ function SteamMMMatches({steamid}) {
   },[steamid, hasAuth]);
 
   async function restoreAuthOnBackend() {
-    // Восстанавливаем auth код на бэкенде из localStorage (Render мог перезапуститься)
     try {
       const saved = JSON.parse(localStorage.getItem(KEY)||"null");
-      if (!saved?.auth_code) return false;
-      const r = await fetch(`${BACKEND}/steam/auto-connect`, {
+      if (!saved?.auth_code || !saved?.match_code) return false;
+      const r = await fetch(`${BACKEND}/steam/auth-code`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({steamid, auth_code: saved.auth_code})
+        body: JSON.stringify({steamid, auth_code: saved.auth_code, match_code: saved.match_code})
       });
       const d = await r.json();
       return d.ok;
@@ -3417,6 +3416,7 @@ function DailyStreak({streak}) {
 function OnboardingModal({player, onClose, onGoTab}) {
   const [step, setStep] = useState(0);
   const [authCode, setAuthCode] = useState("");
+  const [matchCode, setMatchCode] = useState("");
   const [codeLoading, setCodeLoading] = useState(false);
   const [codeErr, setCodeErr] = useState("");
   const [codeDone, setCodeDone] = useState(false);
@@ -3425,24 +3425,23 @@ function OnboardingModal({player, onClose, onGoTab}) {
   const KEY = `cs2_steam_auth_${steamid}`;
 
   async function connectCode() {
-    if (!authCode.trim()) return;
+    if (!authCode.trim() || !matchCode.trim()) {
+      setCodeErr("Введи оба кода");
+      return;
+    }
     setCodeLoading(true); setCodeErr("");
-    // Для онбординга нам нужен только auth_code
-    // Попробуем получить последний матч автоматически через GetUserGameStats
-    // или просто сохраним код — match_code можно получить позже
     try {
-      // Пробуем найти последний match code автоматически
-      const r = await fetch(`${BACKEND}/steam/auto-connect`, {
+      const r = await fetch(`${BACKEND}/steam/auth-code`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({steamid, auth_code: authCode.trim()})
+        body: JSON.stringify({steamid, auth_code: authCode.trim(), match_code: matchCode.trim()})
       });
       const d = await r.json();
       if (d.ok) {
-        localStorage.setItem(KEY, JSON.stringify({auth_code:authCode.trim(), match_code:d.match_code, ts:Date.now()}));
+        localStorage.setItem(KEY, JSON.stringify({auth_code:authCode.trim(), match_code:matchCode.trim(), ts:Date.now()}));
         setCodeDone(true);
         setStep(3);
       } else {
-        setCodeErr(d.detail || "Неверный код. Проверь и попробуй снова.");
+        setCodeErr(d.detail || "Неверные коды. Проверь и попробуй снова.");
       }
     } catch { setCodeErr("Ошибка сети — попробуй позже"); }
     setCodeLoading(false);
@@ -3563,72 +3562,90 @@ function OnboardingModal({player, onClose, onGoTab}) {
             </div>
           )}
 
-          {/* Шаг 3 — Код аутентификации */}
+          {/* Шаг 3 — Код аутентификации + код матча */}
           {step===2&&(
             <div>
-              <div style={{textAlign:"center",marginBottom:"16px"}}>
-                <div style={{fontSize:"48px",marginBottom:"10px"}}>🔑</div>
-                <div style={{fontSize:"19px",color:C.value,fontWeight:800,marginBottom:"6px"}}>
+              <div style={{textAlign:"center",marginBottom:"14px"}}>
+                <div style={{fontSize:"44px",marginBottom:"8px"}}>🔑</div>
+                <div style={{fontSize:"18px",color:C.value,fontWeight:800,marginBottom:"4px"}}>
                   Подключи историю матчей
                 </div>
-                <div style={{fontSize:"12px",color:C.muted,lineHeight:1.6}}>
-                  Получи доступ к своим MM матчам через официальный Steam API
+                <div style={{fontSize:"12px",color:C.muted,lineHeight:1.5}}>
+                  Нужны 2 кода — оба на одной странице Steam
                 </div>
               </div>
 
-              {/* Картинка-инструкция */}
-              <div style={{background:"#0d0d09",border:`2px dashed ${C.yellow}44`,
-                padding:"14px",marginBottom:"14px",position:"relative"}}>
+              {/* Инструкция */}
+              <div style={{background:"#0d0d09",border:`1px solid ${C.yellow}33`,padding:"12px 14px",marginBottom:"12px"}}>
                 <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",fontWeight:700,marginBottom:"10px"}}>
-                  ГДЕ ВЗЯТЬ КОД:
+                  КАК ПОЛУЧИТЬ КОДЫ — 2 ШАГА:
                 </div>
-                <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-                  {[
-                    {n:"1", text:"Перейди по ссылке ниже", color:C.blue},
-                    {n:"2", text:"Найди поле «Код аутентификации игры»", color:C.yellow},
-                    {n:"3", text:"Скопируй код вида XXXX-XXXXX-XXXX", color:C.win},
-                  ].map((s,i)=>(
-                    <div key={i} style={{display:"flex",gap:"10px",alignItems:"center"}}>
-                      <div style={{width:"22px",height:"22px",background:s.color+"22",
-                        border:`1px solid ${s.color}66`,borderRadius:"50%",
-                        display:"flex",alignItems:"center",justifyContent:"center",
-                        fontSize:"11px",color:s.color,fontWeight:700,flexShrink:0}}>
-                        {s.n}
-                      </div>
-                      <span style={{fontSize:"13px",color:C.text}}>{s.text}</span>
+                <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
+                  <div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}>
+                    <div style={{width:"22px",height:"22px",background:C.blue+"22",border:`1px solid ${C.blue}55`,
+                      borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:"11px",color:C.blue,fontWeight:700,flexShrink:0,marginTop:"1px"}}>1</div>
+                    <div style={{fontSize:"12px",color:C.text,lineHeight:1.5}}>
+                      Открой страницу Steam Support по ссылке ниже
                     </div>
-                  ))}
+                  </div>
+                  <div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}>
+                    <div style={{width:"22px",height:"22px",background:C.yellow+"22",border:`1px solid ${C.yellow}55`,
+                      borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:"11px",color:C.yellow,fontWeight:700,flexShrink:0,marginTop:"1px"}}>2</div>
+                    <div style={{fontSize:"12px",color:C.text,lineHeight:1.5}}>
+                      Скопируй <span style={{color:C.yellow,fontWeight:700}}>Код аутентификации</span>{" "}
+                      (вида <code style={{color:C.yellow,fontSize:"11px"}}>XXXX-XXXXX-XXXX</code>) и{" "}
+                      <span style={{color:C.orange,fontWeight:700}}>Код последнего матча</span>{" "}
+                      (вида <code style={{color:C.orange,fontSize:"11px"}}>CSGO-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX</code>)
+                    </div>
+                  </div>
                 </div>
                 <a href="https://help.steampowered.com/en/wizard/HelpWithGameIssue/?appid=730&issueid=128"
                   target="_blank" rel="noreferrer"
-                  style={{display:"block",marginTop:"12px",padding:"9px 14px",
-                    background:"#1b2a3a",border:`1px solid ${C.blue}55`,
-                    color:C.blue,textDecoration:"none",fontSize:"12px",fontWeight:700,
-                    letterSpacing:"1px",textAlign:"center"}}>
-                  🔗 ОТКРЫТЬ СТРАНИЦУ STEAM SUPPORT →
+                  style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",
+                    padding:"9px",background:"#1b2a3a",border:`1px solid ${C.blue}55`,
+                    color:C.blue,textDecoration:"none",fontSize:"12px",fontWeight:700,letterSpacing:"1px"}}>
+                  🔗 ОТКРЫТЬ STEAM SUPPORT →
                 </a>
               </div>
 
-              {/* Поле ввода */}
-              <div style={{marginBottom:"12px"}}>
-                <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"6px"}}>
-                  КОД АУТЕНТИФИКАЦИИ
+              {/* Два поля */}
+              <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
+                <div>
+                  <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"1px",marginBottom:"4px",fontWeight:700}}>
+                    КОД АУТЕНТИФИКАЦИИ
+                  </div>
+                  <input value={authCode} onChange={e=>setAuthCode(e.target.value.toUpperCase())}
+                    placeholder="XXXX-XXXXX-XXXX"
+                    style={{width:"100%",background:"#0d0d09",border:`1px solid ${authCode?C.yellow+"66":C.border}`,
+                      color:C.yellow,padding:"10px 14px",fontFamily:"monospace",fontSize:"14px",letterSpacing:"2px"}}/>
                 </div>
-                <input value={authCode} onChange={e=>setAuthCode(e.target.value.toUpperCase())}
-                  placeholder="XXXX-XXXXX-XXXX"
-                  style={{width:"100%",background:"#0d0d09",border:`1px solid ${codeErr?C.lose:C.border}`,
-                    color:C.yellow,padding:"12px 16px",fontFamily:"monospace",fontSize:"15px",
-                    letterSpacing:"2px",textAlign:"center"}}/>
-                {codeErr&&<div style={{fontSize:"12px",color:C.lose,marginTop:"6px"}}>{codeErr}</div>}
+                <div>
+                  <div style={{fontSize:"10px",color:C.orange,letterSpacing:"1px",marginBottom:"4px",fontWeight:700}}>
+                    КОД ПОСЛЕДНЕГО МАТЧА
+                  </div>
+                  <input value={matchCode} onChange={e=>setMatchCode(e.target.value)}
+                    placeholder="CSGO-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+                    style={{width:"100%",background:"#0d0d09",border:`1px solid ${matchCode?C.orange+"66":C.border}`,
+                      color:C.orange,padding:"10px 14px",fontFamily:"monospace",fontSize:"12px",letterSpacing:"1px"}}/>
+                </div>
               </div>
+
+              {codeErr&&<div style={{fontSize:"12px",color:C.lose,marginBottom:"8px",
+                padding:"8px 12px",background:C.lose+"11",border:`1px solid ${C.lose}33`}}>
+                ✗ {codeErr}
+              </div>}
 
               <div style={{display:"flex",gap:"8px"}}>
                 <button onClick={connectCode}
-                  disabled={codeLoading||!authCode.trim()}
-                  style={{flex:1,padding:"12px",background:codeLoading||!authCode.trim()?C.yellow+"66":C.yellow,
-                    color:"#080807",border:"none",cursor:codeLoading||!authCode.trim()?"not-allowed":"pointer",
+                  disabled={codeLoading||!authCode.trim()||!matchCode.trim()}
+                  style={{flex:1,padding:"12px",
+                    background:codeLoading||!authCode.trim()||!matchCode.trim()?C.yellow+"55":C.yellow,
+                    color:"#080807",border:"none",
+                    cursor:codeLoading||!authCode.trim()||!matchCode.trim()?"not-allowed":"pointer",
                     fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
-                  {codeLoading?"ПРОВЕРЯЮ...":"ПОДКЛЮЧИТЬ →"}
+                  {codeLoading?"ПРОВЕРЯЮ КОДЫ...":"ПОДКЛЮЧИТЬ →"}
                 </button>
                 <button onClick={()=>setStep(3)} style={{padding:"12px 16px",background:"transparent",
                   border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"12px",fontFamily:"inherit"}}>
@@ -6069,10 +6086,10 @@ export default function App() {
           try {
             const steamAuthKey = `cs2_steam_auth_${p.steamid}`;
             const savedAuth = JSON.parse(localStorage.getItem(steamAuthKey)||"null");
-            if (savedAuth?.auth_code) {
-              fetch(`${BACKEND}/steam/auto-connect`, {
+            if (savedAuth?.auth_code && savedAuth?.match_code) {
+              fetch(`${BACKEND}/steam/auth-code`, {
                 method:"POST", headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({steamid: p.steamid, auth_code: savedAuth.auth_code})
+                body: JSON.stringify({steamid: p.steamid, auth_code: savedAuth.auth_code, match_code: savedAuth.match_code})
               }).catch(()=>{});
             }
           } catch {}
