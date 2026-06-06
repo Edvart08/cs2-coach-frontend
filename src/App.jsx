@@ -595,19 +595,29 @@ function SteamMMMatches({steamid}) {
         color:C.muted,fontSize:"13px"}}>
         Матчи не найдены. Сыграй хотя бы 1 матч в MM после подключения кодов.
       </div>}
-      {matches.map((m,i)=>(
-        <div key={i} style={{padding:"12px 18px",borderBottom:i<matches.length-1?`1px solid ${C.border}`:"none",
-          display:"flex",alignItems:"center",gap:"14px"}}>
-          <div style={{width:"8px",height:"8px",borderRadius:"50%",background:C.blue,flexShrink:0}}/>
-          <div style={{flex:1}}>
-            <div style={{fontSize:"14px",color:C.value,fontWeight:600}}>{m.map||"Матч"}</div>
-            <div style={{fontSize:"11px",color:C.muted,fontFamily:"monospace",marginTop:"2px"}}>
-              {m.code}
+      {matches.map((m,i)=>{
+        const mapColors = {Dust2:C.yellow,Mirage:"#74c6f5",Inferno:"#ff8844",Nuke:"#66ee66",
+          Overpass:"#aa88ff",Ancient:"#ff6655",Anubis:"#44ddaa",Vertigo:"#ffaa33"};
+        const mapColor = m.map ? (mapColors[m.map]||C.label) : C.border;
+        return (
+          <div key={i} style={{padding:"12px 18px",borderBottom:i<matches.length-1?`1px solid ${C.border}`:"none",
+            display:"flex",alignItems:"center",gap:"14px",
+            borderLeft:`3px solid ${mapColor}`}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:"14px",color:m.map?mapColor:C.muted,fontWeight:700}}>
+                {m.map || <span style={{color:C.muted,fontStyle:"italic",fontSize:"12px"}}>Карта недоступна</span>}
+              </div>
+              {m.score&&<div style={{fontSize:"12px",color:C.label,marginTop:"2px"}}>Счёт: {m.score}</div>}
+              <div style={{fontSize:"10px",color:C.muted,fontFamily:"monospace",marginTop:"2px",opacity:0.6}}>
+                {m.code}
+              </div>
             </div>
+            {m.match_id&&m.match_id!=="0"&&<div style={{fontSize:"10px",color:C.muted,opacity:0.5,textAlign:"right"}}>
+              ID: {m.match_id.slice(-8)}...
+            </div>}
           </div>
-          {m.match_id&&<div style={{fontSize:"11px",color:C.muted}}>ID: {m.match_id}</div>}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
