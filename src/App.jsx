@@ -3573,17 +3573,28 @@ function SetupChecklist({player, hasFaceit, analysisCount, onDismiss}) {
   );
 }
 
-function ProModal({player, onClose, onActivated}) {
-  const [tab,setTab]         = useState("plans");
+function ProModal({player, isPro, onClose, onActivated}) {
+  const [tab,setTab]         = useState(isPro ? "info" : "plans");
   const [key,setKey]         = useState("");
   const [loading,setLoading] = useState(false);
   const [msg,setMsg]         = useState(null);
   const [payLoading,setPayLoading] = useState(null);
   const [selPlan,setSelPlan] = useState("year");
+  const [proData,setProData] = useState(null);
   const [promo,setPromo]     = useState("");
   const [promoInfo,setPromoInfo] = useState(null); // {discount, final_price, is_free}
   const [promoLoading,setPromoLoading] = useState(false);
   const [promoErr,setPromoErr] = useState("");
+
+  // Загружаем данные о подписке
+  useEffect(()=>{
+    if(player?.steamid && isPro) {
+      fetch(`${BACKEND}/payment/status/${player.steamid}`)
+        .then(r=>r.json())
+        .then(d=>setProData(d.data||null))
+        .catch(()=>{});
+    }
+  },[isPro,player?.steamid]);
 
   async function checkPromo() {
     if (!promo.trim()) return;
@@ -3657,7 +3668,10 @@ function ProModal({player, onClose, onActivated}) {
 
         {/* Tabs */}
         <div style={{display:"flex",margin:"18px 24px 0",gap:"4px"}}>
-          {[["plans","Тарифы"],["activate","Ввести ключ"]].map(([t,l])=>(
+          {(isPro
+            ? [["info","⚡ Моя подписка"],["plans","Продлить"],["activate","Ввести ключ"]]
+            : [["plans","Тарифы"],["activate","Ввести ключ"]]
+          ).map(([t,l])=>(
             <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"9px",
               background:tab===t?C.yellow+"22":"transparent",
               border:`1px solid ${tab===t?C.yellow+"66":C.border}`,
@@ -3667,6 +3681,53 @@ function ProModal({player, onClose, onActivated}) {
         </div>
 
         <div style={{padding:"20px 24px 28px"}}>
+          {tab==="info"&&(
+            <div>
+              {/* PRO активен */}
+              <div style={{textAlign:"center",padding:"20px 0 16px"}}>
+                <div style={{fontSize:"48px",marginBottom:"8px"}}>⚡</div>
+                <div style={{fontSize:"20px",color:C.yellow,fontWeight:800,marginBottom:"4px"}}>PRO АКТИВЕН</div>
+                <div style={{fontSize:"13px",color:C.muted}}>Все функции доступны</div>
+              </div>
+
+              {/* Детали подписки */}
+              <div style={{background:"#0d0d09",border:`1px solid ${C.yellow}33`,padding:"16px 20px",marginBottom:"12px"}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+                  <div>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>ПЛАН</div>
+                    <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>
+                      {proData?.plan==="month"?"Месяц":proData?.plan==="year"?"Год":proData?.plan==="lifetime"?"Навсегда":proData?.plan||"PRO"}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>АКТИВИРОВАН</div>
+                    <div style={{fontSize:"13px",color:C.label}}>
+                      {proData?.activated_at ? new Date(proData.activated_at*1000).toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Что включено */}
+              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>ЧТО ВКЛЮЧЕНО:</div>
+              {[["🤖","Безлимитный AI разбор каждой игры"],["💬","AI чат без ограничений"],["⚡","PRO значок в лидерборде"],["🎯","Анализ слабых карт"],["🎧","Приоритетная поддержка"]].map(([icon,text],i)=>(
+                <div key={i} style={{display:"flex",gap:"10px",alignItems:"center",padding:"8px 0",
+                  borderBottom:`1px solid ${C.border}44`}}>
+                  <span style={{fontSize:"16px"}}>{icon}</span>
+                  <span style={{fontSize:"13px",color:C.text}}>{text}</span>
+                  <span style={{marginLeft:"auto",color:C.win,fontSize:"14px"}}>✓</span>
+                </div>
+              ))}
+
+              <button onClick={()=>setTab("plans")} style={{
+                width:"100%",padding:"12px",marginTop:"16px",
+                background:C.yellow+"18",border:`1px solid ${C.yellow}44`,
+                color:C.yellow,cursor:"pointer",fontSize:"13px",fontWeight:700,
+                fontFamily:"inherit",letterSpacing:"1px"}}>
+                ПРОДЛИТЬ ПОДПИСКУ →
+              </button>
+            </div>
+          )}
           {tab==="plans"&&<>
             {/* PRO фичи — нормально описанные */}
             <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"20px"}}>
@@ -5658,7 +5719,7 @@ export default function App() {
       {showPopup&&<SteamPopup onLogin={openSteam} onSkip={()=>setShowPopup(false)}/>}
       {profileView&&<ProfileModal steamid={profileView.steamid} nickname={profileView.nickname} onClose={()=>setProfileView(null)}/>}
       {shareOpen&&player&&<ShareModal steamid={player.steamid} player={player} source={source} onClose={()=>setShareOpen(false)}/>}
-      {showProModal&&<ProModal player={player} onClose={()=>setShowProModal(false)}
+      {showProModal&&<ProModal player={player} isPro={isPro} onClose={()=>setShowProModal(false)}
         onActivated={()=>{setIsPro(true);setAiRemaining(999);setShowProModal(false);setShowProCelebration(true);}}/>}
       {showProCelebration&&<ProCelebration onClose={()=>setShowProCelebration(false)}/>}
       <ColdStartBanner status={serverStatus}/>
@@ -6006,16 +6067,16 @@ export default function App() {
         </button>
         {chatOpen&&<ChatPanel player={player} source={source} isPro={isPro} aiRemaining={aiRemaining} onClose={()=>setChatOpen(false)}/>}
       </>}
-      {/* 💬 Поддержка — выше на 64px */}
-      <button onClick={()=>setSupportOpen(o=>!o)}
+      {/* 💬 Поддержка — открывает ChatPanel с FAQ вкладкой */}
+      <button onClick={()=>{ setChatOpen(true); }}
         className="fab-support"
         style={{
           position:"fixed",bottom:"96px",right:"24px",width:"48px",height:"48px",
-          background:supportOpen?"#1b6090":"#0d0d09",color:C.blue,
+          background:"#0d1520",color:C.blue,
           border:`2px solid ${C.blue}`,borderRadius:"50%",cursor:"pointer",
           fontSize:"20px",boxShadow:`0 4px 16px ${C.blue}33`,zIndex:199,
           transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}
-        title="Поддержка">
+        title="Поддержка и FAQ">
         💬
       </button>
     </div>
