@@ -809,6 +809,172 @@ function MatchHistory({faceit}) {
 }
 
 // ── Map Pool ──────────────────────────────────────────────────────────────────
+// ── Steam Stats Panel — красивая статистика Steam ─────────────────────────────
+function SteamStatsPanel({player}) {
+  const cs2 = player?.cs2 || {};
+  const kd = parseFloat(cs2.kd) || 0;
+  const hs = parseFloat(cs2.hs) || 0;
+  const wr = parseFloat(cs2.winrate) || 0;
+  const matches = parseInt(cs2.matches) || 0;
+  const kills = parseInt(cs2.kills) || 0;
+  const deaths = parseInt(cs2.deaths) || 0;
+  const wins = parseInt(cs2.wins) || 0;
+  const mvps = parseInt(cs2.mvps) || 0;
+  const playtime = parseInt(cs2.playtime) || 0;
+  const hours = Math.round(playtime / 60);
+  const kdPerMatch = matches > 0 ? (kills / matches).toFixed(1) : "—";
+  const deathsPerMatch = matches > 0 ? (deaths / matches).toFixed(1) : "—";
+
+  // Средние по базе для сравнения
+  const AVG = { kd:0.90, hs:28, wr:47 };
+  const kdColor = kd >= AVG.kd*1.1 ? C.win : kd >= AVG.kd*0.9 ? C.yellow : C.lose;
+  const hsColor = hs >= AVG.hs*1.1 ? C.win : hs >= AVG.hs*0.9 ? C.yellow : C.lose;
+  const wrColor = wr >= AVG.wr*1.05 ? C.win : wr >= AVG.wr*0.95 ? C.yellow : C.lose;
+
+  // Skill score (0-100)
+  function sig(v,a){return Math.min(100,Math.max(0,Math.round(100/(1+Math.exp(-4*(v/a-1))))));}
+  const kdScore = sig(kd, AVG.kd);
+  const hsScore = sig(hs, AVG.hs);
+  const wrScore = sig(wr, AVG.wr);
+  const aimScore = Math.round(kdScore*0.6 + hsScore*0.4);
+  const formScore = Math.round(kdScore*0.5 + wrScore*0.5);
+
+  const Ring = ({score, label, color}) => {
+    const r=30, circ=2*Math.PI*r, dash=circ*score/100;
+    const c = score>=70?C.win:score>=45?C.yellow:C.lose;
+    return (
+      <div style={{textAlign:"center"}}>
+        <div style={{position:"relative",width:"80px",height:"80px",margin:"0 auto 8px"}}>
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r={r} fill="none" stroke={C.border} strokeWidth="5"/>
+            <circle cx="40" cy="40" r={r} fill="none" stroke={c} strokeWidth="5"
+              strokeDasharray={`${dash} ${circ-dash}`} strokeLinecap="round"
+              strokeDashoffset={circ/4} style={{transition:"stroke-dasharray 1s ease"}}/>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:"18px",color:c,fontWeight:800}}>{score}</div>
+        </div>
+        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px"}}>{label}</div>
+        <div style={{fontSize:"12px",color:c,fontWeight:700,marginTop:"2px"}}>
+          {score>=70?"ХОРОШО":score>=45?"СРЕДНЕ":"РАБОТАЙ"}
+        </div>
+      </div>
+    );
+  };
+
+  const StatBar = ({label, val, avg, color, fmt=(v)=>v}) => {
+    const pct = Math.min(100, Math.round((val/avg)*50));
+    const c = val >= avg ? C.win : val >= avg*0.85 ? C.yellow : C.lose;
+    return (
+      <div style={{marginBottom:"14px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px",fontSize:"12px"}}>
+          <span style={{color:C.muted,letterSpacing:"1px"}}>{label}</span>
+          <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+            <span style={{color:c,fontWeight:700,fontSize:"14px"}}>{fmt(val)}</span>
+            <span style={{color:C.muted,fontSize:"11px"}}>avg {fmt(avg)}</span>
+          </div>
+        </div>
+        <div style={{position:"relative",height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
+          <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:"1px",background:C.border+"88",zIndex:1}}/>
+          <div style={{height:"100%",width:`${Math.min(100,val/avg*50)}%`,background:c,
+            borderRadius:"3px",transition:"width 1s ease"}}/>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:"9px",color:C.muted,marginTop:"2px"}}>
+          <span>0</span><span>avg</span><span>топ</span>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{animation:"up .4s ease both"}}>
+      {/* Шапка с аватаром */}
+      <div style={{background:`linear-gradient(135deg,#1a1a0a,#141409)`,
+        border:`1px solid ${C.border}`,borderTop:`3px solid ${C.yellow}`,
+        padding:"24px 24px 20px",marginBottom:"3px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:"-40px",right:"-40px",width:"200px",height:"200px",
+          background:`radial-gradient(circle,${C.yellow}0e,transparent 70%)`,pointerEvents:"none"}}/>
+        <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap"}}>
+          {player.avatar&&<img src={player.avatar} alt="" style={{width:"64px",height:"64px",
+            borderRadius:"4px",border:`2px solid ${C.yellow}44`}}/>}
+          <div style={{flex:1}}>
+            <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"4px"}}>
+              {player.username}
+            </div>
+            <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"13px",color:C.muted}}>
+              {matches>0&&<span>🎮 {matches.toLocaleString()} матчей</span>}
+              {hours>0&&<span>⏱ {hours.toLocaleString()} часов</span>}
+              {player.steam_level&&<span>⭐ Steam {player.steam_level} уровень</span>}
+            </div>
+          </div>
+          {/* Топ% */}
+          <div style={{textAlign:"center",background:"#0d0d09",border:`1px solid ${C.yellow}33`,padding:"12px 20px"}}>
+            <div style={{fontSize:"30px",color:C.yellow,fontWeight:900,lineHeight:1}}>
+              {Math.round((kdScore*0.45+hsScore*0.25+wrScore*0.30))}
+            </div>
+            <div style={{fontSize:"10px",color:C.muted,marginTop:"4px",letterSpacing:"1px"}}>РЕЙТИНГ</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Кольца скилла */}
+      <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"20px 24px",
+        marginBottom:"3px",display:"flex",justifyContent:"space-around",flexWrap:"wrap",gap:"20px"}}>
+        <Ring score={aimScore} label="АИМ" color={C.orange}/>
+        <Ring score={formScore} label="ФОРМА" color={C.blue}/>
+        <Ring score={wrScore} label="WR" color={C.win}/>
+      </div>
+
+      {/* Детальные статы с барами */}
+      <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"20px 24px",marginBottom:"3px"}}>
+        <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>
+          ПОКАЗАТЕЛИ vs СРЕДНЕГО ИГРОКА
+        </div>
+        <StatBar label="K/D" val={kd} avg={AVG.kd} fmt={(v)=>v.toFixed(2)}/>
+        <StatBar label="HS%" val={hs} avg={AVG.hs} fmt={(v)=>Math.round(v)+"%"}/>
+        <StatBar label="WR%" val={wr} avg={AVG.wr} fmt={(v)=>Math.round(v)+"%"}/>
+      </div>
+
+      {/* Цифры */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px",marginBottom:"3px"}}>
+        {[
+          {l:"УБИЙСТВА",   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
+          {l:"СМЕРТИ",     v:deaths.toLocaleString(),  c:C.lose,   icon:"💀"},
+          {l:"ПОБЕДЫ",     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
+          {l:"MVP",        v:mvps.toLocaleString(),    c:C.yellow, icon:"⭐"},
+          {l:"K/МАТЧ",     v:kdPerMatch,               c:C.blue,   icon:"🎯"},
+          {l:"СМЕРТЕЙ/МАТ",v:deathsPerMatch,           c:C.muted,  icon:"📊"},
+        ].filter(s=>s.v!=="0"&&s.v!=="—").map((s,i)=>(
+          <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px 12px",textAlign:"center"}}>
+            <div style={{fontSize:"16px",marginBottom:"4px"}}>{s.icon}</div>
+            <div style={{fontSize:"18px",color:s.c,fontWeight:700,marginBottom:"4px"}}>{s.v}</div>
+            <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Подсказка про FACEIT */}
+      {!player.faceit&&<div style={{background:"#0d1016",border:`1px solid ${C.orange}22`,
+        padding:"14px 18px",display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
+        <span style={{fontSize:"20px"}}>⚡</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:"13px",color:C.orange,fontWeight:700,marginBottom:"2px"}}>
+            Хочешь историю каждого матча?
+          </div>
+          <div style={{fontSize:"12px",color:C.muted}}>
+            Зарегистрируйся на FACEIT и привяжи Steam — получишь K/D, ADR, карту и AI разбор каждой игры
+          </div>
+        </div>
+        <a href="https://www.faceit.com" target="_blank" rel="noreferrer"
+          style={{padding:"8px 16px",background:C.orange,color:"#fff",textDecoration:"none",
+            fontSize:"12px",fontWeight:700,letterSpacing:"1px",flexShrink:0}}>
+          FACEIT →
+        </a>
+      </div>}
+    </div>
+  );
+}
+
 function MapPool({faceit}) {
   const maps = arr(faceit?.maps).filter(m=>parseInt(m.matches)>0)
     .sort((a,b)=>parseFloat(b.winrate)-parseFloat(a.winrate));
@@ -6634,31 +6800,9 @@ export default function App() {
           ?<>
             <SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>
 
-            {/* Steam статистика */}
+            {/* Steam статистика — красивое оформление */}
             {player.cs2&&!player.cs2.private&&<>
-              <SectionTitle icon="🎮" label="STEAM СТАТИСТИКА" sub="общая статистика из профиля"/>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:"3px",marginBottom:"10px"}}>
-                {[
-                  {l:"K/D",        v:player.cs2.kd||"—",          c:C.yellow},
-                  {l:"WIN%",       v:player.cs2.winrate?(player.cs2.winrate+"%"):"—", c:C.win},
-                  {l:"HS%",        v:player.cs2.hs?(player.cs2.hs+"%"):"—",           c:C.orange},
-                  {l:"МАТЧИ",      v:player.cs2.matches||"—",      c:C.label},
-                  {l:"УБИЙСТВА",   v:player.cs2.kills ? parseInt(player.cs2.kills).toLocaleString():"—", c:C.label},
-                  {l:"СМЕРТИ",     v:player.cs2.deaths? parseInt(player.cs2.deaths).toLocaleString():"—",c:C.muted},
-                  {l:"MVP",        v:player.cs2.mvps||"—",         c:C.yellow},
-                  {l:"ПОБЕДЫ",     v:player.cs2.wins||"—",         c:C.win},
-                ].map((s,i)=>(
-                  <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px 12px",textAlign:"center"}}>
-                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"6px"}}>{s.l}</div>
-                    <div style={{fontSize:"20px",color:s.c,fontWeight:700}}>{s.v}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{background:"#0d1520",border:`1px solid ${C.blue}33`,padding:"12px 16px",marginBottom:"10px",
-                fontSize:"12px",color:C.muted,lineHeight:1.7}}>
-                💡 <span style={{color:C.label}}>История отдельных MM матчей (карта, счёт, K/D за матч) недоступна через публичный Steam API.</span>{" "}
-                Подключи <span style={{color:C.orange,fontWeight:700}}>FACEIT</span> — там полная история каждого матча с AI разбором.
-              </div>
+              <SteamStatsPanel player={player}/>
             </>}
 
             {source==="faceit"&&hasFaceit&&<>
