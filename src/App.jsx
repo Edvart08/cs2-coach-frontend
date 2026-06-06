@@ -534,11 +534,40 @@ function SteamMMMatches({steamid}) {
     load();
   },[steamid, hasAuth]);
 
+  async function restoreAuthOnBackend() {
+    // Восстанавливаем auth код на бэкенде из localStorage (Render мог перезапуститься)
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY)||"null");
+      if (!saved?.auth_code) return false;
+      const r = await fetch(`${BACKEND}/steam/auto-connect`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({steamid, auth_code: saved.auth_code})
+      });
+      const d = await r.json();
+      return d.ok;
+    } catch { return false; }
+  }
+
   async function load() {
     setLoading(true); setErr("");
     try {
-      const r = await fetch(`${BACKEND}/steam/matches/${steamid}?limit=10`);
-      const d = await r.json();
+      // Сначала пробуем загрузить матчи
+      let r = await fetch(`${BACKEND}/steam/matches/${steamid}?limit=10`);
+      let d = await r.json();
+
+      // Если бэкенд не знает auth код — восстанавливаем и пробуем снова
+      if (r.status === 404 || d.detail?.includes("Auth код не найден")) {
+        const restored = await restoreAuthOnBackend();
+        if (restored) {
+          r = await fetch(`${BACKEND}/steam/matches/${steamid}?limit=10`);
+          d = await r.json();
+        } else {
+          setErr("Не удалось восстановить подключение. Попробуй переподключить код.");
+          setLoading(false);
+          return;
+        }
+      }
+
       if (d.matches) setMatches(d.matches);
       else setErr(d.detail || "Не удалось загрузить матчи");
     } catch { setErr("Ошибка сети"); }
@@ -6036,6 +6065,18 @@ export default function App() {
         }
         // background refresh
         if (p.steamid) {
+          // Восстанавливаем steam auth код на бэкенде если есть в localStorage
+          try {
+            const steamAuthKey = `cs2_steam_auth_${p.steamid}`;
+            const savedAuth = JSON.parse(localStorage.getItem(steamAuthKey)||"null");
+            if (savedAuth?.auth_code) {
+              fetch(`${BACKEND}/steam/auto-connect`, {
+                method:"POST", headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({steamid: p.steamid, auth_code: savedAuth.auth_code})
+              }).catch(()=>{});
+            }
+          } catch {}
+
           fetch(`${BACKEND}/profile/${p.steamid}`).then(r=>r.json()).then(d=>{
             if (d?.steamid) {
               const fresh = {...p, username:d.username||p.username, avatar:d.avatar||p.avatar,
