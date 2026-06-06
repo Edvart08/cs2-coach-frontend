@@ -4865,33 +4865,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
       </>}
     </div>
   );
-}        {msgs.map((m,i)=>(
-          <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-            <div style={{maxWidth:"85%",padding:"10px 14px",
-              background:m.role==="user"?C.yellow+"22":"#1e1e12",
-              border:`1px solid ${m.role==="user"?C.yellow+"44":C.border}`,
-              fontSize:"14px",color:m.role==="user"?C.yellow:C.text,lineHeight:1.65}}>
-              {m.content}
-            </div>
-          </div>
-        ))}
-        {loading&&<div style={{display:"flex",gap:"5px",padding:"8px"}}>
-          {[0,1,2].map(i=><div key={i} style={{width:"7px",height:"7px",background:C.yellow,borderRadius:"50%",animation:`blink 1s ${i*.3}s infinite`}}/>)}
-        </div>}
-        <div ref={endRef}/>
-      </div>
-
-      {/* Quick questions */}
-      {msgs.length<=1&&<div style={{padding:"0 12px 12px",display:"flex",flexWrap:"wrap",gap:"6px"}}>
-        {QUICK.map((q,i)=>(
-          <button key={i} onClick={()=>{setInput(q);}} style={{
-            padding:"5px 11px",background:"transparent",border:`1px solid ${C.border}`,
-            color:C.label,cursor:"pointer",fontSize:"12px",fontFamily:"inherit"}}>
-            {q}
-          </button>
-        ))}
-      </div>}
-
+}
 
 
 // ── Practice Tab ──────────────────────────────────────────────────────────────
