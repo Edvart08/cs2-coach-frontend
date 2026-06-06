@@ -452,12 +452,8 @@ function SteamMatchConnect({steamid, onConnected}) {
   if (hasAuth) return (
     <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"10px 16px",
       background:"#0a140a",border:`1px solid ${C.win}44`,marginBottom:"10px"}}>
-      <span style={{color:C.win}}>✓</span>
-      <span style={{fontSize:"13px",color:C.win}}>История матчей Matchmaking подключена</span>
-      <button onClick={()=>{ localStorage.removeItem(KEY); setHasAuth(false); }}
-        style={{marginLeft:"auto",background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"11px"}}>
-        Отключить
-      </button>
+      <span style={{color:C.win,fontSize:"16px"}}>✓</span>
+      <span style={{fontSize:"13px",color:C.win,fontWeight:700}}>История матчей Matchmaking подключена</span>
     </div>
   );
 
@@ -3389,48 +3385,266 @@ function DailyStreak({streak}) {
 
 // ── Notification Toast ────────────────────────────────────────────────────────
 // ── Onboarding Modal ──────────────────────────────────────────────────────────
-function OnboardingModal({onClose, onGoTab}) {
+function OnboardingModal({player, onClose, onGoTab}) {
   const [step, setStep] = useState(0);
-  const steps = [
-    { icon:"🎯", title:"Твой AI-вердикт готов", text:"Смотри главный вывод вверху — AI разобрал твою игру и нашёл главную проблему", action:"Понятно →" },
-    { icon:"⚡", title:"Главное действие сегодня", text:"Блок «ГЛАВНОЕ ДЕЙСТВИЕ» показывает что именно тренировать сегодня для роста рейтинга", action:"Дальше →" },
-    { icon:"🏅", title:"Достижения и XP", text:"Нажми на любое достижение — увидишь конкретные тренировки как его выполнить", action:"Дальше →" },
-    { icon:"👥", title:"Сравни себя с другими", text:"Во вкладке ЛИДЕРЫ — таблица игроков. В ДРУЗЬЯ — добавь ников и сравни статы", action:"Дальше →" },
-    { icon:"🔥", title:"Возвращайся каждый день", text:"Ежедневный вход сохраняет серию. 7 дней подряд — особый бейдж. Удачи в рейтинговых!", action:"Начать играть 🎮" },
+  const [authCode, setAuthCode] = useState("");
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [codeErr, setCodeErr] = useState("");
+  const [codeDone, setCodeDone] = useState(false);
+
+  const steamid = player?.steamid || "";
+  const KEY = `cs2_steam_auth_${steamid}`;
+
+  async function connectCode() {
+    if (!authCode.trim()) return;
+    setCodeLoading(true); setCodeErr("");
+    // Для онбординга нам нужен только auth_code
+    // Попробуем получить последний матч автоматически через GetUserGameStats
+    // или просто сохраним код — match_code можно получить позже
+    try {
+      // Пробуем найти последний match code автоматически
+      const r = await fetch(`${BACKEND}/steam/auto-connect`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({steamid, auth_code: authCode.trim()})
+      });
+      const d = await r.json();
+      if (d.ok) {
+        localStorage.setItem(KEY, JSON.stringify({auth_code:authCode.trim(), match_code:d.match_code, ts:Date.now()}));
+        setCodeDone(true);
+        setStep(3);
+      } else {
+        setCodeErr(d.detail || "Неверный код. Проверь и попробуй снова.");
+      }
+    } catch { setCodeErr("Ошибка сети — попробуй позже"); }
+    setCodeLoading(false);
+  }
+
+  const STEPS = [
+    {
+      num:1, icon:"🎮", title:"Добро пожаловать!",
+      sub:"Ты вошёл через Steam — это уже первый шаг",
+    },
+    {
+      num:2, icon:"⚡", title:"Подключи FACEIT",
+      sub:"Получи детальную статистику по каждому матчу",
+    },
+    {
+      num:3, icon:"🔑", title:"Подключи историю матчей",
+      sub:"Введи код аутентификации Steam для доступа к MM матчам",
+    },
+    {
+      num:4, icon:"🏆", title:"Всё готово!",
+      sub:"AI тренер знает твою игру и готов помочь",
+    },
   ];
-  const s = steps[step];
-  const isLast = step === steps.length - 1;
 
   return createPortal(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:9999,
-      display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"up .3s ease"}}>
-      <div style={{background:C.card,border:`2px solid ${C.yellow}55`,width:"100%",maxWidth:"420px",
-        padding:"32px 28px",textAlign:"center",position:"relative"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:9999,
+      display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",animation:"fadeIn .3s ease",
+      overflowY:"auto"}}>
+      <div style={{background:C.card,border:`2px solid ${C.yellow}44`,width:"100%",maxWidth:"480px",
+        animation:"slideUp .35s ease",position:"relative"}}>
 
-        {/* Прогресс точки */}
-        <div style={{display:"flex",justifyContent:"center",gap:"6px",marginBottom:"24px"}}>
-          {steps.map((_,i)=>(
-            <div key={i} style={{width:i===step?"20px":"6px",height:"6px",borderRadius:"3px",
-              background:i<=step?C.yellow:C.border,transition:"all .3s"}}/>
+        {/* Прогресс */}
+        <div style={{display:"flex",borderBottom:`1px solid ${C.border}`}}>
+          {STEPS.map((s,i)=>(
+            <div key={i} style={{flex:1,padding:"10px 4px",textAlign:"center",
+              borderBottom:`3px solid ${i===step?C.yellow:i<step?C.win+"88":"transparent"}`,
+              transition:"all .3s"}}>
+              <div style={{fontSize:"11px",color:i===step?C.yellow:i<step?C.win:C.muted,fontWeight:i===step?700:400}}>
+                {i<step?"✓":s.num}
+              </div>
+            </div>
           ))}
         </div>
 
-        <div style={{fontSize:"48px",marginBottom:"16px"}}>{s.icon}</div>
-        <div style={{fontSize:"18px",color:C.value,fontWeight:700,marginBottom:"10px"}}>{s.title}</div>
-        <div style={{fontSize:"14px",color:C.text,lineHeight:1.7,marginBottom:"28px"}}>{s.text}</div>
+        <div style={{padding:"28px 28px 24px"}}>
 
-        <button onClick={()=>{ if(isLast){ track("onboarding_completed"); onClose(); } else setStep(s=>s+1); }}
-          style={{background:C.yellow,color:"#080807",border:"none",padding:"12px 32px",
-            cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit",width:"100%",
-            letterSpacing:"1px"}}>
-          {s.action}
-        </button>
+          {/* Шаг 1 — Приветствие */}
+          {step===0&&(
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:"56px",marginBottom:"14px"}}>🎮</div>
+              <div style={{fontSize:"20px",color:C.value,fontWeight:800,marginBottom:"8px"}}>
+                Привет, {player?.username||"игрок"}!
+              </div>
+              <div style={{fontSize:"13px",color:C.muted,lineHeight:1.7,marginBottom:"24px"}}>
+                Ты подключён через Steam. Вот что мы уже знаем:<br/>
+                K/D, Win Rate, HS%, статистику карт.
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px",marginBottom:"24px"}}>
+                {[
+                  ["K/D", player?.cs2?.kd||player?.faceit?.lifetime?.kd||"—"],
+                  ["WR%", (player?.cs2?.winrate||player?.faceit?.lifetime?.winrate||"—")+(player?.cs2?.winrate||player?.faceit?.lifetime?.winrate?"%":"")],
+                  ["HS%", (player?.cs2?.hs||player?.faceit?.lifetime?.hs||"—")+(player?.cs2?.hs||player?.faceit?.lifetime?.hs?"%":"")],
+                  ["МАТЧИ", player?.cs2?.matches||player?.faceit?.lifetime?.matches||"—"],
+                ].map(([l,v],i)=>(
+                  <div key={i} style={{background:"#0d0d09",border:`1px solid ${C.border}`,padding:"12px",textAlign:"center"}}>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>{l}</div>
+                    <div style={{fontSize:"20px",color:C.yellow,fontWeight:700}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={()=>setStep(1)} style={{width:"100%",padding:"13px",background:C.yellow,
+                color:"#080807",border:"none",cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>
+                ПРОДОЛЖИТЬ →
+              </button>
+            </div>
+          )}
 
-        <button onClick={()=>{ track("onboarding_skipped",{step}); onClose(); }}
-          style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",
-            fontSize:"12px",marginTop:"12px",fontFamily:"inherit",display:"block",width:"100%"}}>
-          Пропустить
-        </button>
+          {/* Шаг 2 — FACEIT */}
+          {step===1&&(
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:"56px",marginBottom:"14px"}}>⚡</div>
+              <div style={{fontSize:"20px",color:C.value,fontWeight:800,marginBottom:"8px"}}>
+                Подключи FACEIT
+              </div>
+              <div style={{fontSize:"13px",color:C.label,lineHeight:1.75,marginBottom:"8px"}}>
+                С FACEIT ты получишь:
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:"6px",marginBottom:"20px",textAlign:"left"}}>
+                {["История каждого матча с детальной статистикой","AI разбор каждой игры — что пошло не так","ELO график и динамика роста","Статистика по картам — лучшие и худшие"].map((t,i)=>(
+                  <div key={i} style={{display:"flex",gap:"8px",alignItems:"flex-start",
+                    padding:"8px 12px",background:"#0d0d09",border:`1px solid ${C.border}`}}>
+                    <span style={{color:C.win,flexShrink:0,marginTop:"1px"}}>✓</span>
+                    <span style={{fontSize:"13px",color:C.text}}>{t}</span>
+                  </div>
+                ))}
+              </div>
+              {player?.faceit?.elo
+                ? <div style={{padding:"12px",background:"#0a140a",border:`1px solid ${C.win}44`,
+                    marginBottom:"16px",fontSize:"13px",color:C.win}}>
+                    ✓ FACEIT уже подключён — уровень {player.faceit.level}, {player.faceit.elo} ELO
+                  </div>
+                : <a href="https://www.faceit.com/ru/players-registration" target="_blank" rel="noreferrer"
+                    style={{display:"block",padding:"12px",background:"#ff7733",color:"#fff",
+                      textDecoration:"none",fontWeight:700,fontSize:"13px",marginBottom:"12px",
+                      letterSpacing:"1px",textAlign:"center"}}>
+                    ЗАРЕГИСТРИРОВАТЬСЯ НА FACEIT →
+                  </a>}
+              <div style={{display:"flex",gap:"8px"}}>
+                <button onClick={()=>setStep(2)} style={{flex:1,padding:"12px",background:C.yellow,
+                  color:"#080807",border:"none",cursor:"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
+                  ДАЛЕЕ →
+                </button>
+                <button onClick={()=>setStep(2)} style={{padding:"12px 16px",background:"transparent",
+                  border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"12px",fontFamily:"inherit"}}>
+                  Пропустить
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Шаг 3 — Код аутентификации */}
+          {step===2&&(
+            <div>
+              <div style={{textAlign:"center",marginBottom:"16px"}}>
+                <div style={{fontSize:"48px",marginBottom:"10px"}}>🔑</div>
+                <div style={{fontSize:"19px",color:C.value,fontWeight:800,marginBottom:"6px"}}>
+                  Подключи историю матчей
+                </div>
+                <div style={{fontSize:"12px",color:C.muted,lineHeight:1.6}}>
+                  Получи доступ к своим MM матчам через официальный Steam API
+                </div>
+              </div>
+
+              {/* Картинка-инструкция */}
+              <div style={{background:"#0d0d09",border:`2px dashed ${C.yellow}44`,
+                padding:"14px",marginBottom:"14px",position:"relative"}}>
+                <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",fontWeight:700,marginBottom:"10px"}}>
+                  ГДЕ ВЗЯТЬ КОД:
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+                  {[
+                    {n:"1", text:"Перейди по ссылке ниже", color:C.blue},
+                    {n:"2", text:"Найди поле «Код аутентификации игры»", color:C.yellow},
+                    {n:"3", text:"Скопируй код вида XXXX-XXXXX-XXXX", color:C.win},
+                  ].map((s,i)=>(
+                    <div key={i} style={{display:"flex",gap:"10px",alignItems:"center"}}>
+                      <div style={{width:"22px",height:"22px",background:s.color+"22",
+                        border:`1px solid ${s.color}66`,borderRadius:"50%",
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        fontSize:"11px",color:s.color,fontWeight:700,flexShrink:0}}>
+                        {s.n}
+                      </div>
+                      <span style={{fontSize:"13px",color:C.text}}>{s.text}</span>
+                    </div>
+                  ))}
+                </div>
+                <a href="https://help.steampowered.com/en/wizard/HelpWithGameIssue/?appid=730&issueid=128"
+                  target="_blank" rel="noreferrer"
+                  style={{display:"block",marginTop:"12px",padding:"9px 14px",
+                    background:"#1b2a3a",border:`1px solid ${C.blue}55`,
+                    color:C.blue,textDecoration:"none",fontSize:"12px",fontWeight:700,
+                    letterSpacing:"1px",textAlign:"center"}}>
+                  🔗 ОТКРЫТЬ СТРАНИЦУ STEAM SUPPORT →
+                </a>
+              </div>
+
+              {/* Поле ввода */}
+              <div style={{marginBottom:"12px"}}>
+                <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"6px"}}>
+                  КОД АУТЕНТИФИКАЦИИ
+                </div>
+                <input value={authCode} onChange={e=>setAuthCode(e.target.value.toUpperCase())}
+                  placeholder="XXXX-XXXXX-XXXX"
+                  style={{width:"100%",background:"#0d0d09",border:`1px solid ${codeErr?C.lose:C.border}`,
+                    color:C.yellow,padding:"12px 16px",fontFamily:"monospace",fontSize:"15px",
+                    letterSpacing:"2px",textAlign:"center"}}/>
+                {codeErr&&<div style={{fontSize:"12px",color:C.lose,marginTop:"6px"}}>{codeErr}</div>}
+              </div>
+
+              <div style={{display:"flex",gap:"8px"}}>
+                <button onClick={connectCode}
+                  disabled={codeLoading||!authCode.trim()}
+                  style={{flex:1,padding:"12px",background:codeLoading||!authCode.trim()?C.yellow+"66":C.yellow,
+                    color:"#080807",border:"none",cursor:codeLoading||!authCode.trim()?"not-allowed":"pointer",
+                    fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
+                  {codeLoading?"ПРОВЕРЯЮ...":"ПОДКЛЮЧИТЬ →"}
+                </button>
+                <button onClick={()=>setStep(3)} style={{padding:"12px 16px",background:"transparent",
+                  border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"12px",fontFamily:"inherit"}}>
+                  Пропустить
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Шаг 4 — Готово */}
+          {step===3&&(
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:"56px",marginBottom:"14px"}}>🏆</div>
+              <div style={{fontSize:"20px",color:C.value,fontWeight:800,marginBottom:"8px"}}>
+                Всё готово!
+              </div>
+              <div style={{fontSize:"13px",color:C.label,lineHeight:1.75,marginBottom:"20px"}}>
+                {codeDone
+                  ? "✓ История матчей подключена!\n\n"
+                  : ""}
+                AI тренер уже анализирует твою игру. Заходи каждый день — серия входов даёт бонусы и следит за прогрессом.
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:"6px",marginBottom:"24px",textAlign:"left"}}>
+                {[
+                  ["🤖","AI вердикт — персональный разбор твоих слабых сторон"],
+                  ["⚡","Главное действие сегодня — что именно тренировать"],
+                  ["🏅","Рейтинг и достижения — следи за прогрессом"],
+                  ["📊","Сравнение периодов — как ты вырос за неделю"],
+                ].map(([icon,text],i)=>(
+                  <div key={i} style={{display:"flex",gap:"10px",alignItems:"center",
+                    padding:"8px 12px",background:"#0d0d09",border:`1px solid ${C.border}`}}>
+                    <span style={{fontSize:"16px"}}>{icon}</span>
+                    <span style={{fontSize:"12px",color:C.text}}>{text}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={()=>{ track("onboarding_completed"); onClose(); }}
+                style={{width:"100%",padding:"14px",background:C.yellow,color:"#080807",
+                  border:"none",cursor:"pointer",fontSize:"15px",fontWeight:800,
+                  fontFamily:"inherit",letterSpacing:"1px"}}>
+                НАЧАТЬ ИГРАТЬ 🎮
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>,
     document.body
@@ -6396,7 +6610,7 @@ export default function App() {
       {showStreakToast&&<StreakToast streak={streak} onClose={()=>setShowStreakToast(false)}/>}
       {/* Notifications */}
       {showNotifications&&notifications.length>0&&<NotificationToast notifications={notifications} onClose={()=>setShowNotifications(false)}/>}
-      {showOnboarding&&<OnboardingModal onClose={()=>setShowOnboarding(false)} onGoTab={setMainTab}/>}
+      {showOnboarding&&<OnboardingModal player={player} onClose={()=>setShowOnboarding(false)} onGoTab={setMainTab}/>}
 
       {/* Mobile nav */}
       {player&&<MobileNav tab={mainTab} setTab={setMainTab}/>}
