@@ -3576,6 +3576,22 @@ function ProModal({player, onClose, onActivated}) {
   const [msg,setMsg]         = useState(null);
   const [payLoading,setPayLoading] = useState(null);
   const [selPlan,setSelPlan] = useState("year");
+  const [promo,setPromo]     = useState("");
+  const [promoInfo,setPromoInfo] = useState(null); // {discount, final_price, is_free}
+  const [promoLoading,setPromoLoading] = useState(false);
+  const [promoErr,setPromoErr] = useState("");
+
+  async function checkPromo() {
+    if (!promo.trim()) return;
+    setPromoLoading(true); setPromoErr(""); setPromoInfo(null);
+    try {
+      const r = await fetch(`${BACKEND}/promo/check?code=${promo.trim()}&plan=${selPlan}`);
+      const d = await r.json();
+      if (d.ok) setPromoInfo(d);
+      else setPromoErr(d.detail||"Промокод не найден");
+    } catch { setPromoErr("Ошибка сети"); }
+    setPromoLoading(false);
+  }
 
   async function activate() {
     if (!key.trim()||!player?.steamid) return;
@@ -3593,9 +3609,12 @@ function ProModal({player, onClose, onActivated}) {
     if(!player?.steamid)return;
     setPayLoading(plan);
     try{
-      const r=await fetch(`${BACKEND}/payment/create`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({steamid:player.steamid,plan})});
+      const body = {steamid:player.steamid, plan};
+      if (promoInfo && promo.trim()) body.promo = promo.trim();
+      const r=await fetch(`${BACKEND}/payment/create`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
       const d=await r.json();
-      if(d.url)window.open(d.url,"_blank");
+      if (d.free) { setMsg({ok:true,text:"🎉 PRO активирован бесплатно по промокоду!"}); onActivated(); }
+      else if(d.url) window.open(d.url,"_blank");
       else alert("Платежи временно недоступны. Используй активацию ключом.");
     }catch{alert("Ошибка сети");}
     setPayLoading(null);
@@ -3680,6 +3699,29 @@ function ProModal({player, onClose, onActivated}) {
               ))}
             </div>
 
+            {/* Промокод */}
+            <div style={{marginBottom:"12px"}}>
+              <div style={{display:"flex",gap:"6px"}}>
+                <input value={promo} onChange={e=>{setPromo(e.target.value.toUpperCase());setPromoInfo(null);setPromoErr("");}}
+                  onKeyDown={e=>e.key==="Enter"&&checkPromo()}
+                  placeholder="ПРОМОКОД (если есть)"
+                  style={{flex:1,background:"#0d0d09",border:`1px solid ${promoInfo?C.win:promoErr?C.lose:C.border}`,
+                    color:C.value,padding:"10px 14px",fontFamily:"inherit",fontSize:"13px",
+                    outline:"none",letterSpacing:"1px"}}/>
+                <button onClick={checkPromo} disabled={promoLoading||!promo.trim()}
+                  style={{padding:"10px 14px",background:C.border,color:C.text,border:"none",
+                    cursor:"pointer",fontFamily:"inherit",fontSize:"12px",whiteSpace:"nowrap"}}>
+                  {promoLoading?"...":"ПРИМЕНИТЬ"}
+                </button>
+              </div>
+              {promoInfo&&<div style={{fontSize:"12px",color:C.win,marginTop:"6px",padding:"8px 12px",
+                background:C.win+"11",border:`1px solid ${C.win}33`}}>
+                ✅ Скидка {promoInfo.discount}% — итого <strong>{promoInfo.final_price} ₽</strong>
+                {promoInfo.is_free&&" (бесплатно!)"}
+              </div>}
+              {promoErr&&<div style={{fontSize:"12px",color:C.lose,marginTop:"6px"}}>{promoErr}</div>}
+            </div>
+
             {/* CTA кнопка */}
             <button onClick={()=>startPayment(p.plan)} disabled={!!payLoading}
               style={{width:"100%",padding:"15px",background:payLoading?C.yellow+"88":C.yellow,
@@ -3687,6 +3729,7 @@ function ProModal({player, onClose, onActivated}) {
                 fontSize:"15px",fontWeight:800,fontFamily:"inherit",letterSpacing:"1px",
                 marginBottom:"12px",transition:"opacity .2s"}}>
               {payLoading?"ОТКРЫВАЮ ОПЛАТУ...":
+                promoInfo ? `ПОЛУЧИТЬ PRO — ${promoInfo.final_price} ₽` :
                 `ПОЛУЧИТЬ PRO — ${plans[selPlan].price}`}
             </button>
 
