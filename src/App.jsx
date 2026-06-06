@@ -3786,6 +3786,54 @@ function ProModal({player, onClose, onActivated}) {
   );
 }
 
+// ── PRO Celebration ───────────────────────────────────────────────────────────
+function ProCelebration({onClose}) {
+  useEffect(()=>{
+    const t = setTimeout(onClose, 5000);
+    return ()=>clearTimeout(t);
+  },[]);
+  return createPortal(
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.96)",
+      zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",
+      animation:"fadeIn .3s ease",cursor:"pointer"}}>
+      <div onClick={e=>e.stopPropagation()} style={{textAlign:"center",padding:"48px 40px",
+        background:C.card,border:`2px solid ${C.yellow}`,maxWidth:"460px",width:"90%",
+        position:"relative",overflow:"hidden",animation:"slideUp .5s ease"}}>
+        {/* Светящийся фон */}
+        <div style={{position:"absolute",inset:0,background:`radial-gradient(circle at 50% 30%,${C.yellow}18,transparent 70%)`,pointerEvents:"none"}}/>
+        <div style={{fontSize:"64px",marginBottom:"16px",animation:"bounce 1s ease infinite"}}>⚡</div>
+        <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"5px",fontWeight:700,marginBottom:"8px"}}>
+          ДОБРО ПОЖАЛОВАТЬ
+        </div>
+        <div style={{fontSize:"32px",color:C.value,fontWeight:900,marginBottom:"8px",lineHeight:1.2}}>
+          Ты теперь PRO!
+        </div>
+        <div style={{fontSize:"14px",color:C.muted,marginBottom:"28px",lineHeight:1.7}}>
+          Безлимитный AI разбор каждой игры.<br/>
+          Приоритетная поддержка.<br/>
+          PRO значок в лидерборде.
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginBottom:"28px"}}>
+          {[["🤖","AI без лимита"],["📊","Все статы"],["🏆","PRO значок"]].map(([icon,text],i)=>(
+            <div key={i} style={{padding:"12px 8px",background:"#0d0d09",border:`1px solid ${C.yellow}33`}}>
+              <div style={{fontSize:"22px",marginBottom:"4px"}}>{icon}</div>
+              <div style={{fontSize:"11px",color:C.label}}>{text}</div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onClose} style={{
+          width:"100%",padding:"14px",background:C.yellow,color:"#080807",
+          border:"none",cursor:"pointer",fontSize:"15px",fontWeight:800,
+          fontFamily:"inherit",letterSpacing:"2px"}}>
+          НАЧАТЬ ТРЕНИРОВКУ →
+        </button>
+        <div style={{fontSize:"11px",color:C.muted,marginTop:"10px"}}>нажми в любом месте чтобы закрыть</div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function ProBadge() {
   return(
     <div style={{display:"inline-flex",alignItems:"center",gap:"4px",background:`linear-gradient(135deg,${C.yellow}22,#ff880022)`,border:`1px solid ${C.yellow}66`,padding:"3px 10px"}}>
@@ -5186,9 +5234,11 @@ export default function App() {
   const [showStreakToast,setShowStreakToast] = useState(false);
   const [notifications, setNotifications]   = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [isPro,setIsPro]               = useState(false);
+  const [isPro,setIsProRaw]            = useState(()=>{ try{ return localStorage.getItem("cs2_is_pro")==="1"; }catch{ return false; } });
   const [aiRemaining,setAiRemaining]   = useState(FREE_WEEKLY);
+  const setIsPro = (v) => { setIsProRaw(v); try{ localStorage.setItem("cs2_is_pro", v?"1":"0"); }catch{} };
   const [showProModal,setShowProModal] = useState(false);
+  const [showProCelebration,setShowProCelebration] = useState(false);
   const [showChecklist,setShowChecklist] = useState(true);
   const [showOnboarding,setShowOnboarding] = useState(false);
   const [analysisCount,setAnalysisCount] = useState(
@@ -5228,14 +5278,7 @@ export default function App() {
                 setIsPro(true);
                 setAiRemaining(999);
                 setShowProModal(false);
-                // Показываем красивое уведомление
-                setNotifications(n=>[...n, {
-                  icon:"⚡",
-                  title:"PRO активирован!",
-                  text:"Безлимитный AI разбор и все PRO функции доступны",
-                  color:C.yellow,
-                }]);
-                setTimeout(()=>setShowNotifications(true), 300);
+                setShowProCelebration(true);
               } else {
                 // ЮКасса иногда медленная — повторяем через 5 сек
                 setTimeout(()=>{
@@ -5602,7 +5645,8 @@ export default function App() {
       {profileView&&<ProfileModal steamid={profileView.steamid} nickname={profileView.nickname} onClose={()=>setProfileView(null)}/>}
       {shareOpen&&player&&<ShareModal steamid={player.steamid} player={player} source={source} onClose={()=>setShareOpen(false)}/>}
       {showProModal&&<ProModal player={player} onClose={()=>setShowProModal(false)}
-        onActivated={()=>{setIsPro(true);setAiRemaining(999);setShowProModal(false);}}/>}
+        onActivated={()=>{setIsPro(true);setAiRemaining(999);setShowProModal(false);setShowProCelebration(true);}}/>}
+      {showProCelebration&&<ProCelebration onClose={()=>setShowProCelebration(false)}/>}
       <ColdStartBanner status={serverStatus}/>
 
       {/* Top accent */}
@@ -5630,7 +5674,13 @@ export default function App() {
                 </span>}
               </div>
               {isPro
-                ? <ProBadge/>
+                ? <div style={{display:"flex",alignItems:"center",gap:"6px",
+                    padding:"5px 14px",background:`linear-gradient(135deg,${C.yellow}33,#ff880022)`,
+                    border:`1px solid ${C.yellow}88`,cursor:"default"}}>
+                    <span style={{fontSize:"13px"}}>⚡</span>
+                    <span style={{fontSize:"12px",color:C.yellow,fontWeight:800,letterSpacing:"2px"}}>PRO</span>
+                    <span style={{fontSize:"10px",color:C.yellow+"99"}}>АКТИВЕН</span>
+                  </div>
                 : <button onClick={()=>setShowProModal(true)} style={{
                     padding:"5px 12px",background:C.yellow+"18",border:`1px solid ${C.yellow}44`,
                     color:C.yellow,cursor:"pointer",fontSize:"11px",fontWeight:700,
