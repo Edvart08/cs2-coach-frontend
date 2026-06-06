@@ -599,22 +599,33 @@ function SteamMMMatches({steamid}) {
         const mapColors = {Dust2:C.yellow,Mirage:"#74c6f5",Inferno:"#ff8844",Nuke:"#66ee66",
           Overpass:"#aa88ff",Ancient:"#ff6655",Anubis:"#44ddaa",Vertigo:"#ffaa33"};
         const mapColor = m.map ? (mapColors[m.map]||C.label) : C.border;
+        // URL для скачивания демки
+        const demoUrl = m.match_id && m.match_id!=="0"
+          ? `steam://rungame/730/76561202255233023/+csgo_download_match%20${m.code}`
+          : null;
         return (
           <div key={i} style={{padding:"12px 18px",borderBottom:i<matches.length-1?`1px solid ${C.border}`:"none",
             display:"flex",alignItems:"center",gap:"14px",
             borderLeft:`3px solid ${mapColor}`}}>
+            <div style={{width:"28px",height:"28px",background:mapColor+"22",border:`1px solid ${mapColor}44`,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:"12px",color:mapColor,fontWeight:700,flexShrink:0}}>
+              {i+1}
+            </div>
             <div style={{flex:1}}>
-              <div style={{fontSize:"14px",color:m.map?mapColor:C.muted,fontWeight:700}}>
-                {m.map || <span style={{color:C.muted,fontStyle:"italic",fontSize:"12px"}}>Карта недоступна</span>}
+              <div style={{fontSize:"14px",color:m.map?mapColor:C.label,fontWeight:700}}>
+                {m.map || `Матч #${i+1}`}
               </div>
-              {m.score&&<div style={{fontSize:"12px",color:C.label,marginTop:"2px"}}>Счёт: {m.score}</div>}
               <div style={{fontSize:"10px",color:C.muted,fontFamily:"monospace",marginTop:"2px",opacity:0.6}}>
                 {m.code}
               </div>
             </div>
-            {m.match_id&&m.match_id!=="0"&&<div style={{fontSize:"10px",color:C.muted,opacity:0.5,textAlign:"right"}}>
-              ID: {m.match_id.slice(-8)}...
-            </div>}
+            {demoUrl&&<a href={demoUrl} style={{
+              padding:"5px 10px",background:"#1b2a3a",border:`1px solid ${C.blue}44`,
+              color:C.blue,textDecoration:"none",fontSize:"11px",fontWeight:700,
+              whiteSpace:"nowrap",flexShrink:0}}>
+              ▶ Смотреть
+            </a>}
           </div>
         );
       })}
