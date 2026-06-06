@@ -4575,7 +4575,23 @@ function SupportPanel({onClose}) {
 function SupportModal({player, onClose}) {
   const steamid = player?.steamid || "anon";
   const SKEY = `cs2_support_${steamid}`;
-  const INITIAL = [{from:"support",text:"Привет! 👋 Чем могу помочь? Опиши проблему — передам команде и ответим в Telegram.",ts:0}];
+  const FAQ_BTNS = [
+    {icon:"⚡", q:"Как активировать PRO?"},
+    {icon:"🔍", q:"У меня активна Pro версия"},
+    {icon:"📊", q:"Данные не загружаются"},
+    {icon:"🎮", q:"FACEIT не подключается"},
+    {icon:"📋", q:"Сколько у меня анализов?"},
+  ];
+  const FAQ_ANSWERS = {
+    "Как активировать PRO?": "Для активации PRO:\n1. Нажми кнопку ⚡ PRO в шапке сайта\n2. Выбери тариф и оплати\nЕсли есть ключ — вкладка «Ввести ключ»\n\nЕсли уже оплатил но не активировалось — напиши сюда, помогу!",
+    "У меня активна Pro версия": player?.isPro
+      ? "✅ Да, PRO активен на твоём аккаунте!"
+      : "Не вижу активной PRO подписки. Если оплатил — попробуй выйти и войти снова. Если не помогло — напиши сюда!",
+    "Данные не загружаются": "Проверь:\n1. Профиль Steam открыт (Конфиденциальность → Публичный)\n2. Статистика CS2 открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — напиши здесь!",
+    "FACEIT не подключается": "1. В FACEIT должен быть привязан тот же Steam аккаунт\n2. Подожди 30 секунд после входа\n3. Если аккаунт новый (менее 10 матчей) — статистика недоступна",
+    "Сколько у меня анализов?": "Бесплатно: 1 AI разбор в неделю.\nС PRO: безлимитно.\n\nЕсли лимит исчерпан — жди следующей недели или активируй PRO.",
+  };
+  const INITIAL = [{from:"support",text:"Привет! 👋 Чем могу помочь?\n\nВыбери вопрос ниже — отвечу сразу, или напиши своё.",ts:0}];
 
   const [msgs,setMsgs] = useState(()=>{
     try { const s=localStorage.getItem(SKEY); return s?JSON.parse(s):INITIAL; }
@@ -4708,6 +4724,22 @@ function SupportModal({player, onClose}) {
         </div>}
         <div ref={endRef}/>
       </div>
+
+      {/* FAQ быстрые кнопки — показываем пока мало сообщений */}
+      {msgs.length<=2&&(
+        <div style={{padding:"8px 10px",borderTop:`1px solid ${C.border}`,display:"flex",flexWrap:"wrap",gap:"5px"}}>
+          {FAQ_BTNS.map((f,i)=>(
+            <button key={i} onClick={()=>{
+              const answer = FAQ_ANSWERS[f.q];
+              if(answer) setMsgs(m=>[...m,{from:"user",text:f.q,ts:Date.now()},{from:"support",text:answer,ts:Date.now()+1}]);
+            }} style={{padding:"5px 10px",background:"#0a1018",border:`1px solid ${C.blue}33`,
+              color:C.blue,cursor:"pointer",fontSize:"11px",fontFamily:"inherit",
+              display:"flex",alignItems:"center",gap:"4px"}}>
+              <span>{f.icon}</span><span>{f.q}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Input — всегда показываем */}
       <div style={{padding:"10px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"7px"}}>
@@ -4874,7 +4906,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
 
       {/* Header */}
       <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,background:"#181408",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
             <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
             <span style={{fontSize:"13px",color:C.yellow,fontWeight:700,letterSpacing:"2px"}}>AI ТРЕНЕР</span>
@@ -4884,43 +4916,10 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
             <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
           </div>
         </div>
-        {/* Табы */}
-        <div style={{display:"flex",gap:"4px"}}>
-          {[["chat","💬 Чат"],["faq","❓ FAQ"]].map(([t,l])=>(
-            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"5px",background:tab===t?C.yellow+"22":"transparent",
-              border:`1px solid ${tab===t?C.yellow+"66":C.border}`,color:tab===t?C.yellow:C.muted,
-              cursor:"pointer",fontSize:"11px",fontFamily:"inherit",letterSpacing:"1px"}}>{l}</button>
-          ))}
-        </div>
       </div>
 
-      {/* FAQ tab */}
-      {tab==="faq"&&(
-        <div style={{flex:1,overflowY:"auto",padding:"12px",display:"flex",flexDirection:"column",gap:"6px"}}>
-          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>ЧАСТЫЕ ВОПРОСЫ — нажми чтобы получить ответ</div>
-          {FAQ_LIST.map((f,i)=>(
-            <button key={i} onClick={()=>{ setTab("chat"); setInput(f.q); setTimeout(()=>{ setInput(""); send(); },50); const q=f.q; const faqMatch=checkFAQ(q); if(faqMatch){ setMsgs(m=>[...m,{role:"user",content:q},{role:"assistant",content:faqMatch.answer}]); } }}
-              style={{display:"flex",alignItems:"center",gap:"10px",padding:"10px 12px",
-                background:"#0d0d09",border:`1px solid ${C.border}`,cursor:"pointer",
-                textAlign:"left",color:C.text,fontSize:"13px",fontFamily:"inherit",
-                transition:"border-color .15s"}}
-              onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"44"}
-              onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
-              <span style={{fontSize:"16px"}}>{f.icon}</span>
-              <span>{f.q}</span>
-              <span style={{marginLeft:"auto",color:C.muted,fontSize:"10px"}}>→</span>
-            </button>
-          ))}
-          <button onClick={()=>{ setTab("chat"); escalateToSupport("Нужна помощь оператора"); }}
-            style={{marginTop:"8px",padding:"10px",background:"#0d1520",border:`1px solid ${C.blue}44`,
-              color:C.blue,cursor:"pointer",fontSize:"12px",fontFamily:"inherit",letterSpacing:"1px"}}>
-            📨 СВЯЗАТЬСЯ С ПОДДЕРЖКОЙ
-          </button>
-        </div>
-      )}
-
-      {/* Chat tab */}
-      {tab==="chat"&&<>
+      {/* Chat */}
+      <>
         <div style={{flex:1,overflowY:"auto",padding:"14px",display:"flex",flexDirection:"column",gap:"10px"}}>
           {msgs.map((m,i)=>(
             <div key={i}>
@@ -4977,7 +4976,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
             {"→"}
           </button>
         </div>
-      </>}
+      </>
     </div>
   );
 }
@@ -6069,12 +6068,12 @@ export default function App() {
         </button>
         {chatOpen&&<ChatPanel player={player} source={source} isPro={isPro} aiRemaining={aiRemaining} onClose={()=>setChatOpen(false)}/>}
       </>}
-      {/* 💬 Поддержка — открывает ChatPanel с FAQ вкладкой */}
-      <button onClick={()=>{ setChatOpen(true); }}
+      {/* 💬 Поддержка */}
+      <button onClick={()=>setSupportOpen(o=>!o)}
         className="fab-support"
         style={{
           position:"fixed",bottom:"96px",right:"24px",width:"48px",height:"48px",
-          background:"#0d1520",color:C.blue,
+          background:supportOpen?"#1b6090":"#0d1520",color:C.blue,
           border:`2px solid ${C.blue}`,borderRadius:"50%",cursor:"pointer",
           fontSize:"20px",boxShadow:`0 4px 16px ${C.blue}33`,zIndex:199,
           transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}
