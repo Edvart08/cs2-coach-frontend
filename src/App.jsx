@@ -5413,11 +5413,21 @@ export default function App() {
         const p = JSON.parse(saved);
         setPlayer(p);
         if (!hasFaceit) setSource("steam");
-        // check Pro status
+        // check Pro status — если localStorage говорит PRO, доверяем ему
+        // бэкенд может потерять данные после рестарта Render
         if (p.steamid) {
           fetch(`${BACKEND}/pro/${p.steamid}`)
             .then(r=>r.json())
-            .then(d=>{ setIsPro(d.pro||false); setAiRemaining(d.remaining??FREE_WEEKLY); })
+            .then(d=>{
+              if(d.pro){
+                setIsPro(true); setAiRemaining(999);
+              } else {
+                // Бэкенд говорит не-PRO — но проверяем localStorage
+                const localPro = localStorage.getItem("cs2_is_pro") === "1";
+                if (!localPro) { setIsPro(false); setAiRemaining(d.remaining??FREE_WEEKLY); }
+                // если localPro=true, оставляем как есть (Render мог рестартнуть)
+              }
+            })
             .catch(()=>{});
         }
         // background refresh
@@ -5507,7 +5517,7 @@ export default function App() {
       if (p.steamid) {
         fetch(`${BACKEND}/pro/${p.steamid}`)
           .then(r=>r.json())
-          .then(d=>{ setIsPro(d.pro||false); setAiRemaining(d.remaining??FREE_DAILY); })
+          .then(d=>{ if(d.pro){setIsPro(true);setAiRemaining(999);}else{const lp=localStorage.getItem("cs2_is_pro")==="1";if(!lp){setIsPro(false);setAiRemaining(d.remaining??FREE_WEEKLY);}} })
           .catch(()=>{});
       }
       // Авто-добавление в лидерборд при первом входе
