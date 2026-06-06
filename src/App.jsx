@@ -6634,28 +6634,52 @@ export default function App() {
           ?<>
             <SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>
 
-            {/* Steam MM история — всегда показываем если есть Steam */}
-            <SectionTitle icon="🎮" label="MATCHMAKING" sub="история ранговых матчей Steam"/>
-            <SteamMatchConnect steamid={player.steamid} onConnected={()=>{}}/>
-            <SteamMMMatches steamid={player.steamid}/>
+            {/* Steam статистика */}
+            {player.cs2&&!player.cs2.private&&<>
+              <SectionTitle icon="🎮" label="STEAM СТАТИСТИКА" sub="общая статистика из профиля"/>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:"3px",marginBottom:"10px"}}>
+                {[
+                  {l:"K/D",        v:player.cs2.kd||"—",          c:C.yellow},
+                  {l:"WIN%",       v:player.cs2.winrate?(player.cs2.winrate+"%"):"—", c:C.win},
+                  {l:"HS%",        v:player.cs2.hs?(player.cs2.hs+"%"):"—",           c:C.orange},
+                  {l:"МАТЧИ",      v:player.cs2.matches||"—",      c:C.label},
+                  {l:"УБИЙСТВА",   v:player.cs2.kills ? parseInt(player.cs2.kills).toLocaleString():"—", c:C.label},
+                  {l:"СМЕРТИ",     v:player.cs2.deaths? parseInt(player.cs2.deaths).toLocaleString():"—",c:C.muted},
+                  {l:"MVP",        v:player.cs2.mvps||"—",         c:C.yellow},
+                  {l:"ПОБЕДЫ",     v:player.cs2.wins||"—",         c:C.win},
+                ].map((s,i)=>(
+                  <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px 12px",textAlign:"center"}}>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"6px"}}>{s.l}</div>
+                    <div style={{fontSize:"20px",color:s.c,fontWeight:700}}>{s.v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{background:"#0d1520",border:`1px solid ${C.blue}33`,padding:"12px 16px",marginBottom:"10px",
+                fontSize:"12px",color:C.muted,lineHeight:1.7}}>
+                💡 <span style={{color:C.label}}>История отдельных MM матчей (карта, счёт, K/D за матч) недоступна через публичный Steam API.</span>{" "}
+                Подключи <span style={{color:C.orange,fontWeight:700}}>FACEIT</span> — там полная история каждого матча с AI разбором.
+              </div>
+            </>}
 
             {source==="faceit"&&hasFaceit&&<>
               <SectionTitle icon="⚡" label="FACEIT МАТЧИ"/>
-              {/* ELO График */}
               <EloChart faceit={player.faceit}/>
-              {/* Серии */}
               <Streaks player={player} source={source}/>
-              {/* Задания недели */}
               <WeeklyMissions player={player} source={source}/>
-              {/* История матчей */}
               <MatchHistory faceit={player.faceit}/>
-              {/* FACEIT графики */}
               <div style={{marginTop:"10px"}}><ChartsSection faceit={player.faceit}/></div>
             </>}
-            {source!=="faceit"&&<div style={{background:C.card,border:`1px solid ${C.border}`,padding:"28px 24px",textAlign:"center"}}>
-              <div style={{fontSize:"24px",marginBottom:"10px"}}>⚡</div>
-              <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"8px"}}>Подключи FACEIT</div>
-              <div style={{fontSize:"14px",color:C.label,lineHeight:1.7}}>Детальная история каждого матча с AI разбором доступна через FACEIT.</div>
+            {!hasFaceit&&<div style={{background:C.card,border:`1px solid ${C.border}`,padding:"28px 24px",textAlign:"center",marginTop:"10px"}}>
+              <div style={{fontSize:"32px",marginBottom:"12px"}}>⚡</div>
+              <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"8px"}}>Подключи FACEIT для истории матчей</div>
+              <div style={{fontSize:"13px",color:C.label,lineHeight:1.7,marginBottom:"16px"}}>
+                История каждого матча, K/D по раундам, статистика карт, ELO динамика — всё это через FACEIT.
+              </div>
+              <a href="https://www.faceit.com" target="_blank" rel="noreferrer"
+                style={{display:"inline-block",padding:"11px 28px",background:C.orange,
+                  color:"#fff",textDecoration:"none",fontSize:"13px",fontWeight:700,letterSpacing:"2px"}}>
+                РЕГИСТРАЦИЯ НА FACEIT →
+              </a>
             </div>}
           </>
           :<div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>Войди через Steam</div>)}
