@@ -420,6 +420,174 @@ function ChartsSection({faceit}) {
 }
 
 // ── Match History ─────────────────────────────────────────────────────────────
+// ── Steam MM Match History ────────────────────────────────────────────────────
+function SteamMatchConnect({steamid, onConnected}) {
+  const KEY = `cs2_steam_auth_${steamid}`;
+  const [hasAuth, setHasAuth] = useState(()=>{ try{ return !!localStorage.getItem(KEY); }catch{ return false; } });
+  const [open, setOpen] = useState(false);
+  const [authCode, setAuthCode] = useState("");
+  const [matchCode, setMatchCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function connect() {
+    if (!authCode.trim() || !matchCode.trim()) return;
+    setLoading(true); setErr("");
+    try {
+      const r = await fetch(`${BACKEND}/steam/auth-code`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({steamid, auth_code:authCode.trim(), match_code:matchCode.trim()})
+      });
+      const d = await r.json();
+      if (d.ok) {
+        localStorage.setItem(KEY, JSON.stringify({auth_code:authCode.trim(), match_code:matchCode.trim(), ts:Date.now()}));
+        setHasAuth(true); setOpen(false); onConnected?.();
+      } else {
+        setErr(d.detail || "Ошибка подключения");
+      }
+    } catch { setErr("Ошибка сети"); }
+    setLoading(false);
+  }
+
+  if (hasAuth) return (
+    <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"10px 16px",
+      background:"#0a140a",border:`1px solid ${C.win}44`,marginBottom:"10px"}}>
+      <span style={{color:C.win}}>✓</span>
+      <span style={{fontSize:"13px",color:C.win}}>История матчей Matchmaking подключена</span>
+      <button onClick={()=>{ localStorage.removeItem(KEY); setHasAuth(false); }}
+        style={{marginLeft:"auto",background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"11px"}}>
+        Отключить
+      </button>
+    </div>
+  );
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.yellow}33`,marginBottom:"10px"}}>
+      <div onClick={()=>setOpen(o=>!o)} style={{padding:"14px 18px",cursor:"pointer",
+        display:"flex",alignItems:"center",gap:"12px"}}>
+        <span style={{fontSize:"18px"}}>🔑</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:"13px",color:C.yellow,fontWeight:700}}>Подключить историю Matchmaking</div>
+          <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Введи код аутентификации Steam — увидишь все свои MM матчи</div>
+        </div>
+        <span style={{color:C.muted,fontSize:"12px"}}>{open?"▲":"▼"}</span>
+      </div>
+
+      {open&&(
+        <div style={{padding:"0 18px 18px",borderTop:`1px solid ${C.border}`}}>
+          <div style={{fontSize:"12px",color:C.label,lineHeight:1.7,margin:"12px 0 16px",
+            padding:"10px 14px",background:"#0d0d09",border:`1px solid ${C.border}`}}>
+            <strong style={{color:C.yellow}}>Как получить коды:</strong><br/>
+            1. Перейди на{" "}
+            <a href="https://help.steampowered.com/en/wizard/HelpWithGameIssue/?appid=730&issueid=128"
+              target="_blank" rel="noreferrer" style={{color:C.blue}}>
+              страницу Steam Support
+            </a><br/>
+            2. Скопируй <span style={{color:C.yellow}}>Код аутентификации</span> (вида XXXX-XXXXX-XXXX)<br/>
+            3. Скопируй <span style={{color:C.yellow}}>Код последнего матча</span> (вида CSGO-XXXXX-...)
+          </div>
+
+          <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
+            <div>
+              <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>КОД АУТЕНТИФИКАЦИИ</div>
+              <input value={authCode} onChange={e=>setAuthCode(e.target.value)}
+                placeholder="XXXX-XXXXX-XXXX"
+                style={{width:"100%",background:"#0d0d09",border:`1px solid ${C.border}`,
+                  color:C.yellow,padding:"10px 14px",fontFamily:"monospace",fontSize:"13px",
+                  letterSpacing:"1px"}}/>
+            </div>
+            <div>
+              <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>КОД ПОСЛЕДНЕГО МАТЧА</div>
+              <input value={matchCode} onChange={e=>setMatchCode(e.target.value)}
+                placeholder="CSGO-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+                style={{width:"100%",background:"#0d0d09",border:`1px solid ${C.border}`,
+                  color:C.yellow,padding:"10px 14px",fontFamily:"monospace",fontSize:"13px",
+                  letterSpacing:"1px"}}/>
+            </div>
+          </div>
+
+          {err&&<div style={{fontSize:"12px",color:C.lose,marginBottom:"8px",
+            padding:"8px 12px",background:C.lose+"11",border:`1px solid ${C.lose}33`}}>
+            ✗ {err}
+          </div>}
+
+          <button onClick={connect} disabled={loading||!authCode.trim()||!matchCode.trim()}
+            style={{width:"100%",padding:"11px",background:C.yellow,color:"#080807",
+              border:"none",cursor:"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit",
+              opacity:(loading||!authCode.trim()||!matchCode.trim())?0.5:1}}>
+            {loading?"ПРОВЕРЯЮ КОДЫ...":"ПОДКЛЮЧИТЬ →"}
+          </button>
+          <div style={{fontSize:"11px",color:C.muted,marginTop:"8px",textAlign:"center"}}>
+            Коды дают доступ только к истории матчей — пароль и инвентарь недоступны
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SteamMMMatches({steamid}) {
+  const KEY = `cs2_steam_auth_${steamid}`;
+  const hasAuth = !!localStorage.getItem(KEY);
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(()=>{
+    if (!hasAuth) return;
+    load();
+  },[steamid, hasAuth]);
+
+  async function load() {
+    setLoading(true); setErr("");
+    try {
+      const r = await fetch(`${BACKEND}/steam/matches/${steamid}?limit=10`);
+      const d = await r.json();
+      if (d.matches) setMatches(d.matches);
+      else setErr(d.detail || "Не удалось загрузить матчи");
+    } catch { setErr("Ошибка сети"); }
+    setLoading(false);
+  }
+
+  if (!hasAuth) return null;
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px"}}>
+      <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,
+        display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:"11px",color:C.blue,letterSpacing:"3px",fontWeight:700}}>
+          🎮 MATCHMAKING ИСТОРИЯ
+        </span>
+        <button onClick={load} style={{background:"transparent",border:`1px solid ${C.border}`,
+          color:C.muted,cursor:"pointer",fontSize:"11px",padding:"4px 10px",fontFamily:"inherit"}}>
+          ↻ Обновить
+        </button>
+      </div>
+      {loading&&<div style={{padding:"24px",textAlign:"center",color:C.muted,fontSize:"13px"}}>
+        Загружаю матчи...
+      </div>}
+      {err&&<div style={{padding:"16px",color:C.lose,fontSize:"13px"}}>{err}</div>}
+      {!loading&&matches.length===0&&!err&&<div style={{padding:"24px",textAlign:"center",
+        color:C.muted,fontSize:"13px"}}>
+        Матчи не найдены. Сыграй хотя бы 1 матч в MM после подключения кодов.
+      </div>}
+      {matches.map((m,i)=>(
+        <div key={i} style={{padding:"12px 18px",borderBottom:i<matches.length-1?`1px solid ${C.border}`:"none",
+          display:"flex",alignItems:"center",gap:"14px"}}>
+          <div style={{width:"8px",height:"8px",borderRadius:"50%",background:C.blue,flexShrink:0}}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:"14px",color:C.value,fontWeight:600}}>{m.map||"Матч"}</div>
+            <div style={{fontSize:"11px",color:C.muted,fontFamily:"monospace",marginTop:"2px"}}>
+              {m.code}
+            </div>
+          </div>
+          {m.match_id&&<div style={{fontSize:"11px",color:C.muted}}>ID: {m.match_id}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function MatchHistory({faceit}) {
   const [exp,setExp]           = useState(null);
   const [analyses,setAnalyses] = useState({});
@@ -6168,7 +6336,14 @@ export default function App() {
         {mainTab==="matches"&&(!player?<LandingPage onLogin={openSteam}/>:player
           ?<>
             <SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>
+
+            {/* Steam MM история — всегда показываем если есть Steam */}
+            <SectionTitle icon="🎮" label="MATCHMAKING" sub="история ранговых матчей Steam"/>
+            <SteamMatchConnect steamid={player.steamid} onConnected={()=>{}}/>
+            <SteamMMMatches steamid={player.steamid}/>
+
             {source==="faceit"&&hasFaceit&&<>
+              <SectionTitle icon="⚡" label="FACEIT МАТЧИ"/>
               {/* ELO График */}
               <EloChart faceit={player.faceit}/>
               {/* Серии */}
@@ -6182,8 +6357,8 @@ export default function App() {
             </>}
             {source!=="faceit"&&<div style={{background:C.card,border:`1px solid ${C.border}`,padding:"28px 24px",textAlign:"center"}}>
               <div style={{fontSize:"24px",marginBottom:"10px"}}>⚡</div>
-              <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"8px"}}>Переключись на FACEIT</div>
-              <div style={{fontSize:"14px",color:C.label,lineHeight:1.7}}>История матчей доступна только через FACEIT.</div>
+              <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"8px"}}>Подключи FACEIT</div>
+              <div style={{fontSize:"14px",color:C.label,lineHeight:1.7}}>Детальная история каждого матча с AI разбором доступна через FACEIT.</div>
             </div>}
           </>
           :<div style={{textAlign:"center",padding:"60px",color:C.muted,fontSize:"13px"}}>Войди через Steam</div>)}
