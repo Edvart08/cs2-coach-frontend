@@ -1788,6 +1788,74 @@ function AchievementModal({a, onClose}) {
   );
 }
 
+// ── Achievements Collapsible ──────────────────────────────────────────────────
+function AchievementsCollapsible({player, source}) {
+  const [open, setOpen] = useState(false);
+  // Считаем сколько разблокировано для превью
+  const fc=player?.faceit, cs2=player?.cs2||{};
+  const kd=parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd)||0;
+  const hs=parseFloat(source==="faceit"?fc?.lifetime?.hs:cs2.hs)||0;
+  const wr=parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate)||0;
+  const matches=parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches)||0;
+  const kills=parseInt(cs2?.kills)||0;
+  const mvps=parseInt(cs2?.mvps)||0;
+  const lvl=parseInt(fc?.level)||0;
+  const elo=parseInt(fc?.elo)||0;
+  const knifeKills=parseInt(cs2?.knife_kills)||0;
+  const bombsDefused=parseInt(cs2?.bombs_defused)||0;
+  const bombsPlanted=parseInt(cs2?.bombs_planted)||0;
+  const dominated=parseInt(cs2?.dominated)||0;
+  const hours=Math.round((parseInt(cs2?.playtime)||0)/60);
+  const accuracy=parseInt(cs2?.accuracy)||0;
+  const apiStreak=parseInt(fc?.lifetime?.longest_streak)||0;
+  const calcStreak=(()=>{let s=0;for(const m of arr(fc?.matches)){if(m.result==="1")s++;else break;}return s;})();
+  const streak=Math.max(apiStreak,calcStreak);
+  const sniperKills=parseInt(cs2?.sniper_kills)||0;
+
+  const total = 32;
+  const unlocked = [
+    hs>=30,hs>=40,hs>=55,accuracy>=25,
+    streak>=3,streak>=5,streak>=10,
+    kd>=1.0,kd>=1.5,kd>=2.0,dominated>=50,mvps>=100,mvps>=500,kills>=1000,kills>=5000,kills>=10000,
+    wr>=50,wr>=60,matches>=100,matches>=500,matches>=1000,lvl>=5,lvl>=8,lvl>=10,elo>=2000,hours>=100,hours>=500,
+    knifeKills>=5,knifeKills>=50,sniperKills>=100,
+    bombsDefused>=10,bombsPlanted>=50,
+  ].filter(Boolean).length;
+
+  const pct = Math.round(unlocked/total*100);
+
+  return (
+    <div style={{marginBottom:"10px"}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{
+        width:"100%",background:C.card,border:`1px solid ${C.border}`,
+        cursor:"pointer",padding:"14px 20px",fontFamily:"inherit",
+        display:"flex",justifyContent:"space-between",alignItems:"center",transition:"border-color .15s"}}
+        onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"55"}
+        onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+        <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+          <span style={{fontSize:"16px"}}>🏅</span>
+          <div style={{textAlign:"left"}}>
+            <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>ДОСТИЖЕНИЯ</div>
+            <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>
+              <span style={{color:C.yellow,fontWeight:700}}>{unlocked}</span>/{total} разблокировано
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+          {/* Мини прогресс-бар */}
+          <div style={{width:"80px",height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${pct}%`,background:C.yellow,transition:"width 1s ease"}}/>
+          </div>
+          <span style={{fontSize:"11px",color:C.muted,minWidth:"28px"}}>{pct}%</span>
+          <span style={{fontSize:"14px",color:C.muted,transition:"transform .2s",
+            transform:open?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
+        </div>
+      </button>
+      {open&&<Achievements player={player} source={source}/>}
+    </div>
+  );
+}
+
 // ── Achievements ─────────────────────────────────────────────────────────────
 function Achievements({player, source}) {
   const [cat, setCat] = useState("all");
@@ -3122,6 +3190,38 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
   const recentMatches = arr(fc?.matches).slice(0,5);
   const matchCount = parseInt(fc?.lifetime?.matches||cs2.matches)||0;
 
+  // Premier / MM ранг — только из localStorage для своего профиля
+  const premierRating = (() => {
+    if (!steamid || steamid !== myId) return null;
+    try {
+      const saved = JSON.parse(localStorage.getItem("cs2_player_v3")||"null");
+      return saved?.cs2?.premier_rating || saved?.premier_rating || null;
+    } catch { return null; }
+  })();
+
+  // Цвет Premier ранга
+  const premierColor = (r) => {
+    const n = parseInt(r)||0;
+    if (n >= 30000) return "#e8c84a"; // Global
+    if (n >= 25000) return "#cc4444"; // Supreme
+    if (n >= 20000) return "#9944cc"; // Distinguished
+    if (n >= 15000) return "#4488ff"; // Legendary Eagle
+    if (n >= 10000) return "#66aaff"; // Distinguished MG
+    if (n >= 5000)  return "#44ccaa"; // Master Guardian
+    return "#888888"; // Silver-Gold
+  };
+  const premierLabel = (r) => {
+    const n = parseInt(r)||0;
+    if (n >= 30000) return "Глобал Элита";
+    if (n >= 25000) return "Верховный Мастер";
+    if (n >= 20000) return "Легендарный Орёл";
+    if (n >= 15000) return "Мастер Страж";
+    if (n >= 10000) return "Золотой Страж";
+    if (n >= 5000)  return "Серебро Высшее";
+    if (n > 0)      return "Серебро";
+    return null;
+  };
+
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.96)",zIndex:500,
       overflowY:"auto",animation:"fadeIn .2s ease"}}>
@@ -3190,6 +3290,43 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                     </span>}
                     {data?.steam_level&&<span style={{marginRight:"12px"}}>Steam Lvl {data.steam_level}</span>}
                     {matchCount>0&&<span>{matchCount} матчей</span>}
+                  </div>
+
+                  {/* Ранги — Premier + FACEIT */}
+                  <div style={{display:"flex",gap:"8px",flexWrap:"wrap",marginBottom:"10px"}}>
+                    {/* FACEIT уровень */}
+                    {fc?.level&&<div style={{display:"flex",alignItems:"center",gap:"6px",
+                      padding:"5px 12px",background:LVL_COLOR[fc.level]+"18",
+                      border:`1px solid ${LVL_COLOR[fc.level]}44`}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={LVL_COLOR[fc.level]} strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <span style={{fontSize:"12px",color:LVL_COLOR[fc.level],fontWeight:700}}>FACEIT LVL {fc.level}</span>
+                      <span style={{fontSize:"11px",color:LVL_COLOR[fc.level]+"cc"}}>{fc.elo} ELO</span>
+                    </div>}
+
+                    {/* Premier рейтинг — только для своего профиля */}
+                    {premierRating&&parseInt(premierRating)>0&&<div style={{display:"flex",alignItems:"center",gap:"6px",
+                      padding:"5px 12px",background:premierColor(premierRating)+"18",
+                      border:`1px solid ${premierColor(premierRating)}44`}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={premierColor(premierRating)} strokeWidth="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+                      <span style={{fontSize:"12px",color:premierColor(premierRating),fontWeight:700}}>
+                        Premier {parseInt(premierRating).toLocaleString()}
+                      </span>
+                      {premierLabel(premierRating)&&<span style={{fontSize:"10px",color:premierColor(premierRating)+"aa"}}>
+                        {premierLabel(premierRating)}
+                      </span>}
+                    </div>}
+
+                    {/* Если свой профиль но ранга нет */}
+                    {steamid===myId&&!premierRating&&<div style={{display:"flex",alignItems:"center",gap:"6px",
+                      padding:"5px 12px",background:"#1a1a10",border:`1px solid ${C.border}`}}>
+                      <span style={{fontSize:"11px",color:C.muted}}>🎖 Premier ранг: не сыгран / скрыт</span>
+                    </div>}
+
+                    {/* Для чужого профиля */}
+                    {steamid&&steamid!==myId&&<div style={{display:"flex",alignItems:"center",gap:"6px",
+                      padding:"5px 12px",background:"#1a1a10",border:`1px solid ${C.border}`}}>
+                      <span style={{fontSize:"11px",color:C.muted}}>🎖 Premier ранг скрыт Steam API</span>
+                    </div>}
                   </div>
                   {/* Win streak */}
                   {(()=>{
@@ -7413,9 +7550,8 @@ export default function App() {
               <RecentMatchesOverview faceit={player.faceit}/>
             </>}
 
-            {/* ── СЕКЦИЯ 7: Достижения ── */}
-            <SectionTitle icon="🏆" label="ДОСТИЖЕНИЯ"/>
-            <Achievements player={player} source={source}/>
+            {/* ── СЕКЦИЯ 7: Достижения — за кнопкой ── */}
+            <AchievementsCollapsible player={player} source={source}/>
 
             {/* ── Steam статы (только Steam режим) ── */}
             {source==="steam"&&!player.cs2?.private&&<>
