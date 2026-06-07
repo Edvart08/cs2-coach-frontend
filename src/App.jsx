@@ -4530,6 +4530,69 @@ function ProModal({player, isPro, onClose, onActivated}) {
                     </div>
                   </div>
                 </div>
+
+                {/* Дата окончания */}
+                {proData?.activated_at && proData?.plan !== "lifetime" && (()=>{
+                  const activatedMs = proData.activated_at * 1000;
+                  const daysInPlan = proData?.plan === "year" ? 365 : proData?.plan === "month" ? 30 : 0;
+                  if (!daysInPlan) return null;
+                  const expiresMs = activatedMs + daysInPlan * 86400 * 1000;
+                  const expiresDate = new Date(expiresMs);
+                  const daysLeft = Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000));
+                  const isExpiringSoon = daysLeft <= 7;
+                  const expired = daysLeft === 0;
+                  return (
+                    <div style={{marginTop:"12px",paddingTop:"12px",borderTop:`1px solid ${C.border}`}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div>
+                          <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>
+                            {expired?"ПОДПИСКА ИСТЕКЛА":"ДЕЙСТВУЕТ ДО"}
+                          </div>
+                          <div style={{fontSize:"14px",color:expired?C.lose:isExpiringSoon?C.orange:C.win,fontWeight:700}}>
+                            {expiresDate.toLocaleDateString("ru-RU",{day:"2-digit",month:"long",year:"numeric"})}
+                          </div>
+                        </div>
+                        <div style={{textAlign:"right"}}>
+                          <div style={{fontSize:"22px",color:expired?C.lose:isExpiringSoon?C.orange:C.win,fontWeight:800,lineHeight:1}}>
+                            {expired?"0":daysLeft}
+                          </div>
+                          <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>
+                            {expired?"истекла":daysLeft===1?"день":"дней"}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Прогресс-бар */}
+                      <div style={{marginTop:"10px",height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                        <div style={{height:"100%",
+                          width:`${Math.min(100,Math.max(0,((Date.now()-activatedMs)/(expiresMs-activatedMs))*100))}%`,
+                          background:expired?C.lose:isExpiringSoon?C.orange:C.win,
+                          transition:"width 1s ease"}}/>
+                      </div>
+                      {isExpiringSoon&&!expired&&<div style={{marginTop:"8px",fontSize:"11px",
+                        color:C.orange,padding:"6px 10px",background:C.orange+"11",
+                        border:`1px solid ${C.orange}33`}}>
+                        ⚠️ Подписка истекает через {daysLeft} {daysLeft===1?"день":daysLeft<5?"дня":"дней"} — продли сейчас
+                      </div>}
+                      {expired&&<div style={{marginTop:"8px",fontSize:"11px",
+                        color:C.lose,padding:"6px 10px",background:C.lose+"11",
+                        border:`1px solid ${C.lose}33`}}>
+                        ✗ Подписка истекла — оформи снова чтобы продолжить
+                      </div>}
+                    </div>
+                  );
+                })()}
+
+                {/* Lifetime badge */}
+                {proData?.plan === "lifetime" && (
+                  <div style={{marginTop:"12px",paddingTop:"12px",borderTop:`1px solid ${C.border}`,
+                    display:"flex",alignItems:"center",gap:"8px"}}>
+                    <span style={{fontSize:"18px"}}>∞</span>
+                    <div>
+                      <div style={{fontSize:"13px",color:C.win,fontWeight:700}}>Навсегда</div>
+                      <div style={{fontSize:"11px",color:C.muted}}>Срок действия не ограничен</div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Что включено */}
@@ -6105,23 +6168,12 @@ function PracticeTab({player}) {
 // ── Settings Modal ────────────────────────────────────────────────────────────
 function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProModal}) {
   const [notifOn, setNotifOn] = useState(()=>{ try{ return localStorage.getItem("cs2_notif")!=="0"; }catch{ return true; } });
-  const [theme, setTheme] = useState("dark");
+  const [activeSection, setActiveSection] = useState("account");
 
   const toggle = (key, val, setter) => {
     setter(val);
     try{ localStorage.setItem(key, val?"1":"0"); }catch{}
   };
-
-  const Row = ({label, desc, children}) => (
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-      padding:"14px 0",borderBottom:`1px solid ${C.border}`}}>
-      <div>
-        <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>{label}</div>
-        {desc&&<div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{desc}</div>}
-      </div>
-      {children}
-    </div>
-  );
 
   const Toggle = ({on, onToggle}) => (
     <div onClick={onToggle} style={{width:"44px",height:"24px",borderRadius:"12px",
@@ -6132,105 +6184,246 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
     </div>
   );
 
+  const ConnBlock = ({title, icon, connected, info, linkHref, onLink, onUnlink}) => (
+    <div style={{background:"#0d0d09",border:`1px solid ${C.border}`,padding:"14px 16px",marginBottom:"8px"}}>
+      <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"10px"}}>{title}</div>
+      <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+        <div style={{width:"36px",height:"36px",background:connected?"#0a140a":"#1a1a10",
+          border:`1px solid ${connected?C.win+"44":C.border}`,borderRadius:"3px",
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px",flexShrink:0}}>
+          {icon}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"2px"}}>
+            <div style={{width:"8px",height:"8px",borderRadius:"50%",
+              background:connected?C.win:"#ff4444",flexShrink:0}}/>
+            <span style={{fontSize:"12px",color:connected?C.win:C.lose,fontWeight:600}}>
+              {connected?"Подключён":"Аккаунт не подключён"}
+            </span>
+          </div>
+          {info&&<div style={{fontSize:"11px",color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{info}</div>}
+        </div>
+        {connected
+          ? onUnlink&&<button onClick={onUnlink} style={{padding:"5px 10px",background:"transparent",
+              border:`1px solid ${C.lose}44`,color:C.lose,cursor:"pointer",
+              fontSize:"10px",fontFamily:"inherit",flexShrink:0}}>Отвязать</button>
+          : <a href={linkHref||"#"} onClick={onLink} target={linkHref?"_blank":"_self"} rel="noreferrer"
+              style={{padding:"7px 14px",background:"#2a4a1a",border:`1px solid ${C.win}55`,
+                color:C.win,cursor:"pointer",fontSize:"11px",fontFamily:"inherit",
+                fontWeight:700,letterSpacing:"1px",textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
+              ПОДКЛЮЧИТЬ
+            </a>}
+      </div>
+    </div>
+  );
+
+  const hasFaceit = !!(player?.faceit?.elo || player?.faceit?.nickname);
+  const tgLinked = false; // TODO: добавить TG link на бэке
+
+  const SECTIONS = [
+    {id:"account", label:"Аккаунт"},
+    {id:"connections", label:"Подключения"},
+    {id:"preferences", label:"Настройки"},
+    {id:"data", label:"Данные"},
+  ];
+
   return (
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
       zIndex:500,display:"flex",alignItems:"flex-start",justifyContent:"center",
-      paddingTop:"72px",paddingBottom:"20px",padding:"72px 20px 20px",
+      padding:"56px 20px 20px",
       animation:"fadeIn .2s ease",overflowY:"auto"}}>
       <div onClick={e=>e.stopPropagation()} style={{
         background:C.card,border:`1px solid ${C.border}`,borderTop:`3px solid ${C.yellow}`,
-        maxWidth:"480px",width:"100%",animation:"slideUp .3s ease"}}>
+        maxWidth:"520px",width:"100%",animation:"slideUp .3s ease"}}>
 
-        <div style={{padding:"20px 24px",borderBottom:`1px solid ${C.border}`,
+        {/* Header */}
+        <div style={{padding:"18px 24px",borderBottom:`1px solid ${C.border}`,
           display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>⚙️ НАСТРОЙКИ</div>
           <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
             color:C.muted,cursor:"pointer",width:"28px",height:"28px",fontSize:"14px"}}>✕</button>
         </div>
 
-        <div style={{padding:"0 24px 8px"}}>
-          {/* Профиль */}
-          {player&&<div style={{padding:"16px 0 12px",borderBottom:`1px solid ${C.border}`}}>
-            <div style={{fontSize:"10px",letterSpacing:"2px",color:C.muted,marginBottom:"10px"}}>АККАУНТ</div>
-            <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+        {/* Sub-nav */}
+        <div style={{display:"flex",borderBottom:`1px solid ${C.border}`}}>
+          {SECTIONS.map(s=>(
+            <button key={s.id} onClick={()=>setActiveSection(s.id)} style={{
+              flex:1,padding:"10px 6px",background:"transparent",border:"none",
+              borderBottom:`2px solid ${activeSection===s.id?C.yellow:"transparent"}`,
+              color:activeSection===s.id?C.yellow:C.muted,cursor:"pointer",
+              fontSize:"11px",fontFamily:"inherit",fontWeight:activeSection===s.id?700:400,
+              letterSpacing:"0.5px",transition:"all .15s"}}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{padding:"16px 24px 20px"}}>
+
+          {/* ── АККАУНТ ── */}
+          {activeSection==="account"&&<>
+            {player&&<div style={{display:"flex",alignItems:"center",gap:"14px",
+              padding:"16px",background:"#0d0d09",border:`1px solid ${C.border}`,marginBottom:"14px"}}>
               {(player.avatar||player.faceit?.avatar)
-                ?<img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"44px",height:"44px",borderRadius:"3px",border:`1px solid ${C.border}`}}/>
-                :<div style={{width:"44px",height:"44px",background:"#1a1a10",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px"}}>👤</div>}
-              <div>
-                <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{player.username}</div>
-                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>
+                ?<img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"52px",height:"52px",borderRadius:"3px",border:`2px solid ${C.yellow}44`}}/>
+                :<div style={{width:"52px",height:"52px",background:"#1a1a10",border:`2px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px"}}>👤</div>}
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"3px"}}>{player.username}</div>
+                <div style={{fontSize:"11px",color:C.muted}}>
                   {player.faceit?.elo?`FACEIT LVL ${player.faceit.level} · ${player.faceit.elo} ELO`:`Steam Lvl ${player.steam_level||"—"}`}
                 </div>
-                <div style={{fontSize:"11px",color:isPro?C.yellow:C.muted,marginTop:"2px"}}>
-                  {isPro?"⚡ PRO подписка активна":"Бесплатный план"}
+                <div style={{fontSize:"11px",marginTop:"4px"}}>
+                  <span style={{color:isPro?C.yellow:C.muted,background:isPro?C.yellow+"18":"transparent",
+                    border:`1px solid ${isPro?C.yellow+"44":"transparent"}`,
+                    padding:"1px 7px",fontSize:"10px",fontWeight:700,letterSpacing:"1px"}}>
+                    {isPro?"⚡ PRO":"FREE"}
+                  </span>
                 </div>
               </div>
-            </div>
-            {!isPro&&<button onClick={onProModal} style={{width:"100%",marginTop:"12px",padding:"9px",
+            </div>}
+
+            {!isPro&&<button onClick={onProModal} style={{width:"100%",marginBottom:"12px",padding:"10px",
               background:C.yellow+"18",border:`1px solid ${C.yellow}44`,color:C.yellow,
               cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"inherit",letterSpacing:"1px"}}>
               ⚡ УЛУЧШИТЬ ДО PRO →
             </button>}
-          </div>}
 
-          {/* Язык */}
-          <Row label="Язык / Language" desc="Язык интерфейса сайта">
-            <div style={{display:"flex",gap:"4px"}}>
-              {[["ru","🇷🇺 RU"],["en","🇬🇧 EN"]].map(([l,label])=>(
-                <button key={l} onClick={()=>setLang(l)} style={{
-                  padding:"5px 12px",background:lang===l?C.yellow+"22":"transparent",
-                  border:`1px solid ${lang===l?C.yellow+"66":C.border}`,
-                  color:lang===l?C.yellow:C.muted,cursor:"pointer",
-                  fontSize:"12px",fontFamily:"inherit",fontWeight:lang===l?700:400}}>
-                  {label}
+            <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7,
+              padding:"12px 14px",background:"#0d0d09",border:`1px solid ${C.border}`,marginBottom:"12px"}}>
+              <div style={{color:C.label,fontWeight:600,marginBottom:"4px",fontSize:"11px",letterSpacing:"1px"}}>STEAM ID</div>
+              <div style={{fontFamily:"monospace",color:C.blue,fontSize:"12px"}}>{player?.steamid||"—"}</div>
+            </div>
+
+            <button onClick={()=>{if(window.confirm("Выйти из аккаунта?")){ onLogout(); onClose(); }}}
+              style={{width:"100%",padding:"9px",background:"transparent",border:`1px solid ${C.lose}44`,
+                color:C.lose,cursor:"pointer",fontSize:"12px",fontFamily:"inherit",fontWeight:700}}>
+              🚪 Выйти из аккаунта
+            </button>
+          </>}
+
+          {/* ── ПОДКЛЮЧЕНИЯ ── */}
+          {activeSection==="connections"&&<>
+            <div style={{fontSize:"11px",color:C.muted,marginBottom:"12px",lineHeight:1.6}}>
+              Подключай аккаунты для расширенной статистики и уведомлений
+            </div>
+
+            <ConnBlock
+              title="STEAM"
+              icon="🎮"
+              connected={!!player?.steamid}
+              info={player?.username ? `${player.username} · Steam Lvl ${player.steam_level||"—"}` : ""}
+            />
+
+            <ConnBlock
+              title="FACEIT"
+              icon="⚡"
+              connected={hasFaceit}
+              info={hasFaceit ? `LVL ${player.faceit.level} · ${player.faceit.elo} ELO · ${player.faceit.nickname}` : ""}
+              linkHref="https://www.faceit.com/ru/players-registration"
+            />
+
+            <ConnBlock
+              title="TELEGRAM"
+              icon={<svg width="18" height="18" viewBox="0 0 24 24" fill={tgLinked?"#66ee66":"#9a9270"}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.03 9.566c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.48 14.4l-2.96-.924c-.643-.2-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.836.186z"/></svg>}
+              connected={tgLinked}
+              info={tgLinked?"Уведомления о матчах активны":"Получай уведомления о матчах в Telegram"}
+              onLink={(e)=>{
+                e.preventDefault();
+                window.open("https://t.me/cs2coach_support","_blank");
+              }}
+            />
+
+            <div style={{marginTop:"4px",padding:"10px 14px",background:"#0d0d0a",
+              border:`1px solid ${C.blue}22`,fontSize:"11px",color:C.muted,lineHeight:1.6}}>
+              💡 Подключи Telegram для получения уведомлений о новых матчах и достижениях
+            </div>
+          </>}
+
+          {/* ── НАСТРОЙКИ ── */}
+          {activeSection==="preferences"&&<>
+            {/* Язык */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+              padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+              <div>
+                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>Язык / Language</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Язык интерфейса</div>
+              </div>
+              <div style={{display:"flex",gap:"4px"}}>
+                {[["ru","🇷🇺 RU"],["en","🇬🇧 EN"]].map(([l,label])=>(
+                  <button key={l} onClick={()=>setLang(l)} style={{
+                    padding:"5px 12px",background:lang===l?C.yellow+"22":"transparent",
+                    border:`1px solid ${lang===l?C.yellow+"66":C.border}`,
+                    color:lang===l?C.yellow:C.muted,cursor:"pointer",
+                    fontSize:"12px",fontFamily:"inherit",fontWeight:lang===l?700:400}}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Уведомления */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+              padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+              <div>
+                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>Уведомления</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Достижения и апдейты</div>
+              </div>
+              <Toggle on={notifOn} onToggle={()=>toggle("cs2_notif",!notifOn,setNotifOn)}/>
+            </div>
+
+            {/* Тема */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+              padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+              <div>
+                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>Тема</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Только тёмная тема</div>
+              </div>
+              <div style={{fontSize:"12px",color:C.muted,padding:"5px 10px",
+                border:`1px solid ${C.border}`,background:"#0d0d09"}}>
+                🌙 Тёмная
+              </div>
+            </div>
+          </>}
+
+          {/* ── ДАННЫЕ ── */}
+          {activeSection==="data"&&<>
+            <div style={{fontSize:"11px",color:C.muted,marginBottom:"12px",lineHeight:1.6}}>
+              Управление локальными данными в браузере
+            </div>
+
+            {[
+              {label:"История рейтинга", desc:"Снапшоты K/D, WR, HS за 30 дней", key_prefix:"cs2_rating_history_"},
+              {label:"Кеш профиля", desc:"Данные Steam и FACEIT", key_prefix:"cs2_player_v3"},
+              {label:"Steam auth код", desc:"Подключение к истории матчей", key_prefix:"cs2_steam_auth_"},
+            ].map((item,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+                padding:"11px 14px",background:"#0d0d09",border:`1px solid ${C.border}`,
+                marginBottom:"6px"}}>
+                <div>
+                  <div style={{fontSize:"13px",color:C.label,fontWeight:600}}>{item.label}</div>
+                  <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{item.desc}</div>
+                </div>
+                <button onClick={()=>{
+                  if(window.confirm(`Удалить: ${item.label}?`)){
+                    const keys = Object.keys(localStorage).filter(k=>k.startsWith(item.key_prefix));
+                    keys.forEach(k=>localStorage.removeItem(k));
+                    if(item.key_prefix==="cs2_player_v3") localStorage.removeItem("cs2_player_v3");
+                  }
+                }} style={{padding:"5px 10px",background:"transparent",
+                  border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",
+                  fontSize:"10px",fontFamily:"inherit",whiteSpace:"nowrap",flexShrink:0}}>
+                  Очистить
                 </button>
-              ))}
-            </div>
-          </Row>
-
-          {/* Уведомления */}
-          <Row label="Уведомления" desc="Показывать уведомления о достижениях">
-            <Toggle on={notifOn} onToggle={()=>toggle("cs2_notif",!notifOn,setNotifOn)}/>
-          </Row>
-
-          {/* Статистика */}
-          <div style={{padding:"14px 0",borderBottom:`1px solid ${C.border}`}}>
-            <div style={{fontSize:"10px",letterSpacing:"2px",color:C.muted,marginBottom:"10px"}}>ДАННЫЕ</div>
-            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-              <div style={{fontSize:"12px",color:C.label}}>
-                · История рейтинга хранится в браузере (до 30 дней)
               </div>
-              <div style={{fontSize:"12px",color:C.label}}>
-                · Пароли и личные данные не сохраняются
-              </div>
-              <div style={{fontSize:"12px",color:C.label}}>
-                · Используется только публичная статистика Steam и FACEIT
-              </div>
-            </div>
-          </div>
+            ))}
 
-          {/* Очистить данные */}
-          <div style={{padding:"14px 0 8px"}}>
-            <div style={{fontSize:"10px",letterSpacing:"2px",color:C.muted,marginBottom:"10px"}}>ДЕЙСТВИЯ</div>
-            <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-              <button onClick={()=>{
-                if(window.confirm("Очистить историю рейтинга?")){
-                  const keys = Object.keys(localStorage).filter(k=>k.startsWith("cs2_rating_history_"));
-                  keys.forEach(k=>localStorage.removeItem(k));
-                  onClose();
-                }
-              }} style={{padding:"8px 14px",background:"transparent",border:`1px solid ${C.border}`,
-                color:C.muted,cursor:"pointer",fontSize:"11px",fontFamily:"inherit"}}>
-                Очистить историю
-              </button>
-              <button onClick={()=>{
-                if(window.confirm("Выйти из аккаунта?")){ onLogout(); onClose(); }
-              }} style={{padding:"8px 14px",background:"transparent",border:`1px solid ${C.lose}44`,
-                color:C.lose,cursor:"pointer",fontSize:"11px",fontFamily:"inherit"}}>
-                🚪 Выйти
-              </button>
+            <div style={{marginTop:"8px",padding:"10px 14px",background:"#0d0d09",
+              border:`1px solid ${C.border}`,fontSize:"11px",color:C.muted,lineHeight:1.7}}>
+              · Пароли и личные данные никогда не сохраняются<br/>
+              · Используется только публичная статистика Steam и FACEIT<br/>
+              · Данные хранятся локально в браузере
             </div>
-          </div>
+          </>}
         </div>
       </div>
     </div>
@@ -6769,11 +6962,12 @@ export default function App() {
           {/* Переключатель языка */}
           <button onClick={()=>setLangPersist(l=>l==="ru"?"en":"ru")} title={lang==="ru"?"Switch to English":"Переключить на русский"}
             style={{background:"transparent",border:`1px solid ${C.border}`,color:C.muted,
-              cursor:"pointer",fontSize:"13px",padding:"5px 10px",fontFamily:"inherit",
-              display:"flex",alignItems:"center",gap:"5px",letterSpacing:"1px",transition:"all .2s"}}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=C.yellow+"88";e.currentTarget.style.color=C.yellow;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted;}}>
-            {lang==="ru"?"🇷🇺 RU":"🇬🇧 EN"}
+              cursor:"pointer",fontSize:"16px",padding:"5px 8px",fontFamily:"inherit",
+              display:"flex",alignItems:"center",gap:"3px",transition:"all .2s",lineHeight:1}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=C.yellow+"88";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;}}>
+            {lang==="ru"?"🇷🇺":"🇬🇧"}
+            <span style={{fontSize:"10px",color:C.muted,letterSpacing:"1px"}}>{lang==="ru"?"RU":"EN"}</span>
           </button>
 
           {player?(
