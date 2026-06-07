@@ -274,6 +274,15 @@ function HeroCard({player, source}) {
   const heroWRVal = !isFaceit && heroMatches >= 100 && heroWRRaw > 80 ? 80 : Math.min(heroWRRaw, 99);
   const heroWRStr = heroWRVal ? `${heroWRVal}%` : "—";
 
+  const STAT_ICONS = {
+    "K/D": <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8c0-3.31-2.69-6-6-6S6 4.69 6 8c0 4 3 8 6 11 3-3 6-7 6-11z"/><circle cx="12" cy="8" r="2" fill="currentColor" stroke="none"/></svg>,
+    "WIN%": <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+    "HS%": <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="3" strokeLinecap="round"/></svg>,
+    "МАТЧИ": <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+    "FACEIT ELO": <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+    "ADR": <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+  };
+
   const stats = isFaceit
     ? [{l:"K/D",v:fc?.lifetime?.kd||"—"},{l:"WIN%",v:fc?.lifetime?.winrate?(fc.lifetime.winrate+"%"):"—"},{l:"HS%",v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—"},{l:"МАТЧИ",v:fc?.lifetime?.matches||"—"}]
     : [{l:"K/D",v:cs2.kd||"—"},{l:"WIN%",v:heroWRStr},{l:"HS%",v:cs2.hs?(cs2.hs+"%"):"—"},{l:"МАТЧИ",v:cs2.matches||"—"}];
@@ -350,7 +359,10 @@ function HeroCard({player, source}) {
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:`1px solid ${C.border}`,opacity:0.85}}>
         {stats.map((s,i)=>(
           <div key={i} style={{padding:"12px 10px",textAlign:"center",borderLeft:i>0?`1px solid ${C.border}`:"none"}}>
-            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"5px"}}>{s.l}</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"4px",fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"5px"}}>
+              {STAT_ICONS[s.l]&&<span style={{color:C.muted,display:"flex"}}>{STAT_ICONS[s.l]}</span>}
+              {s.l}
+            </div>
             <div style={{fontSize:"20px",color:C.label,fontWeight:700}}>{s.v}</div>
           </div>
         ))}
@@ -426,21 +438,20 @@ function SteamMatchConnect({steamid, onConnected}) {
   const [hasAuth, setHasAuth] = useState(()=>{ try{ return !!localStorage.getItem(KEY); }catch{ return false; } });
   const [open, setOpen] = useState(false);
   const [authCode, setAuthCode] = useState("");
-  const [matchCode, setMatchCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
   async function connect() {
-    if (!authCode.trim() || !matchCode.trim()) return;
+    if (!authCode.trim()) return;
     setLoading(true); setErr("");
     try {
       const r = await fetch(`${BACKEND}/steam/auth-code`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({steamid, auth_code:authCode.trim(), match_code:matchCode.trim()})
+        body: JSON.stringify({steamid, auth_code:authCode.trim(), match_code:""})
       });
       const d = await r.json();
       if (d.ok) {
-        localStorage.setItem(KEY, JSON.stringify({auth_code:authCode.trim(), match_code:matchCode.trim(), ts:Date.now()}));
+        localStorage.setItem(KEY, JSON.stringify({auth_code:authCode.trim(), match_code:"", ts:Date.now()}));
         setHasAuth(true); setOpen(false); onConnected?.();
       } else {
         setErr(d.detail || "Ошибка подключения");
@@ -473,33 +484,22 @@ function SteamMatchConnect({steamid, onConnected}) {
         <div style={{padding:"0 18px 18px",borderTop:`1px solid ${C.border}`}}>
           <div style={{fontSize:"12px",color:C.label,lineHeight:1.7,margin:"12px 0 16px",
             padding:"10px 14px",background:"#0d0d09",border:`1px solid ${C.border}`}}>
-            <strong style={{color:C.yellow}}>Как получить коды:</strong><br/>
+            <strong style={{color:C.yellow}}>Как получить код:</strong><br/>
             1. Перейди на{" "}
             <a href="https://help.steampowered.com/en/wizard/HelpWithGameIssue/?appid=730&issueid=128"
               target="_blank" rel="noreferrer" style={{color:C.blue}}>
               страницу Steam Support
             </a><br/>
-            2. Скопируй <span style={{color:C.yellow}}>Код аутентификации</span> (вида XXXX-XXXXX-XXXX)<br/>
-            3. Скопируй <span style={{color:C.yellow}}>Код последнего матча</span> (вида CSGO-XXXXX-...)
+            2. Скопируй <span style={{color:C.yellow}}>Код аутентификации</span> (вида XXXX-XXXXX-XXXX)
           </div>
 
-          <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
-            <div>
-              <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>КОД АУТЕНТИФИКАЦИИ</div>
-              <input value={authCode} onChange={e=>setAuthCode(e.target.value)}
-                placeholder="XXXX-XXXXX-XXXX"
-                style={{width:"100%",background:"#0d0d09",border:`1px solid ${C.border}`,
-                  color:C.yellow,padding:"10px 14px",fontFamily:"monospace",fontSize:"13px",
-                  letterSpacing:"1px"}}/>
-            </div>
-            <div>
-              <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>КОД ПОСЛЕДНЕГО МАТЧА</div>
-              <input value={matchCode} onChange={e=>setMatchCode(e.target.value)}
-                placeholder="CSGO-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-                style={{width:"100%",background:"#0d0d09",border:`1px solid ${C.border}`,
-                  color:C.yellow,padding:"10px 14px",fontFamily:"monospace",fontSize:"13px",
-                  letterSpacing:"1px"}}/>
-            </div>
+          <div style={{marginBottom:"12px"}}>
+            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>КОД АУТЕНТИФИКАЦИИ</div>
+            <input value={authCode} onChange={e=>setAuthCode(e.target.value)}
+              placeholder="XXXX-XXXXX-XXXX"
+              style={{width:"100%",background:"#0d0d09",border:`1px solid ${C.border}`,
+                color:C.yellow,padding:"10px 14px",fontFamily:"monospace",fontSize:"13px",
+                letterSpacing:"1px"}}/>
           </div>
 
           {err&&<div style={{fontSize:"12px",color:C.lose,marginBottom:"8px",
@@ -507,14 +507,14 @@ function SteamMatchConnect({steamid, onConnected}) {
             ✗ {err}
           </div>}
 
-          <button onClick={connect} disabled={loading||!authCode.trim()||!matchCode.trim()}
+          <button onClick={connect} disabled={loading||!authCode.trim()}
             style={{width:"100%",padding:"11px",background:C.yellow,color:"#080807",
               border:"none",cursor:"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit",
-              opacity:(loading||!authCode.trim()||!matchCode.trim())?0.5:1}}>
-            {loading?"ПРОВЕРЯЮ КОДЫ...":"ПОДКЛЮЧИТЬ →"}
+              opacity:(loading||!authCode.trim())?0.5:1}}>
+            {loading?"ПРОВЕРЯЮ КОД...":"ПОДКЛЮЧИТЬ →"}
           </button>
           <div style={{fontSize:"11px",color:C.muted,marginTop:"8px",textAlign:"center"}}>
-            Коды дают доступ только к истории матчей — пароль и инвентарь недоступны
+            Код даёт доступ только к истории матчей — пароль и инвентарь недоступны
           </div>
         </div>
       )}
@@ -3676,23 +3676,23 @@ function OnboardingModal({player, onClose, onGoTab}) {
   const KEY = `cs2_steam_auth_${steamid}`;
 
   async function connectCode() {
-    if (!authCode.trim() || !matchCode.trim()) {
-      setCodeErr("Введи оба кода");
+    if (!authCode.trim()) {
+      setCodeErr("Введи код аутентификации");
       return;
     }
     setCodeLoading(true); setCodeErr("");
     try {
       const r = await fetch(`${BACKEND}/steam/auth-code`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({steamid, auth_code: authCode.trim(), match_code: matchCode.trim()})
+        body: JSON.stringify({steamid, auth_code: authCode.trim(), match_code: ""})
       });
       const d = await r.json();
       if (d.ok) {
-        localStorage.setItem(KEY, JSON.stringify({auth_code:authCode.trim(), match_code:matchCode.trim(), ts:Date.now()}));
+        localStorage.setItem(KEY, JSON.stringify({auth_code:authCode.trim(), match_code:"", ts:Date.now()}));
         setCodeDone(true);
         setStep(3);
       } else {
-        setCodeErr(d.detail || "Неверные коды. Проверь и попробуй снова.");
+        setCodeErr(d.detail || "Неверный код. Проверь и попробуй снова.");
       }
     } catch { setCodeErr("Ошибка сети — попробуй позже"); }
     setCodeLoading(false);
@@ -3813,7 +3813,7 @@ function OnboardingModal({player, onClose, onGoTab}) {
             </div>
           )}
 
-          {/* Шаг 3 — Код аутентификации + код матча */}
+          {/* Шаг 3 — Только код аутентификации */}
           {step===2&&(
             <div>
               <div style={{textAlign:"center",marginBottom:"14px"}}>
@@ -3822,14 +3822,14 @@ function OnboardingModal({player, onClose, onGoTab}) {
                   Подключи историю матчей
                 </div>
                 <div style={{fontSize:"12px",color:C.muted,lineHeight:1.5}}>
-                  Нужны 2 кода — оба на одной странице Steam
+                  Нужен 1 код со страницы Steam Support
                 </div>
               </div>
 
               {/* Инструкция */}
               <div style={{background:"#0d0d09",border:`1px solid ${C.yellow}33`,padding:"12px 14px",marginBottom:"12px"}}>
                 <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",fontWeight:700,marginBottom:"10px"}}>
-                  КАК ПОЛУЧИТЬ КОДЫ — 2 ШАГА:
+                  КАК ПОЛУЧИТЬ КОД:
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
                   <div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}>
@@ -3837,7 +3837,7 @@ function OnboardingModal({player, onClose, onGoTab}) {
                       borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",
                       fontSize:"11px",color:C.blue,fontWeight:700,flexShrink:0,marginTop:"1px"}}>1</div>
                     <div style={{fontSize:"12px",color:C.text,lineHeight:1.5}}>
-                      Открой страницу Steam Support по ссылке ниже
+                      Открой страницу Steam Support по кнопке ниже
                     </div>
                   </div>
                   <div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}>
@@ -3846,9 +3846,7 @@ function OnboardingModal({player, onClose, onGoTab}) {
                       fontSize:"11px",color:C.yellow,fontWeight:700,flexShrink:0,marginTop:"1px"}}>2</div>
                     <div style={{fontSize:"12px",color:C.text,lineHeight:1.5}}>
                       Скопируй <span style={{color:C.yellow,fontWeight:700}}>Код аутентификации</span>{" "}
-                      (вида <code style={{color:C.yellow,fontSize:"11px"}}>XXXX-XXXXX-XXXX</code>) и{" "}
-                      <span style={{color:C.orange,fontWeight:700}}>Код последнего матча</span>{" "}
-                      (вида <code style={{color:C.orange,fontSize:"11px"}}>CSGO-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX</code>)
+                      (вида <code style={{color:C.yellow,fontSize:"11px"}}>XXXX-XXXXX-XXXX</code>)
                     </div>
                   </div>
                 </div>
@@ -3861,26 +3859,15 @@ function OnboardingModal({player, onClose, onGoTab}) {
                 </a>
               </div>
 
-              {/* Два поля */}
-              <div style={{display:"flex",flexDirection:"column",gap:"8px",marginBottom:"12px"}}>
-                <div>
-                  <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"1px",marginBottom:"4px",fontWeight:700}}>
-                    КОД АУТЕНТИФИКАЦИИ
-                  </div>
-                  <input value={authCode} onChange={e=>setAuthCode(e.target.value.toUpperCase())}
-                    placeholder="XXXX-XXXXX-XXXX"
-                    style={{width:"100%",background:"#0d0d09",border:`1px solid ${authCode?C.yellow+"66":C.border}`,
-                      color:C.yellow,padding:"10px 14px",fontFamily:"monospace",fontSize:"14px",letterSpacing:"2px"}}/>
+              {/* Одно поле */}
+              <div style={{marginBottom:"12px"}}>
+                <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"1px",marginBottom:"4px",fontWeight:700}}>
+                  КОД АУТЕНТИФИКАЦИИ
                 </div>
-                <div>
-                  <div style={{fontSize:"10px",color:C.orange,letterSpacing:"1px",marginBottom:"4px",fontWeight:700}}>
-                    КОД ПОСЛЕДНЕГО МАТЧА
-                  </div>
-                  <input value={matchCode} onChange={e=>setMatchCode(e.target.value)}
-                    placeholder="CSGO-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-                    style={{width:"100%",background:"#0d0d09",border:`1px solid ${matchCode?C.orange+"66":C.border}`,
-                      color:C.orange,padding:"10px 14px",fontFamily:"monospace",fontSize:"12px",letterSpacing:"1px"}}/>
-                </div>
+                <input value={authCode} onChange={e=>setAuthCode(e.target.value.toUpperCase())}
+                  placeholder="XXXX-XXXXX-XXXX"
+                  style={{width:"100%",background:"#0d0d09",border:`1px solid ${authCode?C.yellow+"66":C.border}`,
+                    color:C.yellow,padding:"10px 14px",fontFamily:"monospace",fontSize:"14px",letterSpacing:"2px"}}/>
               </div>
 
               {codeErr&&<div style={{fontSize:"12px",color:C.lose,marginBottom:"8px",
@@ -3890,13 +3877,13 @@ function OnboardingModal({player, onClose, onGoTab}) {
 
               <div style={{display:"flex",gap:"8px"}}>
                 <button onClick={connectCode}
-                  disabled={codeLoading||!authCode.trim()||!matchCode.trim()}
+                  disabled={codeLoading||!authCode.trim()}
                   style={{flex:1,padding:"12px",
-                    background:codeLoading||!authCode.trim()||!matchCode.trim()?C.yellow+"55":C.yellow,
+                    background:codeLoading||!authCode.trim()?C.yellow+"55":C.yellow,
                     color:"#080807",border:"none",
-                    cursor:codeLoading||!authCode.trim()||!matchCode.trim()?"not-allowed":"pointer",
+                    cursor:codeLoading||!authCode.trim()?"not-allowed":"pointer",
                     fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
-                  {codeLoading?"ПРОВЕРЯЮ КОДЫ...":"ПОДКЛЮЧИТЬ →"}
+                  {codeLoading?"ПРОВЕРЯЮ КОД...":"ПОДКЛЮЧИТЬ →"}
                 </button>
                 <button onClick={()=>setStep(3)} style={{padding:"12px 16px",background:"transparent",
                   border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"12px",fontFamily:"inherit"}}>
@@ -6115,6 +6102,141 @@ function PracticeTab({player}) {
   );
 }
 
+// ── Settings Modal ────────────────────────────────────────────────────────────
+function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProModal}) {
+  const [notifOn, setNotifOn] = useState(()=>{ try{ return localStorage.getItem("cs2_notif")!=="0"; }catch{ return true; } });
+  const [theme, setTheme] = useState("dark");
+
+  const toggle = (key, val, setter) => {
+    setter(val);
+    try{ localStorage.setItem(key, val?"1":"0"); }catch{}
+  };
+
+  const Row = ({label, desc, children}) => (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+      padding:"14px 0",borderBottom:`1px solid ${C.border}`}}>
+      <div>
+        <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>{label}</div>
+        {desc&&<div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{desc}</div>}
+      </div>
+      {children}
+    </div>
+  );
+
+  const Toggle = ({on, onToggle}) => (
+    <div onClick={onToggle} style={{width:"44px",height:"24px",borderRadius:"12px",
+      background:on?C.yellow:"#2a2a1a",border:`1px solid ${on?C.yellow:C.border}`,
+      cursor:"pointer",position:"relative",transition:"all .2s",flexShrink:0}}>
+      <div style={{position:"absolute",top:"3px",left:on?"23px":"3px",width:"16px",height:"16px",
+        borderRadius:"50%",background:on?"#080807":C.muted,transition:"left .2s"}}/>
+    </div>
+  );
+
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",
+      zIndex:500,display:"flex",alignItems:"flex-start",justifyContent:"center",
+      paddingTop:"72px",paddingBottom:"20px",padding:"72px 20px 20px",
+      animation:"fadeIn .2s ease",overflowY:"auto"}}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        background:C.card,border:`1px solid ${C.border}`,borderTop:`3px solid ${C.yellow}`,
+        maxWidth:"480px",width:"100%",animation:"slideUp .3s ease"}}>
+
+        <div style={{padding:"20px 24px",borderBottom:`1px solid ${C.border}`,
+          display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>⚙️ НАСТРОЙКИ</div>
+          <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
+            color:C.muted,cursor:"pointer",width:"28px",height:"28px",fontSize:"14px"}}>✕</button>
+        </div>
+
+        <div style={{padding:"0 24px 8px"}}>
+          {/* Профиль */}
+          {player&&<div style={{padding:"16px 0 12px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"10px",letterSpacing:"2px",color:C.muted,marginBottom:"10px"}}>АККАУНТ</div>
+            <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+              {(player.avatar||player.faceit?.avatar)
+                ?<img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"44px",height:"44px",borderRadius:"3px",border:`1px solid ${C.border}`}}/>
+                :<div style={{width:"44px",height:"44px",background:"#1a1a10",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px"}}>👤</div>}
+              <div>
+                <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{player.username}</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>
+                  {player.faceit?.elo?`FACEIT LVL ${player.faceit.level} · ${player.faceit.elo} ELO`:`Steam Lvl ${player.steam_level||"—"}`}
+                </div>
+                <div style={{fontSize:"11px",color:isPro?C.yellow:C.muted,marginTop:"2px"}}>
+                  {isPro?"⚡ PRO подписка активна":"Бесплатный план"}
+                </div>
+              </div>
+            </div>
+            {!isPro&&<button onClick={onProModal} style={{width:"100%",marginTop:"12px",padding:"9px",
+              background:C.yellow+"18",border:`1px solid ${C.yellow}44`,color:C.yellow,
+              cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"inherit",letterSpacing:"1px"}}>
+              ⚡ УЛУЧШИТЬ ДО PRO →
+            </button>}
+          </div>}
+
+          {/* Язык */}
+          <Row label="Язык / Language" desc="Язык интерфейса сайта">
+            <div style={{display:"flex",gap:"4px"}}>
+              {[["ru","🇷🇺 RU"],["en","🇬🇧 EN"]].map(([l,label])=>(
+                <button key={l} onClick={()=>setLang(l)} style={{
+                  padding:"5px 12px",background:lang===l?C.yellow+"22":"transparent",
+                  border:`1px solid ${lang===l?C.yellow+"66":C.border}`,
+                  color:lang===l?C.yellow:C.muted,cursor:"pointer",
+                  fontSize:"12px",fontFamily:"inherit",fontWeight:lang===l?700:400}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </Row>
+
+          {/* Уведомления */}
+          <Row label="Уведомления" desc="Показывать уведомления о достижениях">
+            <Toggle on={notifOn} onToggle={()=>toggle("cs2_notif",!notifOn,setNotifOn)}/>
+          </Row>
+
+          {/* Статистика */}
+          <div style={{padding:"14px 0",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"10px",letterSpacing:"2px",color:C.muted,marginBottom:"10px"}}>ДАННЫЕ</div>
+            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+              <div style={{fontSize:"12px",color:C.label}}>
+                · История рейтинга хранится в браузере (до 30 дней)
+              </div>
+              <div style={{fontSize:"12px",color:C.label}}>
+                · Пароли и личные данные не сохраняются
+              </div>
+              <div style={{fontSize:"12px",color:C.label}}>
+                · Используется только публичная статистика Steam и FACEIT
+              </div>
+            </div>
+          </div>
+
+          {/* Очистить данные */}
+          <div style={{padding:"14px 0 8px"}}>
+            <div style={{fontSize:"10px",letterSpacing:"2px",color:C.muted,marginBottom:"10px"}}>ДЕЙСТВИЯ</div>
+            <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+              <button onClick={()=>{
+                if(window.confirm("Очистить историю рейтинга?")){
+                  const keys = Object.keys(localStorage).filter(k=>k.startsWith("cs2_rating_history_"));
+                  keys.forEach(k=>localStorage.removeItem(k));
+                  onClose();
+                }
+              }} style={{padding:"8px 14px",background:"transparent",border:`1px solid ${C.border}`,
+                color:C.muted,cursor:"pointer",fontSize:"11px",fontFamily:"inherit"}}>
+                Очистить историю
+              </button>
+              <button onClick={()=>{
+                if(window.confirm("Выйти из аккаунта?")){ onLogout(); onClose(); }
+              }} style={{padding:"8px 14px",background:"transparent",border:`1px solid ${C.lose}44`,
+                color:C.lose,cursor:"pointer",fontSize:"11px",fontFamily:"inherit"}}>
+                🚪 Выйти
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [player,setPlayer]       = useState(null);
@@ -6141,6 +6263,9 @@ export default function App() {
   const [showProModal,setShowProModal] = useState(false);
   const [showProCelebration,setShowProCelebration] = useState(false);
   const [showChecklist,setShowChecklist] = useState(true);
+  const [profileDropdown,setProfileDropdown] = useState(false);
+  const [lang,setLang] = useState(()=>{ try{ return localStorage.getItem("cs2_lang")||"ru"; }catch{ return "ru"; } });
+  const [showSettings,setShowSettings] = useState(false);
   const [showOnboarding,setShowOnboarding] = useState(false);
   const [analysisCount,setAnalysisCount] = useState(
     ()=>{ try{ return parseInt(localStorage.getItem("cs2_analysis_count")||"0"); }catch{ return 0; } }
@@ -6606,6 +6731,8 @@ export default function App() {
 
   const lc = ANALYSIS_COLOR[analysis?.level] || C.yellow;
 
+  const setLangPersist = (v) => { setLang(v); try{ localStorage.setItem("cs2_lang",v); }catch{} };
+
   // ── Layout ────────────────────────────────────────────────────────────────
   return (
     <div className="scanlines" style={{minHeight:"100vh",background:C.bg,fontFamily:"'Segoe UI',system-ui,-apple-system,sans-serif",color:C.text}}>
@@ -6616,6 +6743,7 @@ export default function App() {
         animation:"scan 10s linear infinite",pointerEvents:"none",zIndex:1}}/>
 
       {showPopup&&<SteamPopup onLogin={openSteam} onSkip={()=>setShowPopup(false)}/>}
+      {showSettings&&<SettingsModal player={player} lang={lang} setLang={setLangPersist} isPro={isPro} onClose={()=>setShowSettings(false)} onLogout={logout} onProModal={()=>{setShowSettings(false);setShowProModal(true);}}/>}
       {profileView&&<ProfileModal steamid={profileView.steamid} nickname={profileView.nickname} myId={player?.steamid} isPro={isPro} onClose={()=>setProfileView(null)}/>}
       {shareOpen&&player&&<ShareModal steamid={player.steamid} player={player} source={source} onClose={()=>setShareOpen(false)}/>}
       {showProModal&&<ProModal player={player} isPro={isPro} onClose={()=>setShowProModal(false)}
@@ -6635,18 +6763,21 @@ export default function App() {
           onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
           <Logo size={28} withText={true}/>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
           <div className="search-bar"><SearchBar onSelect={r=>setProfileView({nickname:r.nickname})}/></div>
+
+          {/* Переключатель языка */}
+          <button onClick={()=>setLangPersist(l=>l==="ru"?"en":"ru")} title={lang==="ru"?"Switch to English":"Переключить на русский"}
+            style={{background:"transparent",border:`1px solid ${C.border}`,color:C.muted,
+              cursor:"pointer",fontSize:"13px",padding:"5px 10px",fontFamily:"inherit",
+              display:"flex",alignItems:"center",gap:"5px",letterSpacing:"1px",transition:"all .2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=C.yellow+"88";e.currentTarget.style.color=C.yellow;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted;}}>
+            {lang==="ru"?"🇷🇺 RU":"🇬🇧 EN"}
+          </button>
+
           {player?(
             <>
-              <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                {(player.avatar||player.faceit?.avatar)&&
-                  <img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"28px",height:"28px",borderRadius:"2px"}}/>}
-                <span style={{fontSize:"13px",color:C.value}}>{player.username}</span>
-                {hasFaceit&&<span style={{fontSize:"11px",color:C.orange,background:"#ff773322",padding:"2px 8px",border:"1px solid #ff773344"}}>
-                  FACEIT {player.faceit.level} · {player.faceit.elo} ELO
-                </span>}
-              </div>
               {isPro
                 ? <button onClick={()=>setShowProModal(true)} style={{
                     display:"flex",alignItems:"center",gap:"6px",
@@ -6669,7 +6800,73 @@ export default function App() {
                 <span style={{fontSize:"10px",color:C.muted}}>дн</span>
               </div>}
               <button onClick={()=>setShareOpen(true)} style={{background:"transparent",border:`1px solid ${C.yellow}44`,color:C.yellow,cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"inherit",padding:"5px 12px",display:"flex",alignItems:"center",gap:"5px"}}>📤 <span>Поделиться</span></button>
-              <button onClick={logout} style={{background:"transparent",border:`1px solid ${C.border}`,color:C.label,cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"inherit",padding:"5px 10px"}}>ВЫЙТИ</button>
+
+              {/* Профиль дропдаун */}
+              <div style={{position:"relative"}}>
+                <button onClick={()=>setProfileDropdown(o=>!o)}
+                  style={{display:"flex",alignItems:"center",gap:"8px",background:"transparent",
+                    border:`1px solid ${profileDropdown?C.yellow+"66":C.border}`,
+                    cursor:"pointer",padding:"5px 10px",transition:"all .2s"}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"55"}
+                  onMouseLeave={e=>{if(!profileDropdown)e.currentTarget.style.borderColor=C.border;}}>
+                  {(player.avatar||player.faceit?.avatar)&&
+                    <img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"24px",height:"24px",borderRadius:"2px"}}/>}
+                  <span style={{fontSize:"13px",color:C.value,maxWidth:"120px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{player.username}</span>
+                  {hasFaceit&&<span style={{fontSize:"10px",color:C.orange,background:"#ff773318",padding:"1px 6px",border:"1px solid #ff773333"}}>
+                    FACEIT {player.faceit.level}
+                  </span>}
+                  <span style={{fontSize:"10px",color:C.muted,transition:"transform .2s",
+                    transform:profileDropdown?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
+                </button>
+
+                {profileDropdown&&<>
+                  <div onClick={()=>setProfileDropdown(false)} style={{position:"fixed",inset:0,zIndex:99}}/>
+                  <div style={{position:"absolute",right:0,top:"calc(100% + 6px)",
+                    background:"#141409",border:`1px solid ${C.yellow}44`,
+                    minWidth:"200px",zIndex:100,animation:"popIn .15s ease",boxShadow:"0 8px 32px rgba(0,0,0,0.6)"}}>
+                    {/* Шапка дропдауна */}
+                    <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,
+                      display:"flex",alignItems:"center",gap:"10px"}}>
+                      {(player.avatar||player.faceit?.avatar)
+                        ?<img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"36px",height:"36px",borderRadius:"3px",border:`1px solid ${C.border}`}}/>
+                        :<div style={{width:"36px",height:"36px",background:"#1a1a10",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px"}}>👤</div>}
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:"13px",color:C.value,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{player.username}</div>
+                        <div style={{fontSize:"10px",color:C.muted,marginTop:"1px"}}>
+                          {hasFaceit?`FACEIT LVL ${player.faceit.level} · ${player.faceit.elo} ELO`:`Steam Lvl ${player.steam_level||"—"}`}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Пункты меню */}
+                    {[
+                      {icon:"👤",label:"Мой профиль",action:()=>{setMainTab("overview");setProfileDropdown(false);}},
+                      {icon:"⚙️",label:"Настройки",action:()=>{setShowSettings(true);setProfileDropdown(false);}},
+                      {icon:"⚡",label:"PRO подписка",action:()=>{setShowProModal(true);setProfileDropdown(false);}},
+                      {icon:"📤",label:"Поделиться",action:()=>{setShareOpen(true);setProfileDropdown(false);}},
+                    ].map((item,i)=>(
+                      <button key={i} onClick={item.action}
+                        style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",padding:"10px 16px",
+                          background:"transparent",border:"none",color:C.label,cursor:"pointer",
+                          fontSize:"13px",fontFamily:"inherit",textAlign:"left",borderBottom:`1px solid ${C.border}`,
+                          transition:"all .15s"}}
+                        onMouseEnter={e=>{e.currentTarget.style.background="#1a1a10";e.currentTarget.style.color=C.yellow;}}
+                        onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.label;}}>
+                        <span style={{fontSize:"15px",width:"20px",textAlign:"center"}}>{item.icon}</span>
+                        {item.label}
+                      </button>
+                    ))}
+                    <button onClick={()=>{logout();setProfileDropdown(false);}}
+                      style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",padding:"10px 16px",
+                        background:"transparent",border:"none",color:C.lose,cursor:"pointer",
+                        fontSize:"13px",fontFamily:"inherit",textAlign:"left",transition:"all .15s"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="#1a0808"}
+                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                      <span style={{fontSize:"15px",width:"20px",textAlign:"center"}}>🚪</span>
+                      Выйти
+                    </button>
+                  </div>
+                </>}
+              </div>
             </>
           ):(
             <button onClick={openSteam} style={{background:"#1b6090",color:"#fff",border:"none",padding:"9px 18px",cursor:"pointer",fontSize:"11px",fontWeight:700,letterSpacing:"2px",fontFamily:"'Courier New',monospace"}}>STEAM</button>
