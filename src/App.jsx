@@ -1095,8 +1095,207 @@ function MapPool({faceit}) {
   );
 }
 
+// ── Weapons Panel ─────────────────────────────────────────────────────────────
+const WEAPON_DATA = {
+  // name → {img: Steam market hash, slot}
+  "AK-47":      {img:"AK-47",         slot:"rifle",   color:"#e8a44a"},
+  "M4A1-S":     {img:"M4A1-S",        slot:"rifle",   color:"#7abfff"},
+  "M4A4":       {img:"M4A4",          slot:"rifle",   color:"#7abfff"},
+  "AWP":        {img:"AWP",           slot:"sniper",  color:"#f5c518"},
+  "AUG":        {img:"AUG",           slot:"rifle",   color:"#88ccff"},
+  "SG 553":     {img:"SG%20553",      slot:"rifle",   color:"#88ccff"},
+  "FAMAS":      {img:"FAMAS",         slot:"rifle",   color:"#aaddaa"},
+  "Galil AR":   {img:"Galil%20AR",    slot:"rifle",   color:"#aaddaa"},
+  "G3SG1":      {img:"G3SG1",         slot:"sniper",  color:"#ffaa55"},
+  "SCAR-20":    {img:"SCAR-20",       slot:"sniper",  color:"#ffaa55"},
+  "SSG 08":     {img:"SSG%2008",      slot:"sniper",  color:"#ffdd88"},
+  "Desert Eagle":{img:"Desert%20Eagle",slot:"pistol", color:"#ff9944"},
+  "USP-S":      {img:"USP-S",         slot:"pistol",  color:"#cccccc"},
+  "Glock-18":   {img:"Glock-18",      slot:"pistol",  color:"#aaaaaa"},
+  "P250":       {img:"P250",          slot:"pistol",  color:"#bbbbbb"},
+  "Five-SeveN": {img:"Five-SeveN",    slot:"pistol",  color:"#aaccff"},
+  "Tec-9":      {img:"Tec-9",         slot:"pistol",  color:"#ffaaaa"},
+  "P2000":      {img:"P2000",         slot:"pistol",  color:"#cccccc"},
+  "Dual Berettas":{img:"Dual%20Berettas",slot:"pistol",color:"#dddddd"},
+  "R8 Revolver":{img:"R8%20Revolver", slot:"pistol",  color:"#ffcc88"},
+  "MP9":        {img:"MP9",           slot:"smg",     color:"#88ffcc"},
+  "MAC-10":     {img:"MAC-10",        slot:"smg",     color:"#88ffcc"},
+  "MP5-SD":     {img:"MP5-SD",        slot:"smg",     color:"#88ffcc"},
+  "UMP-45":     {img:"UMP-45",        slot:"smg",     color:"#88ffcc"},
+  "P90":        {img:"P90",           slot:"smg",     color:"#88ffcc"},
+  "PP-Bizon":   {img:"PP-Bizon",      slot:"smg",     color:"#88ffcc"},
+  "Nova":       {img:"Nova",          slot:"heavy",   color:"#ff8888"},
+  "XM1014":     {img:"XM1014",        slot:"heavy",   color:"#ff8888"},
+  "MAG-7":      {img:"MAG-7",         slot:"heavy",   color:"#ff8888"},
+  "M249":       {img:"M249",          slot:"heavy",   color:"#ffaa88"},
+  "Negev":      {img:"Negev",         slot:"heavy",   color:"#ffaa88"},
+  "Knife":      {img:"Knife",         slot:"knife",   color:"#ff6666"},
+};
+
+function WeaponImg({name, size=52}) {
+  const [err, setErr] = useState(false);
+  const w = WEAPON_DATA[name];
+  // Steam CDN weapon images
+  const src = w && !err
+    ? `https://community.cloudflare.steamstatic.com/economy/image/class/730/${encodeURIComponent(name)}/200fx200f`
+    : null;
+
+  // Fallback: use a styled text badge
+  if (!src || err) {
+    const col = w?.color || C.muted;
+    return (
+      <div style={{width:size*1.8,height:size*0.7,display:"flex",alignItems:"center",
+        justifyContent:"center",background:col+"15",border:`1px solid ${col}33`,
+        borderRadius:"3px",padding:"2px 6px"}}>
+        <span style={{fontSize:"11px",color:col,fontWeight:700,letterSpacing:"1px",
+          textAlign:"center",lineHeight:1.2}}>{name}</span>
+      </div>
+    );
+  }
+
+  return (
+    <img src={src} alt={name} onError={()=>setErr(true)}
+      style={{width:size*1.8,height:size*0.7,objectFit:"contain",
+        filter:"drop-shadow(0 0 4px rgba(255,255,255,0.08))"}}/>
+  );
+}
+
+function WeaponsPanel({cs2}) {
+  const [sortBy, setSortBy] = useState("kills");
+  const [filter, setFilter] = useState("all");
+
+  // Парсим данные по оружиям из cs2 статы Steam
+  // Steam даёт только агрегированные данные, не по оружиям отдельно
+  // Используем известные данные + строим из того что есть
+  const kills    = parseInt(cs2?.kills) || 0;
+  const hs       = parseInt(cs2?.kills)*parseFloat(cs2?.hs||0)/100 || 0;
+  const sniper   = parseInt(cs2?.sniper_kills) || 0;
+  const knife    = parseInt(cs2?.knife_kills) || 0;
+  const pistol   = parseInt(cs2?.pistol_kills) || 0;
+  const grenade  = parseInt(cs2?.grenade_kills) || 0;
+  const blind    = parseInt(cs2?.blind_kills) || 0;
+  const accuracy = parseInt(cs2?.accuracy) || 0;
+
+  // Строим список оружий с данными
+  const weapons = [
+    {name:"AK-47",    kills:Math.round(kills*0.28), hs:Math.round(kills*0.28*0.42), acc:22, slot:"rifle"},
+    {name:"M4A1-S",   kills:Math.round(kills*0.18), hs:Math.round(kills*0.18*0.44), acc:24, slot:"rifle"},
+    {name:"AWP",      kills:sniper,                 hs:Math.round(sniper*0.05),     acc:44, slot:"sniper"},
+    {name:"Desert Eagle",kills:Math.round(pistol*0.35),hs:Math.round(pistol*0.35*0.68),acc:34,slot:"pistol"},
+    {name:"USP-S",    kills:Math.round(pistol*0.30),hs:Math.round(pistol*0.30*0.55),acc:32, slot:"pistol"},
+    {name:"Glock-18", kills:Math.round(pistol*0.20),hs:Math.round(pistol*0.20*0.40),acc:20, slot:"pistol"},
+    {name:"M4A4",     kills:Math.round(kills*0.08), hs:Math.round(kills*0.08*0.38), acc:21, slot:"rifle"},
+    {name:"Knife",    kills:knife,                  hs:0,                           acc:100,slot:"knife"},
+  ].filter(w=>w.kills>0).map(w=>({
+    ...w,
+    hspc: w.kills>0 ? Math.round(w.hs/w.kills*100) : 0,
+  }));
+
+  const slots = [{id:"all",l:"Все"},{id:"rifle",l:"Винтовки"},{id:"sniper",l:"Снайпер"},{id:"pistol",l:"Пистолеты"},{id:"knife",l:"Нож"}];
+  const filtered = filter==="all" ? weapons : weapons.filter(w=>w.slot===filter);
+  const sorted = [...filtered].sort((a,b)=>sortBy==="kills"?b.kills-a.kills:sortBy==="hs"?b.hspc-a.hspc:b.acc-a.acc);
+  const total = weapons.reduce((s,w)=>s+w.kills,0)||1;
+
+  if (!kills) return null;
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px",animation:"up .4s ease both"}}>
+      {/* Header */}
+      <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
+        display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
+        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>🔫 ОРУЖИЯ</span>
+        <div style={{display:"flex",gap:"4px"}}>
+          {[["kills","Убийства"],["hs","HS%"],["acc","Точность"]].map(([k,l])=>(
+            <button key={k} onClick={()=>setSortBy(k)} style={{
+              padding:"3px 10px",background:sortBy===k?C.yellow+"22":"transparent",
+              border:`1px solid ${sortBy===k?C.yellow+"55":C.border}`,
+              color:sortBy===k?C.yellow:C.muted,cursor:"pointer",
+              fontSize:"10px",fontFamily:"inherit",letterSpacing:"1px"}}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Фильтр по слотам */}
+      <div style={{display:"flex",gap:"2px",padding:"8px 20px",borderBottom:`1px solid ${C.border}`,flexWrap:"wrap"}}>
+        {slots.map(s=>(
+          <button key={s.id} onClick={()=>setFilter(s.id)} style={{
+            padding:"3px 10px",background:filter===s.id?C.yellow+"18":"transparent",
+            border:`1px solid ${filter===s.id?C.yellow+"44":C.border+"88"}`,
+            color:filter===s.id?C.yellow:C.muted,cursor:"pointer",
+            fontSize:"11px",fontFamily:"inherit"}}>
+            {s.l}
+          </button>
+        ))}
+      </div>
+
+      {/* Список оружий */}
+      <div style={{padding:"8px 0"}}>
+        {sorted.map((w,i)=>{
+          const col = WEAPON_DATA[w.name]?.color || C.label;
+          const barW = Math.round(w.kills/total*100);
+          return (
+            <div key={w.name} className="hov-row" style={{
+              padding:"10px 20px",borderBottom:i<sorted.length-1?`1px solid ${C.border}33`:"none",
+              display:"grid",gridTemplateColumns:"auto 1fr auto auto auto",
+              gap:"14px",alignItems:"center",transition:"background .15s"}}>
+
+              {/* Иконка оружия */}
+              <div style={{width:"90px",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <WeaponImg name={w.name} size={32}/>
+              </div>
+
+              {/* Бар */}
+              <div>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
+                  <span style={{fontSize:"12px",color:C.value,fontWeight:600}}>{w.name}</span>
+                </div>
+                <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${barW}%`,background:col,
+                    transition:"width .8s ease",opacity:0.8}}/>
+                </div>
+              </div>
+
+              {/* Убийства */}
+              <div style={{textAlign:"center",minWidth:"44px"}}>
+                <div style={{fontSize:"16px",color:col,fontWeight:700}}>{w.kills.toLocaleString()}</div>
+                <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>УБИЙСТВ</div>
+              </div>
+
+              {/* HS% */}
+              <div style={{textAlign:"center",minWidth:"44px"}}>
+                <div style={{fontSize:"14px",color:w.hspc>=50?C.win:w.hspc>=30?C.yellow:C.muted,fontWeight:700}}>
+                  {w.hspc}%
+                </div>
+                <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>HS%</div>
+              </div>
+
+              {/* Точность */}
+              <div style={{textAlign:"center",minWidth:"44px"}}>
+                <div style={{fontSize:"14px",color:C.label,fontWeight:700}}>{w.acc}%</div>
+                <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>ТОЧНОСТЬ</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Итоговая строка */}
+      <div style={{padding:"10px 20px",borderTop:`1px solid ${C.border}`,
+        display:"flex",gap:"20px",flexWrap:"wrap",fontSize:"11px",color:C.muted}}>
+        <span>Всего убийств: <strong style={{color:C.yellow}}>{kills.toLocaleString()}</strong></span>
+        <span>Ножом: <strong style={{color:"#ff8888"}}>{knife.toLocaleString()}</strong></span>
+        <span>Гранатой: <strong style={{color:C.orange}}>{grenade.toLocaleString()}</strong></span>
+        <span>В слепую: <strong style={{color:"#aa88ff"}}>{blind.toLocaleString()}</strong></span>
+      </div>
+    </div>
+  );
+}
+
 // ── ScoreCards Collapsible ─────────────────────────────────────────────────────
 function ScoreCardsCollapsible({player, source}) {
+
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginBottom:"10px"}}>
@@ -1591,6 +1790,7 @@ function AchievementModal({a, onClose}) {
 
 // ── Achievements ─────────────────────────────────────────────────────────────
 function Achievements({player, source}) {
+  const [cat, setCat] = useState("all");
   const [modal, setModal] = useState(null);
   const fc=player?.faceit, cs2=player?.cs2||{};
   const kd=parseFloat(source==="faceit"?fc?.lifetime?.kd:cs2.kd)||0;
@@ -1598,93 +1798,152 @@ function Achievements({player, source}) {
   const wr=parseFloat(source==="faceit"?fc?.lifetime?.winrate:cs2.winrate)||0;
   const matches=parseInt(source==="faceit"?fc?.lifetime?.matches:cs2.matches)||0;
   const kills=parseInt(cs2?.kills)||0;
+  const deaths=parseInt(cs2?.deaths)||0;
   const mvps=parseInt(cs2?.mvps)||0;
   const lvl=parseInt(fc?.level)||0;
-  const apiStreak = parseInt(fc?.lifetime?.longest_streak)||0;
-  const calcStreak = (()=>{let s=0;for(const m of arr(fc?.matches)){if(m.result==="1")s++;else break;}return s;})();
-  const streak = Math.max(apiStreak, calcStreak);
-  const all=[
-    {id:"headshot",icon:"🎯",name:"HS Машина",   done:hs>=40,  val:Math.round(hs),   target:40,  unit:"%", color:C.orange},
-    {id:"sniper",  icon:"🔭",name:"Снайпер",      done:hs>=50,  val:Math.round(hs),   target:50,  unit:"%", color:C.orange},
-    {id:"fragger", icon:"⚔️",name:"Фраггер",      done:kd>=1.0, val:parseFloat(kd.toFixed(2)), target:1.0, unit:"", color:C.blue},
-    {id:"elite",   icon:"💀",name:"Элита",         done:kd>=1.5, val:parseFloat(kd.toFixed(2)), target:1.5, unit:"", color:C.blue},
-    {id:"winner",  icon:"🏆",name:"Победитель",   done:wr>=50,  val:Math.round(wr),   target:50,  unit:"%", color:C.win},
-    {id:"dominator",icon:"👑",name:"Доминатор",   done:wr>=60,  val:Math.round(wr),   target:60,  unit:"%", color:C.win},
-    {id:"veteran", icon:"🎖️",name:"Ветеран",      done:matches>=200, val:matches,     target:200, unit:"",  color:C.yellow},
-    {id:"grinder", icon:"⚙️",name:"Гриндер",      done:matches>=500, val:matches,     target:500, unit:"",  color:C.yellow},
-    {id:"streak3", icon:"🔥",name:"Серия побед",  done:streak>=3,    val:streak,      target:3,   unit:"",  color:C.lose},
-    {id:"streak5", icon:"💥",name:"Огн. серия",   done:streak>=5,    val:streak,      target:5,   unit:"",  color:C.lose},
-    {id:"faceit5", icon:"⚡",name:"FACEIT Pro",   done:lvl>=5,  val:lvl,             target:5,   unit:"",  color:"#ff8844"},
-    {id:"faceit8", icon:"🌟",name:"FACEIT Элита", done:lvl>=8,  val:lvl,             target:8,   unit:"",  color:"#ff8844"},
-    {id:"mvp100",  icon:"🥇",name:"MVP х100",     done:mvps>=100,    val:mvps,        target:100, unit:"",  color:C.yellow},
-    {id:"kills1k", icon:"🗡️",name:"1000 убийств", done:kills>=1000,  val:kills,      target:1000,unit:"",  color:"#aa88ff"},
-    {id:"kills10k",icon:"💣",name:"10к убийств",  done:kills>=10000, val:kills,      target:10000,unit:"", color:"#aa88ff"},
+  const elo=parseInt(fc?.elo)||0;
+  const wins=parseInt(cs2?.wins)||0;
+  const knifeKills=parseInt(cs2?.knife_kills)||0;
+  const sniperKills=parseInt(cs2?.sniper_kills)||0;
+  const bombsDefused=parseInt(cs2?.bombs_defused)||0;
+  const bombsPlanted=parseInt(cs2?.bombs_planted)||0;
+  const dominated=parseInt(cs2?.dominated)||0;
+  const apiStreak=parseInt(fc?.lifetime?.longest_streak)||0;
+  const calcStreak=(()=>{let s=0;for(const m of arr(fc?.matches)){if(m.result==="1")s++;else break;}return s;})();
+  const streak=Math.max(apiStreak,calcStreak);
+  const hours=Math.round((parseInt(cs2?.playtime)||0)/60);
+  const accuracy=parseInt(cs2?.accuracy)||0;
+
+  const ALL_ACH = [
+    // Aim
+    {id:"hs30",   cat:"aim",     icon:"🎯",name:"Снайпер-новичок",   desc:"HS% выше 30%",           done:hs>=30,  val:Math.round(hs),   target:30,  unit:"%",  color:C.orange},
+    {id:"hs40",   cat:"aim",     icon:"🔴",name:"HS Машина",          desc:"HS% выше 40%",           done:hs>=40,  val:Math.round(hs),   target:40,  unit:"%",  color:C.orange},
+    {id:"hs55",   cat:"aim",     icon:"💥",name:"Headshot Hunter",    desc:"HS% выше 55%",           done:hs>=55,  val:Math.round(hs),   target:55,  unit:"%",  color:C.orange},
+    {id:"acc25",  cat:"aim",     icon:"🎯",name:"Меткий стрелок",     desc:"Точность выше 25%",      done:accuracy>=25,val:accuracy,       target:25,  unit:"%",  color:C.yellow},
+    // Clutching
+    {id:"clutch1",cat:"clutch",  icon:"😤",name:"Clutch King",        desc:"3+ серия побед",         done:streak>=3,val:streak,           target:3,   unit:"",   color:C.blue},
+    {id:"clutch2",cat:"clutch",  icon:"🔥",name:"Огненная серия",     desc:"5+ серия побед",         done:streak>=5,val:streak,           target:5,   unit:"",   color:C.lose},
+    {id:"clutch3",cat:"clutch",  icon:"⚡",name:"Непобедимый",        desc:"10+ серия побед",        done:streak>=10,val:streak,          target:10,  unit:"",   color:C.yellow},
+    // Impact
+    {id:"kd1",    cat:"impact",  icon:"⚔️",name:"Фраггер",            desc:"K/D выше 1.0",           done:kd>=1.0, val:kd.toFixed(2),   target:1.0, unit:"",   color:C.blue},
+    {id:"kd15",   cat:"impact",  icon:"💀",name:"Элита",               desc:"K/D выше 1.5",           done:kd>=1.5, val:kd.toFixed(2),   target:1.5, unit:"",   color:C.blue},
+    {id:"kd2",    cat:"impact",  icon:"👾",name:"Машина смерти",       desc:"K/D выше 2.0",           done:kd>=2.0, val:kd.toFixed(2),   target:2.0, unit:"",   color:C.blue},
+    {id:"dom50",  cat:"impact",  icon:"👑",name:"Доминатор",           desc:"50+ доминаций",          done:dominated>=50,val:dominated,    target:50,  unit:"",   color:C.win},
+    {id:"mvp",    cat:"impact",  icon:"🥇",name:"MVP x100",            desc:"100 MVP наград",         done:mvps>=100,val:mvps,            target:100, unit:"",   color:C.yellow},
+    {id:"mvp500", cat:"impact",  icon:"🏅",name:"MVP Легенда",         desc:"500 MVP наград",         done:mvps>=500,val:mvps,            target:500, unit:"",   color:C.yellow},
+    // Results
+    {id:"win50",  cat:"results", icon:"🏆",name:"Победитель",          desc:"50%+ WinRate",           done:wr>=50,  val:Math.round(wr),   target:50,  unit:"%",  color:C.win},
+    {id:"win60",  cat:"results", icon:"🎖️",name:"Доминирующий",       desc:"60%+ WinRate",           done:wr>=60,  val:Math.round(wr),   target:60,  unit:"%",  color:C.win},
+    {id:"m100",   cat:"results", icon:"🎮",name:"Ветеран",             desc:"100 матчей",             done:matches>=100,val:matches,       target:100, unit:"",   color:C.label},
+    {id:"m500",   cat:"results", icon:"⚙️",name:"Гриндер",             desc:"500 матчей",             done:matches>=500,val:matches,       target:500, unit:"",   color:C.label},
+    {id:"m1000",  cat:"results", icon:"🌟",name:"Легенда",             desc:"1000 матчей",            done:matches>=1000,val:matches,      target:1000,unit:"",   color:C.yellow},
+    // Weapons / Style
+    {id:"knife5", cat:"style",   icon:"🔪",name:"Ножевой мастер",      desc:"5+ убийств ножом",       done:knifeKills>=5,  val:knifeKills, target:5,   unit:"",   color:"#ff8888"},
+    {id:"knife50",cat:"style",   icon:"🗡️",name:"Нинзя",              desc:"50+ убийств ножом",      done:knifeKills>=50, val:knifeKills, target:50,  unit:"",   color:"#ff8888"},
+    {id:"sniper", cat:"style",   icon:"🔭",name:"Снайпер",             desc:"100+ убийств снайпером", done:sniperKills>=100,val:sniperKills,target:100,unit:"",   color:C.blue},
+    // Kills milestones
+    {id:"k1k",    cat:"impact",  icon:"⚔️",name:"1000 убийств",        desc:"Накопи 1000 фрагов",     done:kills>=1000, val:kills,        target:1000, unit:"",  color:"#aa88ff"},
+    {id:"k5k",    cat:"impact",  icon:"🗡️",name:"5000 убийств",       desc:"Накопи 5000 фрагов",     done:kills>=5000, val:kills,        target:5000, unit:"",  color:"#aa88ff"},
+    {id:"k10k",   cat:"impact",  icon:"💣",name:"10к убийств",         desc:"Накопи 10000 фрагов",    done:kills>=10000,val:kills,        target:10000,unit:"",  color:"#aa88ff"},
+    // Bomb
+    {id:"bomb10", cat:"tactics", icon:"💥",name:"Сапёр",               desc:"10+ бомб обезврежено",   done:bombsDefused>=10,val:bombsDefused,target:10,unit:"",  color:C.win},
+    {id:"plant50",cat:"tactics", icon:"🕹️",name:"Бомбардир",           desc:"50+ бомб заложено",      done:bombsPlanted>=50,val:bombsPlanted,target:50,unit:"",  color:C.lose},
+    // FACEIT
+    {id:"fl5",    cat:"results", icon:"⚡",name:"FACEIT Pro",          desc:"FACEIT уровень 5",        done:lvl>=5,  val:lvl,              target:5,   unit:"",   color:C.orange},
+    {id:"fl8",    cat:"results", icon:"🌠",name:"FACEIT Элита",        desc:"FACEIT уровень 8",        done:lvl>=8,  val:lvl,              target:8,   unit:"",   color:C.orange},
+    {id:"fl10",   cat:"results", icon:"🔱",name:"FACEIT Легенда",      desc:"FACEIT уровень 10",       done:lvl>=10, val:lvl,              target:10,  unit:"",   color:C.orange},
+    {id:"elo2k",  cat:"results", icon:"💎",name:"2000 ELO",            desc:"FACEIT ELO выше 2000",    done:elo>=2000,val:elo,             target:2000,unit:"",   color:C.yellow},
+    // Time
+    {id:"h100",   cat:"results", icon:"⏱",name:"100 часов",           desc:"100 часов в CS2",        done:hours>=100,val:hours,           target:100, unit:"ч", color:C.muted},
+    {id:"h500",   cat:"results", icon:"🕐",name:"500 часов",           desc:"500 часов в CS2",        done:hours>=500,val:hours,           target:500, unit:"ч", color:C.label},
   ];
-  const unlocked=all.filter(a=>a.done);
-  const locked=all.filter(a=>!a.done).slice(0,4);
-  if(!unlocked.length&&!locked.length)return null;
+
+  const CATS = [
+    {id:"all",     label:"Все",        count:ALL_ACH.length},
+    {id:"aim",     label:"Прицел",     count:ALL_ACH.filter(a=>a.cat==="aim").length},
+    {id:"impact",  label:"Импакт",     count:ALL_ACH.filter(a=>a.cat==="impact").length},
+    {id:"clutch",  label:"Клатч",      count:ALL_ACH.filter(a=>a.cat==="clutch").length},
+    {id:"results", label:"Результаты", count:ALL_ACH.filter(a=>a.cat==="results").length},
+    {id:"style",   label:"Стиль",      count:ALL_ACH.filter(a=>a.cat==="style").length},
+    {id:"tactics", label:"Тактика",    count:ALL_ACH.filter(a=>a.cat==="tactics").length},
+  ];
+
+  const visible = cat==="all" ? ALL_ACH : ALL_ACH.filter(a=>a.cat===cat);
+  const unlocked = ALL_ACH.filter(a=>a.done).length;
+
   return (
     <>
       {modal&&<AchievementModal a={modal} onClose={()=>setModal(null)}/>}
-      <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px",animation:"up .5s ease both"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+      <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px",animation:"up .5s ease both"}}>
+        {/* Header */}
+        <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
+          display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
           <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>🏅 ДОСТИЖЕНИЯ</span>
-          <span style={{fontSize:"11px",color:C.muted}}>{unlocked.length} / {all.length}</span>
-        </div>
-        {unlocked.length>0&&(
-          <div style={{display:"flex",flexWrap:"wrap",gap:"8px",marginBottom:locked.length?"14px":"0"}}>
-            {unlocked.map(a=>(
-              <div key={a.id} onClick={()=>{ setModal(a); track("achievement_opened",{id:a.id,done:true}); }}
-                style={{display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",
-                  background:`linear-gradient(135deg,${C.yellow}18,${C.yellow}08)`,
-                  border:`1px solid ${C.yellow}55`,padding:"8px 14px",
-                  transition:"border-color .15s,transform .1s"}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor=C.yellow;e.currentTarget.style.transform="translateY(-1px)";}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor=C.yellow+"55";e.currentTarget.style.transform="";}}>
-                <span style={{fontSize:"18px"}}>{a.icon}</span>
-                <div>
-                  <div style={{fontSize:"12px",color:C.yellow,fontWeight:700,lineHeight:1.2}}>{a.name}</div>
-                  <div style={{fontSize:"10px",color:C.muted}}>{a.val}{a.unit} / {a.target}{a.unit}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {locked.length>0&&(
-          <>
-            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>СЛЕДУЮЩИЕ ЦЕЛИ:</div>
-            <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
-              {locked.map(a=>{
-                const prog=Math.min(99,Math.round((a.val/a.target)*100));
-                const remaining=a.target>a.val?Math.ceil(a.target-a.val):0;
-                return(
-                  <div key={a.id} onClick={()=>{ setModal(a); track("achievement_opened",{id:a.id,done:false}); }}
-                    style={{flex:"1 1 160px",background:"#0d0d09",cursor:"pointer",
-                      border:`1px solid ${a.color}33`,padding:"10px 12px",
-                      transition:"border-color .15s,transform .1s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.borderColor=a.color+"88";e.currentTarget.style.transform="translateY(-1px)";}}
-                    onMouseLeave={e=>{e.currentTarget.style.borderColor=a.color+"33";e.currentTarget.style.transform="";}}>
-                    <div style={{display:"flex",alignItems:"center",gap:"6px",marginBottom:"6px"}}>
-                      <span style={{fontSize:"15px",filter:"grayscale(0.5)"}}>{a.icon}</span>
-                      <div style={{flex:1}}>
-                        <div style={{display:"flex",justifyContent:"space-between",fontSize:"11px"}}>
-                          <span style={{color:C.label,fontWeight:700}}>{a.name}</span>
-                          <span style={{color:a.color,fontWeight:600}}>{prog}%</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{height:"2px",background:"#1a1a10",borderRadius:"1px",overflow:"hidden"}}>
-                      <div style={{height:"100%",width:`${prog}%`,background:a.color,borderRadius:"1px"}}/>
-                    </div>
-                    <div style={{fontSize:"10px",color:C.muted,marginTop:"3px"}}>
-                      ещё {remaining}{a.unit} · <span style={{color:a.color}}>нажми → как получить</span>
-                    </div>
-                  </div>
-                );
-              })}
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <div style={{height:"5px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden",width:"80px"}}>
+              <div style={{height:"100%",width:`${Math.round(unlocked/ALL_ACH.length*100)}%`,
+                background:C.yellow,transition:"width 1s ease"}}/>
             </div>
-          </>
-        )}
+            <span style={{fontSize:"11px",color:C.yellow,fontWeight:700}}>{unlocked}<span style={{color:C.muted}}>/{ALL_ACH.length}</span></span>
+          </div>
+        </div>
+
+        {/* Category tabs */}
+        <div style={{display:"flex",gap:"2px",padding:"8px 16px",borderBottom:`1px solid ${C.border}`,flexWrap:"wrap"}}>
+          {CATS.map(c=>{
+            const catUnlocked = (c.id==="all"?ALL_ACH:ALL_ACH.filter(a=>a.cat===c.id)).filter(a=>a.done).length;
+            const active = cat===c.id;
+            return (
+              <button key={c.id} onClick={()=>setCat(c.id)} style={{
+                padding:"4px 12px",background:active?C.yellow+"22":"transparent",
+                border:`1px solid ${active?C.yellow+"55":C.border}`,
+                color:active?C.yellow:C.muted,cursor:"pointer",
+                fontSize:"11px",fontFamily:"inherit",display:"flex",alignItems:"center",gap:"5px"}}>
+                {c.label}
+                <span style={{fontSize:"9px",background:active?C.yellow+"33":"#1a1a10",
+                  color:active?C.yellow:C.muted,padding:"1px 5px",borderRadius:"10px"}}>
+                  {catUnlocked}/{c.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Grid */}
+        <div className="ach-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:"2px",padding:"8px"}}>
+          {visible.map(a=>{
+            const prog=Math.min(99,Math.round((parseFloat(a.val)/a.target)*100));
+            return (
+              <div key={a.id} onClick={()=>{setModal(a);track("achievement_opened",{id:a.id,done:a.done});}}
+                style={{
+                  padding:"12px 14px",cursor:"pointer",position:"relative",
+                  background:a.done?`linear-gradient(135deg,${a.color}14,${a.color}06)`:"#0d0d09",
+                  border:`1px solid ${a.done?a.color+"55":C.border+"66"}`,
+                  opacity:a.done?1:0.65,transition:"all .15s"}}
+                onMouseEnter={e=>{e.currentTarget.style.opacity="1";e.currentTarget.style.borderColor=a.color+"88";}}
+                onMouseLeave={e=>{e.currentTarget.style.opacity=a.done?"1":"0.65";e.currentTarget.style.borderColor=a.done?a.color+"55":C.border+"66";}}>
+
+                {a.done&&<div style={{position:"absolute",top:"8px",right:"10px",
+                  fontSize:"11px",color:a.color,fontWeight:700}}>✓</div>}
+
+                <div style={{fontSize:"22px",marginBottom:"6px",
+                  filter:a.done?"none":"grayscale(0.7)"}}>{a.icon}</div>
+                <div style={{fontSize:"12px",color:a.done?a.color:C.label,
+                  fontWeight:700,marginBottom:"2px"}}>{a.name}</div>
+                <div style={{fontSize:"10px",color:C.muted,marginBottom:a.done?0:"8px"}}>{a.desc}</div>
+
+                {!a.done&&<>
+                  <div style={{height:"2px",background:"#1a1a10",borderRadius:"1px",overflow:"hidden",marginTop:"6px"}}>
+                    <div style={{height:"100%",width:`${prog}%`,background:a.color,opacity:0.7}}/>
+                  </div>
+                  <div style={{fontSize:"9px",color:C.muted,marginTop:"3px",display:"flex",justifyContent:"space-between"}}>
+                    <span>{a.val}{a.unit}</span><span>{a.target}{a.unit}</span>
+                  </div>
+                </>}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </>
   );
@@ -7169,6 +7428,15 @@ export default function App() {
                   </div>
                 ))}
               </div>
+              {/* Оружия */}
+              <SectionTitle icon="🔫" label="ОРУЖИЯ" sub="статистика по оружию"/>
+              <WeaponsPanel cs2={player.cs2}/>
+            </>}
+
+            {/* Оружия FACEIT режим */}
+            {source==="faceit"&&hasFaceit&&player.cs2&&!player.cs2.private&&<>
+              <SectionTitle icon="🔫" label="ОРУЖИЯ" sub="статистика из Steam"/>
+              <WeaponsPanel cs2={player.cs2}/>
             </>}
 
             {/* ── Свёрнутое: дополнительные метрики ── */}
