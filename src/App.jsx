@@ -6224,7 +6224,8 @@ export default function App() {
         if (prevData.mvps && mvps >= 100 && prevData.mvps < 100) notifs.push({icon:"🥇",title:"Достижение: MVP x100!",text:"100 MVP — настоящий лидер команды",color:C.yellow});
         // Стрик при повторном входе
         const cur = parseInt(localStorage.getItem("cs2_streak")||"0");
-        if (cur >= 3 && lastNotif) notifs.push({icon:"🔥",title:`Серия: ${cur} дней подряд!`,text:"Заходи завтра чтобы не потерять",color:C.lose});
+        // Стрик показывается отдельным StreakToast — не дублируем в notifications
+        // if (cur >= 3 && lastNotif) notifs.push(...);
         // Сохраняем текущие статы для следующего сравнения
         localStorage.setItem(`cs2_prev_stats_${player.steamid}`, JSON.stringify({kd,hs,wr,matches,kills,mvps}));
         localStorage.setItem(notifKey, today);
