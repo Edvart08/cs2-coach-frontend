@@ -6443,16 +6443,46 @@ export default function App() {
       if (!e.data?.player) return;
       const cs2stats = e.data.stats || {};
       const p = {...e.data.player, cs2: cs2stats};
-      setPlayer(p);
-      if (!p.faceit?.elo) setSource("steam");
-      try{localStorage.setItem("cs2_player_v3",JSON.stringify(p));}catch{}
-      setShowPopup(false);
-      // check Pro status
+
+      // Проверяем бан сразу при входе
       if (p.steamid) {
-        fetch(`${BACKEND}/pro/${p.steamid}`)
-          .then(r=>r.json())
-          .then(d=>{ if(d.pro){setIsPro(true);setAiRemaining(999);}else{const lp=localStorage.getItem("cs2_is_pro")==="1";if(!lp){setIsPro(false);setAiRemaining(d.remaining??FREE_WEEKLY);}} })
-          .catch(()=>{});
+        fetch(`${BACKEND}/check-ban/${p.steamid}`)
+          .then(r => {
+            if (r.status === 403) {
+              r.json().then(bd => {
+                localStorage.removeItem("cs2_player_v3");
+                localStorage.removeItem("cs2_is_pro");
+                document.body.innerHTML = `<div style="min-height:100vh;background:#0a0a07;display:flex;align-items:center;justify-content:center;font-family:sans-serif;">
+                  <div style="text-align:center;padding:40px;max-width:400px;">
+                    <div style="font-size:64px;margin-bottom:16px;">⛔</div>
+                    <div style="font-size:20px;color:#ff4444;font-weight:700;margin-bottom:8px;">Аккаунт заблокирован</div>
+                    <div style="font-size:14px;color:#9a9270;line-height:1.7;">${bd.detail||'Доступ к сервису ограничен.'}</div>
+                  </div>
+                </div>`;
+              });
+              return; // не логиним
+            }
+            // Не забанен — продолжаем вход
+            setPlayer(p);
+            if (!p.faceit?.elo) setSource("steam");
+            try{localStorage.setItem("cs2_player_v3",JSON.stringify(p));}catch{}
+            setShowPopup(false);
+            // check Pro status
+            fetch(`${BACKEND}/pro/${p.steamid}`)
+              .then(r=>r.json())
+              .then(d=>{ if(d.pro){setIsPro(true);setAiRemaining(999);}else{const lp=localStorage.getItem("cs2_is_pro")==="1";if(!lp){setIsPro(false);setAiRemaining(d.remaining??FREE_WEEKLY);}} })
+              .catch(()=>{});
+          })
+          .catch(()=>{
+            // Ошибка сети — всё равно логиним
+            setPlayer(p);
+            if (!p.faceit?.elo) setSource("steam");
+            try{localStorage.setItem("cs2_player_v3",JSON.stringify(p));}catch{}
+            setShowPopup(false);
+          });
+      } else {
+        setPlayer(p);
+        setShowPopup(false);
       }
       // Авто-добавление в лидерборд при первом входе
       try {
