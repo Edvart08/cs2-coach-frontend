@@ -824,6 +824,22 @@ function SteamStatsPanel({player}) {
   const hours = Math.round(playtime / 60);
   const kdPerMatch = matches > 0 ? (kills / matches).toFixed(1) : "—";
   const deathsPerMatch = matches > 0 ? (deaths / matches).toFixed(1) : "—";
+  // Новые данные
+  const accuracy = parseInt(cs2.accuracy) || 0;
+  const knifeKills = parseInt(cs2.knife_kills) || 0;
+  const pistolKills = parseInt(cs2.pistol_kills) || 0;
+  const sniperKills = parseInt(cs2.sniper_kills) || 0;
+  const grenadeKills = parseInt(cs2.grenade_kills) || 0;
+  const blindKills = parseInt(cs2.blind_kills) || 0;
+  const dominated = parseInt(cs2.dominated) || 0;
+  const revenges = parseInt(cs2.revenges) || 0;
+  const bombsPlanted = parseInt(cs2.bombs_planted) || 0;
+  const bombsDefused = parseInt(cs2.bombs_defused) || 0;
+  const pistolRounds = parseInt(cs2.rounds_pistol_won) || 0;
+  // Профиль
+  const friendCount = player?.friend_count || 0;
+  const badgeCount = player?.badge_count || 0;
+  const playerXp = player?.player_xp || 0;
 
   // Средние по базе для сравнения
   const AVG = { kd:0.90, hs:28, wr:47 };
@@ -935,7 +951,7 @@ function SteamStatsPanel({player}) {
         <StatBar label="WR%" val={wr} avg={AVG.wr} fmt={(v)=>Math.round(v)+"%"}/>
       </div>
 
-      {/* Цифры */}
+      {/* Цифры — основные */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px",marginBottom:"3px"}}>
         {[
           {l:"УБИЙСТВА",   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
@@ -952,6 +968,50 @@ function SteamStatsPanel({player}) {
           </div>
         ))}
       </div>
+
+      {/* Специальные убийства */}
+      {(knifeKills>0||sniperKills>0||grenadeKills>0||blindKills>0)&&<>
+        <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,
+          padding:"14px 0 8px"}}>СПЕЦИАЛЬНЫЕ УБИЙСТВА</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:"3px",marginBottom:"3px"}}>
+          {[
+            {l:"НОЖОМ",    v:knifeKills,   icon:"🔪", c:"#ff8888"},
+            {l:"ПИСТОЛЕТ", v:pistolKills,  icon:"🔫", c:C.blue},
+            {l:"СНАЙПЕР",  v:sniperKills,  icon:"🔭", c:C.orange},
+            {l:"ГРАНАТА",  v:grenadeKills, icon:"💣", c:C.yellow},
+            {l:"В СЛЕПУЮ", v:blindKills,   icon:"🎭", c:"#aa88ff"},
+            {l:"ДОМИНАЦИЙ",v:dominated,    icon:"👑", c:C.win},
+          ].filter(s=>s.v>0).map((s,i)=>(
+            <div key={i} style={{background:C.card,border:`1px solid ${s.c}22`,padding:"12px 10px",textAlign:"center"}}>
+              <div style={{fontSize:"18px",marginBottom:"4px"}}>{s.icon}</div>
+              <div style={{fontSize:"16px",color:s.c,fontWeight:700,marginBottom:"3px"}}>{s.v.toLocaleString()}</div>
+              <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </>}
+
+      {/* Точность + бомбы */}
+      {(accuracy>0||bombsPlanted>0||bombsDefused>0||pistolRounds>0)&&<>
+        <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,
+          padding:"14px 0 8px"}}>ДОПОЛНИТЕЛЬНО</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px",marginBottom:"3px"}}>
+          {[
+            accuracy>0    &&{l:"ТОЧНОСТЬ",      v:accuracy+"%",              icon:"🎯", c:C.orange},
+            bombsPlanted>0&&{l:"БОМБ ЗАЛОЖЕНО", v:bombsPlanted.toLocaleString(), icon:"💥", c:C.lose},
+            bombsDefused>0&&{l:"БОМБ ОБЕЗВРЕЖЕНО",v:bombsDefused.toLocaleString(),icon:"🛡️", c:C.win},
+            pistolRounds>0&&{l:"ПИСТОЛЕТНЫХ ПОБЕД",v:pistolRounds.toLocaleString(),icon:"🔫", c:C.blue},
+            revenges>0    &&{l:"РЕВАНШИ",        v:revenges.toLocaleString(),  icon:"⚡", c:C.yellow},
+            friendCount>0 &&{l:"ДРУЗЕЙ",         v:friendCount,                icon:"👥", c:C.label},
+          ].filter(Boolean).map((s,i)=>(
+            <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px 12px",textAlign:"center"}}>
+              <div style={{fontSize:"16px",marginBottom:"4px"}}>{s.icon}</div>
+              <div style={{fontSize:"16px",color:s.c,fontWeight:700,marginBottom:"4px"}}>{s.v}</div>
+              <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </>}
 
       {/* Подсказка про FACEIT */}
       {!player.faceit&&<div style={{background:"#0d1016",border:`1px solid ${C.orange}22`,
