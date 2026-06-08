@@ -1329,50 +1329,60 @@ function WeaponsPanel({cs2}) {
       </div>
 
       {/* Список оружий */}
-      <div style={{padding:"8px 0"}}>
+      <div style={{padding:"4px 0"}}>
         {sorted.map((w,i)=>{
           const col = WEAPON_DATA[w.name]?.color || C.label;
           const barW = Math.round(w.kills/total*100);
           return (
             <div key={w.name} className="hov-row" style={{
-              padding:"10px 20px",borderBottom:i<sorted.length-1?`1px solid ${C.border}33`:"none",
-              display:"grid",gridTemplateColumns:"auto 1fr auto auto auto",
-              gap:"14px",alignItems:"center",transition:"background .15s"}}>
+              padding:"12px 20px",
+              borderBottom:i<sorted.length-1?`1px solid ${C.border}22`:"none",
+              display:"grid",gridTemplateColumns:"100px 1fr 70px 60px 60px",
+              gap:"14px",alignItems:"center",transition:"background .15s",
+              background:i%2===0?"rgba(0,0,0,0.1)":"transparent"}}>
 
-              {/* Иконка оружия */}
-              <div style={{width:"90px",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <WeaponImg name={w.name} size={32}/>
+              {/* Цветной бейдж имени */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <div style={{padding:"4px 10px",
+                  background:`linear-gradient(90deg,${col}22,${col}14)`,
+                  border:`1px solid ${col}44`,
+                  fontSize:"11px",color:col,fontWeight:800,
+                  letterSpacing:"0.5px",textAlign:"center",
+                  boxShadow:`0 0 8px ${col}22`,whiteSpace:"nowrap",
+                  maxWidth:"96px",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  {w.name}
+                </div>
               </div>
 
               {/* Бар */}
               <div>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
-                  <span style={{fontSize:"12px",color:C.value,fontWeight:600}}>{w.name}</span>
-                </div>
-                <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
-                  <div style={{height:"100%",width:`${barW}%`,background:col,
-                    transition:"width .8s ease",opacity:0.8}}/>
+                <div style={{height:"5px",background:"#111108",borderRadius:"3px",overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${barW}%`,
+                    background:`linear-gradient(90deg,${col}55,${col})`,
+                    borderRadius:"3px",transition:"width .8s ease",
+                    boxShadow:`0 0 6px ${col}44`}}/>
                 </div>
               </div>
 
               {/* Убийства */}
-              <div style={{textAlign:"center",minWidth:"44px"}}>
-                <div style={{fontSize:"16px",color:col,fontWeight:700}}>{w.kills.toLocaleString()}</div>
-                <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>УБИЙСТВ</div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"15px",color:col,fontWeight:800,
+                  textShadow:`0 0 6px ${col}44`}}>{w.kills.toLocaleString()}</div>
+                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px",marginTop:"1px"}}>УБИЙСТВ</div>
               </div>
 
               {/* HS% */}
-              <div style={{textAlign:"center",minWidth:"44px"}}>
+              <div style={{textAlign:"center"}}>
                 <div style={{fontSize:"14px",color:w.hspc>=50?C.win:w.hspc>=30?C.yellow:C.muted,fontWeight:700}}>
                   {w.hspc}%
                 </div>
-                <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>HS%</div>
+                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px",marginTop:"1px"}}>HS%</div>
               </div>
 
               {/* Точность */}
-              <div style={{textAlign:"center",minWidth:"44px"}}>
-                <div style={{fontSize:"14px",color:C.label,fontWeight:700}}>{w.acc}%</div>
-                <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>ТОЧНОСТЬ</div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"14px",color:C.label,fontWeight:600}}>{w.acc}%</div>
+                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px",marginTop:"1px"}}>ТОЧНОСТЬ</div>
               </div>
             </div>
           );
@@ -1677,51 +1687,83 @@ function PlayerRating({player, source}) {
   const lvlProg  = nextLvl ? Math.round((overall-coachLvl.min)/(coachLvl.max-coachLvl.min)*100) : 100;
 
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px",animation:"up .5s ease both"}}>
-      <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>🏅 CS2 COACH РЕЙТИНГ</div>
-      <div className="rating-row" style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"16px"}}>
-        {/* Уровень — иконка + название */}
-        <div style={{textAlign:"center",minWidth:"100px"}}>
-          <div style={{fontSize:"44px",lineHeight:1,marginBottom:"4px"}}>{coachLvl.icon}</div>
-          <div style={{fontSize:"13px",color:coachLvl.color,fontWeight:800,letterSpacing:"1px"}}>{coachLvl.name}</div>
-          <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{overall} / 100</div>
-        </div>
-        <div style={{flex:1}}>
-          <div className="rating-pct" style={{fontSize:"22px",color:C.value,fontWeight:800,lineHeight:1.2,marginBottom:"5px"}}>
-            Лучше чем <span style={{color:coachLvl.color}}>{overall}%</span>
+    <div style={{marginBottom:"10px",position:"relative",overflow:"hidden",animation:"up .5s ease both"}}>
+      {/* Фоновый градиент */}
+      <div style={{position:"absolute",inset:0,
+        background:`linear-gradient(135deg,#0d0d09 0%,${coachLvl.color}0e 50%,#0a0a07 100%)`,zIndex:0}}/>
+      <div style={{position:"absolute",top:"-50px",right:"-30px",width:"260px",height:"260px",
+        background:`radial-gradient(circle,${coachLvl.color}14,transparent 65%)`,pointerEvents:"none",zIndex:0}}/>
+      <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.025,
+        backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 32px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 32px)"}}/>
+      <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${coachLvl.color}88,${coachLvl.color},${coachLvl.color}88,transparent)`,position:"relative",zIndex:1}}/>
+
+      <div style={{border:`1px solid ${coachLvl.color}22`,borderTop:"none",padding:"18px 20px",position:"relative",zIndex:1}}>
+        <div style={{fontSize:"10px",color:coachLvl.color,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>🏅 CS2 COACH РЕЙТИНГ</div>
+
+        <div className="rating-row" style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"18px"}}>
+          {/* Уровень */}
+          <div style={{textAlign:"center",minWidth:"110px",
+            background:`linear-gradient(135deg,${coachLvl.color}18,${coachLvl.color}08)`,
+            border:`1px solid ${coachLvl.color}33`,padding:"14px 18px"}}>
+            <div style={{fontSize:"40px",lineHeight:1,marginBottom:"6px"}}>{coachLvl.icon}</div>
+            <div style={{fontSize:"12px",color:coachLvl.color,fontWeight:900,letterSpacing:"2px"}}>{coachLvl.name}</div>
+            <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{overall} / 100</div>
           </div>
-          <div style={{fontSize:"14px",color:C.muted,marginBottom:"10px"}}>игроков{lvl>0?` уровня FACEIT ${lvl}`:" CS2"}</div>
-          {/* Прогресс до следующего уровня */}
-          {/* XP прогресс до следующего уровня */}
-          {nextLvl&&<>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:"10px",color:C.muted,marginBottom:"4px"}}>
-              <span style={{color:coachLvl.color,fontWeight:700}}>{overall*10} XP</span>
-              <span>{(coachLvl.max+1)*10} XP → <span style={{color:coachLevels.find(l=>l.name===coachLvl.next)?.color||C.yellow}}>{coachLvl.next}</span></span>
+
+          <div style={{flex:1}}>
+            <div className="rating-big" style={{fontSize:"26px",color:C.value,fontWeight:900,lineHeight:1.1,marginBottom:"4px"}}>
+              Лучше чем <span style={{color:coachLvl.color,textShadow:`0 0 12px ${coachLvl.color}55`}}>{overall}%</span>
             </div>
-            <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden",marginBottom:"4px"}}>
-              <div style={{height:"100%",width:`${lvlProg}%`,background:coachLvl.color,
-                borderRadius:"3px",transition:"width 1s ease",boxShadow:`0 0 6px ${coachLvl.color}88`}}/>
+            <div style={{fontSize:"13px",color:C.muted,marginBottom:"12px"}}>
+              игроков{lvl>0?` уровня FACEIT ${lvl}`:" CS2"}
             </div>
-            <div style={{fontSize:"11px",color:C.muted}}>
-              ещё <span style={{color:coachLvl.color,fontWeight:700}}>{(coachLvl.max+1-overall)*10} XP</span> до {coachLvl.next}
-            </div>
-          </>}
-          {!nextLvl&&<div style={{fontSize:"12px",color:"#aa44ff",fontWeight:700}}>⭐ Максимальный уровень</div>}
-          {matches>0&&<div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>на основе {matches} матчей</div>}
-        </div>
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
-        {stats.map((s,i)=>(
-          <div key={i}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px",fontSize:"12px"}}>
-              <span style={{color:C.muted}}>{s.name}</span>
-              <span><span style={{color:s.color,fontWeight:700}}>{s.val}</span><span style={{color:C.muted}}> / avg {s.avg}</span></span>
-            </div>
-            <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
-              <div style={{height:"100%",width:`${s.pct}%`,background:s.color,borderRadius:"2px",transition:"width 1s ease"}}/>
-            </div>
+            {nextLvl&&<>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:"10px",marginBottom:"5px"}}>
+                <span style={{color:coachLvl.color,fontWeight:700}}>{overall*10} XP</span>
+                <span style={{color:C.muted}}>{(coachLvl.max+1)*10} XP →{" "}
+                  <span style={{color:coachLevels.find(l=>l.name===coachLvl.next)?.color||C.yellow,fontWeight:700}}>
+                    {coachLvl.next}
+                  </span>
+                </span>
+              </div>
+              <div style={{height:"8px",background:"#111108",borderRadius:"4px",overflow:"hidden",marginBottom:"5px"}}>
+                <div style={{height:"100%",width:`${lvlProg}%`,
+                  background:`linear-gradient(90deg,${coachLvl.color}66,${coachLvl.color})`,
+                  borderRadius:"4px",transition:"width 1.2s ease",
+                  boxShadow:`0 0 8px ${coachLvl.color}66`}}/>
+              </div>
+              <div style={{fontSize:"11px",color:C.muted}}>
+                ещё{" "}<span style={{color:coachLvl.color,fontWeight:700}}>{(coachLvl.max+1-overall)*10} XP</span>{" "}до {coachLvl.next}
+              </div>
+            </>}
+            {!nextLvl&&<div style={{fontSize:"13px",color:"#aa44ff",fontWeight:700}}>⭐ Максимальный уровень</div>}
+            {matches>0&&<div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>на основе {matches} матчей</div>}
           </div>
-        ))}
+        </div>
+
+        {/* Бары K/D, HS%, WR% */}
+        <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+          {stats.map((s,i)=>(
+            <div key={i}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px",fontSize:"12px"}}>
+                <span style={{color:C.muted,letterSpacing:"1px"}}>{s.name}</span>
+                <span>
+                  <span style={{color:s.color,fontWeight:700}}>{s.val}</span>
+                  <span style={{color:C.muted}}> / avg {s.avg}</span>
+                </span>
+              </div>
+              <div style={{height:"5px",background:"#111108",borderRadius:"3px",overflow:"hidden",position:"relative"}}>
+                {/* Линия среднего */}
+                <div style={{position:"absolute",left:`${Math.round(50)}%`,top:0,bottom:0,
+                  width:"1px",background:C.muted+"44"}}/>
+                <div style={{height:"100%",width:`${s.pct}%`,
+                  background:`linear-gradient(90deg,${s.color}66,${s.color})`,
+                  borderRadius:"3px",transition:"width 1.2s ease",
+                  boxShadow:`0 0 6px ${s.color}44`}}/>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -2850,92 +2892,113 @@ function WeekComparison({player}) {
   const rColor = rDiff > 0 ? C.win : rDiff < 0 ? C.lose : C.muted;
 
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"10px",animation:"up .5s ease both"}}>
-      {/* Заголовок + переключатель */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px",flexWrap:"wrap",gap:"8px"}}>
-        <div>
-          <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"2px"}}>
-            📊 СРАВНЕНИЕ ПЕРИОДОВ
-          </div>
-          <div style={{fontSize:"11px",color:C.muted}}>
-            {prev.date} → {now.date} ({diffDays} дней)
-          </div>
-        </div>
-        <div style={{display:"flex",gap:"4px"}}>
-          {[["week","7 дн"],["month","30 дн"],["all","Всё"]].map(([p,l])=>(
-            <button key={p} onClick={()=>setPeriod(p)} style={{
-              padding:"4px 10px",background:period===p?C.yellow+"22":"transparent",
-              border:`1px solid ${period===p?C.yellow+"66":C.border}`,
-              color:period===p?C.yellow:C.muted,cursor:"pointer",
-              fontSize:"11px",fontFamily:"inherit",fontWeight:period===p?700:400}}>
-              {l}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div style={{marginBottom:"10px",position:"relative",overflow:"hidden",animation:"up .5s ease both"}}>
+      <div style={{position:"absolute",inset:0,
+        background:`linear-gradient(135deg,#0d0d09,${rColor}08,#0a0a07)`,zIndex:0}}/>
+      <div style={{position:"absolute",top:"-40px",left:"-20px",width:"200px",height:"200px",
+        background:`radial-gradient(circle,${rColor}0e,transparent 65%)`,pointerEvents:"none",zIndex:0}}/>
+      <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.02,
+        backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 28px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 28px)"}}/>
+      <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${rColor}66,${rColor}66,transparent)`,position:"relative",zIndex:1}}/>
 
-      {/* Рейтинг тогда vs сейчас */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"20px",
-        marginBottom:"16px",padding:"14px",background:"#0d0d09",border:`1px solid ${C.border}`}}>
-        <div style={{textAlign:"center"}}>
-          <div style={{fontSize:"11px",color:C.muted,marginBottom:"4px"}}>{prev.date}</div>
-          <div style={{fontSize:"32px",color:C.muted,fontWeight:900,lineHeight:1}}>{rPrev}</div>
-          <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>рейтинг</div>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
-          <div style={{fontSize:"24px",color:rColor,fontWeight:900}}>
-            {rDiff > 0 ? `+${rDiff}` : rDiff === 0 ? "=" : rDiff}
+      <div style={{border:`1px solid ${rColor}22`,borderTop:"none",padding:"18px 20px",position:"relative",zIndex:1}}>
+        {/* Заголовок + переключатель */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"8px"}}>
+          <div>
+            <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"2px"}}>📊 СРАВНЕНИЕ ПЕРИОДОВ</div>
+            <div style={{fontSize:"11px",color:C.muted}}>{prev.date} → {now.date} ({diffDays} дней)</div>
           </div>
-          <div style={{fontSize:"10px",color:rColor,fontWeight:700,letterSpacing:"1px"}}>
-            {rDiff > 0 ? "ПРОГРЕСС ▲" : rDiff < 0 ? "СПАД ▼" : "БЕЗ ИЗМЕНЕНИЙ"}
+          <div style={{display:"flex",gap:"3px"}}>
+            {[["week","7 дн"],["month","30 дн"],["all","Всё"]].map(([p,l])=>(
+              <button key={p} onClick={()=>setPeriod(p)} style={{
+                padding:"4px 10px",background:period===p?C.yellow+"22":"transparent",
+                border:`1px solid ${period===p?C.yellow+"55":C.border}`,
+                color:period===p?C.yellow:C.muted,cursor:"pointer",
+                fontSize:"11px",fontFamily:"inherit",fontWeight:period===p?700:400}}>
+                {l}
+              </button>
+            ))}
           </div>
-          <div style={{fontSize:"9px",color:C.muted}}>за {diffDays} дней</div>
         </div>
-        <div style={{textAlign:"center"}}>
-          <div style={{fontSize:"11px",color:C.muted,marginBottom:"4px"}}>{now.date}</div>
-          <div style={{fontSize:"32px",color:rColor,fontWeight:900,lineHeight:1}}>{rNow}</div>
-          <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>рейтинг</div>
-        </div>
-      </div>
 
-      {/* Статы по показателям */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"6px"}}>
-        {stats.map((s,i)=>{
-          const diff = s.now - s.prev;
-          const dc = diff > 0 ? C.win : diff < 0 ? C.lose : C.muted;
-          const pct = s.prev > 0 ? ((diff/s.prev)*100).toFixed(1) : "0";
-          return (
-            <div key={i} style={{background:"#0d0d09",padding:"10px 12px",border:`1px solid ${s.color}22`,textAlign:"center"}}>
-              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"6px"}}>{s.label}</div>
-              <div style={{display:"flex",justifyContent:"space-around",alignItems:"center",marginBottom:"6px"}}>
-                <span style={{fontSize:"13px",color:C.muted}}>{s.fmt(s.prev)}</span>
-                <span style={{fontSize:"10px",color:C.muted}}>→</span>
-                <span style={{fontSize:"15px",color:dc,fontWeight:700}}>{s.fmt(s.now)}</span>
-              </div>
-              <div style={{fontSize:"12px",color:dc,fontWeight:700}}>
-                {diff > 0 ? "+" : ""}{s.fmt(diff)} <span style={{fontSize:"10px",opacity:.7}}>({diff>0?"+":""}{pct}%)</span>
-              </div>
-              {/* Мини-бар */}
-              <div style={{marginTop:"6px",height:"3px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${Math.min(100,Math.max(0,(s.now/Math.max(s.prev,s.now))*100))}%`,
-                  background:s.color,borderRadius:"2px",transition:"width .8s ease"}}/>
-              </div>
+        {/* Рейтинг тогда vs сейчас — большой */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"16px",
+          marginBottom:"16px",padding:"16px 20px",
+          background:"rgba(0,0,0,0.4)",border:`1px solid ${rColor}22`}}>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:"11px",color:C.muted,marginBottom:"4px",letterSpacing:"1px"}}>{prev.date}</div>
+            <div style={{fontSize:"40px",color:C.muted,fontWeight:900,lineHeight:1}}>{rPrev}</div>
+            <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>рейтинг</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"4px",minWidth:"80px"}}>
+            <div style={{fontSize:"32px",color:rColor,fontWeight:900,lineHeight:1,
+              textShadow:`0 0 12px ${rColor}66`}}>
+              {rDiff > 0 ? `+${rDiff}` : rDiff === 0 ? "=" : rDiff}
             </div>
-          );
-        })}
-      </div>
-
-      {/* Инсайт */}
-      {rDiff !== 0 && (
-        <div style={{marginTop:"10px",padding:"10px 14px",
-          background:rDiff>0?"#0a140a":"#140a0a",
-          border:`1px solid ${rColor}33`,fontSize:"13px",color:rColor,lineHeight:1.5}}>
-          {rDiff > 0
-            ? `✓ За ${diffDays} дней рейтинг вырос на ${rDiff} пунктов — ${rDiff>=10?"отличный прогресс!":rDiff>=5?"хорошая динамика":"небольшой рост"}`
-            : `→ За ${diffDays} дней рейтинг упал на ${Math.abs(rDiff)} пунктов. ${stats.find(s=>s.now<s.prev)?.label||"K/D"} просел — сфокусируйся на нём`
-          }
+            <div style={{fontSize:"10px",color:rColor,fontWeight:700,letterSpacing:"1px",
+              padding:"2px 8px",background:rColor+"18",border:`1px solid ${rColor}33`}}>
+              {rDiff > 0 ? "ПРОГРЕСС ▲" : rDiff < 0 ? "СПАД ▼" : "СТАБИЛЬНО"}
+            </div>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:"11px",color:C.muted,marginBottom:"4px",letterSpacing:"1px"}}>{now.date}</div>
+            <div style={{fontSize:"40px",color:rColor,fontWeight:900,lineHeight:1,
+              textShadow:`0 0 12px ${rColor}44`}}>{rNow}</div>
+            <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>рейтинг</div>
+          </div>
         </div>
-      )}
+
+        {/* Статы */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"6px"}}>
+          {stats.map((s,i)=>{
+            const diff = s.now - s.prev;
+            const dc = diff > 0 ? C.win : diff < 0 ? C.lose : C.muted;
+            const pct = s.prev > 0 ? ((diff/s.prev)*100).toFixed(1) : "0";
+            return (
+              <div key={i} style={{padding:"12px 14px",
+                background:`linear-gradient(135deg,${s.color}08,transparent)`,
+                border:`1px solid ${s.color}22`}}>
+                <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"8px",fontWeight:700}}>{s.label}</div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:"8px"}}>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>было</div>
+                    <div style={{fontSize:"18px",color:C.muted,fontWeight:700}}>{s.fmt(s.prev)}</div>
+                  </div>
+                  <div style={{fontSize:"18px",color:dc,fontWeight:900}}>
+                    {diff > 0 ? "↑" : diff < 0 ? "↓" : "→"}
+                  </div>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>стало</div>
+                    <div style={{fontSize:"18px",color:dc,fontWeight:700}}>{s.fmt(s.now)}</div>
+                  </div>
+                </div>
+                <div style={{textAlign:"center",fontSize:"12px",color:dc,fontWeight:700,marginBottom:"6px"}}>
+                  {diff > 0 ? "+" : ""}{s.fmt(diff)} <span style={{fontSize:"10px",opacity:.7}}>({diff>0?"+":""}{pct}%)</span>
+                </div>
+                <div style={{height:"3px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${Math.min(100,Math.max(0,(s.now/Math.max(s.prev,s.now))*100))}%`,
+                    background:`linear-gradient(90deg,${s.color}66,${s.color})`,
+                    borderRadius:"2px",boxShadow:`0 0 4px ${s.color}44`,transition:"width .8s ease"}}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Инсайт */}
+        {rDiff !== 0 && (
+          <div style={{marginTop:"10px",padding:"10px 16px",
+            background:rDiff>0?"rgba(0,20,0,0.5)":"rgba(20,0,0,0.5)",
+            border:`1px solid ${rColor}33`,fontSize:"13px",color:rColor,lineHeight:1.5,
+            display:"flex",gap:"8px",alignItems:"flex-start"}}>
+            <span>{rDiff>0?"✓":"→"}</span>
+            <span>{rDiff > 0
+              ? `За ${diffDays} дней рейтинг вырос на ${rDiff} пунктов — ${rDiff>=10?"отличный прогресс!":rDiff>=5?"хорошая динамика":"небольшой рост"}`
+              : `За ${diffDays} дней рейтинг упал на ${Math.abs(rDiff)} пунктов. ${stats.find(s=>s.now<s.prev)?.label||"K/D"} просел — сфокусируйся на нём`
+            }</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -8419,28 +8482,39 @@ export default function App() {
               <SourceToggle source={source} setSource={setSource} hasFaceit={hasFaceit}/>
               {source==="steam"&&player.cs2?.private&&<PrivateWarning/>}
 
-              {/* Stat cards */}
-              <div style={{className:"stat-grid",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:"3px",marginBottom:"16px"}}>
-                {(source==="faceit"&&player.faceit?[
-                  {l:"K/D",v:player.faceit.lifetime?.kd||"—"},
-                  {l:"WIN %",v:player.faceit.lifetime?.winrate?(player.faceit.lifetime.winrate+"%"):"—"},
-                  {l:"HS %",v:player.faceit.lifetime?.hs?(player.faceit.lifetime.hs+"%"):"—"},
-                  {l:"FACEIT ELO",v:player.faceit.elo||"—"},
-                  {l:"МАТЧИ",v:player.faceit.lifetime?.matches||"—"},
-                  {l:"ADR",v:arr(player.faceit.matches)[0]?.adr||"—"},
-                ]:[
-                  {l:"K/D",v:player.cs2?.kd||"—"},
-                  {l:"WIN %",v:player.cs2?.winrate?(player.cs2.winrate+"%"):"—"},
-                  {l:"HS %",v:player.cs2?.hs?(player.cs2.hs+"%"):"—"},
-                  {l:"FACEIT ELO",v:player.faceit?.elo||"—"},
-                  {l:"МАТЧИ",v:player.cs2?.matches||"—"},
-                  {l:"УБИЙСТВА",v:player.cs2?.kills||"—"},
-                ]).map((f,i)=>(
-                  <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px 16px"}}>
-                    <div style={{fontSize:"11px",color:C.label,letterSpacing:"2px",marginBottom:"7px"}}>{f.l}</div>
-                    <div style={{fontSize:"24px",color:C.yellow,fontWeight:700}}>{f.v}</div>
-                  </div>
-                ))}
+              {/* Stat cards — с цветами и паттерном */}
+              <div style={{position:"relative",overflow:"hidden",marginBottom:"16px"}}>
+                <div style={{position:"absolute",top:"-30px",right:"-20px",width:"160px",height:"160px",
+                  background:`radial-gradient(circle,${C.yellow}0a,transparent 65%)`,pointerEvents:"none"}}/>
+                <div style={{display:"grid",className:"stat-grid",
+                  gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:"3px",position:"relative"}}>
+                  {(source==="faceit"&&player.faceit?[
+                    {l:"K/D",v:player.faceit.lifetime?.kd||"—",c:parseFloat(player.faceit.lifetime?.kd)>=1?C.win:C.lose},
+                    {l:"WIN %",v:player.faceit.lifetime?.winrate?(player.faceit.lifetime.winrate+"%"):"—",c:parseInt(player.faceit.lifetime?.winrate)>=50?C.win:C.yellow},
+                    {l:"HS %",v:player.faceit.lifetime?.hs?(player.faceit.lifetime.hs+"%"):"—",c:parseInt(player.faceit.lifetime?.hs)>=40?C.win:C.orange},
+                    {l:"FACEIT ELO",v:player.faceit.elo||"—",c:LVL_COLOR[player.faceit.level]||C.yellow},
+                    {l:"МАТЧИ",v:player.faceit.lifetime?.matches||"—",c:C.label},
+                    {l:"ADR",v:arr(player.faceit.matches)[0]?.adr||"—",c:C.orange},
+                  ]:[
+                    {l:"K/D",v:player.cs2?.kd||"—",c:parseFloat(player.cs2?.kd)>=1?C.win:C.lose},
+                    {l:"WIN %",v:player.cs2?.winrate?(player.cs2.winrate+"%"):"—",c:parseInt(player.cs2?.winrate)>=50?C.win:C.yellow},
+                    {l:"HS %",v:player.cs2?.hs?(player.cs2.hs+"%"):"—",c:parseInt(player.cs2?.hs)>=40?C.win:C.orange},
+                    {l:"FACEIT ELO",v:player.faceit?.elo||"—",c:LVL_COLOR[player.faceit?.level]||C.muted},
+                    {l:"МАТЧИ",v:player.cs2?.matches||"—",c:C.label},
+                    {l:"УБИЙСТВА",v:player.cs2?.kills?parseInt(player.cs2.kills).toLocaleString():"—",c:C.label},
+                  ]).map((f,i)=>(
+                    <div key={i} style={{
+                      background:`linear-gradient(135deg,${f.c}0c,${C.card})`,
+                      border:`1px solid ${f.c}22`,padding:"14px 16px",textAlign:"center",
+                      transition:"border-color .15s"}}
+                      onMouseEnter={e=>e.currentTarget.style.borderColor=f.c+"55"}
+                      onMouseLeave={e=>e.currentTarget.style.borderColor=f.c+"22"}>
+                      <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"7px"}}>{f.l}</div>
+                      <div style={{fontSize:"22px",color:f.c,fontWeight:800,
+                        textShadow:`0 0 8px ${f.c}44`}}>{f.v}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
               <UsageBar remaining={aiRemaining} total={FREE_WEEKLY} isPro={isPro} onUpgrade={()=>setShowProModal(true)}/>
               <div style={{fontSize:"12px",color:C.muted,marginBottom:"16px"}}>
@@ -8476,6 +8550,23 @@ export default function App() {
 
             {analysis&&(
               <div style={{animation:"up .4s ease both"}}>
+                <AIVerdict report={{
+                  verdict: analysis.overall||"",
+                  role: analysis.level==="Про"?"RIFLER":analysis.level==="Хороший"?"ENTRY FRAGGER":"RIFLER",
+                  roast: analysis.mainProblem||"",
+                  strengths: arr(analysis.strengths).map((s,i)=>typeof s==="object"?{stat:s.stat||"",value:"",verdict:s.comment||"",tip:""}:{stat:"",value:"",verdict:String(s),tip:""}),
+                  problems: arr(analysis.weaknesses).map((w,i)=>typeof w==="object"?{stat:w.stat||"",value:"",reason:w.problem||"",fix:w.fix||"",priority:i+1}:{stat:"",value:"",reason:String(w),fix:"",priority:i+1}),
+                  priority: arr(analysis.plan)[0]||"",
+                  weekly_plan: arr(analysis.plan).map((p,i)=>({day:`День ${i+1}`,task:p,goal:""})),
+                  best_map: arr(analysis.mapInsights)[0]?{name:arr(analysis.mapInsights)[0],wr:"",kd:"",tip:""}:null,
+                  worst_map: arr(analysis.mapInsights)[1]?{name:arr(analysis.mapInsights)[1],wr:"",kd:"",tip:""}:null,
+                  rating_breakdown: {aim:65,game_sense:55,consistency:50,utility:45,clutch:50},
+                }}
+                loading={false}
+                onRefresh={analyze}
+                cacheDate={null}/>
+              </div>
+            )}     <div style={{animation:"up .4s ease both"}}>
                 <div style={{background:C.card,border:`1px solid ${C.border}`,borderLeft:`4px solid ${lc}`,padding:"24px 26px",marginBottom:"10px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"14px",flexWrap:"wrap"}}>
                     <span style={{padding:"5px 16px",fontSize:"12px",letterSpacing:"3px",fontWeight:700,background:lc+"20",color:lc,border:`1px solid ${lc}55`}}>
