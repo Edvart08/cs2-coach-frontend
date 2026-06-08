@@ -5876,21 +5876,96 @@ function SupportModal({player, onClose}) {
   const steamid = player?.steamid || "anon";
   const SKEY = `cs2_support_${steamid}`;
   const FAQ_BTNS = [
-    {icon:"⚡", q:"Как активировать PRO?"},
-    {icon:"🔍", q:"У меня активна Pro версия"},
+    {icon:"⚡", q:"У меня есть PRO?"},
+    {icon:"📅", q:"До какого работает PRO?"},
     {icon:"📊", q:"Данные не загружаются"},
     {icon:"🎮", q:"FACEIT не подключается"},
-    {icon:"📋", q:"Сколько у меня анализов?"},
+    {icon:"📋", q:"Сколько анализов осталось?"},
+    {icon:"🆘", q:"Позвать оператора"},
   ];
+
+  // Умный матчинг по ключевым словам — охватывает разные формулировки
+  const SMART_FAQ = [
+    {
+      keywords: [
+        "у меня про","есть про","есть подписка","активна про","активен про","про активна",
+        "про активен","pro активна","pro активен","pro у меня","у меня pro",
+        "активирована подписка","есть ли у меня","моя подписка","у меня подписка",
+        "куплена подписка","куплен про","оплатил про","оплатил подписку"
+      ],
+      answer: () => isPro
+        ? `✅ Да! У тебя активна PRO подписка.\n\nВсе функции доступны:\n• Безлимитный AI разбор\n• AI чат без ограничений\n• PRO значок в лидерборде\n• Анализ слабых карт\n• Приоритетная поддержка`
+        : `Сейчас не вижу активной PRO подписки на твоём аккаунте.\n\nЧто попробовать:\n1. Выйди и войди снова через Steam\n2. Подожди 1-2 мин и обнови страницу\n3. Если оплачивал — напиши "позови оператора", проверим вручную`
+    },
+    {
+      keywords: [
+        "до какого","до какой даты","когда истекает","срок подписки","когда кончается",
+        "сколько осталось дней","дата окончания","подписка до","действует до",
+        "сколько дней осталось","expire","срок действия"
+      ],
+      answer: () => {
+        if (!isPro) return "У тебя сейчас нет активной PRO подписки. Оформить можно нажав ⚡ PRO в шапке сайта.";
+        try {
+          const pd = JSON.parse(localStorage.getItem(`cs2_pro_data_${player?.steamid}`) || "null");
+          if (!pd?.activated_at) return "Открой ⚡ PRO → «Моя подписка» — там видна дата окончания. Если не показывает, подожди 30 сек (сервер просыпается).";
+          const plan = pd.plan;
+          if (plan === "lifetime") return "✅ У тебя подписка НАВСЕГДА — срока нет.";
+          const days = plan === "year" ? 365 : plan === "month" ? 30 : 0;
+          if (!days) return "Открой ⚡ PRO → «Моя подписка» для деталей.";
+          const expiresMs = pd.activated_at * 1000 + days * 86400 * 1000;
+          const daysLeft = Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000));
+          const expiresDate = new Date(expiresMs).toLocaleDateString("ru-RU", {day:"2-digit",month:"long",year:"numeric"});
+          if (daysLeft === 0) return `❌ Подписка истекла ${expiresDate}. Оформи снова — кнопка ⚡ PRO в шапке.`;
+          return `✅ PRO действует до ${expiresDate}\n\nОсталось: ${daysLeft} ${daysLeft===1?"день":daysLeft<5?"дня":"дней"}\n\nПродлить можно в ⚡ PRO → «Продлить».`;
+        } catch { return "Открой ⚡ PRO → «Моя подписка» — там видна дата окончания."; }
+      }
+    },
+    {
+      keywords: [
+        "не загружается","не грузит","пустой профиль","нет данных","ошибка",
+        "не показывает","не отображается","не работает статистика","данные пропали"
+      ],
+      answer: () => "Если данные не загружаются:\n1. Профиль Steam должен быть открыт (Настройки → Конфиденциальность → Публичный)\n2. Статистика CS2 тоже должна быть открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — напиши «позови оператора»!"
+    },
+    {
+      keywords: [
+        "faceit не","не подключается faceit","нет faceit","не видит faceit",
+        "faceit не работает","не вижу faceit","faceit пустой"
+      ],
+      answer: () => "Если FACEIT не подключается:\n1. В FACEIT должен быть привязан тот же Steam аккаунт\n2. Подожди 30 секунд — данные грузятся параллельно\n3. Если новый аккаунт (менее 10 матчей) — статистика пока недоступна"
+    },
+    {
+      keywords: [
+        "сколько анализов","остаток анализов","лимит анализов","закончились анализы",
+        "нет разборов","сколько разборов","израсходовал","анализов осталось"
+      ],
+      answer: () => `Бесплатно: 1 AI разбор в неделю.\nС PRO: безлимитно.\n\nТвой статус: ${isPro ? "✅ PRO — безлимит" : `${aiRemaining} разбор(ов) на этой неделе`}`
+    },
+    {
+      keywords: [
+        "позови оператора","позовите оператора","нужен оператор","живой человек",
+        "поддержка","служба поддержки","помогите","не могу решить",
+        "хочу поговорить","оператор","менеджер","напишите мне","свяжитесь"
+      ],
+      answer: () => null, // null = эскалация
+      escalate: true
+    },
+  ];
+
+  function smartMatch(text) {
+    const lower = text.toLowerCase().trim();
+    return SMART_FAQ.find(f => f.keywords.some(k => lower.includes(k)));
+  }
+
   const FAQ_ANSWERS = {
-    "Как активировать PRO?": "Для активации PRO:\n1. Нажми кнопку ⚡ PRO в шапке сайта\n2. Выбери тариф и оплати\nЕсли есть ключ — вкладка «Ввести ключ»\n\nЕсли уже оплатил но не активировалось — напиши сюда, помогу!",
-    "У меня активна Pro версия": player?.isPro
-      ? "✅ Да, PRO активен на твоём аккаунте!"
-      : "Не вижу активной PRO подписки. Если оплатил — попробуй выйти и войти снова. Если не помогло — напиши сюда!",
-    "Данные не загружаются": "Проверь:\n1. Профиль Steam открыт (Конфиденциальность → Публичный)\n2. Статистика CS2 открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — напиши здесь!",
-    "FACEIT не подключается": "1. В FACEIT должен быть привязан тот же Steam аккаунт\n2. Подожди 30 секунд после входа\n3. Если аккаунт новый (менее 10 матчей) — статистика недоступна",
-    "Сколько у меня анализов?": "Бесплатно: 1 AI разбор в неделю.\nС PRO: безлимитно.\n\nЕсли лимит исчерпан — жди следующей недели или активируй PRO.",
+    "У меня есть PRO?":           SMART_FAQ[0].answer,
+    "До какого работает PRO?":    SMART_FAQ[1].answer,
+    "Данные не загружаются":      SMART_FAQ[2].answer,
+    "FACEIT не подключается":     SMART_FAQ[3].answer,
+    "Сколько анализов осталось?": SMART_FAQ[4].answer,
+    "Позвать оператора":          () => null,
   };
+
   const INITIAL = [{from:"support",text:"Привет! 👋 Чем могу помочь?\n\nВыбери вопрос ниже — отвечу сразу, или напиши своё.",ts:0}];
 
   const [msgs,setMsgs] = useState(()=>{
@@ -5947,6 +6022,34 @@ function SupportModal({player, onClose}) {
     sending.current = true;
     setInput(""); setLoading(true);
     setMsgs(m=>[...m,{from:"user",text,ts:Date.now()}]);
+
+    // Умный матчинг по ключевым словам
+    const match = smartMatch(text);
+    if (match) {
+      await new Promise(r=>setTimeout(r,500));
+      if (match.escalate) {
+        // Эскалация к оператору
+        try {
+          await fetch(`${BACKEND}/support`,{
+            method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||"Аноним"})
+          });
+        } catch {}
+        setMsgs(m=>[...m,
+          {from:"support",text:"📨 Передаю твой вопрос живому оператору!\n\nОбычно отвечаем в течение нескольких часов. Ответ придёт прямо сюда.",ts:Date.now()+1}
+        ]);
+        sentAck.current = true;
+        setLoading(false);
+        sending.current = false;
+        return;
+      }
+      const answer = match.answer();
+      setMsgs(m=>[...m,{from:"support",text:answer,ts:Date.now()+1}]);
+      setLoading(false);
+      sending.current = false;
+      return;
+    }
+
     try {
       const ctrl = new AbortController();
       const tid = setTimeout(()=>ctrl.abort(), 12000);
@@ -5956,13 +6059,13 @@ function SupportModal({player, onClose}) {
         body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||"Аноним"})
       });
       clearTimeout(tid);
-      // "Получили!" — только если ещё не было
       setMsgs(m=>{
-        if(m.some(msg=>msg.text?.includes("Менеджер ответит"))) return m;
-        return [...m,{from:"support",text:"Получили! Менеджер ответит здесь или в @cs2coach_support 🙌",ts:Date.now()}];
+        if(sentAck.current) return m;
+        sentAck.current = true;
+        return [...m,{from:"support",text:"📨 Передал оператору! Обычно отвечаем в течение нескольких часов.",ts:Date.now()}];
       });
-    }catch{
-      setMsgs(m=>[...m,{from:"support",text:"Ошибка. Напиши напрямую: @cs2coach_support",ts:Date.now()}]);
+    } catch {
+      setMsgs(m=>[...m,{from:"support",text:"Не могу связаться с сервером. Попробуй позже.",ts:Date.now()}]);
     }
     setLoading(false);
     sending.current = false;
@@ -6025,21 +6128,37 @@ function SupportModal({player, onClose}) {
         <div ref={endRef}/>
       </div>
 
-      {/* FAQ быстрые кнопки — показываем пока мало сообщений */}
-      {msgs.length<=2&&(
-        <div style={{padding:"8px 10px",borderTop:`1px solid ${C.border}`,display:"flex",flexWrap:"wrap",gap:"5px"}}>
-          {FAQ_BTNS.map((f,i)=>(
-            <button key={i} onClick={()=>{
-              const answer = FAQ_ANSWERS[f.q];
-              if(answer) setMsgs(m=>[...m,{from:"user",text:f.q,ts:Date.now()},{from:"support",text:answer,ts:Date.now()+1}]);
-            }} style={{padding:"5px 10px",background:"#0a1018",border:`1px solid ${C.blue}33`,
-              color:C.blue,cursor:"pointer",fontSize:"11px",fontFamily:"inherit",
-              display:"flex",alignItems:"center",gap:"4px"}}>
+      {/* FAQ быстрые кнопки — всегда видны */}
+      <div style={{padding:"6px 10px 2px",borderTop:`1px solid ${C.border}`,display:"flex",flexWrap:"wrap",gap:"4px"}}>
+        {FAQ_BTNS.map((f,i)=>{
+          const isEscalate = f.q === "Позвать оператора";
+          return (
+            <button key={i} onClick={async ()=>{
+              const answerFn = FAQ_ANSWERS[f.q];
+              if (!answerFn) return;
+              setMsgs(m=>[...m,{from:"user",text:f.q,ts:Date.now()}]);
+              await new Promise(r=>setTimeout(r,400));
+              if (isEscalate) {
+                try {
+                  await fetch(`${BACKEND}/support`,{
+                    method:"POST",headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({message:"Пользователь нажал кнопку «Позвать оператора»",steamid:player?.steamid||"",username:player?.username||"Аноним"})
+                  });
+                } catch {}
+                setMsgs(m=>[...m,{from:"support",text:"📨 Передаю твой вопрос живому оператору!\n\nОбычно отвечаем в течение нескольких часов. Ответ придёт прямо сюда.",ts:Date.now()+1}]);
+              } else {
+                const answer = answerFn();
+                setMsgs(m=>[...m,{from:"support",text:answer,ts:Date.now()+1}]);
+              }
+            }} style={{padding:"4px 9px",background:isEscalate?"#1a0a0a":"#0a1018",
+              border:`1px solid ${isEscalate?C.lose+"44":C.blue+"33"}`,
+              color:isEscalate?C.lose:C.blue,cursor:"pointer",fontSize:"10px",
+              fontFamily:"inherit",display:"flex",alignItems:"center",gap:"3px"}}>
               <span>{f.icon}</span><span>{f.q}</span>
             </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {/* Input — всегда показываем */}
       <div style={{padding:"10px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"7px"}}>
@@ -7381,7 +7500,31 @@ export default function App() {
       {profileView&&<ProfileModal steamid={profileView.steamid} nickname={profileView.nickname} myId={player?.steamid} isPro={isPro} onClose={()=>setProfileView(null)}/>}
       {shareOpen&&player&&<ShareModal steamid={player.steamid} player={player} source={source} onClose={()=>setShareOpen(false)}/>}
       {showProModal&&<ProModal player={player} isPro={isPro} onClose={()=>setShowProModal(false)}
-        onActivated={()=>{setIsPro(true);setAiRemaining(999);setShowProModal(false);setShowProCelebration(true);}}/>}
+        onActivated={()=>{
+          setIsPro(true); setAiRemaining(999); setShowProModal(false); setShowProCelebration(true);
+          // Сохраняем данные о подписке в localStorage для восстановления на других устройствах
+          if (player?.steamid) {
+            try {
+              const proData = {activated_at: Math.floor(Date.now()/1000), plan: "month", order: "activated"};
+              // Пробуем получить актуальные данные с бэкенда
+              fetch(`${BACKEND}/pro/${player.steamid}`)
+                .then(r=>r.json())
+                .then(d=>{
+                  if(d.pro && d.data) {
+                    localStorage.setItem(`cs2_pro_data_${player.steamid}`, JSON.stringify(d.data));
+                  } else {
+                    // Fallback — сохраняем с текущим временем
+                    localStorage.setItem(`cs2_pro_data_${player.steamid}`, JSON.stringify(proData));
+                  }
+                  localStorage.setItem("cs2_is_pro","1");
+                })
+                .catch(()=>{
+                  localStorage.setItem(`cs2_pro_data_${player.steamid}`, JSON.stringify(proData));
+                  localStorage.setItem("cs2_is_pro","1");
+                });
+            } catch {}
+          }
+        }}/>}
       {showProCelebration&&<ProCelebration onClose={()=>setShowProCelebration(false)}/>}
       <ColdStartBanner status={serverStatus}/>
 
@@ -7389,93 +7532,84 @@ export default function App() {
       <div style={{height:"3px",background:`linear-gradient(90deg,${C.yellow},#c9a000,${C.yellow})`}}/>
 
       {/* Topbar */}
-      <div style={{background:"#0d0d09",borderBottom:`1px solid ${C.border}`,padding:"12px 28px",
-        display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap",position:"relative",zIndex:10}}>
-        <div onClick={()=>setShowAbout(true)} style={{display:"flex",alignItems:"center",gap:"14px",cursor:"pointer"}}
-          title="О нас"
+      <div style={{background:"#0d0d09",borderBottom:`1px solid ${C.border}`,
+        padding:"8px 14px",display:"flex",alignItems:"center",
+        justifyContent:"space-between",gap:"6px",position:"relative",zIndex:10,
+        overflow:"hidden"}}>
+        {/* Логотип */}
+        <div onClick={()=>setShowAbout(true)} style={{display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",flexShrink:0}}
           onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
           onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
-          <Logo size={28} withText={true}/>
+          <Logo size={24} withText={true}/>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+        {/* Правая часть — не переносится, сжимается */}
+        <div className="topbar-right" style={{display:"flex",alignItems:"center",gap:"6px",minWidth:0,overflow:"hidden"}}>
           <div className="search-bar"><SearchBar onSelect={r=>setProfileView({nickname:r.nickname})}/></div>
-
-          {/* Переключатель языка */}
-          <button onClick={()=>setLangPersist(l=>l==="ru"?"en":"ru")} title={lang==="ru"?"Switch to English":"Переключить на русский"}
+          {/* Язык */}
+          <button onClick={()=>setLangPersist(l=>l==="ru"?"en":"ru")}
             style={{background:"transparent",border:`1px solid ${C.border}`,color:C.muted,
-              cursor:"pointer",fontSize:"11px",padding:"5px 10px",fontFamily:"inherit",
-              display:"flex",alignItems:"center",gap:"5px",transition:"all .2s",letterSpacing:"1px"}}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=C.yellow+"88";e.currentTarget.style.color=C.yellow;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted;}}>
+              cursor:"pointer",padding:"4px 6px",fontFamily:"inherit",
+              display:"flex",alignItems:"center",gap:"3px",flexShrink:0,transition:"all .2s"}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"88"}
+            onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
             {lang==="ru"
-              ? <svg width="18" height="13" viewBox="0 0 18 13" style={{flexShrink:0}}><rect width="18" height="13" fill="#fff"/><rect width="18" height="4.33" y="0" fill="#fff"/><rect width="18" height="4.33" y="4.33" fill="#0039A6"/><rect width="18" height="4.34" y="8.66" fill="#D52B1E"/></svg>
-              : <svg width="18" height="13" viewBox="0 0 60 40" style={{flexShrink:0}}><rect width="60" height="40" fill="#012169"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" strokeWidth="8"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" strokeWidth="5"/><path d="M30,0 L30,40 M0,20 L60,20" stroke="#fff" strokeWidth="13"/><path d="M30,0 L30,40 M0,20 L60,20" stroke="#C8102E" strokeWidth="8"/></svg>}
-            {lang==="ru"?"RU":"EN"}
+              ? <svg width="16" height="11" viewBox="0 0 18 13"><rect width="18" height="13" fill="#fff"/><rect width="18" height="4.33" y="4.33" fill="#0039A6"/><rect width="18" height="4.34" y="8.66" fill="#D52B1E"/></svg>
+              : <svg width="16" height="11" viewBox="0 0 60 40"><rect width="60" height="40" fill="#012169"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" strokeWidth="8"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" strokeWidth="5"/><path d="M30,0 L30,40 M0,20 L60,20" stroke="#fff" strokeWidth="13"/><path d="M30,0 L30,40 M0,20 L60,20" stroke="#C8102E" strokeWidth="8"/></svg>}
+            <span className="topbar-username" style={{fontSize:"10px",color:C.muted,letterSpacing:"1px"}}>{lang==="ru"?"RU":"EN"}</span>
           </button>
-
           {player?(
             <>
               {isPro
-                ? <button onClick={()=>setShowProModal(true)} style={{
-                    display:"flex",alignItems:"center",gap:"6px",
-                    padding:"5px 14px",background:`linear-gradient(135deg,${C.yellow}33,#ff880022)`,
+                ? <button onClick={()=>setShowProModal(true)} style={{display:"flex",alignItems:"center",gap:"4px",flexShrink:0,
+                    padding:"4px 8px",background:`linear-gradient(135deg,${C.yellow}33,#ff880022)`,
                     border:`1px solid ${C.yellow}88`,cursor:"pointer",fontFamily:"inherit"}}>
-                    <span style={{fontSize:"13px"}}>⚡</span>
-                    <span style={{fontSize:"12px",color:C.yellow,fontWeight:800,letterSpacing:"2px"}}>PRO</span>
-                    <span style={{fontSize:"10px",color:C.yellow+"99"}}>АКТИВЕН</span>
+                    <span style={{fontSize:"12px"}}>⚡</span>
+                    <span style={{fontSize:"11px",color:C.yellow,fontWeight:800,letterSpacing:"1px"}}>PRO</span>
                   </button>
-                : <button onClick={()=>setShowProModal(true)} style={{
-                    padding:"5px 12px",background:C.yellow+"18",border:`1px solid ${C.yellow}44`,
-                    color:C.yellow,cursor:"pointer",fontSize:"11px",fontWeight:700,
-                    fontFamily:"inherit",letterSpacing:"1px"}}>
+                : <button onClick={()=>setShowProModal(true)} style={{flexShrink:0,
+                    padding:"4px 8px",background:C.yellow+"18",border:`1px solid ${C.yellow}44`,
+                    color:C.yellow,cursor:"pointer",fontSize:"11px",fontWeight:700,fontFamily:"inherit"}}>
                     ⚡ PRO
                   </button>}
-              {streak>1&&<div title={`Стрик: ${streak} дней подряд`} style={{display:"flex",alignItems:"center",gap:"4px",
-                padding:"4px 10px",background:"#1a1408",border:`1px solid ${C.yellow}44`,cursor:"help"}}>
-                <span style={{fontSize:"14px"}}>🔥</span>
-                <span style={{fontSize:"13px",color:C.yellow,fontWeight:700}}>{streak}</span>
-                <span style={{fontSize:"10px",color:C.muted}}>дн</span>
+              {streak>1&&<div style={{display:"flex",alignItems:"center",gap:"3px",flexShrink:0,
+                padding:"3px 7px",background:"#1a1408",border:`1px solid ${C.yellow}44`,cursor:"help"}}>
+                <span style={{fontSize:"12px"}}>🔥</span>
+                <span style={{fontSize:"12px",color:C.yellow,fontWeight:700}}>{streak}</span>
+                <span className="topbar-username" style={{fontSize:"10px",color:C.muted}}>дн</span>
               </div>}
-              <button onClick={()=>setShareOpen(true)} style={{background:"transparent",border:`1px solid ${C.yellow}44`,color:C.yellow,cursor:"pointer",fontSize:"11px",letterSpacing:"1px",fontFamily:"inherit",padding:"5px 12px",display:"flex",alignItems:"center",gap:"5px"}}>📤 <span>Поделиться</span></button>
-
-              {/* Профиль дропдаун */}
-              <div style={{position:"relative"}}>
+              <button onClick={()=>setShareOpen(true)} className="topbar-share" style={{background:"transparent",border:`1px solid ${C.yellow}44`,color:C.yellow,cursor:"pointer",fontSize:"11px",fontFamily:"inherit",padding:"4px 8px",flexShrink:0}}>📤</button>
+              {/* Профиль — только аватарка + стрелка на мобиле */}
+              <div style={{position:"relative",flexShrink:0}}>
                 <button onClick={()=>setProfileDropdown(o=>!o)}
-                  style={{display:"flex",alignItems:"center",gap:"6px",background:"transparent",
+                  style={{display:"flex",alignItems:"center",gap:"5px",background:"transparent",
                     border:`1px solid ${profileDropdown?C.yellow+"66":C.border}`,
-                    cursor:"pointer",padding:"5px 8px",transition:"all .2s",maxWidth:"180px"}}
+                    cursor:"pointer",padding:"3px 6px",transition:"all .2s"}}
                   onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"55"}
                   onMouseLeave={e=>{if(!profileDropdown)e.currentTarget.style.borderColor=C.border;}}>
-                  {(player.avatar||player.faceit?.avatar)&&
-                    <img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"24px",height:"24px",borderRadius:"2px",flexShrink:0}}/>}
-                  <span className="topbar-username" style={{fontSize:"13px",color:C.value,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100px"}}>{player.username}</span>
-                  {hasFaceit&&<span className="topbar-faceit" style={{fontSize:"10px",color:C.orange,background:"#ff773318",padding:"1px 5px",border:"1px solid #ff773333",flexShrink:0}}>
-                    F{player.faceit.level}
-                  </span>}
-                  <span style={{fontSize:"10px",color:C.muted,flexShrink:0,transition:"transform .2s",
+                  {(player.avatar||player.faceit?.avatar)
+                    ?<img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"22px",height:"22px",borderRadius:"2px",flexShrink:0}}/>
+                    :<span style={{fontSize:"18px"}}>👤</span>}
+                  <span className="topbar-username" style={{fontSize:"12px",color:C.value,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"80px"}}>{player.username}</span>
+                  <span style={{fontSize:"9px",color:C.muted,flexShrink:0,transition:"transform .2s",
                     transform:profileDropdown?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
                 </button>
-
                 {profileDropdown&&<>
                   <div onClick={()=>setProfileDropdown(false)} style={{position:"fixed",inset:0,zIndex:99}}/>
-                  <div style={{position:"fixed",right:"8px",top:"56px",
+                  <div style={{position:"fixed",right:"8px",top:"50px",
                     background:"#141409",border:`1px solid ${C.yellow}44`,
-                    width:"min(220px, calc(100vw - 16px))",zIndex:100,
-                    animation:"popIn .15s ease",boxShadow:"0 8px 32px rgba(0,0,0,0.6)"}}>
-                    {/* Шапка дропдауна */}
-                    <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,
-                      display:"flex",alignItems:"center",gap:"10px"}}>
+                    width:"min(220px,calc(100vw - 16px))",zIndex:100,
+                    animation:"popIn .15s ease",boxShadow:"0 8px 32px rgba(0,0,0,0.7)"}}>
+                    <div style={{padding:"12px 14px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:"10px"}}>
                       {(player.avatar||player.faceit?.avatar)
-                        ?<img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"36px",height:"36px",borderRadius:"3px",border:`1px solid ${C.border}`,flexShrink:0}}/>
-                        :<div style={{width:"36px",height:"36px",background:"#1a1a10",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",flexShrink:0}}>👤</div>}
+                        ?<img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"32px",height:"32px",borderRadius:"3px",border:`1px solid ${C.border}`,flexShrink:0}}/>
+                        :<div style={{width:"32px",height:"32px",background:"#1a1a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",flexShrink:0}}>👤</div>}
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:"13px",color:C.value,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{player.username}</div>
-                        <div style={{fontSize:"10px",color:C.muted,marginTop:"1px"}}>
-                          {hasFaceit?`FACEIT LVL ${player.faceit.level} · ${player.faceit.elo} ELO`:`Steam Lvl ${player.steam_level||"—"}`}
+                        <div style={{fontSize:"10px",color:isPro?C.yellow:C.muted,marginTop:"1px"}}>
+                          {isPro?"⚡ PRO активен":hasFaceit?`FACEIT LVL ${player.faceit.level}`:`Steam Lvl ${player.steam_level||"—"}`}
                         </div>
                       </div>
                     </div>
-                    {/* Пункты меню */}
                     {[
                       {icon:"👤",label:"Мой профиль",action:()=>{setMainTab("overview");setProfileDropdown(false);}},
                       {icon:"⚙️",label:"Настройки",action:()=>{setShowSettings(true);setProfileDropdown(false);}},
@@ -7483,31 +7617,28 @@ export default function App() {
                       {icon:"📤",label:"Поделиться",action:()=>{setShareOpen(true);setProfileDropdown(false);}},
                     ].map((item,i)=>(
                       <button key={i} onClick={item.action}
-                        style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",padding:"10px 16px",
+                        style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",padding:"10px 14px",
                           background:"transparent",border:"none",color:C.label,cursor:"pointer",
-                          fontSize:"13px",fontFamily:"inherit",textAlign:"left",borderBottom:`1px solid ${C.border}`,
-                          transition:"all .15s"}}
+                          fontSize:"13px",fontFamily:"inherit",textAlign:"left",borderBottom:`1px solid ${C.border}`,transition:"all .15s"}}
                         onMouseEnter={e=>{e.currentTarget.style.background="#1a1a10";e.currentTarget.style.color=C.yellow;}}
                         onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.label;}}>
-                        <span style={{fontSize:"15px",width:"20px",textAlign:"center",flexShrink:0}}>{item.icon}</span>
-                        {item.label}
+                        <span style={{fontSize:"14px",width:"20px",textAlign:"center",flexShrink:0}}>{item.icon}</span>{item.label}
                       </button>
                     ))}
                     <button onClick={()=>{logout();setProfileDropdown(false);}}
-                      style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",padding:"10px 16px",
+                      style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",padding:"10px 14px",
                         background:"transparent",border:"none",color:C.lose,cursor:"pointer",
                         fontSize:"13px",fontFamily:"inherit",textAlign:"left",transition:"all .15s"}}
                       onMouseEnter={e=>e.currentTarget.style.background="#1a0808"}
                       onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                      <span style={{fontSize:"15px",width:"20px",textAlign:"center",flexShrink:0}}>🚪</span>
-                      Выйти
+                      <span style={{fontSize:"14px",width:"20px",textAlign:"center",flexShrink:0}}>🚪</span>Выйти
                     </button>
                   </div>
                 </>}
               </div>
             </>
           ):(
-            <button onClick={openSteam} style={{background:"#1b6090",color:"#fff",border:"none",padding:"9px 18px",cursor:"pointer",fontSize:"11px",fontWeight:700,letterSpacing:"2px",fontFamily:"'Courier New',monospace"}}>STEAM</button>
+            <button onClick={openSteam} style={{background:"#1b6090",color:"#fff",border:"none",padding:"7px 12px",cursor:"pointer",fontSize:"11px",fontWeight:700,letterSpacing:"2px",fontFamily:"'Courier New',monospace",flexShrink:0}}>STEAM</button>
           )}
         </div>
       </div>
