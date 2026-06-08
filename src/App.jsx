@@ -5978,7 +5978,317 @@ function LandingPage({onLogin}) {
 // ── AI Verdict — большой блок наверху обзора ─────────────────────────────────
 function AIVerdict({report, loading, onRefresh, cacheDate}) {
   const [step, setStep] = useState(0);
-  const [expanded, setExpanded] = useState(false);
+  const steps = [
+    "Анализируем K/D, WR, HS%...",
+    "Изучаем статистику карт...",
+    "Определяем роль и стиль игры...",
+    "Формируем персональный вердикт...",
+  ];
+
+  useEffect(()=>{
+    if (!loading) return;
+    setStep(0);
+    const iv = setInterval(()=>setStep(s=>s<steps.length-1?s+1:s), 1800);
+    return ()=>clearInterval(iv);
+  }, [loading]);
+
+  if (loading) return (
+    <div style={{background:"linear-gradient(135deg,#15140a,#0f0f08)",
+      border:`1px solid ${C.yellow}44`,borderTop:`3px solid ${C.yellow}`,
+      padding:"32px",marginBottom:"16px",animation:"fadeIn .3s ease"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"28px"}}>
+        <div style={{width:"10px",height:"10px",background:C.yellow,borderRadius:"50%",
+          animation:"pulse 1.2s infinite",boxShadow:`0 0 10px ${C.yellow}`}}/>
+        <span style={{fontSize:"12px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>🤖 AI ТРЕНЕР АНАЛИЗИРУЕТ</span>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"28px"}}>
+        {steps.map((s,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:"12px",
+            opacity:i<=step?1:0.25,transition:"opacity .5s ease"}}>
+            <div style={{width:"20px",height:"20px",borderRadius:"50%",flexShrink:0,
+              background:i<step?C.win+"33":i===step?"#f5c51822":C.border,
+              border:`1px solid ${i<step?C.win:i===step?C.yellow:C.border}`,
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px"}}>
+              {i<step?"✓":i===step?"●":"·"}
+            </div>
+            <span style={{fontSize:"13px",color:i<step?C.win:i===step?C.value:C.muted,fontWeight:i===step?700:400}}>
+              {s}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"6px"}}>
+        {[1,2,3].map(i=><div key={i} style={{background:"#1a1408",border:`1px solid ${C.yellow}22`,padding:"14px"}}>
+          <Skel w="50%" h="8" mb={8}/><Skel w="80%" h="16"/>
+        </div>)}
+      </div>
+    </div>
+  );
+
+  if (!report) return null;
+
+  const roleColor = {ENTRY:C.lose,"ENTRY FRAGGER":C.lose, SUPPORT:C.blue, RIFLER:C.yellow, LURKER:"#aa88ff", AWP:"#44ddaa", AWPer:"#44ddaa"};
+  const rc = roleColor[report.role?.split(" ")[0]?.toUpperCase()] || roleColor[report.role] || C.yellow;
+  const strengths = arr(report.strengths);
+  const problems  = arr(report.problems);
+
+  // Рейтинги навыков из отчёта или дефолт
+  const rb = report.rating_breakdown || {};
+  const skillBars = [
+    {l:"AIM",         v:rb.aim||60,       c:"#ff6655"},
+    {l:"ТАКТИКА",     v:rb.game_sense||55, c:C.blue},
+    {l:"СТАБИЛЬНОСТЬ",v:rb.consistency||50,c:C.yellow},
+    {l:"УТИЛИТИ",     v:rb.utility||40,   c:"#88ff88"},
+    {l:"КЛАТЧ",       v:rb.clutch||45,    c:"#aa88ff"},
+  ];
+
+  return (
+    <div style={{marginBottom:"16px",animation:"up .4s ease both",position:"relative"}}>
+      {/* Верхняя полоска */}
+      <div style={{height:"3px",background:`linear-gradient(90deg,transparent,${C.yellow}88,${C.yellow},${C.yellow}88,transparent)`}}/>
+
+      <div style={{background:"linear-gradient(160deg,#15140a 0%,#0f0f08 100%)",
+        border:`1px solid ${C.yellow}33`,padding:"0 0 20px",position:"relative",overflow:"hidden"}}>
+
+        {/* Фоновое свечение */}
+        <div style={{position:"absolute",top:0,right:"10%",width:"400px",height:"400px",
+          background:`radial-gradient(circle,${C.yellow}08,transparent 60%)`,pointerEvents:"none"}}/>
+
+        {/* ── ШАПКА: роль + кнопка ── */}
+        <div style={{display:"flex",alignItems:"center",gap:"12px",padding:"18px 24px 16px",
+          borderBottom:`1px solid ${C.border}`,flexWrap:"wrap"}}>
+          <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",
+            boxShadow:`0 0 8px ${C.yellow}`,flexShrink:0}}/>
+          <span style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>
+            🤖 AI ТРЕНЕР · ПЕРСОНАЛЬНЫЙ РАЗБОР
+          </span>
+          {report.role&&(
+            <div style={{display:"flex",alignItems:"center",gap:"6px",
+              padding:"4px 14px",background:rc+"18",color:rc,
+              border:`1px solid ${rc}55`,fontSize:"11px",letterSpacing:"2px",fontWeight:800,
+              boxShadow:`0 0 10px ${rc}22`}}>
+              {report.role}
+            </div>
+          )}
+          <div style={{marginLeft:"auto",display:"flex",gap:"8px",alignItems:"center"}}>
+            {cacheDate&&<span style={{fontSize:"10px",color:C.muted}}>обновлён {cacheDate}</span>}
+            <button onClick={onRefresh} style={{background:"transparent",
+              border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",
+              fontSize:"11px",padding:"5px 14px",fontFamily:"inherit",
+              letterSpacing:"1px",transition:"all .2s"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=C.yellow+"66";e.currentTarget.style.color=C.yellow;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted;}}>
+              ↻ обновить
+            </button>
+          </div>
+        </div>
+
+        {/* ── ВЕРДИКТ — главное сообщение ── */}
+        <div style={{padding:"22px 24px",borderBottom:`1px solid ${C.border}`}}>
+          {report.roast&&(
+            <div style={{display:"inline-flex",gap:"8px",alignItems:"center",
+              background:`linear-gradient(90deg,${C.yellow}14,transparent)`,
+              borderLeft:`3px solid ${C.yellow}`,
+              padding:"10px 16px",marginBottom:"14px",width:"100%"}}>
+              <span style={{fontSize:"16px",flexShrink:0}}>💬</span>
+              <span style={{fontSize:"14px",color:C.yellow,fontStyle:"italic",fontWeight:600}}>
+                "{report.roast}"
+              </span>
+            </div>
+          )}
+          <div style={{fontSize:"16px",color:C.value,lineHeight:1.85,fontWeight:400}}>
+            {report.verdict}
+          </div>
+        </div>
+
+        {/* ── РЕЙТИНГ НАВЫКОВ ── */}
+        {Object.keys(rb).length>0&&(
+          <div style={{padding:"18px 24px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
+              РЕЙТИНГ НАВЫКОВ
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+              {skillBars.map((s,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:"12px"}}>
+                  <div style={{width:"100px",fontSize:"10px",color:C.muted,letterSpacing:"1px",textAlign:"right",flexShrink:0}}>{s.l}</div>
+                  <div style={{flex:1,height:"6px",background:"#1a1808",borderRadius:"3px",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${s.v}%`,
+                      background:`linear-gradient(90deg,${s.c}66,${s.c})`,
+                      borderRadius:"3px",transition:"width 1.2s cubic-bezier(.4,0,.2,1)",
+                      boxShadow:`0 0 6px ${s.c}44`}}/>
+                  </div>
+                  <div style={{width:"32px",fontSize:"12px",color:s.c,fontWeight:700,textAlign:"right",flexShrink:0}}>{s.v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── СИЛЬНЫЕ + СЛАБЫЕ — 2 колонки ── */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1px",
+          background:C.border,borderTop:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`}}>
+
+          {/* Сильные */}
+          <div style={{background:"#0a120a",padding:"18px 20px"}}>
+            <div style={{fontSize:"10px",color:C.win,letterSpacing:"3px",fontWeight:700,
+              marginBottom:"12px",display:"flex",alignItems:"center",gap:"6px"}}>
+              <span>✓</span> СИЛЬНЫЕ СТОРОНЫ
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+              {strengths.map((s,i)=>{
+                const st = typeof s==="object"?s:{stat:"",value:"",verdict:s,tip:""};
+                return(
+                  <div key={i} style={{background:"#0f1a0f",border:`1px solid ${C.win}22`,
+                    padding:"12px 14px",borderLeft:`3px solid ${C.win}55`}}>
+                    {st.stat&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
+                      <span style={{fontSize:"11px",color:C.win,fontWeight:700,letterSpacing:"1px"}}>{st.stat}</span>
+                      {st.value&&<span style={{fontSize:"12px",color:C.win,fontWeight:800}}>{st.value}</span>}
+                    </div>}
+                    <div style={{fontSize:"13px",color:C.text,lineHeight:1.55}}>
+                      {st.verdict||st.comment||(typeof s==="string"?s:"")}
+                    </div>
+                    {st.tip&&<div style={{fontSize:"11px",color:C.win,opacity:0.7,marginTop:"5px"}}>→ {st.tip}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Слабые */}
+          <div style={{background:"#120a0a",padding:"18px 20px"}}>
+            <div style={{fontSize:"10px",color:C.lose,letterSpacing:"3px",fontWeight:700,
+              marginBottom:"12px",display:"flex",alignItems:"center",gap:"6px"}}>
+              <span>✗</span> ПРОБЛЕМЫ
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+              {problems.map((p,i)=>{
+                const pr = typeof p==="object"?p:{stat:"",value:"",reason:p,fix:""};
+                const prio = pr.priority||i+1;
+                return(
+                  <div key={i} style={{background:"#1a0f0f",border:`1px solid ${C.lose}22`,
+                    padding:"12px 14px",borderLeft:`3px solid ${C.lose}${prio===1?"ff":"66"}`}}>
+                    {pr.stat&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px"}}>
+                      <span style={{fontSize:"11px",color:C.lose,fontWeight:700,letterSpacing:"1px"}}>{pr.stat}</span>
+                      <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
+                        {pr.value&&<span style={{fontSize:"12px",color:C.lose,fontWeight:800}}>{pr.value}</span>}
+                        {prio===1&&<span style={{fontSize:"9px",background:C.lose+"22",color:C.lose,
+                          padding:"1px 6px",border:`1px solid ${C.lose}44`,letterSpacing:"1px"}}>ГЛАВНОЕ</span>}
+                      </div>
+                    </div>}
+                    <div style={{fontSize:"13px",color:C.text,lineHeight:1.55}}>
+                      {pr.reason||(typeof p==="string"?p:"")}
+                    </div>
+                    {pr.fix&&<div style={{fontSize:"12px",color:C.yellow,marginTop:"7px",
+                      background:C.yellow+"10",padding:"6px 10px",borderLeft:`2px solid ${C.yellow}44`}}>
+                      💡 {pr.fix}
+                    </div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* ── КАРТЫ ── */}
+        {(report.best_map||report.worst_map)&&(
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1px",
+            background:C.border,borderBottom:`1px solid ${C.border}`}}>
+            {report.best_map&&<div style={{background:"#0a160a",padding:"16px 20px"}}>
+              <div style={{fontSize:"10px",color:C.win,letterSpacing:"2px",fontWeight:700,marginBottom:"8px"}}>🏆 ЛУЧШАЯ КАРТА</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}>
+                <span style={{fontSize:"16px",color:C.value,fontWeight:700}}>
+                  {report.best_map.name||report.best_map}
+                </span>
+                {(report.best_map.wr||report.best_map.kd)&&<div style={{textAlign:"right"}}>
+                  {report.best_map.wr&&<div style={{fontSize:"16px",color:C.win,fontWeight:800}}>{report.best_map.wr}</div>}
+                  {report.best_map.kd&&<div style={{fontSize:"11px",color:C.muted}}>K/D {report.best_map.kd}</div>}
+                </div>}
+              </div>
+              {report.best_map.tip&&<div style={{fontSize:"12px",color:C.muted,lineHeight:1.5}}>→ {report.best_map.tip}</div>}
+            </div>}
+            {report.worst_map&&<div style={{background:"#160a0a",padding:"16px 20px"}}>
+              <div style={{fontSize:"10px",color:C.lose,letterSpacing:"2px",fontWeight:700,marginBottom:"8px"}}>⚠️ ХУДШАЯ КАРТА</div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}>
+                <span style={{fontSize:"16px",color:C.value,fontWeight:700}}>
+                  {report.worst_map.name||report.worst_map}
+                </span>
+                {(report.worst_map.wr||report.worst_map.kd)&&<div style={{textAlign:"right"}}>
+                  {report.worst_map.wr&&<div style={{fontSize:"16px",color:C.lose,fontWeight:800}}>{report.worst_map.wr}</div>}
+                  {report.worst_map.kd&&<div style={{fontSize:"11px",color:C.muted}}>K/D {report.worst_map.kd}</div>}
+                </div>}
+              </div>
+              {report.worst_map.tip&&<div style={{fontSize:"12px",color:C.muted,lineHeight:1.5}}>→ {report.worst_map.tip}</div>}
+            </div>}
+          </div>
+        )}
+
+        {/* ── РОЛЬ ── */}
+        {report.role_analysis&&(
+          <div style={{padding:"16px 24px",borderBottom:`1px solid ${C.border}`,
+            background:`linear-gradient(90deg,${rc}08,transparent)`}}>
+            <div style={{fontSize:"10px",color:rc,letterSpacing:"2px",fontWeight:700,marginBottom:"8px"}}>
+              👤 ТВОЯ РОЛЬ: {report.role}
+            </div>
+            <div style={{fontSize:"13px",color:C.text,lineHeight:1.65}}>{report.role_analysis}</div>
+          </div>
+        )}
+
+        {/* ── НЕДЕЛЬНЫЙ ПЛАН ── */}
+        {arr(report.weekly_plan).length>0&&(
+          <div style={{padding:"18px 24px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
+              📅 ПЛАН НА НЕДЕЛЮ
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:"8px"}}>
+              {arr(report.weekly_plan).map((item,i)=>{
+                const it = typeof item==="object"?item:{day:`День ${i+1}`,task:item,goal:""};
+                return(
+                  <div key={i} style={{background:"#0d0d09",border:`1px solid ${C.yellow}22`,padding:"14px 16px"}}>
+                    <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"1px",fontWeight:700,marginBottom:"6px"}}>
+                      {it.day}
+                    </div>
+                    <div style={{fontSize:"13px",color:C.value,lineHeight:1.55,marginBottom:"6px"}}>{it.task}</div>
+                    {it.goal&&<div style={{fontSize:"11px",color:C.muted}}>🎯 {it.goal}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── ГЛАВНАЯ ЦЕЛЬ + ПСИХОЛОГИЯ ── */}
+        <div style={{padding:"18px 24px"}}>
+          {report.priority&&(
+            <div style={{display:"flex",gap:"14px",alignItems:"flex-start",
+              background:`linear-gradient(90deg,${C.win}10,transparent)`,
+              border:`1px solid ${C.win}44`,borderLeft:`4px solid ${C.win}`,
+              padding:"16px 20px",marginBottom:report.mental_note?"12px":"0"}}>
+              <span style={{fontSize:"24px",flexShrink:0}}>🎯</span>
+              <div>
+                <div style={{fontSize:"10px",letterSpacing:"3px",color:C.win,fontWeight:700,marginBottom:"6px"}}>
+                  СЛЕДУЮЩИЙ ШАГ
+                </div>
+                <div style={{fontSize:"15px",color:C.value,lineHeight:1.65,fontWeight:600}}>{report.priority}</div>
+              </div>
+            </div>
+          )}
+          {report.mental_note&&(
+            <div style={{display:"flex",gap:"12px",alignItems:"flex-start",
+              background:"#0d0d16",border:`1px solid ${C.blue}33`,padding:"14px 18px"}}>
+              <span style={{fontSize:"18px",flexShrink:0}}>🧠</span>
+              <div>
+                <div style={{fontSize:"10px",letterSpacing:"3px",color:C.blue,fontWeight:700,marginBottom:"5px"}}>
+                  ПСИХОЛОГИЧЕСКИЙ ПРОФИЛЬ
+                </div>
+                <div style={{fontSize:"13px",color:C.text,lineHeight:1.6}}>{report.mental_note}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
   const steps = [
     "Анализируем статистику матчей...",
     "Изучаем лучшие и худшие карты...",
@@ -6192,13 +6502,28 @@ function AIReport({player, source}) {
     const stats = source==="faceit"&&fc ? {
       kd:fc.lifetime?.kd||"0", winrate:fc.lifetime?.winrate||"0",
       hs:fc.lifetime?.hs||"0", matches:fc.lifetime?.matches||"0",
+      adr:fc.lifetime?.adr||"", clutch1v1:fc.lifetime?.clutch1v1||"",
+      entrySuccess:fc.lifetime?.entrySuccess||"",
       rank:"", faceit_level:String(fc.level||""), faceit_elo:String(fc.elo||""),
       maps:arr(fc.maps), recent_matches:recentMatches,
+      extra: {
+        kills:cs2.kills||"", deaths:cs2.deaths||"",
+        mvps:cs2.mvps||"", sniper_kills:cs2.sniper_kills||"",
+        knife_kills:cs2.knife_kills||"", playtime:cs2.playtime||"",
+        wins:cs2.wins||"",
+      }
     } : {
       kd:cs2.kd||"0", winrate:cs2.winrate||"0",
       hs:cs2.hs||"0", matches:cs2.matches||"0",
+      adr:"", clutch1v1:"", entrySuccess:"",
       rank:"", faceit_level:String(fc?.level||""), faceit_elo:String(fc?.elo||""),
       maps:arr(fc?.maps), recent_matches:[],
+      extra: {
+        kills:cs2.kills||"", deaths:cs2.deaths||"",
+        mvps:cs2.mvps||"", sniper_kills:cs2.sniper_kills||"",
+        knife_kills:cs2.knife_kills||"", playtime:cs2.playtime||"",
+        wins:cs2.wins||"", accuracy:cs2.accuracy||"",
+      }
     };
     try {
       const r = await fetch(`${BACKEND}/ai-summary`,{
