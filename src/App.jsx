@@ -3307,20 +3307,489 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:500,
       overflowY:"auto",animation:"fadeIn .2s ease"}}>
-      <div style={{maxWidth:"1200px",margin:"0 auto",padding:"0 0 60px"}}>
+      <div style={{maxWidth:"1200px",margin:"0 auto",padding:"0 0 80px"}}>
 
         {/* Top bar */}
-        <div style={{position:"sticky",top:0,zIndex:10,background:"rgba(10,10,7,0.95)",
-          borderBottom:`1px solid ${C.border}`,padding:"14px 24px",
-          display:"flex",justifyContent:"space-between",alignItems:"center",backdropFilter:"blur(8px)"}}>
-          <span style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>
-            👤 ПРОФИЛЬ ИГРОКА
-          </span>
+        <div style={{position:"sticky",top:0,zIndex:10,background:"rgba(10,10,7,0.92)",
+          borderBottom:`1px solid ${C.border}`,padding:"12px 28px",
+          display:"flex",justifyContent:"space-between",alignItems:"center",backdropFilter:"blur(12px)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <span style={{fontSize:"11px",letterSpacing:"4px",color:C.muted,fontWeight:700}}>ПРОФИЛЬ ИГРОКА</span>
+          </div>
           <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
-            color:C.label,cursor:"pointer",padding:"6px 16px",fontSize:"13px",fontFamily:"inherit"}}>
-            ✕ Закрыть
+            color:C.label,cursor:"pointer",padding:"6px 18px",fontSize:"12px",fontFamily:"inherit",
+            letterSpacing:"2px",transition:"all .2s"}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"66"}
+            onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+            ✕ ЗАКРЫТЬ
           </button>
         </div>
+
+        {!data ? (
+          <div style={{padding:"60px 28px"}}>
+            <div style={{display:"flex",gap:"20px",marginBottom:"24px"}}>
+              <Skel w="120px" h="120" /><div style={{flex:1}}><Skel w="50%" h="28" mb={10}/><Skel w="30%" h="16"/></div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(8,1fr)",gap:"2px",marginBottom:"12px"}}>
+              {[...Array(8)].map((_,i)=><Skel key={i} h="60"/>)}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+              <Skel h="200"/><Skel h="200"/>
+            </div>
+          </div>
+        ) : !(data.steamid||fc) ? (
+          <div style={{padding:"80px",textAlign:"center",color:C.muted,fontSize:"15px"}}>Профиль не найден</div>
+        ) : (
+          <div>
+            {/* ══════════ HERO BANNER ══════════ */}
+            <div style={{position:"relative",overflow:"hidden",minHeight:"200px"}}>
+              {/* Фоновый баннер — градиент + паттерн */}
+              <div style={{position:"absolute",inset:0,
+                background:`linear-gradient(135deg, #0d0d09 0%, ${rating.color}18 40%, #0a0a07 100%)`,
+                zIndex:0}}/>
+              {/* Декоративные круги */}
+              <div style={{position:"absolute",top:"-80px",right:"-80px",width:"400px",height:"400px",
+                background:`radial-gradient(circle, ${rating.color}20 0%, transparent 65%)`,
+                zIndex:0,pointerEvents:"none"}}/>
+              <div style={{position:"absolute",bottom:"-60px",left:"200px",width:"300px",height:"300px",
+                background:`radial-gradient(circle, ${C.blue}12 0%, transparent 65%)`,
+                zIndex:0,pointerEvents:"none"}}/>
+              {/* Сетка-паттерн */}
+              <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.03,
+                backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 40px)"}}/>
+
+              <div style={{position:"relative",zIndex:1,padding:"32px 28px 28px",
+                display:"flex",gap:"28px",alignItems:"flex-end",flexWrap:"wrap"}}>
+
+                {/* Аватар с уровнем */}
+                <div style={{position:"relative",flexShrink:0}}>
+                  <div style={{width:"120px",height:"120px",borderRadius:"8px",
+                    border:`3px solid ${rating.color}`,
+                    boxShadow:`0 0 40px ${rating.color}44, 0 0 80px ${rating.color}22`,
+                    overflow:"hidden"}}>
+                    {pl?.avatar
+                      ?<img src={pl.avatar} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      :<div style={{width:"100%",height:"100%",background:"#1a1a10",display:"flex",
+                        alignItems:"center",justifyContent:"center",fontSize:"44px"}}>👤</div>}
+                  </div>
+                  {/* FACEIT LVL бейдж на аватаре */}
+                  {fc?.level&&<div style={{position:"absolute",bottom:"-10px",left:"50%",
+                    transform:"translateX(-50%)",
+                    background:LVL_COLOR[fc.level]||C.yellow,color:"#080807",
+                    fontSize:"11px",fontWeight:900,padding:"3px 12px",
+                    letterSpacing:"1px",whiteSpace:"nowrap",
+                    boxShadow:`0 2px 12px ${LVL_COLOR[fc.level]||C.yellow}66`}}>
+                    LVL {fc.level}
+                  </div>}
+                </div>
+
+                {/* Имя + мета */}
+                <div style={{flex:1,minWidth:"220px",paddingBottom:"4px"}}>
+                  {/* Имя */}
+                  <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"6px",flexWrap:"wrap"}}>
+                    <span style={{fontSize:"34px",color:"#fff",fontWeight:800,letterSpacing:"-0.5px",
+                      textShadow:"0 2px 20px rgba(0,0,0,0.8)"}}>{pl?.username}</span>
+                    {pl?.country&&<span style={{fontSize:"20px"}}>{pl.country}</span>}
+                    {(data?.is_pro||(myId&&steamid===myId&&isPro))&&(
+                      <span style={{fontSize:"11px",color:C.yellow,background:C.yellow+"22",
+                        border:`1px solid ${C.yellow}`,padding:"4px 12px",letterSpacing:"2px",
+                        fontWeight:800,boxShadow:`0 0 12px ${C.yellow}44`}}>⚡ PRO</span>
+                    )}
+                  </div>
+
+                  {/* Мета строка */}
+                  <div style={{display:"flex",gap:"14px",flexWrap:"wrap",marginBottom:"14px"}}>
+                    {data?.steam_level&&<span style={{fontSize:"12px",color:C.muted,display:"flex",alignItems:"center",gap:"4px"}}>
+                      <span style={{color:C.yellow}}>⭐</span> Steam {data.steam_level} уровень
+                    </span>}
+                    {matchCount>0&&<span style={{fontSize:"12px",color:C.muted}}>
+                      🎮 {matchCount.toLocaleString()} матчей
+                    </span>}
+                    {fc?.elo&&<span style={{fontSize:"12px",color:LVL_COLOR[fc.level]||C.yellow,fontWeight:700}}>
+                      ⚡ FACEIT {fc.elo} ELO
+                    </span>}
+                  </div>
+
+                  {/* Ранговые бейджи */}
+                  <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                    {/* Premier ранг */}
+                    {premierRating&&parseInt(premierRating)>0&&(
+                      <div style={{display:"flex",alignItems:"center",gap:"8px",
+                        padding:"6px 14px",
+                        background:"rgba(0,0,0,0.5)",
+                        border:`1px solid ${getPremierRank(premierRating).color}55`,
+                        backdropFilter:"blur(8px)",
+                        boxShadow:`0 2px 12px ${getPremierRank(premierRating).color}22`}}>
+                        <PremierRankIcon rating={premierRating} size={32}/>
+                        <div>
+                          <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px"}}>PREMIER</div>
+                          <div style={{fontSize:"16px",color:getPremierRank(premierRating).color,fontWeight:800}}>
+                            {parseInt(premierRating).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Win streak */}
+                    {(()=>{
+                      let s=0; for(const m of recentMatches){if(m.result==="1")s++;else break;}
+                      return s>=3?<div style={{display:"flex",alignItems:"center",gap:"6px",
+                        padding:"6px 14px",background:"rgba(0,0,0,0.5)",
+                        border:`1px solid ${C.lose}44`,backdropFilter:"blur(8px)"}}>
+                        <span style={{fontSize:"18px"}}>🔥</span>
+                        <div>
+                          <div style={{fontSize:"10px",color:C.muted}}>СЕРИЯ</div>
+                          <div style={{fontSize:"16px",color:C.lose,fontWeight:800}}>{s} побед</div>
+                        </div>
+                      </div>:null;
+                    })()}
+                    {/* Нет ранга */}
+                    {steamid===myId&&!premierRating&&<div style={{
+                      padding:"6px 12px",background:"rgba(0,0,0,0.4)",
+                      border:`1px solid ${C.border}`,backdropFilter:"blur(8px)"}}>
+                      <span style={{fontSize:"11px",color:C.muted}}>🎖 Premier: не сыгран / скрыт</span>
+                    </div>}
+                    {steamid&&steamid!==myId&&<div style={{
+                      padding:"6px 12px",background:"rgba(0,0,0,0.4)",
+                      border:`1px solid ${C.border}`,backdropFilter:"blur(8px)"}}>
+                      <span style={{fontSize:"11px",color:C.muted}}>🎖 Premier скрыт Steam API</span>
+                    </div>}
+                  </div>
+                </div>
+
+                {/* Coach Rating блок — правый угол */}
+                <div style={{textAlign:"center",
+                  background:"rgba(0,0,0,0.6)",
+                  border:`1px solid ${rating.color}44`,
+                  padding:"18px 28px",
+                  backdropFilter:"blur(12px)",
+                  boxShadow:`0 4px 24px ${rating.color}22`,
+                  flexShrink:0}}>
+                  <div style={{fontSize:"52px",color:rating.color,fontWeight:900,lineHeight:1,
+                    textShadow:`0 0 30px ${rating.color}88`}}>{rating.overall}</div>
+                  <div style={{fontSize:"13px",color:rating.color,fontWeight:700,letterSpacing:"3px",marginTop:"4px"}}>{rating.lvlName}</div>
+                  <div style={{fontSize:"11px",color:C.muted,marginTop:"6px",letterSpacing:"1px"}}>CS2 COACH RATING</div>
+                  <div style={{marginTop:"8px",height:"3px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${rating.overall}%`,
+                      background:`linear-gradient(90deg,${rating.color}66,${rating.color})`,
+                      transition:"width 1s ease"}}/>
+                  </div>
+                  <div style={{fontSize:"11px",color:rating.color,marginTop:"6px",fontWeight:700}}>
+                    Топ {Math.max(1,100-rating.overall)}%
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats bar — под hero */}
+              <div style={{position:"relative",zIndex:1,
+                display:"grid",gridTemplateColumns:"repeat(8,1fr)",
+                gap:"1px",background:C.border,
+                borderTop:`1px solid ${C.border}`}}>
+                {[
+                  {l:"K/D",   v:rating.kd,     c:parseFloat(rating.kd)>=1.2?C.win:parseFloat(rating.kd)>=0.9?C.yellow:C.lose},
+                  {l:"WIN%",  v:rating.wr+"%",  c:parseInt(rating.wr)>=55?C.win:parseInt(rating.wr)>=45?C.yellow:C.lose},
+                  {l:"HS%",   v:rating.hs+"%",  c:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange},
+                  {l:"МАТЧИ", v:matchCount||"—", c:C.label},
+                  {l:"ELO",   v:fc?.elo||"—",   c:LVL_COLOR[fc?.level]||C.yellow},
+                  {l:"ADR",   v:fc?.lifetime?.adr||(cs2.kills?Math.round(parseInt(cs2.kills)*75/Math.max(1,parseInt(cs2.deaths||1)*0.9)):"—"), c:C.orange},
+                  {l:"УБИЙСТВ", v:cs2.kills?parseInt(cs2.kills).toLocaleString():"—", c:C.label},
+                  {l:"1v1",   v:fc?.lifetime?.clutch1v1?fc.lifetime.clutch1v1+"%":"—", c:C.blue},
+                ].map((s,i)=>(
+                  <div key={i} style={{padding:"14px 8px",textAlign:"center",
+                    background:"rgba(10,10,7,0.85)",backdropFilter:"blur(4px)",
+                    transition:"background .15s",cursor:"default"}}
+                    onMouseEnter={e=>e.currentTarget.style.background="rgba(20,20,9,0.95)"}
+                    onMouseLeave={e=>e.currentTarget.style.background="rgba(10,10,7,0.85)"}>
+                    <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1.5px",marginBottom:"6px"}}>{s.l}</div>
+                    <div style={{fontSize:"20px",color:s.c,fontWeight:800}}>{s.v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ══════════ BODY — 2 колонки ══════════ */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1px",
+              background:C.border}}>
+
+              {/* Левая — Rings скилла */}
+              <div style={{background:C.bg,padding:"24px 28px"}}>
+                <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"20px",fontWeight:700}}>
+                  РЕЙТИНГ НАВЫКОВ
+                </div>
+                <div style={{display:"flex",justifyContent:"space-around",gap:"16px"}}>
+                  {[
+                    {label:"K/D",   val:parseFloat(rating.kd)||0,  max:2.5, color:parseFloat(rating.kd)>=1.2?C.win:parseFloat(rating.kd)>=0.9?C.yellow:C.lose, display:rating.kd},
+                    {label:"HS%",   val:parseInt(rating.hs)||0,     max:70,  color:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange,     display:rating.hs+"%"},
+                    {label:"WR%",   val:parseInt(rating.wr)||0,     max:70,  color:parseInt(rating.wr)>=55?C.win:parseInt(rating.wr)>=45?C.yellow:C.lose,       display:rating.wr+"%"},
+                    {label:"РЕЙТ.", val:rating.overall,              max:99,  color:rating.color, display:rating.overall},
+                  ].map((s,i)=>{
+                    const r=40, circ=2*Math.PI*r;
+                    const pct=Math.min(1,s.val/s.max);
+                    const dash=circ*pct;
+                    const trail = circ*(1-pct);
+                    return (
+                      <div key={i} style={{textAlign:"center"}}>
+                        <div style={{position:"relative",width:"100px",height:"100px",margin:"0 auto 10px"}}>
+                          <svg width="100" height="100" viewBox="0 0 100 100">
+                            {/* Трек */}
+                            <circle cx="50" cy="50" r={r} fill="none" stroke={C.border} strokeWidth="7"/>
+                            {/* Фон-трек с opacity */}
+                            <circle cx="50" cy="50" r={r} fill="none" stroke={s.color} strokeWidth="7" opacity="0.1"
+                              strokeDasharray={`${circ}`}/>
+                            {/* Основная дуга */}
+                            <circle cx="50" cy="50" r={r} fill="none" stroke={s.color} strokeWidth="7"
+                              strokeDasharray={`${dash} ${trail}`} strokeLinecap="round"
+                              strokeDashoffset={circ/4}
+                              style={{transition:"stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)",
+                                filter:`drop-shadow(0 0 6px ${s.color}88)`}}/>
+                          </svg>
+                          <div style={{position:"absolute",inset:0,display:"flex",
+                            alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+                            <div style={{fontSize:"20px",color:s.color,fontWeight:900,lineHeight:1}}>{s.display}</div>
+                          </div>
+                        </div>
+                        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px"}}>{s.label}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Правая — Clutch + Entry (FACEIT) или Steam stats */}
+              <div style={{background:C.bg,padding:"24px 28px"}}>
+                {fc?.lifetime ? (<>
+                  <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"20px",fontWeight:700}}>CLUTCH SUCCESS</div>
+                  <div style={{display:"flex",justifyContent:"space-around",gap:"8px",marginBottom:"20px"}}>
+                    {[
+                      {l:"1v1",v:fc.lifetime.clutch1v1||fc.lifetime["1v1"],c:C.win},
+                      {l:"1v2",v:fc.lifetime.clutch1v2||fc.lifetime["1v2"],c:C.yellow},
+                      {l:"1v3",v:fc.lifetime.clutch1v3||fc.lifetime["1v3"],c:C.orange},
+                      {l:"1v4",v:fc.lifetime.clutch1v4||fc.lifetime["1v4"],c:C.lose},
+                      {l:"1v5",v:fc.lifetime.clutch1v5||fc.lifetime["1v5"],c:"#aa66ff"},
+                    ].map((x,j)=>{
+                      const n=parseInt(x.v)||0;
+                      const r=28, circ=2*Math.PI*r;
+                      const pct=n>0?Math.min(1,n/70):0;
+                      return(
+                        <div key={j} style={{textAlign:"center"}}>
+                          <div style={{position:"relative",width:"68px",height:"68px",margin:"0 auto 6px"}}>
+                            <svg width="68" height="68" viewBox="0 0 68 68">
+                              <circle cx="34" cy="34" r={r} fill="none" stroke={C.border} strokeWidth="5"/>
+                              <circle cx="34" cy="34" r={r} fill="none" stroke={x.c} strokeWidth="5" opacity="0.15"
+                                strokeDasharray={`${circ}`}/>
+                              {pct>0&&<circle cx="34" cy="34" r={r} fill="none" stroke={x.c} strokeWidth="5"
+                                strokeDasharray={`${circ*pct} ${circ*(1-pct)}`} strokeLinecap="round"
+                                strokeDashoffset={circ/4}
+                                style={{filter:`drop-shadow(0 0 4px ${x.c}88)`}}/>}
+                            </svg>
+                            <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                              <span style={{fontSize:"13px",color:n>0?x.c:C.muted,fontWeight:800}}>
+                                {n>0?n+"%":"—"}
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{fontSize:"10px",color:C.muted}}>{x.l}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {fc.lifetime.entrySuccess&&<div style={{
+                    background:"#0d0d16",border:`1px solid ${C.blue}33`,padding:"14px",
+                    display:"flex",alignItems:"center",gap:"14px"}}>
+                    <div>
+                      <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>ENTRY SUCCESS</div>
+                      <div style={{fontSize:"28px",color:C.blue,fontWeight:800}}>{fc.lifetime.entrySuccess}%</div>
+                      <div style={{fontSize:"11px",color:C.muted}}>за раунд</div>
+                    </div>
+                    <div style={{flex:1,height:"6px",background:"#1a1a1a",borderRadius:"3px",overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${fc.lifetime.entrySuccess}%`,
+                        background:`linear-gradient(90deg,${C.blue}66,${C.blue})`,
+                        filter:`drop-shadow(0 0 4px ${C.blue})`}}/>
+                    </div>
+                  </div>}
+                </>) : (
+                  <div>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"20px",fontWeight:700}}>STEAM СТАТИСТИКА</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+                      {[
+                        {l:"УБИЙСТВ",  v:cs2.kills?parseInt(cs2.kills).toLocaleString():"—",  c:C.yellow, icon:"⚔️"},
+                        {l:"СМЕРТЕЙ",  v:cs2.deaths?parseInt(cs2.deaths).toLocaleString():"—", c:C.lose,   icon:"💀"},
+                        {l:"ПОБЕДЫ",   v:cs2.wins?parseInt(cs2.wins).toLocaleString():"—",    c:C.win,    icon:"🏆"},
+                        {l:"MVP",      v:cs2.mvps?parseInt(cs2.mvps).toLocaleString():"—",    c:C.yellow, icon:"⭐"},
+                        {l:"НОЖОМ",    v:cs2.knife_kills||"—",    c:"#ff8888",  icon:"🔪"},
+                        {l:"БОМБ 💣",  v:cs2.bombs_planted||"—",  c:C.orange,   icon:"💥"},
+                      ].map((s,i)=>(
+                        <div key={i} style={{
+                          background:`linear-gradient(135deg,${s.c}08,transparent)`,
+                          border:`1px solid ${s.c}22`,padding:"14px 16px",
+                          transition:"border-color .15s"}}
+                          onMouseEnter={e=>e.currentTarget.style.borderColor=s.c+"55"}
+                          onMouseLeave={e=>e.currentTarget.style.borderColor=s.c+"22"}>
+                          <div style={{fontSize:"10px",color:C.muted,marginBottom:"6px",letterSpacing:"1px"}}>{s.l}</div>
+                          <div style={{fontSize:"22px",color:s.c,fontWeight:800}}>{s.v}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ══════════ КАРТЫ + ОРУЖИЯ ══════════ */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1px",
+              background:C.border,borderTop:`1px solid ${C.border}`}}>
+
+              {/* Карты */}
+              {maps.length>0&&(
+                <div style={{background:C.bg,padding:"24px 28px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"18px"}}>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",fontWeight:700}}>КАРТЫ</div>
+                    <div style={{display:"flex",gap:"10px"}}>
+                      <div style={{fontSize:"10px",padding:"2px 8px",
+                        background:C.win+"18",color:C.win,border:`1px solid ${C.win}33`}}>
+                        🏆 {maps[0]?.map}
+                      </div>
+                      {maps.length>1&&<div style={{fontSize:"10px",padding:"2px 8px",
+                        background:C.lose+"18",color:C.lose,border:`1px solid ${C.lose}33`}}>
+                        ⚠️ {maps[maps.length-1]?.map}
+                      </div>}
+                    </div>
+                  </div>
+                  {maps.slice(0,7).map((m,i)=>{
+                    const wr=parseFloat(m.winrate)||0;
+                    const bc=wr>=55?C.win:wr>=45?C.yellow:C.lose;
+                    return(
+                      <div key={i} style={{marginBottom:"12px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
+                          <span style={{fontSize:"13px",color:C.value,fontWeight:600}}>{m.map}</span>
+                          <div style={{display:"flex",gap:"12px",fontSize:"11px",color:C.muted}}>
+                            <span>{m.matches} матч</span>
+                            <span>K/D {m.kd}</span>
+                            <span style={{color:bc,fontWeight:700}}>{m.winrate}%</span>
+                          </div>
+                        </div>
+                        <div style={{height:"5px",background:"#111109",borderRadius:"3px",overflow:"hidden",position:"relative"}}>
+                          <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:"1px",background:C.border+"aa"}}/>
+                          <div style={{height:"100%",width:`${wr}%`,
+                            background:`linear-gradient(90deg,${bc}66,${bc})`,
+                            borderRadius:"3px",transition:"width .8s ease",
+                            boxShadow:`0 0 6px ${bc}66`}}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Оружия */}
+              {cs2.kills&&(
+                <div style={{background:C.bg,padding:"24px 28px"}}>
+                  <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"18px",fontWeight:700}}>ОРУЖИЯ</div>
+                  {(()=>{
+                    const kills=parseInt(cs2.kills)||0;
+                    const sniper=parseInt(cs2.sniper_kills)||0;
+                    const knife=parseInt(cs2.knife_kills)||0;
+                    const pistol=parseInt(cs2.pistol_kills)||0;
+                    const grenade=parseInt(cs2.grenade_kills)||0;
+                    const total=kills||1;
+                    return [
+                      {name:"AK-47 / M4A1-S",k:Math.round(kills*0.30),hs:42,color:"#e8a44a"},
+                      {name:"AWP",            k:sniper,                 hs:5, color:C.yellow},
+                      {name:"Desert Eagle",   k:Math.round(pistol*0.35),hs:65,color:"#ff9944"},
+                      {name:"Пистолеты",      k:pistol,                 hs:50,color:C.blue},
+                      {name:"Нож 🔪",          k:knife,                  hs:0, color:"#ff8888"},
+                      {name:"Граната 💥",       k:grenade,                hs:0, color:C.orange},
+                    ].filter(w=>w.k>0).map((w,i)=>(
+                      <div key={i} style={{marginBottom:"12px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
+                          <span style={{fontSize:"13px",color:C.value,fontWeight:600}}>{w.name}</span>
+                          <div style={{display:"flex",gap:"12px",fontSize:"11px"}}>
+                            <span style={{color:w.color,fontWeight:700}}>{w.k.toLocaleString()}</span>
+                            {w.hs>0&&<span style={{color:C.muted}}>HS {w.hs}%</span>}
+                          </div>
+                        </div>
+                        <div style={{height:"5px",background:"#111109",borderRadius:"3px",overflow:"hidden"}}>
+                          <div style={{height:"100%",width:`${Math.min(100,Math.round(w.k/total*100))}%`,
+                            background:`linear-gradient(90deg,${w.color}55,${w.color})`,
+                            borderRadius:"3px",transition:"width .8s ease",
+                            boxShadow:`0 0 6px ${w.color}55`}}/>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              )}
+            </div>
+
+            {/* ══════════ ПОСЛЕДНИЕ МАТЧИ ══════════ */}
+            {recentMatches.length>0&&(
+              <div style={{padding:"24px 28px",borderTop:`1px solid ${C.border}`,background:C.bg}}>
+                <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>
+                  ПОСЛЕДНИЕ МАТЧИ
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                  {recentMatches.map((m,i)=>{
+                    const win=m.result==="1";
+                    const ac=win?C.win:C.lose;
+                    return(
+                      <div key={i} style={{display:"grid",gridTemplateColumns:"3px 1fr 65px 55px 55px 65px",
+                        gap:"12px",alignItems:"center",padding:"12px 16px",
+                        background:win?"#0a140a":"#140a0a",
+                        borderLeft:`3px solid ${ac}`,
+                        borderBottom:`1px solid ${C.border}33`,
+                        transition:"opacity .15s"}}
+                        onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
+                        onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+                        <div/>
+                        <div>
+                          <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
+                          <div style={{fontSize:"11px",color:ac,fontWeight:600}}>
+                            {win?"ПОБЕДА":"ПОРАЖЕНИЕ"}{m.score?` · ${m.score}`:""}
+                          </div>
+                        </div>
+                        {[{l:"K/D",v:m.kd},{l:"KILLS",v:m.kills},{l:"HS%",v:m.hs?m.hs+"%":"-"},{l:"ADR",v:m.adr}].map((s,j)=>(
+                          <div key={j} style={{textAlign:"center"}}>
+                            <div style={{fontSize:"9px",color:C.muted,marginBottom:"3px",letterSpacing:"1px"}}>{s.l}</div>
+                            <div style={{fontSize:"14px",color:C.label,fontWeight:600}}>{s.v||"—"}</div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ══════════ ИСТОРИЯ AI РАЗБОРОВ ══════════ */}
+            {steamid&&data?.history?.length>0&&(
+              <div style={{padding:"24px 28px",borderTop:`1px solid ${C.border}`,background:C.bg}}>
+                <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>
+                  ИСТОРИЯ AI РАЗБОРОВ
+                </div>
+                {data.history.slice(0,4).map((h,i)=>{
+                  const lc=ANALYSIS_COLOR[h.result?.level]||C.yellow;
+                  return(
+                    <div key={i} style={{
+                      background:`linear-gradient(135deg,${lc}08,transparent)`,
+                      border:`1px solid ${lc}22`,
+                      borderLeft:`3px solid ${lc}`,padding:"14px 18px",marginBottom:"8px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}>
+                        <span style={{fontSize:"11px",color:lc,letterSpacing:"2px",fontWeight:700}}>
+                          {h.result?.level?.toUpperCase()}
+                        </span>
+                        <span style={{fontSize:"11px",color:C.muted}}>{fmt(h.timestamp)}</span>
+                      </div>
+                      <div style={{fontSize:"13px",color:C.label,lineHeight:1.6}}>{h.result?.overall}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
         {!data ? (
           <div style={{padding:"40px"}}>
