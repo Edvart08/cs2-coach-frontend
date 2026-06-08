@@ -42,6 +42,89 @@ const C = {
   win:"#66ee66", lose:"#ff6655", text:"#ddd6bc",
 };
 
+// ── Premier Rank System ────────────────────────────────────────────────────────
+const PREMIER_RANKS = [
+  {min:0,     max:4999,  label:"Без ранга",   color:"#8a8a8a", gradient:"#555,#888"},
+  {min:5000,  max:9999,  label:"Серый",        color:"#9aacb8", gradient:"#6a7a86,#9aacb8"},
+  {min:10000, max:14999, label:"Голубой",      color:"#6abadf", gradient:"#3a8abf,#6abadf"},
+  {min:15000, max:19999, label:"Синий",        color:"#3d72d7", gradient:"#2255b0,#3d72d7"},
+  {min:20000, max:24999, label:"Фиолетовый",   color:"#8855cc", gradient:"#6633aa,#8855cc"},
+  {min:25000, max:29999, label:"Розовый",      color:"#dd4499", gradient:"#bb2277,#dd4499"},
+  {min:30000, max:34999, label:"Красный",      color:"#dd3333", gradient:"#bb1111,#dd3333"},
+  {min:35000, max:99999, label:"Золотой",      color:"#f5c518", gradient:"#d4a017,#f5c518"},
+];
+
+function getPremierRank(rating) {
+  const n = parseInt(rating) || 0;
+  if (n === 0) return PREMIER_RANKS[0];
+  return PREMIER_RANKS.find(r => n >= r.min && n <= r.max) || PREMIER_RANKS[PREMIER_RANKS.length-1];
+}
+
+// SVG иконка ранга Premier — точные цвета как в игре
+function PremierRankIcon({rating, size=32}) {
+  const n = parseInt(rating) || 0;
+  const rank = getPremierRank(n);
+  const [c1, c2] = rank.gradient.split(",");
+  const id = `grad_${n}_${size}`;
+  if (n === 0) return (
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      <defs>
+        <linearGradient id={id} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#555"/>
+          <stop offset="100%" stopColor="#333"/>
+        </linearGradient>
+      </defs>
+      <polygon points="16,3 29,10 29,22 16,29 3,22 3,10" fill={`url(#${id})`} opacity="0.5"/>
+      <text x="16" y="21" textAnchor="middle" fill="#666" fontSize="10" fontWeight="bold">?</text>
+    </svg>
+  );
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      <defs>
+        <linearGradient id={id} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={c1}/>
+          <stop offset="100%" stopColor={c2}/>
+        </linearGradient>
+        <filter id={`glow_${n}`}>
+          <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+          <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      {/* Шестиугольник */}
+      <polygon points="16,2 28,9 28,23 16,30 4,23 4,9"
+        fill={`url(#${id})`} filter={`url(#glow_${n})`}/>
+      <polygon points="16,2 28,9 28,23 16,30 4,23 4,9"
+        fill="none" stroke={rank.color} strokeWidth="1" opacity="0.8"/>
+      {/* Число внутри */}
+      <text x="16" y="20" textAnchor="middle" fill="white"
+        fontSize={n >= 10000 ? "7" : "8"} fontWeight="bold" fontFamily="sans-serif">
+        {n >= 1000 ? `${Math.floor(n/1000)}k` : n}
+      </text>
+    </svg>
+  );
+}
+
+// Бейдж с рангом и числом
+function PremierBadge({rating, showLabel=true, size=28}) {
+  const n = parseInt(rating) || 0;
+  const rank = getPremierRank(n);
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+      <PremierRankIcon rating={n} size={size}/>
+      {showLabel && n > 0 && (
+        <div>
+          <div style={{fontSize:"13px",color:rank.color,fontWeight:700,lineHeight:1.1}}>
+            {n.toLocaleString()}
+          </div>
+          <div style={{fontSize:"10px",color:rank.color,opacity:0.7,letterSpacing:"0.5px"}}>
+            {rank.label}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const css = `
   html,body,#root{margin:0;padding:0;background:${C.bg};overflow-x:hidden;}
   *{box-sizing:border-box;} input:focus,button:focus{outline:none;}
@@ -3302,18 +3385,20 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                       <span style={{fontSize:"11px",color:LVL_COLOR[fc.level]+"cc"}}>{fc.elo} ELO</span>
                     </div>}
 
-                    {/* Premier рейтинг — только для своего профиля */}
-                    {premierRating&&parseInt(premierRating)>0&&<div style={{display:"flex",alignItems:"center",gap:"6px",
-                      padding:"5px 12px",background:premierColor(premierRating)+"18",
-                      border:`1px solid ${premierColor(premierRating)}44`}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={premierColor(premierRating)} strokeWidth="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-                      <span style={{fontSize:"12px",color:premierColor(premierRating),fontWeight:700}}>
-                        Premier {parseInt(premierRating).toLocaleString()}
-                      </span>
-                      {premierLabel(premierRating)&&<span style={{fontSize:"10px",color:premierColor(premierRating)+"aa"}}>
-                        {premierLabel(premierRating)}
-                      </span>}
-                    </div>}
+                    {/* Premier рейтинг — текущий */}
+                    {premierRating&&parseInt(premierRating)>0&&(
+                      <div style={{display:"flex",alignItems:"center",gap:"8px",
+                        padding:"5px 12px",background:getPremierRank(premierRating).color+"18",
+                        border:`1px solid ${getPremierRank(premierRating).color}44`}}>
+                        <PremierRankIcon rating={premierRating} size={28}/>
+                        <div>
+                          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px"}}>ТЕКУЩИЙ РАНГ</div>
+                          <div style={{fontSize:"14px",color:getPremierRank(premierRating).color,fontWeight:700}}>
+                            {parseInt(premierRating).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Если свой профиль но ранга нет */}
                     {steamid===myId&&!premierRating&&<div style={{display:"flex",alignItems:"center",gap:"6px",
@@ -3350,23 +3435,57 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                 </div>
               </div>
 
-              {/* Stats row */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(90px,1fr))",
+              {/* Stats row — расширенная как на csstats.gg */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(85px,1fr))",
                 gap:"1px",background:C.border,marginTop:"20px",border:`1px solid ${C.border}`}}>
                 {[
-                  {l:"K/D",   v:rating.kd,              c:C.yellow},
-                  {l:"WIN%",  v:rating.wr+"%",           c:C.win},
-                  {l:"HS%",   v:rating.hs+"%",           c:C.orange},
-                  {l:"МАТЧИ", v:matchCount||"—",         c:C.label},
-                  {l:"ELO",   v:fc?.elo||"—",            c:LVL_COLOR[fc?.level]||C.yellow},
-                  {l:"УБИЙСТВ",v:cs2.kills||"—",         c:C.label},
+                  {l:"K/D",       v:rating.kd,              c:parseFloat(rating.kd)>=1.2?C.win:parseFloat(rating.kd)>=0.9?C.yellow:C.lose},
+                  {l:"WIN%",      v:rating.wr+"%",           c:parseInt(rating.wr)>=55?C.win:parseInt(rating.wr)>=45?C.yellow:C.lose},
+                  {l:"HS%",       v:rating.hs+"%",           c:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange},
+                  {l:"МАТЧИ",     v:matchCount||"—",         c:C.label},
+                  {l:"ELO",       v:fc?.elo||"—",            c:LVL_COLOR[fc?.level]||C.yellow},
+                  {l:"ADR",       v:fc?.lifetime?.adr||(cs2.kills&&cs2.deaths?Math.round((parseInt(cs2.kills)*75)/Math.max(1,parseInt(cs2.deaths)*0.9))||"—":"—"), c:C.orange},
+                  {l:"УБИЙСТВ",   v:cs2.kills?parseInt(cs2.kills).toLocaleString():"—", c:C.label},
+                  {l:"1v1",       v:fc?.lifetime?.clutch1v1?fc.lifetime.clutch1v1+"%":"—", c:C.blue},
                 ].map((s,i)=>(
-                  <div key={i} style={{padding:"14px 10px",textAlign:"center",background:C.bg}}>
-                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"5px"}}>{s.l}</div>
-                    <div style={{fontSize:"20px",color:s.c,fontWeight:700}}>{s.v}</div>
+                  <div key={i} style={{padding:"12px 8px",textAlign:"center",background:C.bg}}>
+                    <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px",marginBottom:"5px"}}>{s.l}</div>
+                    <div style={{fontSize:"18px",color:s.c,fontWeight:700}}>{s.v}</div>
                   </div>
                 ))}
               </div>
+
+              {/* FACEIT расширенная статистика */}
+              {fc?.lifetime&&(
+                <div style={{marginTop:"12px",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:"8px"}}>
+                  {/* Clutch Success */}
+                  {(fc.lifetime.clutch1v1||fc.lifetime.clutch1v2)&&(
+                    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px"}}>
+                      <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>CLUTCH SUCCESS</div>
+                      <div style={{display:"flex",gap:"12px",flexWrap:"wrap"}}>
+                        {[
+                          {l:"1v1",v:fc.lifetime.clutch1v1,c:C.win},
+                          {l:"1v2",v:fc.lifetime.clutch1v2,c:C.yellow},
+                          {l:"1v3",v:fc.lifetime.clutch1v3,c:C.orange},
+                        ].filter(x=>x.v).map((x,j)=>(
+                          <div key={j} style={{textAlign:"center"}}>
+                            <div style={{fontSize:"16px",color:x.c,fontWeight:700}}>{x.v}%</div>
+                            <div style={{fontSize:"10px",color:C.muted}}>{x.l}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Entry Success */}
+                  {fc.lifetime.entrySuccess&&(
+                    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px"}}>
+                      <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>ENTRY SUCCESS</div>
+                      <div style={{fontSize:"24px",color:C.blue,fontWeight:700}}>{fc.lifetime.entrySuccess}%</div>
+                      <div style={{fontSize:"11px",color:C.muted}}>за раунд</div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* ── Best / Worst карта ── */}
@@ -3489,7 +3608,8 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 function Leaderboard({myId, myIsPro, onProfile}) {
   const [data,setData]=useState(null);
-  const [sortKey,setSortKey]=useState("kd");
+  const [sortKey,setSortKey]=useState("premier"); // по умолчанию — Premier рейтинг
+  const [tab,setTab]=useState("premier"); // premier | stats
 
   function load() {
     fetch(`${BACKEND}/leaderboard`)
@@ -3500,7 +3620,7 @@ function Leaderboard({myId, myIsPro, onProfile}) {
 
   useEffect(()=>{ load(); },[]);
 
-  if (!data) return <div style={{padding:"12px"}}>{[1,2,3,4,5].map(i=><Skel key={i} h="50"/>)}</div>;
+  if (!data) return <div style={{padding:"12px"}}>{[1,2,3,4,5].map(i=><Skel key={i} h="58"/>)}</div>;
   if (!data.length) return (
     <div style={{textAlign:"center",padding:"70px",color:C.muted}}>
       <div style={{fontSize:"36px",marginBottom:"14px"}}>🏆</div>
@@ -3515,97 +3635,191 @@ function Leaderboard({myId, myIsPro, onProfile}) {
     </div>
   );
 
-  const SORTS = [
+  const STAT_SORTS = [
     {id:"kd",      label:"K/D",          icon:"🎯", fn:(a,b)=>(parseFloat(b.stats?.kd||0)-parseFloat(a.stats?.kd||0))},
     {id:"winrate", label:"Побед %",       icon:"🏆", fn:(a,b)=>(parseFloat(b.stats?.winrate||0)-parseFloat(a.stats?.winrate||0))},
-    {id:"hs",      label:"Хедшоты",      icon:"💥", fn:(a,b)=>(parseFloat(b.stats?.hs||0)-parseFloat(a.stats?.hs||0))},
+    {id:"hs",      label:"HS%",           icon:"💥", fn:(a,b)=>(parseFloat(b.stats?.hs||0)-parseFloat(a.stats?.hs||0))},
     {id:"kills",   label:"Убийства",     icon:"⚔️", fn:(a,b)=>(parseInt(b.stats?.kills||0)-parseInt(a.stats?.kills||0))},
-    {id:"deaths",  label:"Смерти",       icon:"💀", fn:(a,b)=>(parseInt(a.stats?.deaths||0)-parseInt(b.stats?.deaths||0))},
     {id:"matches", label:"Матчи",        icon:"🎮", fn:(a,b)=>(parseInt(b.stats?.matches||0)-parseInt(a.stats?.matches||0))},
     {id:"mvp",     label:"MVP",          icon:"⭐", fn:(a,b)=>(parseInt(b.stats?.mvp||0)-parseInt(a.stats?.mvp||0))},
-    {id:"playtime",label:"Время в игре", icon:"⏱️", fn:(a,b)=>(parseInt(b.stats?.playtime||0)-parseInt(a.stats?.playtime||0))},
   ];
 
-  const sortFn = SORTS.find(s=>s.id===sortKey)?.fn || SORTS[0].fn;
-  const sorted = [...data].sort(sortFn);
+  // Для Premier вкладки — сортировка по рейтингу
+  const premierSorted = [...data].sort((a,b)=>{
+    const ar = parseInt(a.stats?.premier_rating||0);
+    const br = parseInt(b.stats?.premier_rating||0);
+    if (br !== ar) return br - ar;
+    return parseInt(b.stats?.wins||0) - parseInt(a.stats?.wins||0);
+  });
 
-  const valFor = (p) => {
-    const s = p.stats || {};
-    switch(sortKey) {
-      case "kd":      return s.kd ? `${s.kd} K/D` : "—";
-      case "winrate": return s.winrate ? `${s.winrate}%` : "—";
-      case "hs":      return s.hs ? `${s.hs}% HS` : "—";
-      case "kills":   return s.kills ? `${parseInt(s.kills).toLocaleString()}` : "—";
-      case "deaths":  return s.deaths ? `${parseInt(s.deaths).toLocaleString()}` : "—";
-      case "matches": return s.matches ? `${parseInt(s.matches).toLocaleString()}` : "—";
-      case "mvp":     return s.mvp ? `${parseInt(s.mvp).toLocaleString()}` : "—";
-      case "playtime": return s.playtime && parseInt(s.playtime)>0 ? `${Math.round(parseInt(s.playtime)/60)}ч` : "—";
-      default:        return "—";
-    }
-  };
+  const statSortFn = STAT_SORTS.find(s=>s.id===sortKey)?.fn || STAT_SORTS[0].fn;
+  const statSorted = [...data].sort(statSortFn);
+
+  const sorted = tab==="premier" ? premierSorted : statSorted;
 
   return (
     <div style={{animation:"up .4s ease both"}}>
-      {/* Sort buttons */}
-      <div style={{marginBottom:"14px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
-          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px"}}>СОРТИРОВАТЬ ПО:</div>
-          <button onClick={load} style={{background:"transparent",border:`1px solid ${C.border}`,
-            color:C.muted,cursor:"pointer",fontSize:"11px",padding:"4px 12px",fontFamily:"inherit"}}>
-            ↻ обновить
+      {/* Заголовок + переключатель */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px",flexWrap:"wrap",gap:"8px"}}>
+        <div style={{display:"flex",gap:"4px"}}>
+          <button onClick={()=>setTab("premier")} style={{
+            padding:"8px 16px",background:tab==="premier"?C.yellow+"22":C.card,
+            border:`1px solid ${tab==="premier"?C.yellow+"88":C.border}`,
+            color:tab==="premier"?C.yellow:C.muted,cursor:"pointer",
+            fontSize:"12px",fontFamily:"inherit",fontWeight:tab==="premier"?700:400}}>
+            🏅 Premier Рейтинг
+          </button>
+          <button onClick={()=>setTab("stats")} style={{
+            padding:"8px 16px",background:tab==="stats"?C.yellow+"22":C.card,
+            border:`1px solid ${tab==="stats"?C.yellow+"88":C.border}`,
+            color:tab==="stats"?C.yellow:C.muted,cursor:"pointer",
+            fontSize:"12px",fontFamily:"inherit",fontWeight:tab==="stats"?700:400}}>
+            📊 Статистика
           </button>
         </div>
-        <div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>
-          {SORTS.map(s=>{
+        <button onClick={load} style={{background:"transparent",border:`1px solid ${C.border}`,
+          color:C.muted,cursor:"pointer",fontSize:"11px",padding:"6px 14px",fontFamily:"inherit"}}>
+          ↻ Обновить
+        </button>
+      </div>
+
+      {/* Вторичная сортировка для Stats */}
+      {tab==="stats"&&(
+        <div style={{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"12px"}}>
+          {STAT_SORTS.map(s=>{
             const active = sortKey===s.id;
             return(
               <button key={s.id} onClick={()=>setSortKey(s.id)} style={{
-                padding:"7px 12px",background:active?C.yellow+"22":C.card,
-                border:`1px solid ${active?C.yellow+"88":C.border}`,
-                borderBottom:`2px solid ${active?C.yellow:"transparent"}`,
-                color:active?C.yellow:C.muted,cursor:"pointer",fontSize:"12px",
+                padding:"6px 12px",background:active?C.yellow+"22":C.card,
+                border:`1px solid ${active?C.yellow+"55":C.border}`,
+                color:active?C.yellow:C.muted,cursor:"pointer",fontSize:"11px",
                 fontFamily:"inherit",fontWeight:active?700:400,
-                display:"flex",alignItems:"center",gap:"5px",transition:"all .15s",
-                whiteSpace:"nowrap"}}>
+                display:"flex",alignItems:"center",gap:"4px",transition:"all .15s"}}>
                 <span>{s.icon}</span> {s.label}
               </button>
             );
           })}
         </div>
-      </div>
+      )}
 
-      <div style={{fontSize:"12px",color:C.muted,marginBottom:"10px"}}>Нажми на игрока — откроется профиль</div>
-      <div className="lb-grid" style={{display:"grid",gridTemplateColumns:"40px 1fr 110px 100px",gap:"2px",
-        padding:"8px 14px",fontSize:"11px",letterSpacing:"2px",color:C.muted,borderBottom:`1px solid ${C.border}`}}>
-        <div>#</div><div>ИГРОК</div><div>УРОВЕНЬ</div>
-        <div style={{textAlign:"right"}}>{SORTS.find(s=>s.id===sortKey)?.label?.toUpperCase()}</div>
-      </div>
+      {/* Premier вкладка — заголовок таблицы */}
+      {tab==="premier"&&(
+        <div style={{display:"grid",gridTemplateColumns:"40px 1fr 130px 130px 80px",gap:"2px",
+          padding:"8px 14px",fontSize:"10px",letterSpacing:"2px",color:C.muted,
+          borderBottom:`1px solid ${C.border}`,borderTop:`1px solid ${C.border}`}}>
+          <div>#</div>
+          <div>ИГРОК</div>
+          <div>ТЕКУЩИЙ РАНГ</div>
+          <div>ЛУЧШИЙ РАНГ</div>
+          <div style={{textAlign:"right"}}>ПОБЕДЫ</div>
+        </div>
+      )}
+
+      {/* Stats вкладка — заголовок */}
+      {tab==="stats"&&(
+        <div style={{display:"grid",gridTemplateColumns:"40px 1fr 110px 100px",gap:"2px",
+          padding:"8px 14px",fontSize:"10px",letterSpacing:"2px",color:C.muted,
+          borderBottom:`1px solid ${C.border}`,borderTop:`1px solid ${C.border}`}}>
+          <div>#</div><div>ИГРОК</div><div>УРОВЕНЬ</div>
+          <div style={{textAlign:"right"}}>{STAT_SORTS.find(s=>s.id===sortKey)?.label?.toUpperCase()}</div>
+        </div>
+      )}
+
+      {/* Строки */}
       {sorted.map((p,i)=>{
         const lc=ANALYSIS_COLOR[p.level]||C.yellow;
         const isMe=myId&&p.steamid===myId;
         const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":null;
+        const premRating = parseInt(p.stats?.premier_rating||0);
+        const bestPremier = parseInt(p.stats?.best_premier||p.stats?.premier_rating||0);
+        const wins = parseInt(p.stats?.wins||0);
+
+        if (tab==="premier") {
+          return (
+            <div key={p.steamid||i} className="hov-row" onClick={()=>onProfile(p.steamid)} style={{
+              display:"grid",gridTemplateColumns:"40px 1fr 130px 130px 80px",gap:"2px",
+              padding:"12px 14px",cursor:"pointer",borderBottom:`1px solid ${C.border}`,
+              background:isMe?"#1a1a08":C.card,
+              borderLeft:isMe?`3px solid ${C.yellow}`:`3px solid transparent`,
+              alignItems:"center",transition:"background .15s"}}>
+              {/* # */}
+              <div style={{color:i<3?C.yellow:C.muted,fontSize:"14px",fontWeight:700}}>
+                {medal||i+1}
+              </div>
+              {/* Игрок */}
+              <div style={{display:"flex",alignItems:"center",gap:"10px",minWidth:0}}>
+                {p.avatar
+                  ?<img src={p.avatar} alt="" style={{width:"32px",height:"32px",borderRadius:"3px",flexShrink:0}}/>
+                  :<div style={{width:"32px",height:"32px",background:"#1a1a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",flexShrink:0}}>👤</div>}
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:"14px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:500,
+                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    {p.username}{isMe?" (ты)":""}
+                  </div>
+                  <div style={{fontSize:"10px",color:C.muted,marginTop:"1px"}}>
+                    {p.stats?.kd?`K/D ${p.stats.kd}`:""}
+                    {p.stats?.winrate?` · ${p.stats.winrate}% WR`:""}
+                  </div>
+                </div>
+                {(p.is_pro||(isMe&&myIsPro))&&<span style={{fontSize:"9px",color:C.yellow,
+                  background:C.yellow+"22",border:`1px solid ${C.yellow}44`,
+                  padding:"1px 5px",letterSpacing:"1px",flexShrink:0}}>PRO</span>}
+              </div>
+              {/* Текущий ранг */}
+              <div>
+                {premRating>0
+                  ?<PremierBadge rating={premRating} size={28}/>
+                  :<span style={{fontSize:"11px",color:C.muted}}>Нет ранга</span>}
+              </div>
+              {/* Лучший ранг */}
+              <div>
+                {bestPremier>0
+                  ?<PremierBadge rating={bestPremier} size={24} showLabel={bestPremier!==premRating}/>
+                  :<span style={{fontSize:"11px",color:C.muted}}>—</span>}
+              </div>
+              {/* Победы */}
+              <div style={{textAlign:"right",fontSize:"14px",color:C.win,fontWeight:700}}>
+                {wins>0?wins.toLocaleString():"—"}
+              </div>
+            </div>
+          );
+        }
+
+        // Stats вкладка
+        const statVal = (()=>{
+          const s = p.stats||{};
+          switch(sortKey){
+            case "kd":      return s.kd?`${s.kd} K/D`:"—";
+            case "winrate": return s.winrate?`${s.winrate}%`:"—";
+            case "hs":      return s.hs?`${s.hs}%`:"—";
+            case "kills":   return s.kills?parseInt(s.kills).toLocaleString():"—";
+            case "matches": return s.matches?parseInt(s.matches).toLocaleString():"—";
+            case "mvp":     return s.mvp?parseInt(s.mvp).toLocaleString():"—";
+            default: return "—";
+          }
+        })();
         return (
           <div key={p.steamid||i} className="hov-row lb-grid" onClick={()=>onProfile(p.steamid)} style={{
             display:"grid",gridTemplateColumns:"40px 1fr 110px 100px",gap:"2px",
             padding:"12px 14px",cursor:"pointer",borderBottom:`1px solid ${C.border}`,
             background:isMe?"#1a1a08":C.card,borderLeft:isMe?`3px solid ${C.yellow}`:`3px solid transparent`,
-            transition:"background .15s"}}>
-            <div style={{color:i<3?C.yellow:C.muted,fontSize:"14px",fontWeight:700,alignSelf:"center"}}>{medal||i+1}</div>
-            <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            transition:"background .15s",alignItems:"center"}}>
+            <div style={{color:i<3?C.yellow:C.muted,fontSize:"14px",fontWeight:700}}>{medal||i+1}</div>
+            <div style={{display:"flex",alignItems:"center",gap:"10px",minWidth:0}}>
               {p.avatar?<img src={p.avatar} alt="" style={{width:"28px",height:"28px",borderRadius:"2px",flexShrink:0}}/>
                 :<div style={{width:"28px",height:"28px",background:"#1a1a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",flexShrink:0}}>👤</div>}
               <span style={{fontSize:"14px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                 {p.username}{isMe?" (ты)":""}
               </span>
-              {(p.is_pro || (isMe && myIsPro))&&<span style={{fontSize:"9px",color:C.yellow,background:C.yellow+"22",
+              {(p.is_pro||(isMe&&myIsPro))&&<span style={{fontSize:"9px",color:C.yellow,background:C.yellow+"22",
                 border:`1px solid ${C.yellow}44`,padding:"1px 5px",letterSpacing:"1px",flexShrink:0}}>PRO</span>}
             </div>
             <div style={{padding:"3px 8px",background:lc+"18",color:lc,border:`1px solid ${lc}33`,
-              fontSize:"10px",letterSpacing:"1px",display:"inline-flex",alignItems:"center",height:"fit-content",alignSelf:"center"}}>
+              fontSize:"10px",letterSpacing:"1px",display:"inline-flex",alignItems:"center",height:"fit-content"}}>
               {p.level}
             </div>
-            <div className="lb-val" style={{fontSize:"14px",color:C.yellow,fontWeight:700,textAlign:"right",alignSelf:"center",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-              {valFor(p)}
+            <div className="lb-val" style={{fontSize:"14px",color:C.yellow,fontWeight:700,textAlign:"right"}}>
+              {statVal}
             </div>
           </div>
         );
@@ -7160,7 +7374,11 @@ export default function App() {
         avatar: player.avatar||"",
         stats:{kd:lbKd, winrate:lbWr, hs:lbHs, matches:lbM,
           rank: fc2?.elo?`FACEIT ${fc2.level}`:"Steam",
-          kills:lbKills, deaths:lbDeaths, mvp:lbMvp, playtime:lbPt},
+          kills:lbKills, deaths:lbDeaths, mvp:lbMvp, playtime:lbPt,
+          wins: String(parseInt(player.cs2?.wins)||0),
+          premier_rating: String(player.cs2?.premier_rating||""),
+          best_premier: String(player.cs2?.best_premier||""),
+        },
         level: levelLabel,
         overall: String(lbOverall),
       })
@@ -7635,7 +7853,7 @@ export default function App() {
                       </div>
                     </div>
                     {[
-                      {icon:"👤",label:"Мой профиль",action:()=>{setMainTab("overview");setProfileDropdown(false);}},
+                      {icon:"👤",label:"Мой профиль",action:()=>{setProfileView({steamid:player?.steamid});setProfileDropdown(false);}},
                       {icon:"⚙️",label:"Настройки",action:()=>{setShowSettings(true);setProfileDropdown(false);}},
                       {icon:"⚡",label:"PRO подписка",action:()=>{setShowProModal(true);setProfileDropdown(false);}},
                       {icon:"📤",label:"Поделиться",action:()=>{setShareOpen(true);setProfileDropdown(false);}},
