@@ -69,7 +69,9 @@ const css = `
     .desktop-nav{display:none !important;}
     .mobile-nav{display:flex !important;}
     .topbar-search{display:none !important;}
-    .topbar-right{gap:8px !important;}
+    .topbar-right{gap:6px !important;}
+    .topbar-username{display:none !important;}
+    .topbar-faceit{display:none !important;}
     .content-pad{padding:16px 14px 80px !important;}
     .stat-grid{grid-template-columns:repeat(2,1fr) !important;}
     .two-col{grid-template-columns:1fr !important;}
@@ -81,7 +83,6 @@ const css = `
     .score-rings{flex-direction:row !important;justify-content:space-around !important;}
     .chat-panel{width:100% !important;right:0 !important;bottom:64px !important;}
     .search-bar{display:none !important;}
-    /* Новые блоки на мобиле */
     .verdict-grid{grid-template-columns:1fr !important;}
     .rating-row{flex-direction:column !important;align-items:flex-start !important;gap:10px !important;}
     .rating-big{font-size:42px !important;}
@@ -93,9 +94,7 @@ const css = `
     .best-worst{grid-template-columns:1fr !important;}
     .recent-match-grid{grid-template-columns:4px 1fr 60px 50px 50px !important;}
     .recent-match-adr{display:none !important;}
-    /* О нас — технологии и конфиденциальность в одну колонку */
     .about-tech-grid{grid-template-columns:1fr !important;}
-    /* Лидерборд — обрезать длинные значения */
     .lb-val{max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     /* FAB кнопки — поднять над MobileNav (высота ~60px) */
     .fab-chat{bottom:80px !important;}
@@ -7069,22 +7068,48 @@ export default function App() {
         }
         setPlayer(p);
         if (!hasFaceit) setSource("steam");
-        // check Pro status — если localStorage говорит PRO, доверяем ему
-        // бэкенд может потерять данные после рестарта Render
+        // check Pro status
         if (p.steamid) {
           fetch(`${BACKEND}/pro/${p.steamid}`)
             .then(r=>r.json())
             .then(d=>{
               if(d.pro){
                 setIsPro(true); setAiRemaining(999);
+                // Сохраняем в localStorage как резервную копию
+                try{ localStorage.setItem("cs2_is_pro","1"); }catch{}
               } else {
-                // Бэкенд говорит не-PRO — но проверяем localStorage
+                // Бэкенд говорит не-PRO — проверяем localStorage
                 const localPro = localStorage.getItem("cs2_is_pro") === "1";
-                if (!localPro) { setIsPro(false); setAiRemaining(d.remaining??FREE_WEEKLY); }
-                // если localPro=true, оставляем как есть (Render мог рестартнуть)
+                // Также проверяем кеш pro_data (сохраняется в ProModal)
+                let proDataCache = null;
+                try{ proDataCache = JSON.parse(localStorage.getItem(`cs2_pro_data_${p.steamid}`)||"null"); }catch{}
+                const proDataValid = proDataCache?.activated_at && (() => {
+                  const plan = proDataCache.plan;
+                  const days = plan==="year"?365:plan==="month"?30:0;
+                  if(!days) return !!proDataCache.activated_at; // lifetime
+                  const expires = proDataCache.activated_at*1000 + days*86400*1000;
+                  return Date.now() < expires;
+                })();
+                if (localPro || proDataValid) {
+                  // Есть локальные данные — доверяем, но пробуем восстановить на бэкенде
+                  setIsPro(true); setAiRemaining(999);
+                  if(proDataCache) {
+                    // Пробуем тихо восстановить PRO на бэкенде
+                    fetch(`${BACKEND}/pro/restore`, {
+                      method:"POST", headers:{"Content-Type":"application/json"},
+                      body: JSON.stringify({steamid: p.steamid, pro_data: proDataCache})
+                    }).catch(()=>{});
+                  }
+                } else {
+                  setIsPro(false); setAiRemaining(d.remaining??FREE_WEEKLY);
+                }
               }
             })
-            .catch(()=>{});
+            .catch(()=>{
+              // Бэкенд недоступен — доверяем localStorage
+              const localPro = localStorage.getItem("cs2_is_pro") === "1";
+              if(localPro){ setIsPro(true); setAiRemaining(999); }
+            });
         }
         // background refresh
         if (p.steamid) {
@@ -7416,32 +7441,33 @@ export default function App() {
               {/* Профиль дропдаун */}
               <div style={{position:"relative"}}>
                 <button onClick={()=>setProfileDropdown(o=>!o)}
-                  style={{display:"flex",alignItems:"center",gap:"8px",background:"transparent",
+                  style={{display:"flex",alignItems:"center",gap:"6px",background:"transparent",
                     border:`1px solid ${profileDropdown?C.yellow+"66":C.border}`,
-                    cursor:"pointer",padding:"5px 10px",transition:"all .2s"}}
+                    cursor:"pointer",padding:"5px 8px",transition:"all .2s",maxWidth:"180px"}}
                   onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"55"}
                   onMouseLeave={e=>{if(!profileDropdown)e.currentTarget.style.borderColor=C.border;}}>
                   {(player.avatar||player.faceit?.avatar)&&
-                    <img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"24px",height:"24px",borderRadius:"2px"}}/>}
-                  <span style={{fontSize:"13px",color:C.value,maxWidth:"120px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{player.username}</span>
-                  {hasFaceit&&<span style={{fontSize:"10px",color:C.orange,background:"#ff773318",padding:"1px 6px",border:"1px solid #ff773333"}}>
-                    FACEIT {player.faceit.level}
+                    <img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"24px",height:"24px",borderRadius:"2px",flexShrink:0}}/>}
+                  <span className="topbar-username" style={{fontSize:"13px",color:C.value,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100px"}}>{player.username}</span>
+                  {hasFaceit&&<span className="topbar-faceit" style={{fontSize:"10px",color:C.orange,background:"#ff773318",padding:"1px 5px",border:"1px solid #ff773333",flexShrink:0}}>
+                    F{player.faceit.level}
                   </span>}
-                  <span style={{fontSize:"10px",color:C.muted,transition:"transform .2s",
+                  <span style={{fontSize:"10px",color:C.muted,flexShrink:0,transition:"transform .2s",
                     transform:profileDropdown?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
                 </button>
 
                 {profileDropdown&&<>
                   <div onClick={()=>setProfileDropdown(false)} style={{position:"fixed",inset:0,zIndex:99}}/>
-                  <div style={{position:"absolute",right:0,top:"calc(100% + 6px)",
+                  <div style={{position:"fixed",right:"8px",top:"56px",
                     background:"#141409",border:`1px solid ${C.yellow}44`,
-                    minWidth:"200px",zIndex:100,animation:"popIn .15s ease",boxShadow:"0 8px 32px rgba(0,0,0,0.6)"}}>
+                    width:"min(220px, calc(100vw - 16px))",zIndex:100,
+                    animation:"popIn .15s ease",boxShadow:"0 8px 32px rgba(0,0,0,0.6)"}}>
                     {/* Шапка дропдауна */}
                     <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`,
                       display:"flex",alignItems:"center",gap:"10px"}}>
                       {(player.avatar||player.faceit?.avatar)
-                        ?<img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"36px",height:"36px",borderRadius:"3px",border:`1px solid ${C.border}`}}/>
-                        :<div style={{width:"36px",height:"36px",background:"#1a1a10",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px"}}>👤</div>}
+                        ?<img src={player.avatar||player.faceit?.avatar} alt="" style={{width:"36px",height:"36px",borderRadius:"3px",border:`1px solid ${C.border}`,flexShrink:0}}/>
+                        :<div style={{width:"36px",height:"36px",background:"#1a1a10",border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",flexShrink:0}}>👤</div>}
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:"13px",color:C.value,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{player.username}</div>
                         <div style={{fontSize:"10px",color:C.muted,marginTop:"1px"}}>
@@ -7463,7 +7489,7 @@ export default function App() {
                           transition:"all .15s"}}
                         onMouseEnter={e=>{e.currentTarget.style.background="#1a1a10";e.currentTarget.style.color=C.yellow;}}
                         onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.label;}}>
-                        <span style={{fontSize:"15px",width:"20px",textAlign:"center"}}>{item.icon}</span>
+                        <span style={{fontSize:"15px",width:"20px",textAlign:"center",flexShrink:0}}>{item.icon}</span>
                         {item.label}
                       </button>
                     ))}
@@ -7473,7 +7499,7 @@ export default function App() {
                         fontSize:"13px",fontFamily:"inherit",textAlign:"left",transition:"all .15s"}}
                       onMouseEnter={e=>e.currentTarget.style.background="#1a0808"}
                       onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                      <span style={{fontSize:"15px",width:"20px",textAlign:"center"}}>🚪</span>
+                      <span style={{fontSize:"15px",width:"20px",textAlign:"center",flexShrink:0}}>🚪</span>
                       Выйти
                     </button>
                   </div>
