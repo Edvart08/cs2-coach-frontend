@@ -6032,16 +6032,17 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
           // Проверяем есть ли маркер закрытия
           const closeMsg = d.messages.find(m=>m.close_session);
           if(closeMsg) {
-            // Показываем финальное сообщение, потом сбрасываем чат
-            setMsgs(prev=>[...prev,{from:"support",text:closeMsg.text||"✅ Вопрос закрыт.",ts:closeMsg.ts,admin_real:true}]);
-            setTimeout(()=>{
-              // Через 3 секунды — возвращаем к начальному состоянию с кнопками
-              setMsgs([
-                {from:"support",text:"Привет! 👋 Чем могу помочь? Выбери вопрос или напиши своё.",ts:Date.now()},
-                {from:"support",text:"__CHIPS__",ts:Date.now()+1},
-              ]);
-              try{ localStorage.removeItem(SKEY); }catch{}
-            }, 3000);
+            // Добавляем финальное сообщение и кнопки — историю НЕ стираем
+            setMsgs(prev=>{
+              const withClose = [...prev, {from:"support",text:closeMsg.text||"✅ Вопрос закрыт.",ts:closeMsg.ts,admin_real:true}];
+              // Добавляем разделитель и кнопки снова
+              return [...withClose,
+                {from:"support",text:"─────────────────",ts:closeMsg.ts+1},
+                {from:"support",text:"Если есть ещё вопросы — выбери тему ниже 👇",ts:closeMsg.ts+2},
+                {from:"support",text:"__CHIPS__",ts:closeMsg.ts+3},
+              ];
+            });
+            // Сохраняем в localStorage (с историей)
             return;
           }
           setMsgs(prev=>{
