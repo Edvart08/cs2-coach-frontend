@@ -4805,14 +4805,24 @@ function ProModal({player, isPro, onClose, onActivated}) {
   const [promoLoading,setPromoLoading] = useState(false);
   const [promoErr,setPromoErr] = useState("");
 
-  // Загружаем данные о подписке
+  // Загружаем данные о подписке — сначала из localStorage, потом бэкенд
   useEffect(()=>{
-    if(player?.steamid && isPro) {
-      fetch(`${BACKEND}/payment/status/${player.steamid}`)
-        .then(r=>r.json())
-        .then(d=>setProData(d.data||null))
-        .catch(()=>{});
-    }
+    if(!player?.steamid || !isPro) return;
+    // Сразу берём из localStorage
+    try {
+      const cached = JSON.parse(localStorage.getItem(`cs2_pro_data_${player.steamid}`)||"null");
+      if(cached?.activated_at) setProData(cached);
+    } catch {}
+    // Параллельно грузим с бэкенда (может обновить)
+    fetch(`${BACKEND}/pro/${player.steamid}`)
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.pro && d.data) {
+          setProData(d.data);
+          try{ localStorage.setItem(`cs2_pro_data_${player.steamid}`, JSON.stringify(d.data)); }catch{}
+        }
+      })
+      .catch(()=>{});
   },[isPro,player?.steamid]);
 
   async function checkPromo() {
@@ -5872,83 +5882,69 @@ function SupportPanel({onClose}) {
 
 
 // ── Support Modal ─────────────────────────────────────────────────────────────
-function SupportModal({player, onClose}) {
+function SupportModal({player, onClose, isPro, aiRemaining}) {
   const steamid = player?.steamid || "anon";
-  const SKEY = `cs2_support_${steamid}`;
-  const FAQ_BTNS = [
-    {icon:"⚡", q:"У меня есть PRO?"},
-    {icon:"📅", q:"До какого работает PRO?"},
-    {icon:"📊", q:"Данные не загружаются"},
-    {icon:"🎮", q:"FACEIT не подключается"},
-    {icon:"📋", q:"Сколько анализов осталось?"},
-    {icon:"🆘", q:"Позвать оператора"},
-  ];
 
-  // Умный матчинг по ключевым словам — охватывает разные формулировки
+  // Умный матчинг по ключевым словам
   const SMART_FAQ = [
     {
-      keywords: [
-        "у меня про","есть про","есть подписка","активна про","активен про","про активна",
-        "про активен","pro активна","pro активен","pro у меня","у меня pro",
-        "активирована подписка","есть ли у меня","моя подписка","у меня подписка",
-        "куплена подписка","куплен про","оплатил про","оплатил подписку"
-      ],
-      answer: () => isPro
-        ? `✅ Да! У тебя активна PRO подписка.\n\nВсе функции доступны:\n• Безлимитный AI разбор\n• AI чат без ограничений\n• PRO значок в лидерборде\n• Анализ слабых карт\n• Приоритетная поддержка`
-        : `Сейчас не вижу активной PRO подписки на твоём аккаунте.\n\nЧто попробовать:\n1. Выйди и войди снова через Steam\n2. Подожди 1-2 мин и обнови страницу\n3. Если оплачивал — напиши "позови оператора", проверим вручную`
+      id:"pro_check",
+      label:"У меня есть PRO?",
+      icon:"⚡",
+      keywords:["у меня про","есть про","есть подписка","активна про","активен про","про активна","про активен","pro активна","pro активен","pro у меня","у меня pro","активирована подписка","есть ли у меня","моя подписка","у меня подписка","куплена подписка","куплен про","оплатил про","оплатил подписку","есть ли про"],
+      answer:()=> isPro
+        ? "✅ Да! У тебя активна PRO подписка.\n\nВсе функции доступны:\n• Безлимитный AI разбор\n• AI чат без ограничений\n• PRO значок в лидерборде\n• Приоритетная поддержка"
+        : "❌ Сейчас не вижу активной PRO подписки.\n\nЧто попробовать:\n1. Выйди и войди снова через Steam\n2. Подожди 1-2 мин и обнови страницу\n3. Если оплачивал — напиши \"позови оператора\", проверим"
     },
     {
-      keywords: [
-        "до какого","до какой даты","когда истекает","срок подписки","когда кончается",
-        "сколько осталось дней","дата окончания","подписка до","действует до",
-        "сколько дней осталось","expire","срок действия"
-      ],
-      answer: () => {
-        if (!isPro) return "У тебя сейчас нет активной PRO подписки. Оформить можно нажав ⚡ PRO в шапке сайта.";
+      id:"pro_date",
+      label:"До какого PRO?",
+      icon:"📅",
+      keywords:["до какого","до какой даты","когда истекает","срок подписки","когда кончается","сколько осталось дней","дата окончания","подписка до","действует до","сколько дней осталось","срок действия","до когда"],
+      answer:()=>{
+        if(!isPro) return "❌ У тебя сейчас нет активной PRO подписки. Оформить можно нажав ⚡ PRO в шапке.";
         try {
-          const pd = JSON.parse(localStorage.getItem(`cs2_pro_data_${player?.steamid}`) || "null");
-          if (!pd?.activated_at) return "Открой ⚡ PRO → «Моя подписка» — там видна дата окончания. Если не показывает, подожди 30 сек (сервер просыпается).";
-          const plan = pd.plan;
-          if (plan === "lifetime") return "✅ У тебя подписка НАВСЕГДА — срока нет.";
-          const days = plan === "year" ? 365 : plan === "month" ? 30 : 0;
-          if (!days) return "Открой ⚡ PRO → «Моя подписка» для деталей.";
-          const expiresMs = pd.activated_at * 1000 + days * 86400 * 1000;
-          const daysLeft = Math.max(0, Math.ceil((expiresMs - Date.now()) / 86400000));
-          const expiresDate = new Date(expiresMs).toLocaleDateString("ru-RU", {day:"2-digit",month:"long",year:"numeric"});
-          if (daysLeft === 0) return `❌ Подписка истекла ${expiresDate}. Оформи снова — кнопка ⚡ PRO в шапке.`;
-          return `✅ PRO действует до ${expiresDate}\n\nОсталось: ${daysLeft} ${daysLeft===1?"день":daysLeft<5?"дня":"дней"}\n\nПродлить можно в ⚡ PRO → «Продлить».`;
-        } catch { return "Открой ⚡ PRO → «Моя подписка» — там видна дата окончания."; }
+          const pd = JSON.parse(localStorage.getItem(`cs2_pro_data_${player?.steamid}`)||"null");
+          if(!pd?.activated_at) return "Открой ⚡ PRO → «Моя подписка» — там видна дата. Или подожди 30 сек пока сервер проснётся.";
+          if(pd.plan==="lifetime") return "✅ Подписка НАВСЕГДА — срок не ограничен! 🎉";
+          const days = pd.plan==="year"?365:pd.plan==="month"?30:0;
+          if(!days) return "Открой ⚡ PRO → «Моя подписка» для деталей.";
+          const expiresMs = pd.activated_at*1000+days*86400*1000;
+          const daysLeft = Math.max(0,Math.ceil((expiresMs-Date.now())/86400000));
+          const date = new Date(expiresMs).toLocaleDateString("ru-RU",{day:"2-digit",month:"long",year:"numeric"});
+          if(daysLeft===0) return `❌ Подписка истекла ${date}.\n\nОформи снова — кнопка ⚡ PRO в шапке.`;
+          return `✅ PRO действует до ${date}\n\nОсталось: ${daysLeft} ${daysLeft===1?"день":daysLeft<5?"дня":"дней"}`;
+        } catch { return "Открой ⚡ PRO → «Моя подписка» для деталей."; }
       }
     },
     {
-      keywords: [
-        "не загружается","не грузит","пустой профиль","нет данных","ошибка",
-        "не показывает","не отображается","не работает статистика","данные пропали"
-      ],
-      answer: () => "Если данные не загружаются:\n1. Профиль Steam должен быть открыт (Настройки → Конфиденциальность → Публичный)\n2. Статистика CS2 тоже должна быть открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — напиши «позови оператора»!"
+      id:"no_data",
+      label:"Данные не грузятся",
+      icon:"📊",
+      keywords:["не загружается","не грузит","пустой профиль","нет данных","ошибка","не показывает","не отображается","не работает статистика","данные пропали","нет статистики"],
+      answer:()=>"Если данные не загружаются:\n1. Профиль Steam должен быть открыт (Конфиденциальность → Публичный)\n2. Статистика CS2 тоже должна быть открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — напиши \"позови оператора\"!"
     },
     {
-      keywords: [
-        "faceit не","не подключается faceit","нет faceit","не видит faceit",
-        "faceit не работает","не вижу faceit","faceit пустой"
-      ],
-      answer: () => "Если FACEIT не подключается:\n1. В FACEIT должен быть привязан тот же Steam аккаунт\n2. Подожди 30 секунд — данные грузятся параллельно\n3. Если новый аккаунт (менее 10 матчей) — статистика пока недоступна"
+      id:"faceit",
+      label:"FACEIT не работает",
+      icon:"🎮",
+      keywords:["faceit не","не подключается faceit","нет faceit","не видит faceit","faceit не работает","не вижу faceit","faceit пустой","faceit ошибка"],
+      answer:()=>"Если FACEIT не подключается:\n1. В FACEIT должен быть привязан тот же Steam аккаунт\n2. Подожди 30 сек — данные грузятся параллельно\n3. Если новый аккаунт (менее 10 матчей) — статистика пока недоступна"
     },
     {
-      keywords: [
-        "сколько анализов","остаток анализов","лимит анализов","закончились анализы",
-        "нет разборов","сколько разборов","израсходовал","анализов осталось"
-      ],
-      answer: () => `Бесплатно: 1 AI разбор в неделю.\nС PRO: безлимитно.\n\nТвой статус: ${isPro ? "✅ PRO — безлимит" : `${aiRemaining} разбор(ов) на этой неделе`}`
+      id:"analyses",
+      label:"Сколько анализов?",
+      icon:"📋",
+      keywords:["сколько анализов","остаток анализов","лимит","закончились анализы","нет разборов","сколько разборов","израсходовал","анализов осталось","сколько разборов осталось"],
+      answer:()=>`Бесплатно: 1 AI разбор в неделю.\nС PRO: безлимитно.\n\nТвой статус: ${isPro?"✅ PRO — безлимит":aiRemaining+" разбор(ов) на этой неделе"}`
     },
     {
-      keywords: [
-        "позови оператора","позовите оператора","нужен оператор","живой человек",
-        "поддержка","служба поддержки","помогите","не могу решить",
-        "хочу поговорить","оператор","менеджер","напишите мне","свяжитесь"
-      ],
-      answer: () => null, // null = эскалация
-      escalate: true
+      id:"operator",
+      label:"Позвать оператора",
+      icon:"🆘",
+      keywords:["позови оператора","позовите оператора","нужен оператор","живой человек","хочу поговорить","оператор","менеджер","напишите мне","свяжитесь","нужна помощь","помогите"],
+      escalate:true,
+      answer:()=>null
     },
   ];
 
@@ -5957,16 +5953,11 @@ function SupportModal({player, onClose}) {
     return SMART_FAQ.find(f => f.keywords.some(k => lower.includes(k)));
   }
 
-  const FAQ_ANSWERS = {
-    "У меня есть PRO?":           SMART_FAQ[0].answer,
-    "До какого работает PRO?":    SMART_FAQ[1].answer,
-    "Данные не загружаются":      SMART_FAQ[2].answer,
-    "FACEIT не подключается":     SMART_FAQ[3].answer,
-    "Сколько анализов осталось?": SMART_FAQ[4].answer,
-    "Позвать оператора":          () => null,
-  };
-
-  const INITIAL = [{from:"support",text:"Привет! 👋 Чем могу помочь?\n\nВыбери вопрос ниже — отвечу сразу, или напиши своё.",ts:0}];
+  const SKEY = `cs2_support_msgs_${steamid||"anon"}`;
+  const INITIAL = [
+    {from:"support", text:"Привет! 👋 Чем могу помочь? Выбери вопрос или напиши своё.", ts:0},
+    {from:"support", text:"__CHIPS__", ts:1}, // специальный маркер для чипов
+  ];
 
   const [msgs,setMsgs] = useState(()=>{
     try { const s=localStorage.getItem(SKEY); return s?JSON.parse(s):INITIAL; }
@@ -5978,21 +5969,45 @@ function SupportModal({player, onClose}) {
   const lastTs = useRef(0);
   const endRef = useRef(null);
 
-  // Сохраняем в localStorage при каждом изменении
   useEffect(()=>{
     try { localStorage.setItem(SKEY, JSON.stringify(msgs)); } catch {}
     endRef.current?.scrollIntoView({behavior:"smooth"});
   },[msgs]);
 
-  // Инициализируем lastTs из сохранённых сообщений
   useEffect(()=>{
-    const adminMsgs = msgs.filter(m=>m.from==="admin_real");
-    if(adminMsgs.length>0 && adminMsgs[adminMsgs.length-1].ts)
-      lastTs.current = adminMsgs[adminMsgs.length-1].ts;
+    const adminMsgs = msgs.filter(m=>m.admin_real);
+    if(adminMsgs.length>0) lastTs.current = adminMsgs[adminMsgs.length-1].ts||0;
   },[]);
 
-  // Polling новых ответов от админа
+  // При открытии — синхронизируем историю с бэкенда (для кросс-девайс синхронизации)
   useEffect(()=>{
+    if(!steamid||steamid==="anon") return;
+    fetch(`${BACKEND}/support/history/${steamid}`)
+      .then(r=>r.json())
+      .then(d=>{
+        if(!d.messages?.length) return;
+        const adminFromServer = d.messages.filter(m=>m.from==="admin");
+        if(!adminFromServer.length) return;
+        setMsgs(prev=>{
+          const existingTs = new Set(prev.filter(m=>m.admin_real).map(m=>m.ts));
+          const fresh = adminFromServer
+            .filter(m=>!existingTs.has(m.ts) && m.ts)
+            .map(m=>({from:"support",text:m.text,ts:m.ts,admin_real:true}));
+          if(!fresh.length) return prev;
+          const merged = [...prev,...fresh].sort((a,b)=>(a.ts||0)-(b.ts||0));
+          try{ localStorage.setItem(SKEY,JSON.stringify(merged)); }catch{}
+          return merged;
+        });
+        // Обновляем lastTs
+        const maxTs = Math.max(...adminFromServer.map(m=>m.ts||0));
+        if(maxTs>0) lastTs.current = maxTs+1;
+      })
+      .catch(()=>{});
+  },[steamid]);
+
+  // Polling ответов от оператора
+  useEffect(()=>{
+    if(!steamid) return;
     const poll = async ()=>{
       try{
         const r = await fetch(`${BACKEND}/support/poll/${steamid}?since=${lastTs.current}`);
@@ -6001,84 +6016,89 @@ function SupportModal({player, onClose}) {
           d.messages.forEach(m=>{ lastTs.current = Math.max(lastTs.current, m.ts+1); });
           setMsgs(prev=>{
             const existingTs = new Set(prev.filter(m=>m.admin_real).map(m=>m.ts));
-            const fresh = d.messages
-              .filter(m=>!existingTs.has(m.ts))
+            const fresh = d.messages.filter(m=>!existingTs.has(m.ts))
               .map(m=>({from:"support",text:m.text,ts:m.ts,admin_real:true}));
-            return fresh.length>0 ? [...prev,...fresh] : prev;
+            return fresh.length>0?[...prev,...fresh]:prev;
           });
         }
       }catch{}
     };
     poll();
-    const t = setInterval(poll, 2000);
-    return ()=>clearInterval(t);
+    const t = setInterval(poll,2000);
+    return()=>clearInterval(t);
   },[steamid]);
 
-  const sending = useRef(false); // защита от двойной отправки
+  const sending = useRef(false);
+
+  async function handleChip(faq) {
+    // Добавляем сообщение пользователя
+    setMsgs(m=>[...m,{from:"user",text:faq.label,ts:Date.now()}]);
+    await new Promise(r=>setTimeout(r,400));
+    if(faq.escalate) {
+      try {
+        await fetch(`${BACKEND}/support`,{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({message:`[Кнопка] ${faq.label}`,steamid:player?.steamid||"",username:player?.username||"Аноним"})
+        });
+      } catch {}
+      setMsgs(m=>[...m,{from:"support",text:"📨 Передаю оператору! Обычно отвечаем за несколько часов.\n\nОтвет придёт прямо сюда 👇",ts:Date.now()+1}]);
+    } else {
+      const answer = faq.answer();
+      if(answer) setMsgs(m=>[...m,{from:"support",text:answer,ts:Date.now()+1}]);
+    }
+  }
 
   async function send() {
     const text = input.trim();
-    if(!text || loading || sending.current) return;
+    if(!text||loading||sending.current) return;
     sending.current = true;
     setInput(""); setLoading(true);
     setMsgs(m=>[...m,{from:"user",text,ts:Date.now()}]);
 
-    // Умный матчинг по ключевым словам
     const match = smartMatch(text);
-    if (match) {
+    if(match) {
       await new Promise(r=>setTimeout(r,500));
-      if (match.escalate) {
-        // Эскалация к оператору
+      if(match.escalate) {
         try {
-          await fetch(`${BACKEND}/support`,{
-            method:"POST",headers:{"Content-Type":"application/json"},
+          await fetch(`${BACKEND}/support`,{method:"POST",headers:{"Content-Type":"application/json"},
             body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||"Аноним"})
           });
         } catch {}
-        setMsgs(m=>[...m,
-          {from:"support",text:"📨 Передаю твой вопрос живому оператору!\n\nОбычно отвечаем в течение нескольких часов. Ответ придёт прямо сюда.",ts:Date.now()+1}
-        ]);
-        sentAck.current = true;
-        setLoading(false);
-        sending.current = false;
-        return;
+        setMsgs(m=>[...m,{from:"support",text:"📨 Передаю оператору! Обычно отвечаем за несколько часов.\n\nОтвет придёт прямо сюда 👇",ts:Date.now()+1}]);
+        sentAck.current=true;
+      } else {
+        const answer = match.answer();
+        if(answer) setMsgs(m=>[...m,{from:"support",text:answer,ts:Date.now()+1}]);
       }
-      const answer = match.answer();
-      setMsgs(m=>[...m,{from:"support",text:answer,ts:Date.now()+1}]);
-      setLoading(false);
-      sending.current = false;
-      return;
+      setLoading(false); sending.current=false; return;
     }
 
+    // Не распознали — отправляем оператору
     try {
       const ctrl = new AbortController();
-      const tid = setTimeout(()=>ctrl.abort(), 12000);
-      await fetch(`${BACKEND}/support`,{
-        method:"POST",headers:{"Content-Type":"application/json"},
+      const tid = setTimeout(()=>ctrl.abort(),12000);
+      await fetch(`${BACKEND}/support`,{method:"POST",headers:{"Content-Type":"application/json"},
         signal:ctrl.signal,
         body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||"Аноним"})
       });
       clearTimeout(tid);
-      setMsgs(m=>{
-        if(sentAck.current) return m;
-        sentAck.current = true;
-        return [...m,{from:"support",text:"📨 Передал оператору! Обычно отвечаем в течение нескольких часов.",ts:Date.now()}];
-      });
+      if(!sentAck.current) {
+        sentAck.current=true;
+        setMsgs(m=>[...m,{from:"support",text:"📨 Передал оператору! Обычно отвечаем в течение нескольких часов.",ts:Date.now()}]);
+      }
     } catch {
-      setMsgs(m=>[...m,{from:"support",text:"Не могу связаться с сервером. Попробуй позже.",ts:Date.now()}]);
+      setMsgs(m=>[...m,{from:"support",text:"Ошибка сети. Попробуй позже или напиши напрямую: @cs2coach_support",ts:Date.now()}]);
     }
-    setLoading(false);
-    sending.current = false;
+    setLoading(false); sending.current=false;
   }
 
   return (
-    <div style={{position:"fixed",bottom:"150px",right:"24px",width:"320px",
+    <div style={{position:"fixed",bottom:"150px",right:"24px",width:"340px",
       background:C.card,border:`1px solid ${C.blue}55`,
       boxShadow:`0 8px 40px rgba(0,0,0,0.7),0 0 20px ${C.blue}18`,
       display:"flex",flexDirection:"column",zIndex:200,animation:"slideUp .3s ease",
-      maxHeight:"420px"}}>
+      maxHeight:"460px"}}>
       {/* Header */}
-      <div style={{padding:"13px 16px",borderBottom:`1px solid ${C.border}`,
+      <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.border}`,
         display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0f1114"}}>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
           <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",
@@ -6089,79 +6109,67 @@ function SupportModal({player, onClose}) {
           color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
       </div>
 
-      {/* Messages */}
-      <div style={{flex:1,overflowY:"auto",padding:"14px",display:"flex",
-        flexDirection:"column",gap:"10px"}}>
+      {/* Messages — чипы встроены внутрь как сообщения */}
+      <div style={{flex:1,overflowY:"auto",padding:"12px",display:"flex",
+        flexDirection:"column",gap:"8px"}}>
         {msgs.map((m,i)=>{
           const isUser = m.from==="user";
-          const nick = isUser ? (player?.username||"Ты") : "Поддержка";
-          const nickColor = isUser ? C.blue : C.yellow;
+
+          // Специальный рендер чипов — внутри чата
+          if(m.text==="__CHIPS__") return (
+            <div key={i} style={{display:"flex",flexWrap:"wrap",gap:"5px",padding:"2px 0"}}>
+              {SMART_FAQ.map(f=>(
+                <button key={f.id} onClick={()=>handleChip(f)} style={{
+                  padding:"5px 10px",background:f.escalate?"#1a0a0a":"#0d0d18",
+                  border:`1px solid ${f.escalate?C.lose+"55":C.blue+"44"}`,
+                  color:f.escalate?C.lose:C.blue,cursor:"pointer",
+                  fontSize:"11px",fontFamily:"inherit",
+                  display:"flex",alignItems:"center",gap:"4px",
+                  borderRadius:"12px",transition:"all .15s"}}
+                  onMouseEnter={e=>e.currentTarget.style.background=f.escalate?"#2a0a0a":"#0d1428"}
+                  onMouseLeave={e=>e.currentTarget.style.background=f.escalate?"#1a0a0a":"#0d0d18"}>
+                  <span>{f.icon}</span><span>{f.label}</span>
+                </button>
+              ))}
+            </div>
+          );
+
           const avatar = isUser
             ? (player?.avatar
-                ? <img src={player.avatar} alt="" style={{width:"22px",height:"22px",borderRadius:"50%",border:`1px solid ${C.blue}44`,flexShrink:0}}/>
-                : <div style={{width:"22px",height:"22px",borderRadius:"50%",background:"#1a2a3a",border:`1px solid ${C.blue}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",flexShrink:0}}>👤</div>)
-            : <div style={{width:"22px",height:"22px",borderRadius:"50%",background:"#1a180a",border:`1px solid ${C.yellow}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",flexShrink:0}}>🎧</div>;
+                ?<img src={player.avatar} alt="" style={{width:"22px",height:"22px",borderRadius:"50%",border:`1px solid ${C.blue}44`,flexShrink:0}}/>
+                :<div style={{width:"22px",height:"22px",borderRadius:"50%",background:"#1a2a3a",border:`1px solid ${C.blue}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"11px",flexShrink:0}}>👤</div>)
+            :<div style={{width:"22px",height:"22px",borderRadius:"50%",background:"#1a180a",border:`1px solid ${C.yellow}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",flexShrink:0}}>🎧</div>;
+
           return(
-          <div key={i} style={{display:"flex",flexDirection:"column",
-            alignItems:isUser?"flex-end":"flex-start",gap:"3px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"5px",
-              flexDirection:isUser?"row-reverse":"row"}}>
-              {avatar}
-              <span style={{fontSize:"10px",color:nickColor,fontWeight:700,letterSpacing:"1px",opacity:.85}}>
-                {nick}
-              </span>
+            <div key={i} style={{display:"flex",flexDirection:"column",
+              alignItems:isUser?"flex-end":"flex-start",gap:"2px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"5px",
+                flexDirection:isUser?"row-reverse":"row"}}>
+                {avatar}
+                <span style={{fontSize:"10px",color:isUser?C.blue:C.yellow,fontWeight:700,letterSpacing:"1px",opacity:.8}}>
+                  {isUser?(player?.username||"Ты"):"Поддержка"}
+                </span>
+              </div>
+              <div style={{maxWidth:"88%",padding:"8px 12px",
+                background:isUser?C.blue+"1a":"#16160e",
+                border:`1px solid ${isUser?C.blue+"33":C.border}`,
+                fontSize:"12px",color:isUser?C.blue:C.text,lineHeight:1.6,
+                marginLeft:isUser?0:"27px",marginRight:isUser?"27px":0,
+                whiteSpace:"pre-wrap"}}>
+                {m.text}
+              </div>
             </div>
-            <div style={{maxWidth:"85%",padding:"9px 13px",
-              background:isUser?C.blue+"22":"#1a1a12",
-              border:`1px solid ${isUser?C.blue+"44":C.border}`,
-              fontSize:"13px",color:isUser?C.blue:C.text,lineHeight:1.6,
-              marginLeft:isUser?0:"27px",marginRight:isUser?"27px":0}}>
-              {m.text}
-            </div>
-          </div>
           );
         })}
-        {loading&&<div style={{display:"flex",gap:"4px",padding:"6px"}}>
-          {[0,1,2].map(k=><div key={k} style={{width:"6px",height:"6px",background:C.blue,
+        {loading&&<div style={{display:"flex",gap:"4px",padding:"4px 0 4px 27px"}}>
+          {[0,1,2].map(k=><div key={k} style={{width:"5px",height:"5px",background:C.blue,
             borderRadius:"50%",animation:`blink 1s ${k*.3}s infinite`}}/>)}
         </div>}
         <div ref={endRef}/>
       </div>
 
-      {/* FAQ быстрые кнопки — всегда видны */}
-      <div style={{padding:"6px 10px 2px",borderTop:`1px solid ${C.border}`,display:"flex",flexWrap:"wrap",gap:"4px"}}>
-        {FAQ_BTNS.map((f,i)=>{
-          const isEscalate = f.q === "Позвать оператора";
-          return (
-            <button key={i} onClick={async ()=>{
-              const answerFn = FAQ_ANSWERS[f.q];
-              if (!answerFn) return;
-              setMsgs(m=>[...m,{from:"user",text:f.q,ts:Date.now()}]);
-              await new Promise(r=>setTimeout(r,400));
-              if (isEscalate) {
-                try {
-                  await fetch(`${BACKEND}/support`,{
-                    method:"POST",headers:{"Content-Type":"application/json"},
-                    body:JSON.stringify({message:"Пользователь нажал кнопку «Позвать оператора»",steamid:player?.steamid||"",username:player?.username||"Аноним"})
-                  });
-                } catch {}
-                setMsgs(m=>[...m,{from:"support",text:"📨 Передаю твой вопрос живому оператору!\n\nОбычно отвечаем в течение нескольких часов. Ответ придёт прямо сюда.",ts:Date.now()+1}]);
-              } else {
-                const answer = answerFn();
-                setMsgs(m=>[...m,{from:"support",text:answer,ts:Date.now()+1}]);
-              }
-            }} style={{padding:"4px 9px",background:isEscalate?"#1a0a0a":"#0a1018",
-              border:`1px solid ${isEscalate?C.lose+"44":C.blue+"33"}`,
-              color:isEscalate?C.lose:C.blue,cursor:"pointer",fontSize:"10px",
-              fontFamily:"inherit",display:"flex",alignItems:"center",gap:"3px"}}>
-              <span>{f.icon}</span><span>{f.q}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Input — всегда показываем */}
-      <div style={{padding:"10px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"7px"}}>
+      {/* Input */}
+      <div style={{padding:"10px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"6px"}}>
         <input value={input} onChange={e=>setInput(e.target.value)}
           onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&send()}
           placeholder="Напиши вопрос..."
@@ -6170,7 +6178,7 @@ function SupportModal({player, onClose}) {
         <button onClick={send} disabled={loading||!input.trim()} style={{
           padding:"8px 14px",background:loading||!input.trim()?"#1a1a0e":C.blue,
           color:"#fff",border:"none",cursor:"pointer",
-          fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>→</button>
+          fontSize:"14px",fontWeight:700,fontFamily:"inherit",flexShrink:0}}>→</button>
       </div>
     </div>
   );
@@ -7941,7 +7949,7 @@ export default function App() {
       <Footer onAbout={()=>setShowAbout(true)} onPro={()=>setShowProModal(true)} onLeaderboard={()=>setMainTab("leaderboard")}/>
 
       {showAbout&&<AboutModal onClose={()=>setShowAbout(false)}/>}
-      {supportOpen&&<SupportModal player={player} onClose={()=>setSupportOpen(false)}/>}
+      {supportOpen&&<SupportModal player={player} isPro={isPro} aiRemaining={aiRemaining} onClose={()=>setSupportOpen(false)}/>}
       {/* Streak toast */}
       {showStreakToast&&<StreakToast streak={streak} onClose={()=>setShowStreakToast(false)}/>}
       {/* Notifications */}
