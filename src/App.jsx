@@ -356,98 +356,114 @@ function HeroCard({player, source}) {
   const heroWRVal = !isFaceit && heroMatches >= 100 && heroWRRaw > 80 ? 80 : Math.min(heroWRRaw, 99);
   const heroWRStr = heroWRVal ? `${heroWRVal}%` : "—";
 
-  const STAT_ICONS = {
-    "K/D":       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="3" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="21" y2="12"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>,
-    "WIN%":      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0012 0V2z"/></svg>,
-    "HS%":       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="12" y1="7" x2="12" y2="13"/></svg>,
-    "МАТЧИ": <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-    "FACEIT ELO":<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-    "ADR":       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
-  };
-
   const stats = isFaceit
-    ? [{l:"K/D",v:fc?.lifetime?.kd||"—"},{l:"WIN%",v:fc?.lifetime?.winrate?(fc.lifetime.winrate+"%"):"—"},{l:"HS%",v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—"},{l:"МАТЧИ",v:fc?.lifetime?.matches||"—"}]
-    : [{l:"K/D",v:cs2.kd||"—"},{l:"WIN%",v:heroWRStr},{l:"HS%",v:cs2.hs?(cs2.hs+"%"):"—"},{l:"МАТЧИ",v:cs2.matches||"—"}];
+    ? [{l:"K/D",v:fc?.lifetime?.kd||"—",c:parseFloat(fc?.lifetime?.kd)>=1?C.win:parseFloat(fc?.lifetime?.kd)>=0.9?C.yellow:C.lose},
+       {l:"WIN%",v:fc?.lifetime?.winrate?(fc.lifetime.winrate+"%"):"—",c:parseInt(fc?.lifetime?.winrate)>=55?C.win:C.yellow},
+       {l:"HS%",v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—",c:parseInt(fc?.lifetime?.hs)>=40?C.win:C.orange},
+       {l:"МАТЧИ",v:fc?.lifetime?.matches||"—",c:C.label}]
+    : [{l:"K/D",v:cs2.kd||"—",c:parseFloat(cs2.kd)>=1?C.win:parseFloat(cs2.kd)>=0.9?C.yellow:C.lose},
+       {l:"WIN%",v:heroWRStr,c:parseInt(heroWRVal)>=55?C.win:C.yellow},
+       {l:"HS%",v:cs2.hs?(cs2.hs+"%"):"—",c:parseInt(cs2.hs)>=40?C.win:C.orange},
+       {l:"МАТЧИ",v:cs2.matches||"—",c:C.label}];
 
   return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px",position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",top:"-40px",right:"-30px",width:"240px",height:"240px",
-        background:`radial-gradient(circle,${isFaceit?C.orange:C.blue}18,transparent 70%)`,
-        animation:"glow 4s ease-in-out infinite",pointerEvents:"none"}}/>
+    <div style={{marginBottom:"10px",position:"relative",overflow:"hidden"}}>
+      {/* Фоновый градиент */}
+      <div style={{position:"absolute",inset:0,
+        background:`linear-gradient(135deg, #0d0d09 0%, ${accentColor}10 50%, #0a0a07 100%)`,
+        zIndex:0}}/>
+      {/* Декоративные пятна света */}
+      <div style={{position:"absolute",top:"-60px",right:"-40px",width:"280px",height:"280px",
+        background:`radial-gradient(circle,${accentColor}18,transparent 65%)`,
+        pointerEvents:"none",zIndex:0}}/>
+      <div style={{position:"absolute",bottom:"-40px",left:"100px",width:"200px",height:"200px",
+        background:`radial-gradient(circle,${lvlColor}0e,transparent 65%)`,
+        pointerEvents:"none",zIndex:0}}/>
+      {/* Сетка-паттерн */}
+      <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.025,
+        backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 32px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 32px)"}}/>
+      {/* Верхняя цветная полоска */}
+      <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${accentColor}88,${accentColor},${accentColor}88,transparent)`,zIndex:1,position:"relative"}}/>
 
-      <div style={{display:"flex",gap:"20px",padding:"24px",flexWrap:"wrap",position:"relative"}}>
-        {/* Avatar */}
-        <div style={{position:"relative",flexShrink:0}}>
-          {(player.avatar||fc?.avatar)
-            ?<img src={player.avatar||fc?.avatar} alt="" style={{width:"88px",height:"88px",borderRadius:"4px",border:`2px solid ${lvlColor}`,boxShadow:`0 0 18px ${lvlColor}44`}}/>
-            :<div style={{width:"88px",height:"88px",background:"#1a1a10",border:`2px solid ${lvlColor}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px"}}>👤</div>}
-          {fc&&<div style={{position:"absolute",bottom:"-8px",left:"50%",transform:"translateX(-50%)",
-            background:lvlColor,color:"#080807",fontSize:"11px",fontWeight:700,padding:"2px 9px",whiteSpace:"nowrap"}}>
-            LVL {li.lvl}
-          </div>}
-        </div>
+      <div style={{border:`1px solid ${accentColor}22`,borderTop:"none",position:"relative",zIndex:1}}>
+        {/* Основная строка */}
+        <div style={{display:"flex",gap:"20px",padding:"22px 24px 18px",flexWrap:"wrap",alignItems:"center"}}>
+          {/* Аватар */}
+          <div style={{position:"relative",flexShrink:0}}>
+            {(player.avatar||fc?.avatar)
+              ?<img src={player.avatar||fc?.avatar} alt="" style={{width:"88px",height:"88px",borderRadius:"6px",
+                  border:`2px solid ${lvlColor}`,boxShadow:`0 0 24px ${lvlColor}44, 0 4px 16px rgba(0,0,0,0.6)`}}/>
+              :<div style={{width:"88px",height:"88px",background:"#1a1a10",borderRadius:"6px",
+                  border:`2px solid ${lvlColor}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px"}}>👤</div>}
+            {fc&&<div style={{position:"absolute",bottom:"-9px",left:"50%",transform:"translateX(-50%)",
+              background:lvlColor,color:"#080807",fontSize:"10px",fontWeight:900,padding:"2px 8px",
+              letterSpacing:"1px",whiteSpace:"nowrap",boxShadow:`0 2px 8px ${lvlColor}66`}}>
+              LVL {li.lvl}
+            </div>}
+          </div>
 
-        {/* Name / meta */}
-        <div style={{flex:1,minWidth:"160px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"5px"}}>
-            <span style={{fontSize:"26px",color:C.value,fontWeight:700}}>{player.username}</span>
-            <span style={{fontSize:"18px"}}>{flag(player.country||fc?.country)}</span>
+          {/* Имя / мета */}
+          <div style={{flex:1,minWidth:"160px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"6px",flexWrap:"wrap"}}>
+              <span style={{fontSize:"28px",color:"#fff",fontWeight:800,textShadow:"0 2px 12px rgba(0,0,0,0.8)"}}>{player.username}</span>
+              {flag(player.country||fc?.country)&&<span style={{fontSize:"18px"}}>{flag(player.country||fc?.country)}</span>}
+            </div>
+            <div style={{fontSize:"13px",color:C.muted,marginBottom:"8px",display:"flex",gap:"12px",flexWrap:"wrap"}}>
+              {player.created&&<span>⭐ Steam с {new Date(player.created*1000).getFullYear()} г.</span>}
+              {player.steam_level!=null&&<span>Lvl {player.steam_level}</span>}
+              {fc?.nickname&&fc.nickname!==player.username&&<span style={{color:C.orange}}>⚡ {fc.nickname}</span>}
+            </div>
+            {/* Форма */}
+            {form.length>0&&(
+              <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
+                <span style={{fontSize:"10px",color:C.muted,marginRight:"4px",letterSpacing:"1px"}}>ФОРМА</span>
+                {form.map((w,i)=>(
+                  <div key={i} style={{width:"22px",height:"22px",display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:"10px",fontWeight:700,borderRadius:"3px",
+                    background:w?"#1a361a":"#361a1a",color:w?C.win:C.lose,
+                    border:`1px solid ${w?"#2d5a2d":"#5a2d2d"}`,
+                    boxShadow:w?`0 0 6px ${C.win}33`:`0 0 6px ${C.lose}22`}}>
+                    {w?"W":"L"}
+                  </div>
+                ))}
+                {(()=>{let s=0;for(const w of form){if(w)s++;else break;}
+                  return s>=2?<span style={{marginLeft:"6px",fontSize:"12px",color:C.lose,fontWeight:700}}>🔥{s}</span>:null;})()}
+              </div>
+            )}
           </div>
-          <div style={{fontSize:"14px",color:C.label,marginBottom:"7px"}}>
-            {player.created&&`Steam с ${new Date(player.created*1000).getFullYear()} г.`}
-            {player.steam_level!=null&&`  ·  Steam Lvl ${player.steam_level}`}
-          </div>
-          {fc?.nickname&&fc.nickname!==player.username&&(
-            <div style={{fontSize:"14px",color:C.orange,marginBottom:"8px"}}>
-              FACEIT: {fc.nickname}
+
+          {/* ELO блок */}
+          {isFaceit&&fc&&!!elo&&(
+            <div className="hero-right" style={{textAlign:"right",minWidth:"130px",flexShrink:0}}>
+              <div style={{fontSize:"9px",letterSpacing:"3px",color:C.orange,marginBottom:"2px",fontWeight:700}}>FACEIT ELO</div>
+              <div style={{fontSize:"40px",fontWeight:800,color:lvlColor,lineHeight:1,
+                textShadow:`0 0 20px ${lvlColor}66`}}>{eloCount}</div>
+              <div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>
+                до LVL {Math.min(10,li.lvl+1)}: {li.toNext>0?li.toNext:"MAX"}
+              </div>
+              <div style={{marginTop:"6px",height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${li.progress}%`,
+                  background:`linear-gradient(90deg,${lvlColor}66,${lvlColor})`,
+                  boxShadow:`0 0 6px ${lvlColor}`,transition:"width 1s ease"}}/>
+              </div>
             </div>
           )}
-          {/* Форма + серия */}
-          {form.length>0&&(
-            <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"6px"}}>
-              <span style={{fontSize:"13px",color:C.muted,marginRight:"3px"}}>ФОРМА</span>
-              {form.map((w,i)=>(
-                <div key={i} style={{width:"20px",height:"20px",display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:"11px",fontWeight:700,background:w?"#1a361a":"#361a1a",
-                  color:w?C.win:C.lose,border:`1px solid ${w?"#2d5a2d":"#5a2d2d"}`}}>{w?"W":"L"}</div>
-              ))}
-              {(()=>{
-                let streak=0;
-                for(const w of form){if(w)streak++;else break;}
-                return streak>=2?<span style={{marginLeft:"8px",fontSize:"12px",color:C.lose,fontWeight:700}}>🔥 {streak} подряд</span>:null;
-              })()}
-            </div>
-          )}
         </div>
 
-        {/* ELO (faceit mode only) */}
-        {isFaceit&&fc&&!!elo&&(
-          <div className="hero-right" style={{textAlign:"right",minWidth:"145px"}}>
-            <div style={{fontSize:"11px",letterSpacing:"3px",color:C.orange,marginBottom:"2px"}}>FACEIT ELO</div>
-            <div style={{fontSize:"44px",fontWeight:700,color:lvlColor,lineHeight:1,textShadow:`0 0 18px ${lvlColor}55`}}>
-              {eloCount}
+        {/* Stat strip — с цветами и hover */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:`1px solid ${accentColor}22`}}>
+          {stats.map((s,i)=>(
+            <div key={i} style={{padding:"14px 10px",textAlign:"center",
+              borderLeft:i>0?`1px solid ${accentColor}18`:"none",
+              background:"rgba(0,0,0,0.2)",transition:"background .15s",cursor:"default"}}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(0,0,0,0.4)"}
+              onMouseLeave={e=>e.currentTarget.style.background="rgba(0,0,0,0.2)"}>
+              <div style={{fontSize:"9px",color:C.muted,letterSpacing:"2px",marginBottom:"6px",fontWeight:700}}>{s.l}</div>
+              <div style={{fontSize:"22px",color:s.c,fontWeight:800,
+                textShadow:`0 0 8px ${s.c}44`}}>{s.v}</div>
             </div>
-            <div style={{fontSize:"13px",color:C.label,marginTop:"6px"}}>
-              до LVL {Math.min(10,li.lvl+1)}: {li.toNext>0?li.toNext:"MAX"} ELO
-            </div>
-            <div style={{marginTop:"8px",height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
-              <div style={{height:"100%",width:`${li.progress}%`,background:`linear-gradient(90deg,${lvlColor}88,${lvlColor})`,transition:"width 1s ease"}}/>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Stat strip — второстепенная информация */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:`1px solid ${C.border}`,opacity:0.85}}>
-        {stats.map((s,i)=>(
-          <div key={i} style={{padding:"12px 10px",textAlign:"center",borderLeft:i>0?`1px solid ${C.border}`:"none"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"4px",fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"5px"}}>
-              {STAT_ICONS[s.l]&&<span style={{color:C.muted,display:"flex"}}>{STAT_ICONS[s.l]}</span>}
-              {s.l}
-            </div>
-            <div style={{fontSize:"20px",color:C.label,fontWeight:700}}>{s.v}</div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -7243,16 +7259,26 @@ function PracticeTab({player}) {
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:"3px"}}>
           {filtered.map(item=>{
             const dc=DIFF_COLOR[item.diff]||C.yellow;
+            const isSteam = item.type==="steam";
+            const btnColor = isSteam ? "#1b9af5" : "#ff4444";
             return(
               <div key={item.id} className="hov-card" style={{
                 background:C.card,border:`1px solid ${C.border}`,padding:"18px",
-                display:"flex",flexDirection:"column",gap:"10px",transition:"all .2s"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                display:"flex",flexDirection:"column",gap:"10px",transition:"all .2s",
+                position:"relative",overflow:"hidden"}}>
+                {/* Фоновый акцент */}
+                <div style={{position:"absolute",top:0,right:0,width:"80px",height:"80px",
+                  background:`radial-gradient(circle,${dc}08,transparent 70%)`,pointerEvents:"none"}}/>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",position:"relative"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                     <span style={{fontSize:"24px"}}>{item.icon}</span>
                     <div>
                       <div style={{fontSize:"15px",color:C.value,fontWeight:700,lineHeight:1.2}}>{item.title}</div>
-                      {item.map&&<div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>📍 {item.map}</div>}
+                      {item.map&&<div style={{fontSize:"11px",color:C.muted,marginTop:"2px",
+                        display:"flex",alignItems:"center",gap:"3px"}}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {item.map}
+                      </div>}
                     </div>
                   </div>
                   <span style={{padding:"2px 9px",background:dc+"18",color:dc,
@@ -7263,13 +7289,20 @@ function PracticeTab({player}) {
                 <p style={{fontSize:"13px",color:C.label,lineHeight:1.65,margin:0,flex:1}}>{item.desc}</p>
                 <a href={item.url} target="_blank" rel="noreferrer" style={{
                   display:"flex",alignItems:"center",justifyContent:"space-between",
-                  padding:"10px 14px",background:"#111109",border:`1px solid ${C.border}`,
-                  textDecoration:"none",color:item.type==="steam"?C.blue:C.lose,
-                  fontSize:"13px",fontWeight:700,transition:"border-color .2s"}}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor=item.type==="steam"?C.blue+"66":C.lose+"66";}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;}}>
-                  <span>{item.type==="steam"?"🔧 Открыть в Steam":"▶ Смотреть на YouTube"}</span>
-                  <span>→</span>
+                  padding:"10px 14px",
+                  background:isSteam?"#0d1a2a":"#1a0d0d",
+                  border:`1px solid ${btnColor}44`,
+                  textDecoration:"none",color:btnColor,
+                  fontSize:"13px",fontWeight:700,transition:"all .2s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.background=isSteam?"#0d1f36":"#220d0d";e.currentTarget.style.borderColor=btnColor+"88";}}
+                  onMouseLeave={e=>{e.currentTarget.style.background=isSteam?"#0d1a2a":"#1a0d0d";e.currentTarget.style.borderColor=btnColor+"44";}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                    {isSteam
+                      ? <svg width="16" height="16" viewBox="0 0 24 24" fill={btnColor}><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.044-4.525 4.555-4.525 2.512 0 4.555 2.03 4.555 4.525s-2.043 4.525-4.555 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.386 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.606 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.497 1.009 2.455-.397.957-1.494 1.41-2.455 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.252 0-2.265-1.014-2.265-2.265z"/></svg>
+                      : <svg width="16" height="16" viewBox="0 0 24 24" fill={btnColor}><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>}
+                    <span>{isSteam?"Открыть в Steam":"Смотреть на YouTube"}</span>
+                  </div>
+                  <span style={{fontSize:"16px",opacity:0.7}}>→</span>
                 </a>
               </div>
             );
@@ -8049,6 +8082,26 @@ export default function App() {
       for(let i=0;i<3;i++){try{result=await call();break;}catch(e){le=e;if(i<2)await new Promise(r=>setTimeout(r,700));}}
       if (!result) throw le;
       setAnalysis(result); setSubTab("weak");
+      track("analysis_generated", { source, level: result.level, steamid: player.steamid });
+      // Сохраняем в кеш AI Вердикта для главной страницы
+      try {
+        const cacheKey = `cs2_verdict_${player.steamid}_${source}`;
+        const today = new Date().toISOString().slice(0,10);
+        // Конвертируем формат /analyze в формат AIVerdict
+        const verdictResult = {
+          verdict: result.overall || "",
+          role: "RIFLER",
+          roast: result.mainProblem || "",
+          strengths: (result.strengths||[]).map(s=>({stat:s.stat,value:"",verdict:s.comment,tip:""})),
+          problems: (result.weaknesses||[]).map((w,i)=>({stat:w.stat,value:"",reason:w.problem,fix:w.fix,priority:i+1})),
+          priority: result.plan?.[0] || "",
+          weekly_plan: (result.plan||[]).map((p,i)=>({day:`День ${i+1}`,task:p,goal:""})),
+          best_map: result.mapInsights?.[0]?{name:result.mapInsights[0],wr:"",kd:"",tip:""}:null,
+          worst_map: result.mapInsights?.[1]?{name:result.mapInsights[1],wr:"",kd:"",tip:""}:null,
+          rating_breakdown: {aim:65,game_sense:55,consistency:50,utility:45,clutch:50},
+        };
+        localStorage.setItem(cacheKey, JSON.stringify({result:verdictResult, date:today}));
+      } catch {}
       track("analysis_generated", { source, level: result.level, steamid: player.steamid });
       // Онбординг для новичков (первый анализ)
       const obKey = `cs2_onboarding_${player.steamid}`;
