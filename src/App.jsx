@@ -4799,21 +4799,20 @@ function ProModal({player, isPro, onClose, onActivated}) {
   const [msg,setMsg]         = useState(null);
   const [payLoading,setPayLoading] = useState(null);
   const [selPlan,setSelPlan] = useState("year");
-  const [proData,setProData] = useState(null);
+  // Инициализируем сразу из localStorage — нет мерцания "загружается"
+  const [proData,setProData] = useState(()=>{
+    if(!player?.steamid) return null;
+    try { return JSON.parse(localStorage.getItem(`cs2_pro_data_${player.steamid}`)||"null"); }
+    catch { return null; }
+  });
   const [promo,setPromo]     = useState("");
-  const [promoInfo,setPromoInfo] = useState(null); // {discount, final_price, is_free}
+  const [promoInfo,setPromoInfo] = useState(null);
   const [promoLoading,setPromoLoading] = useState(false);
   const [promoErr,setPromoErr] = useState("");
 
-  // Загружаем данные о подписке — сначала из localStorage, потом бэкенд
+  // Обновляем данные с бэкенда (без блокировки UI)
   useEffect(()=>{
     if(!player?.steamid || !isPro) return;
-    // Сразу берём из localStorage
-    try {
-      const cached = JSON.parse(localStorage.getItem(`cs2_pro_data_${player.steamid}`)||"null");
-      if(cached?.activated_at) setProData(cached);
-    } catch {}
-    // Параллельно грузим с бэкенда (может обновить)
     fetch(`${BACKEND}/pro/${player.steamid}`)
       .then(r=>r.json())
       .then(d=>{
@@ -5011,10 +5010,12 @@ function ProModal({player, isPro, onClose, onActivated}) {
                       </div>
                     )}
 
-                    {/* Нет данных — показываем подсказку */}
-                    {!pd&&<div style={{marginTop:"10px",fontSize:"11px",color:C.muted,
-                      padding:"8px 10px",background:"#111109",border:`1px solid ${C.border}`}}>
-                      Данные о подписке загружаются... (сервер может просыпаться ~30 сек)
+                    {/* Нет данных из кеша — минимальная инфа */}
+                    {!pd&&<div style={{marginTop:"10px",padding:"10px 12px",
+                      background:"#111109",border:`1px solid ${C.border}`,
+                      fontSize:"12px",color:C.muted,lineHeight:1.6}}>
+                      📅 Точная дата активации не сохранена в браузере.<br/>
+                      Открой <span style={{color:C.yellow}}>⚡ PRO → «Моя подписка»</span> на ПК где активировал — там будут данные.
                     </div>}
                   </div>
                 );
@@ -5885,64 +5886,78 @@ function SupportPanel({onClose}) {
 function SupportModal({player, onClose, isPro, aiRemaining}) {
   const steamid = player?.steamid || "anon";
 
-  // Умный матчинг по ключевым словам
+  // Умный матчинг — ВАЖНО: порядок имеет значение, более специфичные — первыми
   const SMART_FAQ = [
-    {
-      id:"pro_check",
-      label:"У меня есть PRO?",
-      icon:"⚡",
-      keywords:["у меня про","есть про","есть подписка","активна про","активен про","про активна","про активен","pro активна","pro активен","pro у меня","у меня pro","активирована подписка","есть ли у меня","моя подписка","у меня подписка","куплена подписка","куплен про","оплатил про","оплатил подписку","есть ли про"],
-      answer:()=> isPro
-        ? "✅ Да! У тебя активна PRO подписка.\n\nВсе функции доступны:\n• Безлимитный AI разбор\n• AI чат без ограничений\n• PRO значок в лидерборде\n• Приоритетная поддержка"
-        : "❌ Сейчас не вижу активной PRO подписки.\n\nЧто попробовать:\n1. Выйди и войди снова через Steam\n2. Подожди 1-2 мин и обнови страницу\n3. Если оплачивал — напиши \"позови оператора\", проверим"
-    },
     {
       id:"pro_date",
       label:"До какого PRO?",
       icon:"📅",
-      keywords:["до какого","до какой даты","когда истекает","срок подписки","когда кончается","сколько осталось дней","дата окончания","подписка до","действует до","сколько дней осталось","срок действия","до когда"],
+      // ПЕРВЫМ — чтобы "до какого у меня про" шло сюда, а не в pro_check
+      keywords:[
+        "до какого","до какой даты","когда истекает","когда оканчивается",
+        "когда заканчивается","оканчивается подписка","заканчивается подписка",
+        "срок подписки","когда кончается","сколько осталось дней",
+        "дата окончания","подписка до","действует до","сколько дней осталось",
+        "срок действия","до когда","срок про","на сколько дней","сколько времени"
+      ],
       answer:()=>{
-        if(!isPro) return "❌ У тебя сейчас нет активной PRO подписки. Оформить можно нажав ⚡ PRO в шапке.";
+        if(!isPro) return "❌ У тебя сейчас нет активной PRO подписки.\n\nОформить можно нажав ⚡ PRO в шапке.";
         try {
           const pd = JSON.parse(localStorage.getItem(`cs2_pro_data_${player?.steamid}`)||"null");
-          if(!pd?.activated_at) return "Открой ⚡ PRO → «Моя подписка» — там видна дата. Или подожди 30 сек пока сервер проснётся.";
+          if(!pd?.activated_at) return "📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата.";
           if(pd.plan==="lifetime") return "✅ Подписка НАВСЕГДА — срок не ограничен! 🎉";
           const days = pd.plan==="year"?365:pd.plan==="month"?30:0;
-          if(!days) return "Открой ⚡ PRO → «Моя подписка» для деталей.";
+          if(!days) return "📅 Открой ⚡ PRO → «Моя подписка» для деталей.";
           const expiresMs = pd.activated_at*1000+days*86400*1000;
           const daysLeft = Math.max(0,Math.ceil((expiresMs-Date.now())/86400000));
           const date = new Date(expiresMs).toLocaleDateString("ru-RU",{day:"2-digit",month:"long",year:"numeric"});
           if(daysLeft===0) return `❌ Подписка истекла ${date}.\n\nОформи снова — кнопка ⚡ PRO в шапке.`;
-          return `✅ PRO действует до ${date}\n\nОсталось: ${daysLeft} ${daysLeft===1?"день":daysLeft<5?"дня":"дней"}`;
-        } catch { return "Открой ⚡ PRO → «Моя подписка» для деталей."; }
+          return `📅 PRO действует до ${date}\n\nОсталось: ${daysLeft} ${daysLeft===1?"день":daysLeft<5?"дня":"дней"}`;
+        } catch { return "📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата."; }
       }
+    },
+    {
+      id:"pro_check",
+      label:"У меня есть PRO?",
+      icon:"⚡",
+      keywords:[
+        "у меня про","есть про","есть подписка","активна про","активен про",
+        "про активна","про активен","pro активна","pro активен","pro у меня",
+        "у меня pro","активирована подписка","есть ли у меня","моя подписка",
+        "у меня подписка","куплена подписка","куплен про","оплатил про",
+        "оплатил подписку","есть ли про","активна ли подписка","куплена ли"
+      ],
+      answer:()=> isPro
+        ? "✅ Да! У тебя активна PRO подписка.\n\nВсе функции доступны:\n• Безлимитный AI разбор\n• AI чат без ограничений\n• PRO значок в лидерборде\n• Приоритетная поддержка"
+        : "❌ Сейчас не вижу активной PRO подписки.\n\nЧто попробовать:\n1. Выйди и войди снова через Steam\n2. Подожди 1-2 мин и обнови страницу\n3. Если оплачивал — нажми «Позвать оператора»"
     },
     {
       id:"no_data",
       label:"Данные не грузятся",
       icon:"📊",
-      keywords:["не загружается","не грузит","пустой профиль","нет данных","ошибка","не показывает","не отображается","не работает статистика","данные пропали","нет статистики"],
-      answer:()=>"Если данные не загружаются:\n1. Профиль Steam должен быть открыт (Конфиденциальность → Публичный)\n2. Статистика CS2 тоже должна быть открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — напиши \"позови оператора\"!"
+      keywords:["не загружается","не грузит","пустой профиль","нет данных","не показывает","не отображается","не работает статистика","данные пропали","нет статистики","пусто на сайте"],
+      answer:()=>"Если данные не загружаются:\n1. Профиль Steam должен быть открыт (Конфиденциальность → Публичный)\n2. Статистика CS2 тоже должна быть открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — нажми «Позвать оператора»!"
     },
     {
       id:"faceit",
       label:"FACEIT не работает",
       icon:"🎮",
       keywords:["faceit не","не подключается faceit","нет faceit","не видит faceit","faceit не работает","не вижу faceit","faceit пустой","faceit ошибка"],
-      answer:()=>"Если FACEIT не подключается:\n1. В FACEIT должен быть привязан тот же Steam аккаунт\n2. Подожди 30 сек — данные грузятся параллельно\n3. Если новый аккаунт (менее 10 матчей) — статистика пока недоступна"
+      answer:()=>"Если FACEIT не подключается:\n1. В FACEIT должен быть привязан тот же Steam аккаунт\n2. Подожди 30 сек — данные грузятся параллельно\n3. Новый аккаунт (менее 10 матчей) — статистика пока недоступна"
     },
     {
       id:"analyses",
       label:"Сколько анализов?",
       icon:"📋",
-      keywords:["сколько анализов","остаток анализов","лимит","закончились анализы","нет разборов","сколько разборов","израсходовал","анализов осталось","сколько разборов осталось"],
+      keywords:["сколько анализов","остаток анализов","закончились анализы","нет разборов","сколько разборов","израсходовал","анализов осталось","сколько разборов осталось","лимит анализов"],
       answer:()=>`Бесплатно: 1 AI разбор в неделю.\nС PRO: безлимитно.\n\nТвой статус: ${isPro?"✅ PRO — безлимит":aiRemaining+" разбор(ов) на этой неделе"}`
     },
     {
       id:"operator",
       label:"Позвать оператора",
       icon:"🆘",
-      keywords:["позови оператора","позовите оператора","нужен оператор","живой человек","хочу поговорить","оператор","менеджер","напишите мне","свяжитесь","нужна помощь","помогите"],
+      // ПОСЛЕДНИМ — только явный запрос оператора, не "помогите" в общем
+      keywords:["позови оператора","позовите оператора","нужен оператор","живой человек","хочу оператора","нужен человек","соедините с оператором"],
       escalate:true,
       answer:()=>null
     },
@@ -6014,9 +6029,24 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
         const d = await r.json();
         if(d.messages?.length>0){
           d.messages.forEach(m=>{ lastTs.current = Math.max(lastTs.current, m.ts+1); });
+          // Проверяем есть ли маркер закрытия
+          const closeMsg = d.messages.find(m=>m.close_session);
+          if(closeMsg) {
+            // Показываем финальное сообщение, потом сбрасываем чат
+            setMsgs(prev=>[...prev,{from:"support",text:closeMsg.text||"✅ Вопрос закрыт.",ts:closeMsg.ts,admin_real:true}]);
+            setTimeout(()=>{
+              // Через 3 секунды — возвращаем к начальному состоянию с кнопками
+              setMsgs([
+                {from:"support",text:"Привет! 👋 Чем могу помочь? Выбери вопрос или напиши своё.",ts:Date.now()},
+                {from:"support",text:"__CHIPS__",ts:Date.now()+1},
+              ]);
+              try{ localStorage.removeItem(SKEY); }catch{}
+            }, 3000);
+            return;
+          }
           setMsgs(prev=>{
             const existingTs = new Set(prev.filter(m=>m.admin_real).map(m=>m.ts));
-            const fresh = d.messages.filter(m=>!existingTs.has(m.ts))
+            const fresh = d.messages.filter(m=>!existingTs.has(m.ts)&&!m.close_session)
               .map(m=>({from:"support",text:m.text,ts:m.ts,admin_real:true}));
             return fresh.length>0?[...prev,...fresh]:prev;
           });
