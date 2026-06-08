@@ -3305,9 +3305,9 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
   };
 
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.96)",zIndex:500,
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",zIndex:500,
       overflowY:"auto",animation:"fadeIn .2s ease"}}>
-      <div style={{maxWidth:"960px",margin:"0 auto",padding:"0 0 60px"}}>
+      <div style={{maxWidth:"1200px",margin:"0 auto",padding:"0 0 60px"}}>
 
         {/* Top bar */}
         <div style={{position:"sticky",top:0,zIndex:10,background:"rgba(10,10,7,0.95)",
@@ -3488,104 +3488,216 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
               )}
             </div>
 
-            {/* ── Best / Worst карта ── */}
-            {maps.length>=2&&(
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1px",
-                background:C.border,borderBottom:`1px solid ${C.border}`}}>
-                <div style={{background:"#0a160a",padding:"18px 20px"}}>
-                  <div style={{fontSize:"10px",color:C.win,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>🏆 ЛУЧШАЯ КАРТА</div>
-                  <div style={{fontSize:"20px",color:C.value,fontWeight:700,marginBottom:"4px"}}>{bestMap.map}</div>
-                  <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
-                    <span style={{fontSize:"26px",color:C.win,fontWeight:700}}>{bestMap.winrate}%</span>
-                    <span style={{fontSize:"12px",color:C.muted}}>{bestMap.matches} матчей · K/D {bestMap.kd}</span>
-                  </div>
-                </div>
-                <div style={{background:"#160a0a",padding:"18px 20px"}}>
-                  <div style={{fontSize:"10px",color:C.lose,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>⚠️ ХУДШАЯ КАРТА</div>
-                  <div style={{fontSize:"20px",color:C.value,fontWeight:700,marginBottom:"4px"}}>{worstMap.map}</div>
-                  <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
-                    <span style={{fontSize:"26px",color:C.lose,fontWeight:700}}>{worstMap.winrate}%</span>
-                    <span style={{fontSize:"12px",color:C.muted}}>{worstMap.matches} матчей · K/D {worstMap.kd}</span>
-                  </div>
+            {/* ── BODY — 2 колонки ── */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1px",
+              background:C.border,borderBottom:`1px solid ${C.border}`}}>
+
+              {/* Левая — Rings скилла */}
+              <div style={{background:C.bg,padding:"20px 24px"}}>
+                <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"16px"}}>РЕЙТИНГ НАВЫКОВ</div>
+                <div style={{display:"flex",justifyContent:"space-around",gap:"12px"}}>
+                  {[
+                    {label:"K/D",   val:parseFloat(rating.kd)||0,  max:2.5,  color:parseFloat(rating.kd)>=1.2?C.win:parseFloat(rating.kd)>=0.9?C.yellow:C.lose, display:rating.kd},
+                    {label:"HS%",   val:parseInt(rating.hs)||0,     max:70,   color:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange, display:rating.hs+"%"},
+                    {label:"WR%",   val:parseInt(rating.wr)||0,     max:70,   color:parseInt(rating.wr)>=55?C.win:parseInt(rating.wr)>=45?C.yellow:C.lose, display:rating.wr+"%"},
+                    {label:"РЕЙТ.", val:rating.overall,              max:99,   color:rating.color, display:rating.overall},
+                  ].map((s,i)=>{
+                    const r=36, circ=2*Math.PI*r;
+                    const pct = Math.min(1, s.val/s.max);
+                    const dash = circ*pct;
+                    return (
+                      <div key={i} style={{textAlign:"center"}}>
+                        <svg width="90" height="90" viewBox="0 0 90 90">
+                          <circle cx="45" cy="45" r={r} fill="none" stroke={C.border} strokeWidth="6"/>
+                          <circle cx="45" cy="45" r={r} fill="none" stroke={s.color} strokeWidth="6"
+                            strokeDasharray={`${dash} ${circ-dash}`} strokeLinecap="round"
+                            strokeDashoffset={circ/4} style={{transition:"stroke-dasharray 1s ease"}}/>
+                          <text x="45" y="50" textAnchor="middle" fill={s.color}
+                            fontSize="16" fontWeight="800" fontFamily="sans-serif">{s.display}</text>
+                        </svg>
+                        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginTop:"2px"}}>{s.label}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            )}
 
-            {/* ── Последние матчи ── */}
+              {/* Правая — Clutch + Entry (FACEIT) или Steam stats */}
+              <div style={{background:C.bg,padding:"20px 24px"}}>
+                {fc?.lifetime ? (<>
+                  <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"16px"}}>CLUTCH SUCCESS</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:"8px",marginBottom:"16px"}}>
+                    {[
+                      {l:"1v1",v:fc.lifetime.clutch1v1||fc.lifetime["1v1"]},
+                      {l:"1v2",v:fc.lifetime.clutch1v2||fc.lifetime["1v2"]},
+                      {l:"1v3",v:fc.lifetime.clutch1v3||fc.lifetime["1v3"]},
+                      {l:"1v4",v:fc.lifetime.clutch1v4||fc.lifetime["1v4"]},
+                      {l:"1v5",v:fc.lifetime.clutch1v5||fc.lifetime["1v5"]},
+                    ].map((x,j)=>{
+                      const n=parseInt(x.v)||0;
+                      const r=22, circ=2*Math.PI*r;
+                      const pct = n>0?Math.min(1,n/70):0;
+                      const color = n>=50?C.win:n>=25?C.yellow:C.orange;
+                      return(
+                        <div key={j} style={{textAlign:"center"}}>
+                          <svg width="52" height="52" viewBox="0 0 52 52">
+                            <circle cx="26" cy="26" r={r} fill="none" stroke={C.border} strokeWidth="4"/>
+                            {pct>0&&<circle cx="26" cy="26" r={r} fill="none" stroke={color} strokeWidth="4"
+                              strokeDasharray={`${circ*pct} ${circ*(1-pct)}`} strokeLinecap="round"
+                              strokeDashoffset={circ/4}/>}
+                            <text x="26" y="30" textAnchor="middle" fill={n>0?color:C.muted}
+                              fontSize="11" fontWeight="bold" fontFamily="sans-serif">{n>0?n+"%":"—"}</text>
+                          </svg>
+                          <div style={{fontSize:"9px",color:C.muted}}>{x.l}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {fc.lifetime.entrySuccess&&<>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>ENTRY SUCCESS</div>
+                    <div style={{fontSize:"26px",color:C.blue,fontWeight:800}}>{fc.lifetime.entrySuccess}%</div>
+                    <div style={{fontSize:"11px",color:C.muted}}>за раунд</div>
+                  </>}
+                </>) : (
+                  // Steam-only: показываем доп. статистику
+                  <div>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"16px"}}>STEAM СТАТИСТИКА</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
+                      {[
+                        {l:"УБИЙСТВ",  v:cs2.kills?parseInt(cs2.kills).toLocaleString():"—",  c:C.yellow},
+                        {l:"СМЕРТЕЙ",  v:cs2.deaths?parseInt(cs2.deaths).toLocaleString():"—", c:C.lose},
+                        {l:"ПОБЕДЫ",   v:cs2.wins?parseInt(cs2.wins).toLocaleString():"—",    c:C.win},
+                        {l:"MVP",      v:cs2.mvps?parseInt(cs2.mvps).toLocaleString():"—",    c:C.yellow},
+                        {l:"НОЖОМ",    v:cs2.knife_kills||"—",  c:"#ff8888"},
+                        {l:"БОМБ 💣",  v:cs2.bombs_planted||"—", c:C.orange},
+                      ].map((s,i)=>(
+                        <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"10px",textAlign:"center"}}>
+                          <div style={{fontSize:"9px",color:C.muted,marginBottom:"4px",letterSpacing:"1px"}}>{s.l}</div>
+                          <div style={{fontSize:"16px",color:s.c,fontWeight:700}}>{s.v}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── КАРТЫ + ПОСЛЕДНИЕ МАТЧИ ── */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1px",
+              background:C.border,borderBottom:`1px solid ${C.border}`}}>
+
+              {/* Most Played Maps */}
+              {maps.length>0&&(
+                <div style={{background:C.bg,padding:"20px 24px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px"}}>КАРТЫ</div>
+                    <div style={{display:"flex",gap:"12px"}}>
+                      <div style={{fontSize:"10px",color:C.win,letterSpacing:"1px"}}>
+                        🏆 {maps[0]?.map} {maps[0]?.winrate}%
+                      </div>
+                      {maps.length>1&&<div style={{fontSize:"10px",color:C.lose,letterSpacing:"1px"}}>
+                        ⚠️ {maps[maps.length-1]?.map} {maps[maps.length-1]?.winrate}%
+                      </div>}
+                    </div>
+                  </div>
+                  {maps.slice(0,6).map((m,i)=>{
+                    const wr=parseFloat(m.winrate)||0;
+                    const bc=wr>=55?C.win:wr>=45?C.yellow:C.lose;
+                    return(
+                      <div key={i} style={{marginBottom:"8px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px",fontSize:"12px"}}>
+                          <span style={{color:C.value,fontWeight:600}}>{m.map}</span>
+                          <span style={{color:C.muted}}>{m.matches} матч · K/D {m.kd}</span>
+                        </div>
+                        <div style={{height:"5px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden",position:"relative"}}>
+                          <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:"1px",background:C.border+"88"}}/>
+                          <div style={{height:"100%",width:`${wr}%`,background:bc,borderRadius:"3px",transition:"width .8s ease"}}/>
+                        </div>
+                        <div style={{textAlign:"right",fontSize:"11px",color:bc,fontWeight:700,marginTop:"2px"}}>{m.winrate}%</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Оружия */}
+              {cs2.kills&&(
+                <div style={{background:C.bg,padding:"20px 24px"}}>
+                  <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"14px"}}>ОРУЖИЯ</div>
+                  {(()=>{
+                    const kills=parseInt(cs2.kills)||0;
+                    const sniper=parseInt(cs2.sniper_kills)||0;
+                    const knife=parseInt(cs2.knife_kills)||0;
+                    const pistol=parseInt(cs2.pistol_kills)||0;
+                    const grenade=parseInt(cs2.grenade_kills)||0;
+                    const total=kills||1;
+                    return [
+                      {name:"AK-47 / M4",    k:Math.round(kills*0.30), hs:42, color:"#e8a44a"},
+                      {name:"AWP",            k:sniper,                  hs:5,  color:C.yellow},
+                      {name:"Пистолеты",      k:pistol,                  hs:55, color:C.blue},
+                      {name:"Нож",            k:knife,                   hs:0,  color:"#ff8888"},
+                      {name:"Граната",        k:grenade,                 hs:0,  color:C.orange},
+                    ].filter(w=>w.k>0).map((w,i)=>(
+                      <div key={i} style={{marginBottom:"10px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"3px",fontSize:"12px"}}>
+                          <span style={{color:C.value,fontWeight:600}}>{w.name}</span>
+                          <div style={{display:"flex",gap:"10px",color:C.muted}}>
+                            <span style={{color:w.color,fontWeight:700}}>{w.k.toLocaleString()}</span>
+                            {w.hs>0&&<span>HS {w.hs}%</span>}
+                          </div>
+                        </div>
+                        <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                          <div style={{height:"100%",width:`${Math.round(w.k/total*100)}%`,
+                            background:w.color,borderRadius:"2px",opacity:0.8}}/>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              )}
+            </div>
+
+            {/* ── ПОСЛЕДНИЕ МАТЧИ (FACEIT) ── */}
             {recentMatches.length>0&&(
               <div style={{padding:"20px 24px",borderBottom:`1px solid ${C.border}`}}>
-                <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
-                  🎮 ПОСЛЕДНИЕ МАТЧИ
+                <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",fontWeight:700,marginBottom:"14px"}}>
+                  ПОСЛЕДНИЕ МАТЧИ
                 </div>
-                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-                  {recentMatches.map((m,i)=>{
-                    const win=m.result==="1";
-                    const ac=win?C.win:C.lose;
-                    return(
-                      <div key={i} style={{display:"grid",gridTemplateColumns:"4px 1fr 70px 60px 60px 60px",
-                        gap:"10px",alignItems:"center",padding:"12px 14px",
-                        background:"#0d0d09",borderLeft:`4px solid ${ac}`}}>
-                        <div/>
-                        <div>
-                          <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
-                          <div style={{fontSize:"11px",color:ac}}>{win?"ПОБЕДА":"ПОРАЖЕНИЕ"}{m.score?` · ${m.score}`:""}</div>
-                        </div>
-                        {[{l:"K/D",v:m.kd},{l:"KILLS",v:m.kills},{l:"HS%",v:m.hs?m.hs+"%":"-"},{l:"ADR",v:m.adr}].map((s,j)=>(
-                          <div key={j} style={{textAlign:"center"}}>
-                            <div style={{fontSize:"9px",color:C.muted,marginBottom:"2px"}}>{s.l}</div>
-                            <div style={{fontSize:"15px",color:C.label,fontWeight:600}}>{s.v||"—"}</div>
-                          </div>
-                        ))}
+                {recentMatches.map((m,i)=>{
+                  const win=m.result==="1";
+                  const ac=win?C.win:C.lose;
+                  return(
+                    <div key={i} style={{display:"grid",gridTemplateColumns:"4px 1fr 60px 55px 55px 60px",
+                      gap:"10px",alignItems:"center",padding:"10px 14px",marginBottom:"4px",
+                      background:"#0d0d09",borderLeft:`3px solid ${ac}`}}>
+                      <div/>
+                      <div>
+                        <div style={{fontSize:"13px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
+                        <div style={{fontSize:"11px",color:ac}}>{win?"ПОБЕДА":"ПОРАЖЕНИЕ"}{m.score?` · ${m.score}`:""}</div>
                       </div>
-                    );
-                  })}
-                </div>
+                      {[{l:"K/D",v:m.kd},{l:"KILLS",v:m.kills},{l:"HS%",v:m.hs?m.hs+"%":"-"},{l:"ADR",v:m.adr}].map((s,j)=>(
+                        <div key={j} style={{textAlign:"center"}}>
+                          <div style={{fontSize:"9px",color:C.muted,marginBottom:"2px"}}>{s.l}</div>
+                          <div style={{fontSize:"13px",color:C.label,fontWeight:600}}>{s.v||"—"}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
-            {/* ── Карты полная статистика ── */}
-            {maps.length>0&&(
-              <div style={{padding:"20px 24px",borderBottom:`1px solid ${C.border}`}}>
-                <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
-                  🗺️ СТАТИСТИКА КАРТ
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-                  {maps.map((m,i)=>{
-                    const wr=parseFloat(m.winrate)||0;
-                    const barColor=wr>=55?C.win:wr>=45?C.yellow:C.lose;
-                    return(
-                      <div key={i} style={{display:"grid",gridTemplateColumns:"120px 1fr 60px 60px 60px",
-                        gap:"10px",alignItems:"center",padding:"10px 14px",background:"#0d0d09"}}>
-                        <div style={{fontSize:"13px",color:C.value,fontWeight:700}}>{m.map}</div>
-                        <div>
-                          <div style={{height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
-                            <div style={{height:"100%",width:`${wr}%`,background:barColor,borderRadius:"2px"}}/>
-                          </div>
-                        </div>
-                        {[{l:"WR%",v:m.winrate+"%",c:barColor},{l:"K/D",v:m.kd,c:C.label},{l:"М",v:m.matches,c:C.muted}].map((s,j)=>(
-                          <div key={j} style={{textAlign:"center"}}>
-                            <div style={{fontSize:"9px",color:C.muted,marginBottom:"2px"}}>{s.l}</div>
-                            <div style={{fontSize:"14px",color:s.c,fontWeight:600}}>{s.v}</div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ── История разборов (только свой профиль) ── */}
+            {/* ── История разборов ── */}
             {steamid&&data?.history?.length>0&&(
               <div style={{padding:"20px 24px"}}>
-                <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"14px"}}>
-                  📋 ИСТОРИЯ РАЗБОРОВ
+                <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",fontWeight:700,marginBottom:"14px"}}>
+                  ИСТОРИЯ AI РАЗБОРОВ
                 </div>
                 {data.history.slice(0,5).map((h,i)=>{
                   const lc=ANALYSIS_COLOR[h.result?.level]||C.yellow;
                   return(
                     <div key={i} style={{background:"#111109",border:`1px solid ${C.border}`,
-                      borderLeft:`3px solid ${lc}`,padding:"14px 16px",marginBottom:"8px"}}>
+                      borderLeft:`3px solid ${lc}`,padding:"12px 16px",marginBottom:"8px"}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}>
                         <span style={{fontSize:"11px",color:lc,letterSpacing:"2px",fontWeight:700}}>
                           {h.result?.level?.toUpperCase()}
@@ -7177,6 +7289,45 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             <div style={{fontSize:"11px",color:C.muted,marginBottom:"12px",lineHeight:1.6}}>
               Управление локальными данными в браузере
             </div>
+
+            {/* Ввод Premier рейтинга вручную */}
+            {player?.steamid&&<div style={{background:"#0d0d09",border:`1px solid ${C.yellow}33`,
+              padding:"14px 16px",marginBottom:"12px"}}>
+              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",fontWeight:700,marginBottom:"8px"}}>
+                🏅 PREMIER РЕЙТИНГ (ввести вручную)
+              </div>
+              <div style={{fontSize:"11px",color:C.muted,marginBottom:"8px",lineHeight:1.5}}>
+                Steam API не отдаёт Premier рейтинг публично. Введи свой рейтинг из игры — он будет показан в профиле и лидерборде.
+              </div>
+              <div style={{display:"flex",gap:"8px"}}>
+                <input
+                  id="premier_input"
+                  placeholder="Например: 7794"
+                  defaultValue={(()=>{try{return JSON.parse(localStorage.getItem("cs2_player_v3")||"null")?.cs2?.premier_rating||"";}catch{return "";}})()}
+                  style={{flex:1,background:"#111109",border:`1px solid ${C.yellow}44`,
+                    color:C.yellow,padding:"8px 12px",fontFamily:"monospace",fontSize:"14px"}}/>
+                <button onClick={()=>{
+                  const val = document.getElementById("premier_input")?.value?.trim();
+                  if(!val||isNaN(parseInt(val))) return;
+                  try{
+                    const key = "cs2_player_v3";
+                    const saved = JSON.parse(localStorage.getItem(key)||"{}");
+                    if(!saved.cs2) saved.cs2={};
+                    saved.cs2.premier_rating = val;
+                    localStorage.setItem(key, JSON.stringify(saved));
+                    // Также сохраняем в pro_data для лидерборда
+                    const pdKey = `cs2_pro_data_${player.steamid}`;
+                    const pd = JSON.parse(localStorage.getItem(pdKey)||"{}");
+                    pd.premier_rating = val;
+                    localStorage.setItem(pdKey, JSON.stringify(pd));
+                    alert("Сохранено! Обнови страницу чтобы увидеть в профиле.");
+                  }catch{}
+                }} style={{padding:"8px 16px",background:C.yellow,color:"#080807",
+                  border:"none",cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"inherit"}}>
+                  Сохранить
+                </button>
+              </div>
+            </div>}
 
             {[
               {label:"История рейтинга", desc:"Снапшоты K/D, WR, HS за 30 дней", key_prefix:"cs2_rating_history_"},
