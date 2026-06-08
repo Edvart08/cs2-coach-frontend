@@ -7226,45 +7226,30 @@ export default function App() {
         }
         setPlayer(p);
         if (!hasFaceit) setSource("steam");
-        // check Pro status
+        // check Pro status — бэкенд источник правды
         if (p.steamid) {
-          fetch(`${BACKEND}/pro/${p.steamid}`)
+          const proCheckPromise = fetch(`${BACKEND}/pro/${p.steamid}`)
             .then(r=>r.json())
             .then(d=>{
               if(d.pro){
                 setIsPro(true); setAiRemaining(999);
-                // Сохраняем в localStorage как резервную копию
-                try{ localStorage.setItem("cs2_is_pro","1"); }catch{}
+                // Кешируем локально для оффлайн-fallback
+                try{
+                  localStorage.setItem("cs2_is_pro","1");
+                  if(d.data) localStorage.setItem(`cs2_pro_data_${p.steamid}`, JSON.stringify(d.data));
+                }catch{}
               } else {
-                // Бэкенд говорит не-PRO — проверяем localStorage
-                const localPro = localStorage.getItem("cs2_is_pro") === "1";
-                // Также проверяем кеш pro_data (сохраняется в ProModal)
-                let proDataCache = null;
-                try{ proDataCache = JSON.parse(localStorage.getItem(`cs2_pro_data_${p.steamid}`)||"null"); }catch{}
-                const proDataValid = proDataCache?.activated_at && (() => {
-                  const plan = proDataCache.plan;
-                  const days = plan==="year"?365:plan==="month"?30:0;
-                  if(!days) return !!proDataCache.activated_at; // lifetime
-                  const expires = proDataCache.activated_at*1000 + days*86400*1000;
-                  return Date.now() < expires;
-                })();
-                if (localPro || proDataValid) {
-                  // Есть локальные данные — доверяем, но пробуем восстановить на бэкенде
-                  setIsPro(true); setAiRemaining(999);
-                  if(proDataCache) {
-                    // Пробуем тихо восстановить PRO на бэкенде
-                    fetch(`${BACKEND}/pro/restore`, {
-                      method:"POST", headers:{"Content-Type":"application/json"},
-                      body: JSON.stringify({steamid: p.steamid, pro_data: proDataCache})
-                    }).catch(()=>{});
-                  }
-                } else {
-                  setIsPro(false); setAiRemaining(d.remaining??FREE_WEEKLY);
-                }
+                // Бэкенд говорит НЕТ PRO — доверяем бэкенду
+                // Чистим localStorage чтобы не было конфликта
+                try{
+                  localStorage.removeItem("cs2_is_pro");
+                  // НЕ удаляем pro_data — нужен для отображения даты истекшей подписки
+                }catch{}
+                setIsPro(false); setAiRemaining(d.remaining??FREE_WEEKLY);
               }
             })
             .catch(()=>{
-              // Бэкенд недоступен — доверяем localStorage
+              // Бэкенд НЕДОСТУПЕН (таймаут/сеть) — только тогда используем localStorage
               const localPro = localStorage.getItem("cs2_is_pro") === "1";
               if(localPro){ setIsPro(true); setAiRemaining(999); }
             });
