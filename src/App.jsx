@@ -359,11 +359,11 @@ function HeroCard({player, source}) {
   const stats = isFaceit
     ? [{l:"K/D",v:fc?.lifetime?.kd||"—",c:parseFloat(fc?.lifetime?.kd)>=1?C.win:parseFloat(fc?.lifetime?.kd)>=0.9?C.yellow:C.lose},
        {l:"WIN%",v:fc?.lifetime?.winrate?(fc.lifetime.winrate+"%"):"—",c:parseInt(fc?.lifetime?.winrate)>=55?C.win:C.yellow},
-       {l:t("hs_btn",t("hs_col","HS%")),v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—",c:parseInt(fc?.lifetime?.hs)>=40?C.win:C.orange},
+       {l:t("hs_btn","HS%"),v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—",c:parseInt(fc?.lifetime?.hs)>=40?C.win:C.orange},
        {l:t("col_matches","МАТЧИ"),v:fc?.lifetime?.matches||"—",c:C.label}]
     : [{l:"K/D",v:cs2.kd||"—",c:parseFloat(cs2.kd)>=1?C.win:parseFloat(cs2.kd)>=0.9?C.yellow:C.lose},
        {l:"WIN%",v:heroWRStr,c:parseInt(heroWRVal)>=55?C.win:C.yellow},
-       {l:t("hs_btn",t("hs_col","HS%")),v:cs2.hs?(cs2.hs+"%"):"—",c:parseInt(cs2.hs)>=40?C.win:C.orange},
+       {l:t("hs_btn","HS%"),v:cs2.hs?(cs2.hs+"%"):"—",c:parseInt(cs2.hs)>=40?C.win:C.orange},
        {l:t("col_matches","МАТЧИ"),v:cs2.matches||"—",c:C.label}];
 
   return (
@@ -494,7 +494,7 @@ function ChartsSection({faceit}) {
   const lt = faceit?.lifetime||{};
   const radarAxes = [
     {label:"K/D",  value:Math.min(100,(parseFloat(lt.kd)||0)*55),   raw:lt.kd||"0"},
-    {label:t("hs_btn",t("hs_col","HS%")),  value:parseFloat(lt.hs)||0,                       raw:(lt.hs||"0")+"%"},
+    {label:t("hs_btn","HS%"),  value:parseFloat(lt.hs)||0,                       raw:(lt.hs||"0")+"%"},
     {label:"WIN%", value:parseFloat(lt.winrate)||0,                   raw:(lt.winrate||"0")+"%"},
     {label:"K/R",  value:Math.min(100,(parseFloat(lt.kr)||0)*120),   raw:lt.kr||"0"},
     {label:t("streak","СТРИК"),value:Math.min(100,(parseInt(lt.longest_streak)||0)*10),raw:lt.longest_streak||"0"},
@@ -682,7 +682,7 @@ function SteamMMMatches({steamid}) {
       }
 
       if (d.matches) setMatches(d.matches);
-      else setErr(d.detail || t("matches_err",t("matches_load_fail","Не удалось загрузить матчи")));
+      else setErr(d.detail || t("matches_err","Не удалось загрузить матчи"));
     } catch { setErr(t("net_err","Ошибка сети")); }
     setLoading(false);
   }
@@ -738,7 +738,7 @@ function SteamMMMatches({steamid}) {
             </div>
             <button onClick={()=>{
               try{navigator.clipboard.writeText(m.code);}catch{}
-            }} title=t("copy_match_code","Скопировать код матча")
+            }} title={t("copy_match_code","Скопировать код матча")}
               style={{background:"transparent",border:`1px solid ${C.border}`,
                 color:C.muted,cursor:"pointer",fontSize:"11px",padding:"4px 8px",
                 fontFamily:"inherit",flexShrink:0}}>
@@ -1069,9 +1069,9 @@ function SteamStatsPanel({player}) {
           backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 32px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 32px)"}}/>
         <div style={{position:"relative",zIndex:1,border:`1px solid ${C.border}`,
           padding:"20px 24px",display:"flex",justifyContent:"space-around",flexWrap:"wrap",gap:"20px"}}>
-          <Ring score={aimScore} label=t("lbl_aim","АИМ") color={C.orange}/>
-          <Ring score={formScore} label=t("lbl_form","ФОРМА") color={C.blue}/>
-          <Ring score={wrScore} label=t("lbl_wr","WR") color={C.win}/>
+          <Ring score={aimScore} label={t("lbl_aim","АИМ")} color={C.orange}/>
+          <Ring score={formScore} label={t("lbl_form","ФОРМА")} color={C.blue}/>
+          <Ring score={wrScore} label={t("lbl_wr","WR")} color={C.win}/>
         </div>
       </div>
 
@@ -1085,7 +1085,7 @@ function SteamStatsPanel({player}) {
             ПОКАЗАТЕЛИ vs СРЕДНЕГО ИГРОКА
           </div>
           <StatBar label="K/D" val={kd} avg={AVG.kd} fmt={(v)=>v.toFixed(2)}/>
-          <StatBar label=t("hs_btn",t("hs_col","HS%")) val={hs} avg={AVG.hs} fmt={(v)=>Math.round(v)+"%"}/>
+          <StatBar label={t("hs_btn","HS%")} val={hs} avg={AVG.hs} fmt={(v)=>Math.round(v)+"%"}/>
           <StatBar label="WR%" val={wr} avg={AVG.wr} fmt={(v)=>Math.round(v)+"%"}/>
         </div>
       </div>
@@ -1097,12 +1097,12 @@ function SteamStatsPanel({player}) {
         <div style={{position:"relative",zIndex:1,display:"grid",
           gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px"}}>
           {[
-            {l:t("kills_label",t("lbl_kills","УБИЙСТВА")),   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
-            {l:t("deaths_label",t("lbl_deaths","СМЕРТИ")),     v:deaths.toLocaleString(),  c:C.lose,   icon:"💀"},
-            {l:t("wins_label",t("lbl_wins","ПОБЕДЫ")),     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
+            {l:t("kills_label","УБИЙСТВА"),   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
+            {l:t("deaths_label","СМЕРТИ"),     v:deaths.toLocaleString(),  c:C.lose,   icon:"💀"},
+            {l:t("wins_label","ПОБЕДЫ"),     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
             {l:t("lbl_mvp","MVP"),        v:mvps.toLocaleString(),    c:C.yellow, icon:"⭐"},
-            {l:t("k_match",t("lbl_kmatch","K/МАТЧ")),     v:kdPerMatch,               c:C.blue,   icon:"🎯"},
-            {l:t("d_match",t("lbl_dmatch","СМЕРТЕЙ/МАТ")),v:deathsPerMatch,           c:C.muted,  icon:"📊"},
+            {l:t("k_match","K/МАТЧ"),     v:kdPerMatch,               c:C.blue,   icon:"🎯"},
+            {l:t("d_match","СМЕРТЕЙ/МАТ"),v:deathsPerMatch,           c:C.muted,  icon:"📊"},
           ].filter(s=>s.v!=="0"&&s.v!=="—").map((s,i)=>(
             <div key={i} style={{
               background:`linear-gradient(135deg,${s.c}0c,${C.card})`,
@@ -1152,7 +1152,7 @@ function SteamStatsPanel({player}) {
           padding:"14px 0 8px"}}>ДОПОЛНИТЕЛЬНО</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px",marginBottom:"3px"}}>
           {[
-            accuracy>0    &&{l:t("lbl_acc",t("acc_col","ТОЧНОСТЬ")),      v:accuracy+"%",              icon:"🎯", c:C.orange},
+            accuracy>0    &&{l:t("lbl_acc","ТОЧНОСТЬ"),      v:accuracy+"%",              icon:"🎯", c:C.orange},
             bombsPlanted>0&&{l:t("lbl_planted","БОМБ ЗАЛОЖЕНО"), v:bombsPlanted.toLocaleString(), icon:"💥", c:C.lose},
             bombsDefused>0&&{l:t("lbl_defused","БОМБ ОБЕЗВРЕЖЕНО"),v:bombsDefused.toLocaleString(),icon:"🛡️", c:C.win},
             revenges>0    &&{l:t("lbl_rev","РЕВАНШИ"),        v:revenges.toLocaleString(),  icon:"⚡", c:C.yellow},
@@ -1649,7 +1649,7 @@ function WeaponsPanel({cs2}) {
         display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
         <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>🔫 ОРУЖИЯ</span>
         <div style={{display:"flex",gap:"4px"}}>
-          {[["kills",t("kills_btn","Убийства")],["hs",t("hs_btn",t("hs_col","HS%"))],["acc",t("acc_btn","Точность")]].map(([k,l])=>(
+          {[["kills",t("kills_btn","Убийства")],["hs",t("hs_btn","HS%")],["acc",t("acc_btn","Точность")]].map(([k,l])=>(
             <button key={k} onClick={()=>setSortBy(k)} style={{
               padding:"3px 10px",background:sortBy===k?C.yellow+"22":"transparent",
               border:`1px solid ${sortBy===k?C.yellow+"55":C.border}`,
@@ -1929,7 +1929,7 @@ function ProgressHistory({player, source}) {
   const diffLabel=diff>0?t("growth","РОСТ"):diff<0?t("decline","ПАДЕНИЕ"):t("no_changes","БЕЗ ИЗМЕНЕНИЙ");
   const stats=[
     {name:"K/D",f:first.kd?.toFixed(2),l:last.kd?.toFixed(2),diff:((last.kd||0)-(first.kd||0)).toFixed(2),up:(last.kd||0)>=(first.kd||0)},
-    {name:t("hs_btn",t("hs_col","HS%")),f:Math.round(first.hs||0)+"%",l:Math.round(last.hs||0)+"%",diff:(Math.round(last.hs||0)-Math.round(first.hs||0))+"%",up:(last.hs||0)>=(first.hs||0)},
+    {name:t("hs_btn","HS%"),f:Math.round(first.hs||0)+"%",l:Math.round(last.hs||0)+"%",diff:(Math.round(last.hs||0)-Math.round(first.hs||0))+"%",up:(last.hs||0)>=(first.hs||0)},
     {name:"WR%",f:Math.round(first.wr||0)+"%",l:Math.round(last.wr||0)+"%",diff:(Math.round(last.wr||0)-Math.round(first.wr||0))+"%",up:(last.wr||0)>=(first.wr||0)},
   ];
   const ratings=history.map(s=>calcRating(s));
@@ -2015,7 +2015,7 @@ function PlayerRating({player, source}) {
   const label=overall>=80?t("top_player","ТОП ИГРОК"):overall>=60?t("above_avg","ВЫШЕ СРЕДНЕГО"):overall>=40?t("avg_level","СРЕДНИЙ УРОВЕНЬ"):t("room_to_grow","ЕСТЬ КУДА РАСТИ");
   const stats=[
     {name:"K/D",val:kd.toFixed(2),avg:avg.kd.toFixed(2),pct:kdPct,color:C.blue},
-    {name:t("hs_btn",t("hs_col","HS%")),val:Math.round(hs)+"%",avg:avg.hs+"%",pct:hsPct,color:C.orange},
+    {name:t("hs_btn","HS%"),val:Math.round(hs)+"%",avg:avg.hs+"%",pct:hsPct,color:C.orange},
     {name:"WR%",val:Math.round(wr)+"%",avg:avg.wr+"%",pct:wrPct,color:"#aa88ff"},
   ];
 
@@ -2094,7 +2094,7 @@ function PlayerRating({player, source}) {
             {name:"K/D", val:kd.toFixed(2), avg:avg.kd.toFixed(2), pct:kdPct, color:C.blue,
              icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="9" r="3"/><path d="M9 3a6 6 0 1 0 6 6"/><line x1="15" y1="15" x2="21" y2="21"/></svg>,
              label:t("kd_desc","Убийства / Смерти"), tip:t("kd_norm","норма 0.75–1.0")},
-            {name:t("hs_btn",t("hs_col","HS%")), val:Math.round(hs)+"%", avg:avg.hs+"%", pct:hsPct, color:C.orange,
+            {name:t("hs_btn","HS%"), val:Math.round(hs)+"%", avg:avg.hs+"%", pct:hsPct, color:C.orange,
              icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="5"/><path d="M8 8h8M12 3v10"/><path d="M9 21h6M12 17v4"/></svg>,
              label:t("hs_desc","Попадания в голову"), tip:t("hs_norm","норма 25–35%")},
             {name:"WR%", val:Math.round(wr)+"%", avg:avg.wr+"%", pct:wrPct, color:"#aa88ff",
@@ -3233,7 +3233,7 @@ function WeekComparison({player}) {
 
   const stats = [
     { label:"K/D",  prev:parseFloat(prev.kd||0), now:parseFloat(now.kd||0), fmt:(v)=>v.toFixed(2), color:C.blue },
-    { label:t("hs_btn",t("hs_col","HS%")),  prev:parseFloat(prev.hs||0), now:parseFloat(now.hs||0), fmt:(v)=>Math.round(v)+"%", color:C.orange },
+    { label:t("hs_btn","HS%"),  prev:parseFloat(prev.hs||0), now:parseFloat(now.hs||0), fmt:(v)=>Math.round(v)+"%", color:C.orange },
     { label:"WR%",  prev:parseFloat(prev.wr||0), now:parseFloat(now.wr||0), fmt:(v)=>Math.round(v)+"%", color:"#aa88ff" },
   ];
 
@@ -3386,7 +3386,7 @@ function WhatChanged({player, source}) {
 
   const changes = [
     {label:"K/D", diff:kdDiff, fmt:(d)=>(d>0?"+":"")+d},
-    {label:t("hs_btn",t("hs_col","HS%")), diff:hsDiff, fmt:(d)=>(d>0?"+":"")+d+"%"},
+    {label:t("hs_btn","HS%"), diff:hsDiff, fmt:(d)=>(d>0?"+":"")+d+"%"},
     {label:"WR%", diff:wrDiff, fmt:(d)=>(d>0?"+":"")+d+"%"},
   ].filter(c=>c.diff!==0);
 
@@ -3551,7 +3551,7 @@ function FriendsTab({myPlayer, source}) {
                 </div>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"6px",marginTop:"10px"}}>
-                {[{l:"K/D",v:myKd.toFixed(2),c:C.blue},{l:t("hs_btn",t("hs_col","HS%")),v:Math.round(myHs)+"%",c:C.orange},{l:"WR%",v:Math.round(myWr)+"%",c:"#aa88ff"}].map((s,i)=>(
+                {[{l:"K/D",v:myKd.toFixed(2),c:C.blue},{l:t("hs_btn","HS%"),v:Math.round(myHs)+"%",c:C.orange},{l:"WR%",v:Math.round(myWr)+"%",c:"#aa88ff"}].map((s,i)=>(
                   <div key={i} style={{textAlign:"center",background:"#111109",padding:"6px"}}>
                     <div style={{fontSize:"9px",color:C.muted,marginBottom:"2px"}}>{s.l}</div>
                     <div style={{fontSize:"15px",color:s.c,fontWeight:700}}>{s.v}</div>
@@ -3569,7 +3569,7 @@ function FriendsTab({myPlayer, source}) {
             const diffLabel = ratingDiff > 0 ? `▲ +${ratingDiff}` : ratingDiff < 0 ? `▼ ${ratingDiff}` : "=";
             const stats = [
               {l:"K/D",  my:myKd.toFixed(2), fr:parseFloat(f.kd||0).toFixed(2), better:parseFloat(f.kd||0)<myKd, c:C.blue},
-              {l:t("hs_btn",t("hs_col","HS%")),  my:Math.round(myHs)+"%", fr:Math.round(parseFloat(f.hs||0))+"%", better:parseFloat(f.hs||0)<myHs, c:C.orange},
+              {l:t("hs_btn","HS%"),  my:Math.round(myHs)+"%", fr:Math.round(parseFloat(f.hs||0))+"%", better:parseFloat(f.hs||0)<myHs, c:C.orange},
               {l:"WR%",  my:Math.round(myWr)+"%", fr:Math.round(parseFloat(f.wr||0))+"%", better:parseFloat(f.wr||0)<myWr, c:"#aa88ff"},
             ];
             return (
@@ -3926,7 +3926,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                 {[
                   {l:"K/D",   v:rating.kd,     c:parseFloat(rating.kd)>=1.2?C.win:parseFloat(rating.kd)>=0.9?C.yellow:C.lose},
                   {l:"WIN%",  v:rating.wr+"%",  c:parseInt(rating.wr)>=55?C.win:parseInt(rating.wr)>=45?C.yellow:C.lose},
-                  {l:t("hs_btn",t("hs_col","HS%")),   v:rating.hs+"%",  c:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange},
+                  {l:t("hs_btn","HS%"),   v:rating.hs+"%",  c:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange},
                   {l:t("col_matches","МАТЧИ"), v:matchCount||"—", c:C.label},
                   {l:"ELO",   v:fc?.elo||"—",   c:LVL_COLOR[fc?.level]||C.yellow},
                   {l:"ADR",   v:fc?.lifetime?.adr||(cs2.kills?Math.round(parseInt(cs2.kills)*75/Math.max(1,parseInt(cs2.deaths||1)*0.9)):"—"), c:C.orange},
@@ -3957,7 +3957,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                 <div style={{display:"flex",justifyContent:"space-around",gap:"16px"}}>
                   {[
                     {label:"K/D",   val:parseFloat(rating.kd)||0,  max:2.5, color:parseFloat(rating.kd)>=1.2?C.win:parseFloat(rating.kd)>=0.9?C.yellow:C.lose, display:rating.kd},
-                    {label:t("hs_btn",t("hs_col","HS%")),   val:parseInt(rating.hs)||0,     max:70,  color:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange,     display:rating.hs+"%"},
+                    {label:t("hs_btn","HS%"),   val:parseInt(rating.hs)||0,     max:70,  color:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange,     display:rating.hs+"%"},
                     {label:"WR%",   val:parseInt(rating.wr)||0,     max:70,  color:parseInt(rating.wr)>=55?C.win:parseInt(rating.wr)>=45?C.yellow:C.lose,       display:rating.wr+"%"},
                     {label:t("rating_short","РЕЙТ."), val:rating.overall,              max:99,  color:rating.color, display:rating.overall},
                   ].map((s,i)=>{
@@ -4185,7 +4185,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                             {win?t("lbl_win","ПОБЕДА"):t("lbl_loss","ПОРАЖЕНИЕ")}{m.score?` · ${m.score}`:""}
                           </div>
                         </div>
-                        {[{l:"K/D",v:m.kd},{l:"KILLS",v:m.kills},{l:t("hs_btn",t("hs_col","HS%")),v:m.hs?m.hs+"%":"-"},{l:"ADR",v:m.adr}].map((s,j)=>(
+                        {[{l:"K/D",v:m.kd},{l:"KILLS",v:m.kills},{l:t("hs_btn","HS%"),v:m.hs?m.hs+"%":"-"},{l:"ADR",v:m.adr}].map((s,j)=>(
                           <div key={j} style={{textAlign:"center"}}>
                             <div style={{fontSize:"9px",color:C.muted,marginBottom:"3px",letterSpacing:"1px"}}>{s.l}</div>
                             <div style={{fontSize:"14px",color:C.label,fontWeight:600}}>{s.v||"—"}</div>
@@ -4472,7 +4472,7 @@ function Leaderboard({myId, myIsPro, onProfile}) {
   const STAT_SORTS = [
     {id:"kd",      label:"K/D",          icon:"🎯", fn:(a,b)=>(parseFloat(b.stats?.kd||0)-parseFloat(a.stats?.kd||0))},
     {id:"winrate", label:"Побед %",       icon:"🏆", fn:(a,b)=>(parseFloat(b.stats?.winrate||0)-parseFloat(a.stats?.winrate||0))},
-    {id:"hs",      label:t("hs_btn",t("hs_col","HS%")),           icon:"💥", fn:(a,b)=>(parseFloat(b.stats?.hs||0)-parseFloat(a.stats?.hs||0))},
+    {id:"hs",      label:t("hs_btn","HS%"),           icon:"💥", fn:(a,b)=>(parseFloat(b.stats?.hs||0)-parseFloat(a.stats?.hs||0))},
     {id:"kills",   label:t("kills_btn","Убийства"),     icon:"⚔️", fn:(a,b)=>(parseInt(b.stats?.kills||0)-parseInt(a.stats?.kills||0))},
     {id:"matches", label:t("matches_lbl","Матчи"),        icon:"🎮", fn:(a,b)=>(parseInt(b.stats?.matches||0)-parseInt(a.stats?.matches||0))},
     {id:"mvp",     label:t("lbl_mvp","MVP"),          icon:"⭐", fn:(a,b)=>(parseInt(b.stats?.mvp||0)-parseInt(a.stats?.mvp||0))},
@@ -4785,7 +4785,7 @@ function ScoreCards({player, source}) {
       ]}/>
       <ScoreRing score={aimScore} label="AIM SCORE" breakdown={[
         {label:"K/D",   val:kd.toFixed(2)},
-        {label:t("hs_btn",t("hs_col","HS%")),   val:hs+"%"},
+        {label:t("hs_btn","HS%"),   val:hs+"%"},
         {label:"WR%",   val:wr+"%"},
       ]}/>
       <ScoreRing score={consistScore} label="CONSISTENCY" breakdown={[
@@ -5196,7 +5196,7 @@ function OnboardingModal({player, onClose, onGoTab}) {
                 {[
                   ["K/D", player?.cs2?.kd||player?.faceit?.lifetime?.kd||"—"],
                   ["WR%", (player?.cs2?.winrate||player?.faceit?.lifetime?.winrate||"—")+(player?.cs2?.winrate||player?.faceit?.lifetime?.winrate?"%":"")],
-                  [t("hs_btn",t("hs_col","HS%")), (player?.cs2?.hs||player?.faceit?.lifetime?.hs||"—")+(player?.cs2?.hs||player?.faceit?.lifetime?.hs?"%":"")],
+                  [t("hs_btn","HS%"), (player?.cs2?.hs||player?.faceit?.lifetime?.hs||"—")+(player?.cs2?.hs||player?.faceit?.lifetime?.hs?"%":"")],
                   [t("col_matches","МАТЧИ"), player?.cs2?.matches||player?.faceit?.lifetime?.matches||"—"],
                 ].map(([l,v],i)=>(
                   <div key={i} style={{background:"#0d0d09",border:`1px solid ${C.border}`,padding:"12px",textAlign:"center"}}>
@@ -5750,7 +5750,7 @@ function ShareModal({steamid, player, source, onClose}) {
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px"}}>
             {[
               {l:"K/D",   v:kd.toFixed(2),       c:C.blue},
-              {l:t("hs_btn",t("hs_col","HS%")),   v:Math.round(hs)+"%",   c:C.orange},
+              {l:t("hs_btn","HS%"),   v:Math.round(hs)+"%",   c:C.orange},
               {l:"WR%",   v:Math.round(wr)+"%",   c:"#aa88ff"},
             ].map((s,i)=>(
               <div key={i} style={{textAlign:"center",background:"#141409",
@@ -7251,7 +7251,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
     },
     {
       id:"operator",
-      label:t("call_operator",t("sup_operator","Позвать оператора")),
+      label:t("call_operator","Позвать оператора"),
       icon:"🆘",
       // ПОСЛЕДНИМ — только явный запрос оператора, не "помогите" в общем
       keywords:["позови оператора","позовите оператора","нужен оператор","живой человек","хочу оператора","нужен человек","соедините с оператором"],
@@ -7500,7 +7500,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
       <div style={{padding:"10px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"6px"}}>
         <input value={input} onChange={e=>setInput(e.target.value)}
           onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&send()}
-          placeholder=t("support_placeholder",t("sup_placeholder","Напиши вопрос..."))
+          placeholder={t("support_placeholder","Напиши вопрос...")}
           style={{flex:1,background:"#111109",border:`1px solid ${C.border}`,
             color:C.value,fontSize:"13px",padding:"8px 10px",fontFamily:"inherit"}}/>
         <button onClick={send} disabled={loading||!input.trim()} style={{
@@ -8195,14 +8195,14 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             </div>
 
             <ConnBlock
-              title=t("steam_lbl","STEAM")
+              title={t("steam_lbl","STEAM")}
               icon="🎮"
               connected={!!player?.steamid}
               info={player?.username ? `${player.username} · Steam Lvl ${player.steam_level||"—"}` : ""}
             />
 
             <ConnBlock
-              title=t("faceit_lbl","FACEIT")
+              title={t("faceit_lbl","FACEIT")}
               icon="⚡"
               connected={hasFaceit}
               info={hasFaceit ? `LVL ${player.faceit?.level} · ${player.faceit?.elo} ELO · ${player.faceit?.nickname}` : ""}
@@ -9159,7 +9159,7 @@ export default function App() {
 
             {/* Оружия FACEIT режим */}
             {source==="faceit"&&hasFaceit&&player.cs2&&!player.cs2.private&&<>
-              <SectionTitle icon="🔫" label=t("weapons_h","ОРУЖИЯ") sub="статистика из Steam"/>
+              <SectionTitle icon="🔫" label={t("weapons_h","ОРУЖИЯ")} sub="статистика из Steam"/>
               <WeaponsPanel cs2={player.cs2}/>
             </>}
 
