@@ -3136,7 +3136,7 @@ function FriendsTab({myPlayer, source}) {
             <div style={{flex:1}}>
               <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>{searchResult.nickname}</div>
               <div style={{fontSize:"12px",color:C.muted,marginTop:"2px"}}>
-                {searchResult.level&&<span style={{color:LVL_COLOR[searchResult.level]||C.yellow,marginRight:"10px"}}>LVL {searchResult.level}</span>}
+                {searchResult?.level&&<span style={{color:LVL_COLOR[searchResult?.level]||C.yellow,marginRight:"10px"}}>LVL {searchResult?.level}</span>}
                 {searchResult.elo&&<span>{searchResult.elo} ELO</span>}
               </div>
             </div>
@@ -8011,7 +8011,7 @@ export default function App() {
                       username: fresh.username,
                       avatar: fresh.avatar||"",
                       stats: {kd:lbKd, winrate:lbWr, hs:lbHs, matches:lbM,
-                        rank: fc2?.elo ? `FACEIT ${fc2.level}` : "Steam",
+                        rank: fc2?.elo ? `FACEIT ${fc2?.level}` : "Steam",
                         kills:lbKills, deaths:lbDeaths, mvp:lbMvp, playtime:lbPt},
                       level: levelLabel,
                       overall: String(lbOverall),
@@ -8145,7 +8145,7 @@ export default function App() {
       for(let i=0;i<3;i++){try{result=await call();break;}catch(e){le=e;if(i<2)await new Promise(r=>setTimeout(r,700));}}
       if (!result) throw le;
       setAnalysis(result); setSubTab("weak");
-      track("analysis_generated", { source, level: result.level, steamid: player.steamid });
+      track("analysis_generated", { source, level: result?.level, steamid: player.steamid });
       // Сохраняем в кеш AI Вердикта для главной страницы
       try {
         const cacheKey = `cs2_verdict_${player.steamid}_${source}`;
@@ -8165,7 +8165,7 @@ export default function App() {
         };
         localStorage.setItem(cacheKey, JSON.stringify({result:verdictResult, date:today}));
       } catch {}
-      track("analysis_generated", { source, level: result.level, steamid: player.steamid });
+      track("analysis_generated", { source, level: result?.level, steamid: player.steamid });
       // Онбординг для новичков (первый анализ)
       const obKey = `cs2_onboarding_${player.steamid}`;
       if (!localStorage.getItem(obKey)) {
@@ -8552,7 +8552,7 @@ export default function App() {
               <div style={{animation:"up .4s ease both"}}>
                 <AIVerdict report={{
                   verdict: analysis.overall||"",
-                  role: analysis.level==="Про"?"RIFLER":analysis.level==="Хороший"?"ENTRY FRAGGER":"RIFLER",
+                  role: analysis?.level==="Про"?"RIFLER":analysis?.level==="Хороший"?"ENTRY FRAGGER":"RIFLER",
                   roast: analysis.mainProblem||"",
                   strengths: arr(analysis.strengths).map((s,i)=>typeof s==="object"?{stat:s.stat||"",value:"",verdict:s.comment||"",tip:""}:{stat:"",value:"",verdict:String(s),tip:""}),
                   problems: arr(analysis.weaknesses).map((w,i)=>typeof w==="object"?{stat:w.stat||"",value:"",reason:w.problem||"",fix:w.fix||"",priority:i+1}:{stat:"",value:"",reason:String(w),fix:"",priority:i+1}),
@@ -8570,7 +8570,7 @@ export default function App() {
                 <div style={{background:C.card,border:`1px solid ${C.border}`,borderLeft:`4px solid ${lc}`,padding:"24px 26px",marginBottom:"10px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"14px",flexWrap:"wrap"}}>
                     <span style={{padding:"5px 16px",fontSize:"12px",letterSpacing:"3px",fontWeight:700,background:lc+"20",color:lc,border:`1px solid ${lc}55`}}>
-                      {analysis.level?.toUpperCase()}
+                      {analysis?.level?.toUpperCase()}
                     </span>
                     <span style={{fontSize:"13px",color:C.muted}}>→ {analysis.goal}</span>
                     <span style={{marginLeft:"auto",fontSize:"11px",color:C.muted,letterSpacing:"1px"}}>✓ в лидерах</span>
