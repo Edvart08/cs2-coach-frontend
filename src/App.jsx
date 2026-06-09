@@ -8936,10 +8936,26 @@ export default function App() {
 
             {/* ── СЕКЦИЯ 2: AI Вердикт ── */}
             <SectionTitle icon="🤖" label={T.ai_verdict||"AI ВЕРДИКТ"} sub={T.ai_verdict_sub||"персональный разбор твоей игры"}/>
-            {!player.cs2?.private&&(isPro||aiRemaining>0
-              ? <AIReport player={player} source={source} verdictVersion={verdictVersion} lang={lang}
-                  onGoToCoach={()=>setMainTab("coach")}/>
-              : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
+            {!player.cs2?.private&&(()=>{
+              // Показываем AIReport если: PRO, или лимит есть, или УЖЕ ЕСТЬ КЕШ
+              const hasCachedResult = (()=>{
+                try {
+                  const keys = [
+                    `cs2_verdict_${player.steamid}_${source}`,
+                    `cs2_verdict_${player.steamid}_faceit`,
+                    `cs2_verdict_${player.steamid}_steam`,
+                  ];
+                  return keys.some(k=>{
+                    const c = JSON.parse(localStorage.getItem(k)||"null");
+                    return c?.result && Object.keys(c.result).length > 0;
+                  });
+                } catch { return false; }
+              })();
+              return (isPro || aiRemaining > 0 || hasCachedResult)
+                ? <AIReport player={player} source={source} verdictVersion={verdictVersion} lang={lang}
+                    onGoToCoach={()=>setMainTab("coach")}/>
+                : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>;
+            })()}
 
             {/* ── СЕКЦИЯ 3: Рейтинг ── */}
             <SectionTitle icon="🏅" label={T.rating_title||"РЕЙТИНГ"} sub={T.rating_sub||"Coach Rating на основе твоей статистики"}/>
