@@ -408,20 +408,26 @@ function HeroCard({player, source}) {
               <span style={{fontSize:"28px",color:"#fff",fontWeight:800,textShadow:"0 2px 12px rgba(0,0,0,0.8)"}}>{player.username}</span>
               {flag(player.country||fc?.country)&&<span style={{fontSize:"18px"}}>{flag(player.country||fc?.country)}</span>}
             </div>
-            <div style={{fontSize:"13px",color:C.muted,marginBottom:"8px",display:"flex",gap:"12px",flexWrap:"wrap",alignItems:"center"}}>
-              {player.created&&<span>⭐ Steam с {new Date(player.created*1000).getFullYear()} г.</span>}
-              {player.steam_level!=null&&<span>Lvl {player.steam_level}</span>}
-              {cs2.playtime&&parseInt(cs2.playtime)>0&&<span style={{display:"flex",alignItems:"center",gap:"3px"}}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                {Math.round(parseInt(cs2.playtime)/60)}ч в игре
+            <div style={{display:"flex",gap:"10px",flexWrap:"wrap",marginBottom:"10px",alignItems:"center"}}>
+              {player.created&&<span style={{fontSize:"13px",color:C.muted}}>⭐ Steam {new Date(player.created*1000).getFullYear()}</span>}
+              {player.steam_level!=null&&<span style={{fontSize:"14px",color:C.label,fontWeight:600,
+                padding:"2px 8px",background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`}}>
+                Lvl {player.steam_level}
               </span>}
-              {cs2.wins&&parseInt(cs2.wins)>0&&<span style={{color:C.win}}>
+              {cs2.playtime&&parseInt(cs2.playtime)>0&&<span style={{fontSize:"14px",color:C.blue,fontWeight:600,
+                display:"flex",alignItems:"center",gap:"4px"}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {Math.round(parseInt(cs2.playtime)/60)}ч
+              </span>}
+              {cs2.wins&&parseInt(cs2.wins)>0&&<span style={{fontSize:"15px",color:C.win,fontWeight:700}}>
                 🏆 {parseInt(cs2.wins).toLocaleString()} побед
               </span>}
-              {fc?.elo&&<span style={{color:LVL_COLOR[fc?.level]||C.orange,fontWeight:700}}>
+              {fc?.elo&&<span style={{fontSize:"14px",color:LVL_COLOR[fc?.level]||C.orange,fontWeight:700,
+                padding:"2px 8px",background:(LVL_COLOR[fc?.level]||C.orange)+"18",
+                border:`1px solid ${(LVL_COLOR[fc?.level]||C.orange)}44`}}>
                 ⚡ {fc.elo} ELO
               </span>}
-              {fc?.nickname&&fc.nickname!==player.username&&<span style={{color:C.orange}}>⚡ {fc?.nickname}</span>}
+              {fc?.nickname&&fc.nickname!==player.username&&<span style={{fontSize:"13px",color:C.orange}}>/ {fc?.nickname}</span>}
             </div>
             {/* Форма */}
             {form.length>0&&(
@@ -1240,31 +1246,29 @@ const WEAPON_DATA = {
   "Knife":      {img:"Knife",         slot:"knife",   color:"#ff6666"},
 };
 
-function WeaponImg({name, size=52}) {
-  const [err, setErr] = useState(false);
+// SVG силуэты оружий — белые, как в игре
+const WEAPON_SVG = {
+  "AK-47": <svg viewBox="0 0 80 24" fill="white" opacity="0.9"><rect x="2" y="10" width="52" height="4" rx="1"/><rect x="10" y="6" width="28" height="2" rx="1"/><rect x="14" y="14" width="20" height="5" rx="1"/><rect x="54" y="8" width="20" height="6" rx="1" transform="rotate(-2 54 8)"/><rect x="6" y="9" width="4" height="6" rx="1"/><rect x="18" y="14" width="8" height="8" rx="1"/></svg>,
+  "M4A1-S": <svg viewBox="0 0 80 24" fill="white" opacity="0.9"><rect x="2" y="10" width="50" height="4" rx="1"/><rect x="10" y="6" width="30" height="2" rx="1"/><rect x="52" y="7" width="22" height="8" rx="1"/><rect x="6" y="8" width="4" height="8" rx="1"/><rect x="20" y="14" width="8" height="8" rx="1"/><circle cx="53" cy="11" r="2"/></svg>,
+  "M4A4":   <svg viewBox="0 0 80 24" fill="white" opacity="0.9"><rect x="2" y="10" width="50" height="4" rx="1"/><rect x="10" y="6" width="28" height="2" rx="1"/><rect x="52" y="7" width="22" height="8" rx="1"/><rect x="6" y="8" width="4" height="8" rx="1"/><rect x="19" y="14" width="9" height="8" rx="1"/></svg>,
+  "AWP":    <svg viewBox="0 0 80 24" fill="white" opacity="0.9"><rect x="2" y="11" width="58" height="3" rx="1"/><rect x="8" y="7" width="20" height="2" rx="1"/><rect x="60" y="8" width="16" height="7" rx="1"/><rect x="5" y="9" width="5" height="7" rx="1"/><rect x="18" y="14" width="7" height="7" rx="1"/><rect x="26" y="5" width="6" height="15" rx="1" opacity="0.7"/></svg>,
+  "Desert Eagle": <svg viewBox="0 0 60 28" fill="white" opacity="0.9"><rect x="2" y="8" width="30" height="12" rx="2"/><rect x="32" y="6" width="20" height="8" rx="1"/><rect x="8" y="20" width="12" height="6" rx="1"/></svg>,
+  "USP-S":  <svg viewBox="0 0 60 28" fill="white" opacity="0.9"><rect x="2" y="8" width="28" height="11" rx="2"/><rect x="30" y="7" width="22" height="7" rx="1"/><rect x="8" y="19" width="11" height="6" rx="1"/><circle cx="51" cy="10" r="3" opacity="0.6"/></svg>,
+  "Glock-18":<svg viewBox="0 0 60 28" fill="white" opacity="0.9"><rect x="2" y="8" width="30" height="12" rx="2"/><rect x="32" y="6" width="18" height="7" rx="1"/><rect x="7" y="20" width="12" height="6" rx="1"/></svg>,
+  "Knife":  <svg viewBox="0 0 60 20" fill="white" opacity="0.9"><path d="M4 10 L44 6 L48 10 L44 14 Z"/><rect x="44" y="7" width="10" height="6" rx="2"/></svg>,
+  "default":<svg viewBox="0 0 60 20" fill="white" opacity="0.8"><rect x="2" y="7" width="40" height="6" rx="2"/><rect x="42" y="5" width="14" height="10" rx="1"/></svg>,
+};
+
+function WeaponImg({name, size=28}) {
   const w = WEAPON_DATA[name];
-  // Steam CDN weapon images
-  const src = w && !err
-    ? `https://community.cloudflare.steamstatic.com/economy/image/class/730/${encodeURIComponent(name)}/200fx200f`
-    : null;
-
-  // Fallback: use a styled text badge
-  if (!src || err) {
-    const col = w?.color || C.muted;
-    return (
-      <div style={{width:size*1.8,height:size*0.7,display:"flex",alignItems:"center",
-        justifyContent:"center",background:col+"15",border:`1px solid ${col}33`,
-        borderRadius:"3px",padding:"2px 6px"}}>
-        <span style={{fontSize:"11px",color:col,fontWeight:700,letterSpacing:"1px",
-          textAlign:"center",lineHeight:1.2}}>{name}</span>
-      </div>
-    );
-  }
-
+  const col = w?.color || C.muted;
+  const svg = WEAPON_SVG[name] || WEAPON_SVG["default"];
   return (
-    <img src={src} alt={name} onError={()=>setErr(true)}
-      style={{width:size*1.8,height:size*0.7,objectFit:"contain",
-        filter:"drop-shadow(0 0 4px rgba(255,255,255,0.08))"}}/>
+    <div style={{width:`${size*2.2}px`,height:`${size*0.85}px`,
+      display:"flex",alignItems:"center",justifyContent:"center",
+      filter:`drop-shadow(0 0 3px ${col}66)`}}>
+      {svg}
+    </div>
   );
 }
 
@@ -3889,6 +3893,214 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
   );
 }
 
+
+// ── AI Coach Characters ───────────────────────────────────────────────────────
+const COACH_CHARS = [
+  {
+    id:"drill",
+    name:"Сержант",
+    emoji:"🪖",
+    desc:"Строгий военный тренер. Режет правду без сахара.",
+    color:"#ff6644",
+    pro:false,
+    system:`Ты Сержант — жёсткий военный тренер по CS2. Говоришь коротко, по-военному, без лишних слов. 
+Обращаешься на 'ты'. Никаких ласковых слов — только факты и приказы. 
+Пример стиля: "K/D 0.85 — это провал. Слабак умирает первым. Иди в Aim Botz пока руки не затрясутся."
+Всегда называй конкретные цифры. Давай конкретные команды.`,
+  },
+  {
+    id:"mentor",
+    name:"Ментор",
+    emoji:"🎯",
+    desc:"Спокойный опытный наставник. Объясняет всё по делу.",
+    color:"#74c6f5",
+    pro:false,
+    system:`Ты опытный CS2 ментор. Говоришь спокойно, по делу, как старший товарищ который всё видел.
+Обращаешься на 'ты'. Объясняешь ПОЧЕМУ что-то не работает и как именно это исправить.
+Пример стиля: "Твой K/D 0.85 говорит о том, что ты проигрываешь дуэли. Скорее всего причина — ты стреляешь в движении. Давай разберём."
+Всегда конкретные цифры и пошаговые объяснения.`,
+  },
+  {
+    id:"friend",
+    name:"Бро",
+    emoji:"😎",
+    desc:"Твой друг-про игрок. Говорит как равный, по-братски.",
+    color:"#88ff44",
+    pro:true,
+    system:`Ты лучший друг который играет в CS2 на высоком уровне. Разговариваешь как равный, без пафоса.
+Обращаешься на 'ты', используешь сленг CS2 (пик, флэш, смок, ротация, клатч, утилька).
+Пример стиля: "Бро, 0.85 K/D — ну это поправимо. Главная тема — ты, похоже, пикаешь без предварительного позиционирования. Щас объясню как это фиксить."
+Цифры + неформальный тон.`,
+  },
+  {
+    id:"analyst",
+    name:"Аналитик",
+    emoji:"📊",
+    desc:"Холодный аналитик. Цифры, графики, процент роста.",
+    color:"#44ccff",
+    pro:true,
+    system:`Ты профессиональный аналитик данных специализирующийся на CS2. Думаешь цифрами.
+Обращаешься на 'ты'. Говоришь как аналитик: сравнения, проценты, тренды, конкретные метрики.
+Пример стиля: "Анализ твоих данных: K/D 0.85 (-15% от нормы уровня). Главный outlier — WR 44% при HS 42%. Это аномалия: хороший прицел, плохой outcome. Вероятная причина: poor utility usage."
+Всегда цифры, сравнения, конкретные данные.`,
+  },
+  {
+    id:"legend",
+    name:"Легенда",
+    emoji:"👑",
+    desc:"Бывший про игрок. Рассказывает через призму своего опыта.",
+    color:"#f5c518",
+    pro:true,
+    system:`Ты бывший профессиональный CS игрок, выступал на крупных турнирах. Сейчас тренируешь.
+Обращаешься на 'ты'. Рассказываешь через призму своего опыта на про уровне.
+Пример стиля: "Когда я играл на крупных турнирах, я видел таких игроков как ты. K/D 0.85 — это техническая проблема, не умственная. На про уровне это исправляется за 2 недели плотных тренировок."
+Конкретный опыт + конкретные советы.`,
+  },
+];
+
+// ── Coach Chat ─────────────────────────────────────────────────────────────────
+function CoachChat({player, source, analysis, charId, isPro}) {
+  const [msgs, setMsgs] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef(null);
+  const char = COACH_CHARS.find(c=>c.id===charId) || COACH_CHARS[0];
+
+  // Приветственное сообщение при смене персонажа
+  useEffect(()=>{
+    if (!analysis) return;
+    const kd = analysis.weaknesses?.[0]?.stat || "K/D";
+    const greetings = {
+      drill: `Боец! Я просмотрел твои данные. ${analysis.overall||"Есть что улучшать"}. Без нытья — только работа. Что неясно?`,
+      mentor: `Привет. Изучил твою статистику. ${analysis.overall||"Есть направления для роста"}. Готов разобрать любой момент — спрашивай.`,
+      friend: `Йо! Глянул твою стату. ${analysis.overall||"Есть над чем поработать"}, но это фиксится. Что хочешь разобрать?`,
+      analyst: `Данные загружены. ${analysis.overall||"Выявлены ключевые паттерны"}. Готов к детальному разбору. Задавай вопросы.`,
+      legend: `Посмотрел твою статистику. Я видел похожие профили на тренировках — ${analysis.overall||"всё поправимо"}. С чего начнём?`,
+    };
+    setMsgs([{from:"coach", text:greetings[charId]||greetings.mentor}]);
+  }, [charId, analysis?.overall]);
+
+  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[msgs]);
+
+  async function send() {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput(""); setLoading(true);
+    const newMsgs = [...msgs, {from:"user", text}];
+    setMsgs(newMsgs);
+
+    // Контекст об игроке
+    const fc = player?.faceit; const cs2 = player?.cs2||{};
+    const statsCtx = source==="faceit"&&fc
+      ? `K/D=${fc?.lifetime?.kd} WR=${fc?.lifetime?.winrate}% HS=${fc?.lifetime?.hs}% ELO=${fc?.elo} Матчей=${fc?.lifetime?.matches}`
+      : `K/D=${cs2.kd} WR=${cs2.winrate}% HS=${cs2.hs}% Матчей=${cs2.matches}`;
+    const analysisCtx = analysis
+      ? `\nРезультат анализа: ${analysis.overall||""}\nГлавная проблема: ${analysis.mainProblem||""}`
+      : "";
+
+    const history = newMsgs.slice(-8).map(m=>({
+      role: m.from==="user"?"user":"assistant",
+      content: m.text
+    }));
+
+    try {
+      const r = await fetch(`${BACKEND}/coach-chat`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          char_id: charId,
+          system: char.system,
+          stats: statsCtx + analysisCtx,
+          messages: history,
+          steamid: player?.steamid||"",
+        })
+      });
+      const d = await r.json();
+      setMsgs(m=>[...m, {from:"coach", text:d.reply||"..."}]);
+    } catch {
+      setMsgs(m=>[...m, {from:"coach", text:"Соединение потеряно. Попробуй ещё раз."}]);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div style={{marginTop:"12px",border:`1px solid ${char.color}33`,
+      borderTop:`2px solid ${char.color}`,animation:"up .3s ease both"}}>
+      {/* Заголовок */}
+      <div style={{padding:"12px 18px",background:`linear-gradient(90deg,${char.color}12,transparent)`,
+        borderBottom:`1px solid ${char.color}22`,
+        display:"flex",alignItems:"center",gap:"10px"}}>
+        <span style={{fontSize:"22px"}}>{char.emoji}</span>
+        <div>
+          <div style={{fontSize:"12px",color:char.color,fontWeight:700,letterSpacing:"2px"}}>{char.name.toUpperCase()} · ЧАТ</div>
+          <div style={{fontSize:"11px",color:C.muted}}>{char.desc}</div>
+        </div>
+      </div>
+
+      {/* Сообщения */}
+      <div style={{maxHeight:"360px",overflowY:"auto",padding:"14px",
+        display:"flex",flexDirection:"column",gap:"10px",background:"#0a0a07"}}>
+        {msgs.map((m,i)=>{
+          const isUser = m.from==="user";
+          return (
+            <div key={i} style={{display:"flex",flexDirection:"column",
+              alignItems:isUser?"flex-end":"flex-start",gap:"3px"}}>
+              {!isUser&&<div style={{fontSize:"10px",color:char.color,fontWeight:700,letterSpacing:"1px",
+                display:"flex",alignItems:"center",gap:"5px"}}>
+                <span>{char.emoji}</span>{char.name}
+              </div>}
+              <div style={{maxWidth:"85%",padding:"10px 14px",
+                background:isUser?C.yellow+"1a":"#141409",
+                border:`1px solid ${isUser?C.yellow+"33":char.color+"22"}`,
+                fontSize:"13px",color:isUser?C.yellow:C.text,
+                lineHeight:1.65,whiteSpace:"pre-wrap",
+                borderRadius:"2px",
+                ...(isUser?{marginLeft:"15%"}:{marginRight:"15%"})}}>
+                {m.text}
+              </div>
+            </div>
+          );
+        })}
+        {loading&&<div style={{display:"flex",gap:"4px",padding:"4px 0"}}>
+          {[0,1,2].map(k=><div key={k} style={{width:"6px",height:"6px",background:char.color,
+            borderRadius:"50%",animation:`blink 1s ${k*.3}s infinite`}}/>)}
+        </div>}
+        <div ref={endRef}/>
+      </div>
+
+      {/* Быстрые вопросы */}
+      {msgs.length<=1&&<div style={{display:"flex",gap:"4px",flexWrap:"wrap",
+        padding:"8px 14px",borderTop:`1px solid ${C.border}22`}}>
+        {["Как улучшить K/D?","Что делать с WR?","Какую карту учить?","Как тренироваться?"].map(q=>(
+          <button key={q} onClick={()=>setInput(q)} style={{
+            padding:"4px 10px",background:"transparent",
+            border:`1px solid ${char.color}33`,color:char.color,
+            cursor:"pointer",fontSize:"11px",fontFamily:"inherit",
+            borderRadius:"10px",transition:"all .15s"}}
+            onMouseEnter={e=>e.currentTarget.style.background=char.color+"18"}
+            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            {q}
+          </button>
+        ))}
+      </div>}
+
+      {/* Инпут */}
+      <div style={{display:"flex",gap:"8px",padding:"10px",
+        borderTop:`1px solid ${C.border}`,background:C.card}}>
+        <input value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&send()}
+          placeholder={`Спроси ${char.name.toLowerCase()}а...`}
+          style={{flex:1,background:"#0d0d09",border:`1px solid ${char.color}33`,
+            color:C.value,fontSize:"13px",padding:"9px 12px",fontFamily:"inherit"}}/>
+        <button onClick={send} disabled={loading||!input.trim()} style={{
+          padding:"9px 16px",background:loading||!input.trim()?"#1a1a0e":char.color,
+          color:loading||!input.trim()?C.muted:"#080807",border:"none",
+          cursor:"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit",flexShrink:0}}>
+          →
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 function Leaderboard({myId, myIsPro, onProfile}) {
@@ -7719,6 +7931,7 @@ export default function App() {
   const [analysis,setAnalysis]   = useState(null);
   const [loading,setLoading]     = useState(false);
   const [errorMsg,setErrorMsg]   = useState(null);
+  const [coachChar,setCoachChar] = useState("drill"); // выбранный персонаж
   const [showPopup,setShowPopup] = useState(false);
   const [profileView,setProfileView] = useState(null);
   const [showAbout,setShowAbout]       = useState(false);
@@ -8179,15 +8392,19 @@ export default function App() {
           verdict: result.overall || "",
           role: "RIFLER",
           roast: result.mainProblem || "",
-          strengths: (result.strengths||[]).map(s=>({stat:s.stat,value:"",verdict:s.comment,tip:""})),
-          problems: (result.weaknesses||[]).map((w,i)=>({stat:w.stat,value:"",reason:w.problem,fix:w.fix,priority:i+1})),
+          strengths: (result.strengths||[]).map(s=>({stat:s?.stat||"",value:"",verdict:s?.comment||"",tip:""})),
+          problems: (result.weaknesses||[]).map((w,i)=>({stat:w?.stat||"",value:"",reason:w?.problem||"",fix:w?.fix||"",priority:i+1})),
           priority: result.plan?.[0] || "",
           weekly_plan: (result.plan||[]).map((p,i)=>({day:`День ${i+1}`,task:p,goal:""})),
           best_map: result.mapInsights?.[0]?{name:result.mapInsights[0],wr:"",kd:"",tip:""}:null,
           worst_map: result.mapInsights?.[1]?{name:result.mapInsights[1],wr:"",kd:"",tip:""}:null,
           rating_breakdown: {aim:65,game_sense:55,consistency:50,utility:45,clutch:50},
         };
-        localStorage.setItem(cacheKey, JSON.stringify({result:verdictResult, date:today}));
+        const packed = JSON.stringify({result:verdictResult, date:today});
+        // Сохраняем под всеми ключами чтобы AIReport на главной всегда нашёл
+        localStorage.setItem(cacheKey, packed);
+        localStorage.setItem(`cs2_verdict_${player.steamid}_faceit`, packed);
+        localStorage.setItem(`cs2_verdict_${player.steamid}_steam`, packed);
       } catch {}
       track("analysis_generated", { source, level: result?.level, steamid: player.steamid });
       // Онбординг для новичков (первый анализ)
@@ -8550,6 +8767,37 @@ export default function App() {
             <div style={{marginBottom:"20px"}}>
               <TrainingPlan player={player} source={source}/>
             </div>
+
+            {/* Выбор персонажа тренера */}
+            <div style={{marginBottom:"16px"}}>
+              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",fontWeight:700,marginBottom:"10px"}}>
+                ВЫБЕРИ ТРЕНЕРА
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:"6px"}}>
+                {COACH_CHARS.map(c=>{
+                  const locked = c.pro && !isPro;
+                  const active = coachChar===c.id;
+                  return(
+                    <button key={c.id} onClick={()=>!locked&&setCoachChar(c.id)} style={{
+                      padding:"10px 12px",textAlign:"left",
+                      background:active?`linear-gradient(135deg,${c.color}22,${c.color}0a)`:C.card,
+                      border:`1px solid ${active?c.color+"66":C.border}`,
+                      cursor:locked?"not-allowed":"pointer",fontFamily:"inherit",
+                      opacity:locked?0.5:1,position:"relative",transition:"all .15s"}}
+                      onMouseEnter={e=>{if(!locked&&!active)e.currentTarget.style.borderColor=c.color+"44";}}
+                      onMouseLeave={e=>{if(!locked&&!active)e.currentTarget.style.borderColor=C.border;}}>
+                      {locked&&<span style={{position:"absolute",top:"6px",right:"8px",
+                        fontSize:"9px",color:C.yellow,background:C.yellow+"22",
+                        padding:"1px 5px",border:`1px solid ${C.yellow}44`}}>PRO</span>}
+                      <div style={{fontSize:"18px",marginBottom:"4px"}}>{c.emoji}</div>
+                      <div style={{fontSize:"12px",color:active?c.color:C.value,fontWeight:700,marginBottom:"2px"}}>{c.name}</div>
+                      <div style={{fontSize:"10px",color:C.muted,lineHeight:1.4}}>{c.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <button onClick={analyze} disabled={loading||!player} className="glow-btn" style={{
               width:"100%",padding:"17px",marginBottom:"24px",
               background:(!player||loading)?"#13130a":C.yellow,
@@ -8575,20 +8823,27 @@ export default function App() {
             {analysis&&(
               <div style={{animation:"up .4s ease both"}}>
                 <AIVerdict report={{
-                  verdict: analysis.overall||"",
+                  verdict: analysis?.overall||"",
                   role: analysis?.level==="Про"?"RIFLER":analysis?.level==="Хороший"?"ENTRY FRAGGER":"RIFLER",
-                  roast: analysis.mainProblem||"",
-                  strengths: arr(analysis.strengths).map((s,i)=>typeof s==="object"?{stat:s.stat||"",value:"",verdict:s.comment||"",tip:""}:{stat:"",value:"",verdict:String(s),tip:""}),
-                  problems: arr(analysis.weaknesses).map((w,i)=>typeof w==="object"?{stat:w.stat||"",value:"",reason:w.problem||"",fix:w.fix||"",priority:i+1}:{stat:"",value:"",reason:String(w),fix:"",priority:i+1}),
-                  priority: arr(analysis.plan)[0]||"",
-                  weekly_plan: arr(analysis.plan).map((p,i)=>({day:`День ${i+1}`,task:p,goal:""})),
-                  best_map: arr(analysis.mapInsights)[0]?{name:arr(analysis.mapInsights)[0],wr:"",kd:"",tip:""}:null,
-                  worst_map: arr(analysis.mapInsights)[1]?{name:arr(analysis.mapInsights)[1],wr:"",kd:"",tip:""}:null,
+                  roast: analysis?.mainProblem||"",
+                  strengths: arr(analysis?.strengths).map((s,i)=>typeof s==="object"?{stat:s?.stat||"",value:"",verdict:s?.comment||"",tip:""}:{stat:"",value:"",verdict:String(s),tip:""}),
+                  problems: arr(analysis?.weaknesses).map((w,i)=>typeof w==="object"?{stat:w?.stat||"",value:"",reason:w?.problem||"",fix:w?.fix||"",priority:i+1}:{stat:"",value:"",reason:String(w),fix:"",priority:i+1}),
+                  priority: arr(analysis?.plan)[0]||"",
+                  weekly_plan: arr(analysis?.plan).map((p,i)=>({day:`День ${i+1}`,task:p,goal:""})),
+                  best_map: arr(analysis?.mapInsights)[0]?{name:arr(analysis.mapInsights)[0],wr:"",kd:"",tip:""}:null,
+                  worst_map: arr(analysis?.mapInsights)[1]?{name:arr(analysis.mapInsights)[1],wr:"",kd:"",tip:""}:null,
                   rating_breakdown: {aim:65,game_sense:55,consistency:50,utility:45,clutch:50},
                 }}
                 loading={false}
                 onRefresh={analyze}
                 cacheDate={null}/>
+                {/* AI Чат с тренером */}
+                <CoachChat
+                  player={player}
+                  source={source}
+                  analysis={analysis}
+                  charId={coachChar}
+                  isPro={isPro}/>
               </div>
             )}
           </>
