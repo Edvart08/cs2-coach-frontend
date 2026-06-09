@@ -1252,7 +1252,38 @@ function MapPool({faceit}) {
 }
 
 // ── Weapons Panel ─────────────────────────────────────────────────────────────
-const WEAPON_DATA = {
+const TRANSLATIONS = {
+  ru: {
+    tab_overview:"ОБЗОР",tab_coach:"🎯 ТРЕНЕР",tab_practice:"📚 ПРАКТИКА",
+    tab_matches:"🎮 МАТЧИ",tab_maps:"🗺️ КАРТЫ",tab_history:"📋 ИСТОРИЯ",
+    tab_leaders:"🏆 ЛИДЕРЫ",tab_friends:"👥 ДРУЗЬЯ",
+    login:"Войти через Steam",logout:"Выйти",
+    profile:"Мой профиль",settings:"Настройки",
+    wins:"побед",hours:"ч",matches:"матчей",
+    get_analysis:"ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА",analyzing:"АНАЛИЗИРУЮ...",
+    login_first:"ВОЙДИ ЧЕРЕЗ STEAM",
+    skill_rating:"РЕЙТИНГ НАВЫКОВ",choose_coach:"ВЫБЕРИ ТРЕНЕРА",
+    best_map:"🏆 ЛУЧШАЯ КАРТА",worst_map:"⚠️ ХУДШАЯ КАРТА",
+    role:"ТВОЯ РОЛЬ",next_step:T.next_step||"СЛЕДУЮЩИЙ ШАГ",weekly_plan:T.weekly_plan||"📅 ПЛАН НА НЕДЕЛЮ",
+    mental:T.mental||"🧠 ПСИХОЛОГИЧЕСКИЙ ПРОФИЛЬ",strengths:T.strengths||"✓ СИЛЬНЫЕ СТОРОНЫ",problems:T.problems||"✗ ПРОБЛЕМЫ",
+    refresh:T.refresh||"↻ обновить",
+  },
+  en: {
+    tab_overview:"OVERVIEW",tab_coach:"🎯 COACH",tab_practice:"📚 PRACTICE",
+    tab_matches:"🎮 MATCHES",tab_maps:"🗺️ MAPS",tab_history:"📋 HISTORY",
+    tab_leaders:"🏆 LEADERS",tab_friends:"👥 FRIENDS",
+    login:"Login via Steam",logout:"Logout",
+    profile:"My Profile",settings:"Settings",
+    wins:"wins",hours:"h",matches:"matches",
+    get_analysis:"GET COACH ANALYSIS",analyzing:"ANALYZING...",
+    login_first:"LOGIN VIA STEAM",
+    skill_rating:"SKILL RATING",choose_coach:"CHOOSE COACH",
+    best_map:"🏆 BEST MAP",worst_map:"⚠️ WORST MAP",
+    role:"YOUR ROLE",next_step:"NEXT STEP",weekly_plan:"📅 WEEKLY PLAN",
+    mental:"🧠 MENTAL PROFILE",strengths:"✓ STRENGTHS",problems:"✗ PROBLEMS",
+    refresh:"↻ refresh",
+  },
+};
   // name → {img: Steam market hash, slot}
   "AK-47":      {img:"AK-47",         slot:"rifle",   color:"#e8a44a"},
   "M4A1-S":     {img:"M4A1-S",        slot:"rifle",   color:"#7abfff"},
@@ -1288,20 +1319,43 @@ const WEAPON_DATA = {
   "Knife":      {img:"Knife",         slot:"knife",   color:"#ff6666"},
 };
 
-// Иконки оружий — файлы в /public/weapons/
-// Формат: ak47.png, m4a1s.png, m4a4.png, awp.png, deagle.png, usps.png, glock.png, knife.png
+// Иконки оружий — файлы в /public/weapons/ (frontend)
+// Используй filter:"brightness(0) invert(1)" для белого цвета
 const WEAPON_FILE = {
-  "AK-47":        "ak47.png",
-  "M4A1-S":       "m4a1s.png",
-  "M4A4":         "m4a4.png",
-  "AWP":          "awp.png",
-  "Desert Eagle": "deagle.png",
-  "USP-S":        "usps.png",
-  "Glock-18":     "glock.png",
-  "Knife":        "knife.png",
-  "MP9":          "mp9.png",
-  "MAC-10":       "mac10.png",
-  "SSG 08":       "ssg08.png",
+  "AK-47":        "weapon_ak47.webp",
+  "M4A1-S":       "weapon_m4a1_silencer.webp",
+  "M4A4":         "weapon_m4a1.webp",
+  "AWP":          "weapon_awp.webp",
+  "Desert Eagle": "weapon_deagle.webp",
+  "USP-S":        "weapon_usp_silencer.webp",
+  "Glock-18":     "weapon_glock.webp",
+  "Knife":        "weapon_knife.webp",
+  "SSG 08":       "weapon_ssg08.webp",
+  "G3SG1":        "weapon_g3sg1.webp",
+  "SCAR-20":      "weapon_scar20.webp",
+  "AUG":          "weapon_aug.webp",
+  "SG 553":       "weapon_sg556.webp",
+  "MP9":          "weapon_mp9.webp",
+  "MAC-10":       "weapon_mac10.webp",
+  "MP7":          "weapon_mp7.webp",
+  "P90":          "weapon_p90.webp",
+  "UMP-45":       "weapon_ump45.webp",
+  "P250":         "weapon_p250.webp",
+  "Five-SeveN":   "weapon_fiveseven.webp",
+  "CZ75-Auto":    "weapon_cz75a.webp",
+  "Tec-9":        "weapon_tec9.webp",
+  "Galil AR":     "weapon_galilar.webp",
+  "FAMAS":        "weapon_famas.webp",
+  "Nova":         "weapon_nova.webp",
+  "XM1014":       "weapon_xm1014.webp",
+  "Sawed-Off":    "weapon_sawedoff.webp",
+  "MAG-7":        "weapon_mag7.webp",
+  "M249":         "weapon_m249.webp",
+  "Negev":        "weapon_negev.webp",
+  "HE Grenade":   "weapon_hegrenade.webp",
+  "Flashbang":    "weapon_flashbang.webp",
+  "Smoke":        "weapon_smokegrenade.webp",
+  "Molotov":      "weapon_molotov.webp",
 };
 
 function WeaponImg({name, size=28}) {
@@ -3680,7 +3734,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
               {/* Левая — Rings скилла */}
               <div style={{background:C.bg,padding:"24px 28px"}}>
                 <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"20px",fontWeight:700}}>
-                  РЕЙТИНГ НАВЫКОВ
+                  {T.skill_rating||"РЕЙТИНГ НАВЫКОВ"}
                 </div>
                 <div style={{display:"flex",justifyContent:"space-around",gap:"16px"}}>
                   {[
@@ -6350,7 +6404,8 @@ function LandingPage({onLogin}) {
 
 // ── AI Report (автосводка) ────────────────────────────────────────────────────
 // ── AI Verdict — большой блок наверху обзора ─────────────────────────────────
-function AIVerdict({report, loading, onRefresh, cacheDate}) {
+function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
+  const T = TRANSLATIONS[lang] || TRANSLATIONS.ru;
   const [step, setStep] = useState(0);
   const steps = [
     "Анализируем K/D, WR, HS%...",
@@ -6665,7 +6720,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate}) {
 }
 
 
-function AIReport({player, source}) {
+function AIReport({player, source, verdictVersion=0, lang="ru"}) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -6674,10 +6729,9 @@ function AIReport({player, source}) {
   const cs2 = player?.cs2 || {};
   const cacheKey = `cs2_verdict_${player?.steamid}_${source}`;
 
-  // Загружаем кэш при входе
+  // Загружаем кэш при входе — verdictVersion в зависимостях чтобы реагировать на новый анализ
   useEffect(()=>{
     if (!player?.steamid) return;
-    // Проверяем оба возможных кеш-ключа (source может меняться)
     const keys = [cacheKey, `cs2_verdict_${player.steamid}_faceit`, `cs2_verdict_${player.steamid}_steam`];
     let found = null;
     for (const k of keys) {
@@ -6690,10 +6744,11 @@ function AIReport({player, source}) {
       setReport(found.result);
       setCacheDate(found.date);
       setLoaded(true);
-    } else {
+    } else if (verdictVersion === 0) {
+      // Только при первой загрузке запрашиваем с сервера
       load();
     }
-  }, [player?.steamid, source]);
+  }, [player?.steamid, source, verdictVersion]);
 
   async function load() {
     setLoading(true);
@@ -6744,7 +6799,8 @@ function AIReport({player, source}) {
     setLoading(false);
   }
 
-  return <AIVerdict report={report} loading={loading} onRefresh={load} cacheDate={cacheDate}/>;
+  return <AIVerdict report={report} loading={loading} lang={lang} cacheDate={cacheDate}
+    onRefresh={()=>{try{const keys=[cacheKey,`cs2_verdict_${player?.steamid}_faceit`,`cs2_verdict_${player?.steamid}_steam`];keys.forEach(k=>localStorage.removeItem(k));}catch{}load();}}/>;
 }
 
 
@@ -8017,6 +8073,7 @@ export default function App() {
   const [showChecklist,setShowChecklist] = useState(true);
   const [profileDropdown,setProfileDropdown] = useState(false);
   const [lang,setLang] = useState(()=>{ try{ return localStorage.getItem("cs2_lang")||"ru"; }catch{ return "ru"; } });
+  const T = TRANSLATIONS[lang] || TRANSLATIONS.ru;
   const [showSettings,setShowSettings] = useState(false);
   const [showOnboarding,setShowOnboarding] = useState(false);
   const [analysisCount,setAnalysisCount] = useState(
@@ -8694,7 +8751,7 @@ export default function App() {
 
         {/* Main tabs */}
         <div style={{className:"desktop-nav",display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:"22px",flexWrap:"wrap"}}>
-          {[["overview","ОБЗОР"],["coach","🎯 ТРЕНЕР"],["practice","📚 ПРАКТИКА"],["matches","🎮 МАТЧИ"],["maps","🗺️ КАРТЫ"],["history","📋 ИСТОРИЯ"],["leaderboard","🏆 ЛИДЕРЫ"],["friends","👥 ДРУЗЬЯ"]].map(([t,l])=>(
+          {[["overview","ОБЗОР"],["coach",T.tab_coach||"🎯 ТРЕНЕР"],["practice",T.tab_practice||"📚 ПРАКТИКА"],["matches",T.tab_matches||"🎮 МАТЧИ"],["maps",T.tab_maps||"🗺️ КАРТЫ"],["history",T.tab_history||"📋 ИСТОРИЯ"],["leaderboard",T.tab_leaders||"🏆 ЛИДЕРЫ"],["friends",T.tab_friends||"👥 ДРУЗЬЯ"]].map(([t,l])=>(
             <button key={t} onClick={()=>{ setMainTab(t); track("tab_opened",{tab:t}); }} style={{
               padding:"11px 18px",background:"transparent",
               color:mainTab===t?C.yellow:C.muted,border:"none",
@@ -8724,7 +8781,7 @@ export default function App() {
             {/* ── СЕКЦИЯ 2: AI Вердикт ── */}
             <SectionTitle icon="🤖" label="AI ВЕРДИКТ" sub="персональный разбор твоей игры"/>
             {!player.cs2?.private&&(isPro||aiRemaining>0
-              ? <AIReport key={verdictVersion} player={player} source={source}/>
+              ? <AIReport player={player} source={source} verdictVersion={verdictVersion} lang={lang}/>
               : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
 
             {/* ── СЕКЦИЯ 3: Рейтинг ── */}
@@ -8876,7 +8933,7 @@ export default function App() {
               cursor:(!player||loading)?"not-allowed":"pointer",
               fontSize:"13px",fontWeight:700,letterSpacing:"4px",
               fontFamily:"'Courier New',monospace",transition:"all .15s"}}>
-              {loading?"АНАЛИЗИРУЮ...":!player?"ВОЙДИ ЧЕРЕЗ STEAM":"ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА"}
+              {loading?(T.analyzing||"АНАЛИЗИРУЮ..."):!player?(T.login_first||"ВОЙДИ ЧЕРЕЗ STEAM"):(T.get_analysis||"ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА")}
             </button>
 
             {loading&&(
