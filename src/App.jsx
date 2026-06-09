@@ -1099,7 +1099,7 @@ function SteamStatsPanel({player}) {
           {[
             {l:"УБИЙСТВА",   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
             {l:"СМЕРТИ",     v:deaths.toLocaleString(),  c:C.lose,   icon:"💀"},
-            {l:"ПОБЕДЫ",     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
+            {l:{T.wins_col||"ПОБЕДЫ"},     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
             {l:"MVP",        v:mvps.toLocaleString(),    c:C.yellow, icon:"⭐"},
             {l:"K/МАТЧ",     v:kdPerMatch,               c:C.blue,   icon:"🎯"},
             {l:"СМЕРТЕЙ/МАТ",v:deathsPerMatch,           c:C.muted,  icon:"📊"},
@@ -1260,13 +1260,28 @@ const TRANSLATIONS = {
     login:"Войти через Steam",logout:"Выйти",
     profile:"Мой профиль",settings:"Настройки",
     wins:"побед",hours:"ч",matches:"матчей",
-    get_analysis:"ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА",analyzing:"АНАЛИЗИРУЮ...",
-    login_first:"ВОЙДИ ЧЕРЕЗ STEAM",
+    get_analysis:"ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА",analyzing:"АНАЛИЗИРУЮ...",login_first:"ВОЙДИ ЧЕРЕЗ STEAM",
     skill_rating:"РЕЙТИНГ НАВЫКОВ",choose_coach:"ВЫБЕРИ ТРЕНЕРА",
     best_map:"🏆 ЛУЧШАЯ КАРТА",worst_map:"⚠️ ХУДШАЯ КАРТА",
     role:"ТВОЯ РОЛЬ",next_step:"СЛЕДУЮЩИЙ ШАГ",weekly_plan:"📅 ПЛАН НА НЕДЕЛЮ",
     mental:"🧠 ПСИХОЛОГИЧЕСКИЙ ПРОФИЛЬ",strengths:"✓ СИЛЬНЫЕ СТОРОНЫ",problems:"✗ ПРОБЛЕМЫ",
     refresh:"↻ обновить",
+    ai_verdict:"AI ВЕРДИКТ",ai_verdict_sub:"персональный разбор твоей игры",
+    rating_title:"РЕЙТИНГ",rating_sub:"Coach Rating на основе твоей статистики",
+    today_title:"СЕГОДНЯ",today_sub:"главное действие для роста",
+    progress_title:"ПРОГРЕСС",progress_sub:"как ты изменился",
+    weapons_title:"ОРУЖИЯ",weapons_sub:"статистика по оружию",
+    source_label:"Источник данных",main_problem:"ГЛАВНАЯ ПРОБЛЕМА",
+    premier_tab:{T.premier_tab||"🏅 Premier Рейтинг"},stats_tab:{T.stats_tab||"📊 Статистика"},
+    current_rank:{T.current_rank||"ТЕКУЩИЙ РАНГ"},best_rank:{T.best_rank||"ЛУЧШИЙ РАНГ"},wins_col:"ПОБЕДЫ",
+    update:"↻ Обновить",loading:"Загружаем...",no_data:"Нет данных",
+    go_to_coach:"{T.go_to_coach||"🎯 ПОЛНЫЙ РАЗБОР И ЧАТ С ТРЕНЕРОМ →"}",
+    prac_title:"ПРАКТИКА",prac_sub:"упражнения и материалы",
+    history_title:"ИСТОРИЯ",history_sub:"история разборов",
+    maps_title:"КАРТЫ",maps_sub:"статистика по картам",
+    friends_title:"ДРУЗЬЯ",friends_sub:"сравнение с друзьями",
+    steam_since:"Steam с",lvl:"Уровень",
+    login_btn:"Войти через Steam чтобы начать",
   },
   en: {
     tab_overview:"OVERVIEW",tab_coach:"🎯 COACH",tab_practice:"📚 PRACTICE",
@@ -1275,13 +1290,28 @@ const TRANSLATIONS = {
     login:"Login via Steam",logout:"Logout",
     profile:"My Profile",settings:"Settings",
     wins:"wins",hours:"h",matches:"matches",
-    get_analysis:"GET COACH ANALYSIS",analyzing:"ANALYZING...",
-    login_first:"LOGIN VIA STEAM",
+    get_analysis:"GET COACH ANALYSIS",analyzing:"ANALYZING...",login_first:"LOGIN VIA STEAM",
     skill_rating:"SKILL RATING",choose_coach:"CHOOSE COACH",
     best_map:"🏆 BEST MAP",worst_map:"⚠️ WORST MAP",
     role:"YOUR ROLE",next_step:"NEXT STEP",weekly_plan:"📅 WEEKLY PLAN",
     mental:"🧠 MENTAL PROFILE",strengths:"✓ STRENGTHS",problems:"✗ PROBLEMS",
     refresh:"↻ refresh",
+    ai_verdict:"AI VERDICT",ai_verdict_sub:"personal game analysis",
+    rating_title:"RATING",rating_sub:"Coach Rating based on your stats",
+    today_title:"TODAY",today_sub:"main action for growth",
+    progress_title:"PROGRESS",progress_sub:"how you improved",
+    weapons_title:"WEAPONS",weapons_sub:"weapon statistics",
+    source_label:"Data source",main_problem:"MAIN PROBLEM",
+    premier_tab:"🏅 Premier Rating",stats_tab:"📊 Statistics",
+    current_rank:"CURRENT RANK",best_rank:"BEST RANK",wins_col:"WINS",
+    update:"↻ Update",loading:"Loading...",no_data:"No data",
+    go_to_coach:"🎯 FULL ANALYSIS & COACH CHAT →",
+    prac_title:"PRACTICE",prac_sub:"exercises and materials",
+    history_title:"HISTORY",history_sub:"analysis history",
+    maps_title:"MAPS",maps_sub:"map statistics",
+    friends_title:"FRIENDS",friends_sub:"compare with friends",
+    steam_since:"Steam since",lvl:"Level",
+    login_btn:"Login via Steam to start",
   },
 };
 
@@ -1409,17 +1439,25 @@ function WeaponsPanel({cs2}) {
   const blind    = parseInt(cs2?.blind_kills) || 0;
   const accuracy = parseInt(cs2?.accuracy) || 0;
 
-  // Строим список оружий с данными
+  // Steam даёт: total kills, sniper_kills, knife_kills, pistol_kills, hs%
+  // Rifle kills = total - sniper - knife - pistol - grenade
+  const rifleKills = Math.max(0, kills - sniper - knife - pistol - grenade);
+
+  // Строим список оружий
+  // Реальные данные: sniper=AWP+G3SG1+SCAR-20+SSG, knife, pistol (всего)
+  // Rifle split по мировой статистике: AK47≈40%, M4A1S≈28%, M4A4≈16%, AUG≈8%, остальные≈8%
   const weapons = [
-    {name:"AK-47",    kills:Math.round(kills*0.28), hs:Math.round(kills*0.28*0.42), acc:22, slot:"rifle"},
-    {name:"M4A1-S",   kills:Math.round(kills*0.18), hs:Math.round(kills*0.18*0.44), acc:24, slot:"rifle"},
-    {name:"AWP",      kills:sniper,                 hs:Math.round(sniper*0.05),     acc:44, slot:"sniper"},
-    {name:"Desert Eagle",kills:Math.round(pistol*0.35),hs:Math.round(pistol*0.35*0.68),acc:34,slot:"pistol"},
-    {name:"USP-S",    kills:Math.round(pistol*0.30),hs:Math.round(pistol*0.30*0.55),acc:32, slot:"pistol"},
-    {name:"Glock-18", kills:Math.round(pistol*0.20),hs:Math.round(pistol*0.20*0.40),acc:20, slot:"pistol"},
-    {name:"M4A4",     kills:Math.round(kills*0.08), hs:Math.round(kills*0.08*0.38), acc:21, slot:"rifle"},
-    {name:"Knife",    kills:knife,                  hs:0,                           acc:100,slot:"knife"},
-  ].filter(w=>w.kills>0).map(w=>({
+    {name:"AK-47",      kills:Math.round(rifleKills*0.40), hs:Math.round(rifleKills*0.40*0.42), acc:22, slot:"rifle"},
+    {name:"M4A1-S",     kills:Math.round(rifleKills*0.28), hs:Math.round(rifleKills*0.28*0.44), acc:24, slot:"rifle"},
+    {name:"M4A4",       kills:Math.round(rifleKills*0.16), hs:Math.round(rifleKills*0.16*0.38), acc:21, slot:"rifle"},
+    {name:"AWP",        kills:Math.round(sniper*0.75),     hs:Math.round(sniper*0.75*0.05),     acc:88, slot:"sniper"},
+    {name:"SSG 08",     kills:Math.round(sniper*0.15),     hs:Math.round(sniper*0.15*0.08),     acc:72, slot:"sniper"},
+    {name:"Desert Eagle",kills:Math.round(pistol*0.32),    hs:Math.round(pistol*0.32*0.65),     acc:34, slot:"pistol"},
+    {name:"USP-S",      kills:Math.round(pistol*0.28),     hs:Math.round(pistol*0.28*0.52),     acc:30, slot:"pistol"},
+    {name:"Glock-18",   kills:Math.round(pistol*0.20),     hs:Math.round(pistol*0.20*0.38),     acc:19, slot:"pistol"},
+    {name:"P250",       kills:Math.round(pistol*0.12),     hs:Math.round(pistol*0.12*0.42),     acc:25, slot:"pistol"},
+    {name:"Knife",      kills:knife,                       hs:0,                                acc:100,slot:"knife"},
+  ].filter(w=>w.kills>2).map(w=>({
     ...w,
     hspc: w.kills>0 ? Math.round(w.hs/w.kills*100) : 0,
   }));
@@ -1522,11 +1560,16 @@ function WeaponsPanel({cs2}) {
 
       {/* Итоговая строка */}
       <div style={{padding:"10px 20px",borderTop:`1px solid ${C.border}`,
-        display:"flex",gap:"20px",flexWrap:"wrap",fontSize:"11px",color:C.muted}}>
-        <span>Всего убийств: <strong style={{color:C.yellow}}>{kills.toLocaleString()}</strong></span>
-        <span>Ножом: <strong style={{color:"#ff8888"}}>{knife.toLocaleString()}</strong></span>
-        <span>Гранатой: <strong style={{color:C.orange}}>{grenade.toLocaleString()}</strong></span>
-        <span>В слепую: <strong style={{color:"#aa88ff"}}>{blind.toLocaleString()}</strong></span>
+        display:"flex",gap:"20px",flexWrap:"wrap",fontSize:"11px",color:C.muted,justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{display:"flex",gap:"16px",flexWrap:"wrap"}}>
+          <span>Всего убийств: <strong style={{color:C.yellow}}>{kills.toLocaleString()}</strong></span>
+          <span>Ножом: <strong style={{color:"#ff8888"}}>{knife.toLocaleString()}</strong></span>
+          <span>Гранатой: <strong style={{color:C.orange}}>{grenade.toLocaleString()}</strong></span>
+          <span>В слепую: <strong style={{color:"#aa88ff"}}>{blind.toLocaleString()}</strong></span>
+        </div>
+        <span style={{fontSize:"10px",opacity:0.5,fontStyle:"italic"}}>
+          * Steam не даёт данные по каждому оружию — цифры приблизительные
+        </span>
       </div>
     </div>
   );
@@ -6722,7 +6765,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
 }
 
 
-function AIReport({player, source, verdictVersion=0, lang="ru"}) {
+function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -6730,8 +6773,8 @@ function AIReport({player, source, verdictVersion=0, lang="ru"}) {
   const fc = player?.faceit;
   const cs2 = player?.cs2 || {};
   const cacheKey = `cs2_verdict_${player?.steamid}_${source}`;
+  const T = TRANSLATIONS[lang] || TRANSLATIONS.ru;
 
-  // Загружаем кэш при входе — verdictVersion в зависимостях чтобы реагировать на новый анализ
   useEffect(()=>{
     if (!player?.steamid) return;
     const keys = [cacheKey, `cs2_verdict_${player.steamid}_faceit`, `cs2_verdict_${player.steamid}_steam`];
@@ -6747,7 +6790,6 @@ function AIReport({player, source, verdictVersion=0, lang="ru"}) {
       setCacheDate(found.date);
       setLoaded(true);
     } else if (verdictVersion === 0) {
-      // Только при первой загрузке запрашиваем с сервера
       load();
     }
   }, [player?.steamid, source, verdictVersion]);
@@ -6801,8 +6843,104 @@ function AIReport({player, source, verdictVersion=0, lang="ru"}) {
     setLoading(false);
   }
 
-  return <AIVerdict report={report} loading={loading} lang={lang} cacheDate={cacheDate}
-    onRefresh={()=>{try{const keys=[cacheKey,`cs2_verdict_${player?.steamid}_faceit`,`cs2_verdict_${player?.steamid}_steam`];keys.forEach(k=>localStorage.removeItem(k));}catch{}load();}}/>;
+  if (!loaded && !loading) return null;
+
+  return (
+    <div style={{marginBottom:"10px",animation:"up .4s ease both"}}>
+      {/* Верхняя полоска */}
+      <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${C.yellow}88,${C.yellow},${C.yellow}88,transparent)`}}/>
+      <div style={{background:"linear-gradient(160deg,#15140a,#0f0f08)",border:`1px solid ${C.yellow}22`,
+        borderTop:"none",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:0,right:"5%",width:"300px",height:"300px",
+          background:`radial-gradient(circle,${C.yellow}06,transparent 60%)`,pointerEvents:"none"}}/>
+
+        {/* Шапка */}
+        <div style={{padding:"14px 20px 12px",borderBottom:`1px solid ${C.border}`,
+          display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+          <div style={{width:"7px",height:"7px",background:C.yellow,borderRadius:"50%",
+            boxShadow:`0 0 6px ${C.yellow}`,flexShrink:0}}/>
+          <span style={{fontSize:"10px",letterSpacing:"4px",color:C.yellow,fontWeight:700,flex:1}}>
+            🤖 AI ТРЕНЕР · РАЗБОР
+          </span>
+          {cacheDate&&<span style={{fontSize:"10px",color:C.muted}}>{cacheDate}</span>}
+          <button onClick={()=>{try{const keys=[cacheKey,`cs2_verdict_${player?.steamid}_faceit`,`cs2_verdict_${player?.steamid}_steam`];keys.forEach(k=>localStorage.removeItem(k));}catch{}load();}}
+            style={{background:"transparent",border:`1px solid ${C.border}`,color:C.muted,
+              cursor:"pointer",fontSize:"10px",padding:"3px 10px",fontFamily:"inherit"}}
+            title="Обновить разбор">↻</button>
+        </div>
+
+        {loading&&(
+          <div style={{padding:"24px",display:"flex",alignItems:"center",gap:"12px"}}>
+            <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",animation:"pulse 1.2s infinite"}}/>
+            <span style={{fontSize:"13px",color:C.muted}}>Анализируем твою статистику...</span>
+          </div>
+        )}
+
+        {report&&!loading&&(<>
+          {/* Roast */}
+          {report.roast&&(
+            <div style={{padding:"14px 20px 0"}}>
+              <div style={{display:"flex",gap:"8px",alignItems:"flex-start",
+                background:`linear-gradient(90deg,${C.yellow}14,transparent)`,
+                borderLeft:`3px solid ${C.yellow}`,padding:"10px 14px"}}>
+                <span style={{fontSize:"14px",flexShrink:0}}>💬</span>
+                <span style={{fontSize:"13px",color:C.yellow,fontStyle:"italic",fontWeight:600}}>
+                  "{report.roast}"
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Вердикт — только первые 2 предложения */}
+          <div style={{padding:"14px 20px"}}>
+            <div style={{fontSize:"14px",color:C.value,lineHeight:1.75}}>
+              {(report.verdict||"").split(/[.!?]/).slice(0,2).filter(Boolean).join(". ")
+                .replace(/игрок|игроку|пользователь/gi, "ты") + (report.verdict?.length>0?".":"")}
+            </div>
+          </div>
+
+          {/* Топ-1 проблема */}
+          {arr(report.problems)[0]&&(()=>{
+            const p = arr(report.problems)[0];
+            const pr = typeof p==="object"?p:{stat:"",reason:String(p),fix:""};
+            return(
+              <div style={{margin:"0 20px 14px",
+                background:"#140a0a",border:`1px solid ${C.lose}33`,
+                borderLeft:`3px solid ${C.lose}`,padding:"10px 14px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
+                  <span style={{fontSize:"10px",color:C.lose,fontWeight:700,letterSpacing:"1px"}}>
+                    ⚠️ ГЛАВНАЯ ПРОБЛЕМА: {pr.stat||""}
+                  </span>
+                </div>
+                <div style={{fontSize:"12px",color:C.text,lineHeight:1.5}}>
+                  {(pr.reason||"").replace(/игрок|игроку/gi,"ты")}
+                </div>
+                {pr.fix&&<div style={{fontSize:"11px",color:C.yellow,marginTop:"6px"}}>
+                  💡 {pr.fix.replace(/игрок|игроку/gi,"тебе")}
+                </div>}
+              </div>
+            );
+          })()}
+
+          {/* Кнопка перехода */}
+          <div style={{padding:"0 20px 16px",display:"flex",gap:"8px",alignItems:"center"}}>
+            <button onClick={onGoToCoach} style={{
+              flex:1,padding:"11px 20px",
+              background:`linear-gradient(90deg,${C.yellow}22,${C.yellow}14)`,
+              border:`1px solid ${C.yellow}55`,color:C.yellow,
+              cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"inherit",
+              letterSpacing:"2px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",
+              transition:"all .2s"}}
+              onMouseEnter={e=>{e.currentTarget.style.background=`linear-gradient(90deg,${C.yellow}33,${C.yellow}22)`;}}
+              onMouseLeave={e=>{e.currentTarget.style.background=`linear-gradient(90deg,${C.yellow}22,${C.yellow}14)`;}}>
+              🎯 ПОЛНЫЙ РАЗБОР И ЧАТ С ТРЕНЕРОМ →
+            </button>
+          </div>
+        </>)}
+      </div>
+    </div>
+  );
+}
 }
 
 
@@ -8781,21 +8919,22 @@ export default function App() {
             <HeroCard player={player} source={source}/>
 
             {/* ── СЕКЦИЯ 2: AI Вердикт ── */}
-            <SectionTitle icon="🤖" label="AI ВЕРДИКТ" sub="персональный разбор твоей игры"/>
+            <SectionTitle icon="🤖" label={T.ai_verdict||"AI ВЕРДИКТ"} sub={T.ai_verdict_sub||"персональный разбор твоей игры"}/>
             {!player.cs2?.private&&(isPro||aiRemaining>0
-              ? <AIReport player={player} source={source} verdictVersion={verdictVersion} lang={lang}/>
+              ? <AIReport player={player} source={source} verdictVersion={verdictVersion} lang={lang}
+                  onGoToCoach={()=>setMainTab("coach")}/>
               : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
 
             {/* ── СЕКЦИЯ 3: Рейтинг ── */}
-            <SectionTitle icon="🏅" label="РЕЙТИНГ" sub="Coach Rating на основе твоей статистики"/>
+            <SectionTitle icon="🏅" label={T.rating_title||"РЕЙТИНГ"} sub={T.rating_sub||"Coach Rating на основе твоей статистики"}/>
             <PlayerRating player={player} source={source}/>
 
             {/* ── СЕКЦИЯ 4: Цель и тренировка ── */}
-            <SectionTitle icon="⚡" label="СЕГОДНЯ" sub="главное действие для роста"/>
+            <SectionTitle icon="⚡" label={T.today_title||"СЕГОДНЯ"} sub={T.today_sub||"главное действие для роста"}/>
             <DayAction player={player} source={source} streak={streak}/>
 
             {/* ── СЕКЦИЯ 5: Прогресс ── */}
-            <SectionTitle icon="📈" label="ПРОГРЕСС" sub="как ты изменился"/>
+            <SectionTitle icon="📈" label={T.progress_title||"ПРОГРЕСС"} sub={T.progress_sub||"как ты изменился"}/>
             <WeekComparison player={player}/>
             <ProgressHistory player={player} source={source}/>
 
@@ -8820,7 +8959,7 @@ export default function App() {
                 ))}
               </div>
               {/* Оружия */}
-              <SectionTitle icon="🔫" label="ОРУЖИЯ" sub="статистика по оружию"/>
+              <SectionTitle icon="🔫" label={T.weapons_title||"ОРУЖИЯ"} sub={T.weapons_sub||"статистика по оружию"}/>
               <WeaponsPanel cs2={player.cs2}/>
             </>}
 
