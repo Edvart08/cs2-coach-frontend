@@ -44,14 +44,14 @@ const C = {
 
 // ── Premier Rank System ────────────────────────────────────────────────────────
 const PREMIER_RANKS = [
-  {min:0,     max:4999,  label:t("rank_none","Без ранга"),   color:"#8a8a8a", gradient:"#555,#888"},
-  {min:5000,  max:9999,  label:t("rank_gray","Серый"),        color:"#9aacb8", gradient:"#6a7a86,#9aacb8"},
-  {min:10000, max:14999, label:t("rank_lblue","Голубой"),      color:"#6abadf", gradient:"#3a8abf,#6abadf"},
-  {min:15000, max:19999, label:t("rank_blue","Синий"),        color:"#3d72d7", gradient:"#2255b0,#3d72d7"},
-  {min:20000, max:24999, label:t("rank_purple","Фиолетовый"),   color:"#8855cc", gradient:"#6633aa,#8855cc"},
-  {min:25000, max:29999, label:t("rank_pink","Розовый"),      color:"#dd4499", gradient:"#bb2277,#dd4499"},
-  {min:30000, max:34999, label:t("rank_red","Красный"),      color:"#dd3333", gradient:"#bb1111,#dd3333"},
-  {min:35000, max:99999, label:t("rank_gold","Золотой"),      color:"#f5c518", gradient:"#d4a017,#f5c518"},
+  {min:0,     max:4999,  key:"rank_none",  def:"Без ранга",   color:"#8a8a8a", gradient:"#555,#888"},
+  {min:5000,  max:9999,  key:"rank_gray",  def:"Серый",        color:"#9aacb8", gradient:"#6a7a86,#9aacb8"},
+  {min:10000, max:14999, key:"rank_lblue", def:"Голубой",      color:"#6abadf", gradient:"#3a8abf,#6abadf"},
+  {min:15000, max:19999, key:"rank_blue",  def:"Синий",        color:"#3d72d7", gradient:"#2255b0,#3d72d7"},
+  {min:20000, max:24999, key:"rank_purple",key_def:"Фиолетовый",color:"#8855cc", gradient:"#6633aa,#8855cc"},
+  {min:25000, max:29999, key:"rank_pink",  def:"Розовый",      color:"#dd4499", gradient:"#bb2277,#dd4499"},
+  {min:30000, max:34999, key:"rank_red",   def:"Красный",      color:"#dd3333", gradient:"#bb1111,#dd3333"},
+  {min:35000, max:99999, key:"rank_gold",  def:"Золотой",      color:"#f5c518", gradient:"#d4a017,#f5c518"},
 ];
 
 function getPremierRank(rating) {
@@ -108,6 +108,9 @@ function PremierRankIcon({rating, size=32}) {
 function PremierBadge({rating, showLabel=true, size=28}) {
   const n = parseInt(rating) || 0;
   const rank = getPremierRank(n);
+  // Вызываем функцию перевода t() прямо здесь, когда весь контекст уже гарантированно загружен
+  const translatedLabel = t(rank.key, rank.def); 
+
   return (
     <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
       <PremierRankIcon rating={n} size={size}/>
@@ -117,7 +120,7 @@ function PremierBadge({rating, showLabel=true, size=28}) {
             {n.toLocaleString()}
           </div>
           <div style={{fontSize:"10px",color:rank.color,opacity:0.7,letterSpacing:"0.5px"}}>
-            {rank.label}
+            {translatedLabel}
           </div>
         </div>
       )}
