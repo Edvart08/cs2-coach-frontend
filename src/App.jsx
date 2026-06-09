@@ -1018,125 +1018,167 @@ function SteamStatsPanel({player}) {
 
   return (
     <div style={{animation:"up .4s ease both"}}>
-      {/* Шапка с аватаром */}
-      <div style={{background:`linear-gradient(135deg,#1a1a0a,#141409)`,
-        border:`1px solid ${C.border}`,borderTop:`3px solid ${C.yellow}`,
-        padding:"24px 24px 20px",marginBottom:"3px",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:"-40px",right:"-40px",width:"200px",height:"200px",
-          background:`radial-gradient(circle,${C.yellow}0e,transparent 70%)`,pointerEvents:"none"}}/>
-        <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap"}}>
-          {player.avatar&&<img src={player.avatar} alt="" style={{width:"64px",height:"64px",
-            borderRadius:"4px",border:`2px solid ${C.yellow}44`}}/>}
-          <div style={{flex:1}}>
-            <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"4px"}}>
-              {player.username}
+
+      {/* ── ШАПКА ── */}
+      <div style={{position:"relative",overflow:"hidden",marginBottom:"3px"}}>
+        <div style={{position:"absolute",inset:0,
+          background:`linear-gradient(135deg,#0d0d09 0%,${C.yellow}10 50%,#0a0a07 100%)`,zIndex:0}}/>
+        <div style={{position:"absolute",top:"-60px",right:"-40px",width:"280px",height:"280px",
+          background:`radial-gradient(circle,${C.yellow}14,transparent 65%)`,pointerEvents:"none",zIndex:0}}/>
+        <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.025,
+          backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 32px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 32px)"}}/>
+        <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${C.yellow}88,${C.yellow},${C.yellow}88,transparent)`,position:"relative",zIndex:1}}/>
+
+        <div style={{position:"relative",zIndex:1,border:`1px solid ${C.yellow}22`,borderTop:"none",padding:"22px 24px 18px"}}>
+          <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap"}}>
+            {player.avatar&&<img src={player.avatar} alt="" style={{width:"68px",height:"68px",
+              borderRadius:"6px",border:`2px solid ${C.yellow}66`,
+              boxShadow:`0 0 24px ${C.yellow}33`}}/>}
+            <div style={{flex:1}}>
+              <div style={{fontSize:"24px",color:"#fff",fontWeight:800,marginBottom:"6px",
+                textShadow:"0 2px 12px rgba(0,0,0,0.8)"}}>
+                {player.username}
+              </div>
+              <div style={{display:"flex",gap:"14px",flexWrap:"wrap",fontSize:"13px"}}>
+                {matches>0&&<span style={{color:C.label}}>🎮 {matches.toLocaleString()} матчей</span>}
+                {hours>0&&<span style={{color:C.blue,display:"flex",alignItems:"center",gap:"3px"}}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {hours.toLocaleString()}ч
+                </span>}
+                {player.steam_level&&<span style={{color:C.yellow}}>⭐ Steam {player.steam_level} уровень</span>}
+              </div>
             </div>
-            <div style={{display:"flex",gap:"16px",flexWrap:"wrap",fontSize:"13px",color:C.muted}}>
-              {matches>0&&<span>🎮 {matches.toLocaleString()} матчей</span>}
-              {hours>0&&<span>⏱ {hours.toLocaleString()} часов</span>}
-              {player.steam_level&&<span>⭐ Steam {player.steam_level} уровень</span>}
+            <div style={{textAlign:"center",padding:"14px 22px",
+              background:`linear-gradient(135deg,${C.yellow}22,${C.yellow}0a)`,
+              border:`1px solid ${C.yellow}44`,
+              boxShadow:`0 0 20px ${C.yellow}22`}}>
+              <div style={{fontSize:"38px",color:C.yellow,fontWeight:900,lineHeight:1,
+                textShadow:`0 0 20px ${C.yellow}88`}}>
+                {Math.round((kdScore*0.45+hsScore*0.25+wrScore*0.30))}
+              </div>
+              <div style={{fontSize:"9px",color:C.muted,marginTop:"4px",letterSpacing:"2px"}}>РЕЙТИНГ</div>
             </div>
-          </div>
-          {/* Топ% */}
-          <div style={{textAlign:"center",background:"#0d0d09",border:`1px solid ${C.yellow}33`,padding:"12px 20px"}}>
-            <div style={{fontSize:"30px",color:C.yellow,fontWeight:900,lineHeight:1}}>
-              {Math.round((kdScore*0.45+hsScore*0.25+wrScore*0.30))}
-            </div>
-            <div style={{fontSize:"10px",color:C.muted,marginTop:"4px",letterSpacing:"1px"}}>РЕЙТИНГ</div>
           </div>
         </div>
       </div>
 
-      {/* Кольца скилла */}
-      <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"20px 24px",
-        marginBottom:"3px",display:"flex",justifyContent:"space-around",flexWrap:"wrap",gap:"20px"}}>
-        <Ring score={aimScore} label="АИМ" color={C.orange}/>
-        <Ring score={formScore} label="ФОРМА" color={C.blue}/>
-        <Ring score={wrScore} label="WR" color={C.win}/>
-      </div>
-
-      {/* Детальные статы с барами */}
-      <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"20px 24px",marginBottom:"3px"}}>
-        <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>
-          ПОКАЗАТЕЛИ vs СРЕДНЕГО ИГРОКА
+      {/* ── КОЛЬЦА СКИЛЛА ── */}
+      <div style={{position:"relative",overflow:"hidden",marginBottom:"3px"}}>
+        <div style={{position:"absolute",inset:0,background:"#0d0d09",zIndex:0}}/>
+        <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.025,
+          backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 32px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 32px)"}}/>
+        <div style={{position:"relative",zIndex:1,border:`1px solid ${C.border}`,
+          padding:"20px 24px",display:"flex",justifyContent:"space-around",flexWrap:"wrap",gap:"20px"}}>
+          <Ring score={aimScore} label="АИМ" color={C.orange}/>
+          <Ring score={formScore} label="ФОРМА" color={C.blue}/>
+          <Ring score={wrScore} label="WR" color={C.win}/>
         </div>
-        <StatBar label="K/D" val={kd} avg={AVG.kd} fmt={(v)=>v.toFixed(2)}/>
-        <StatBar label="HS%" val={hs} avg={AVG.hs} fmt={(v)=>Math.round(v)+"%"}/>
-        <StatBar label="WR%" val={wr} avg={AVG.wr} fmt={(v)=>Math.round(v)+"%"}/>
       </div>
 
-      {/* Цифры — основные */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px",marginBottom:"3px"}}>
-        {[
-          {l:"УБИЙСТВА",   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
-          {l:"СМЕРТИ",     v:deaths.toLocaleString(),  c:C.lose,   icon:"💀"},
-          {l:"ПОБЕДЫ",     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
-          {l:"MVP",        v:mvps.toLocaleString(),    c:C.yellow, icon:"⭐"},
-          {l:"K/МАТЧ",     v:kdPerMatch,               c:C.blue,   icon:"🎯"},
-          {l:"СМЕРТЕЙ/МАТ",v:deathsPerMatch,           c:C.muted,  icon:"📊"},
-        ].filter(s=>s.v!=="0"&&s.v!=="—").map((s,i)=>(
-          <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px 12px",textAlign:"center"}}>
-            <div style={{fontSize:"16px",marginBottom:"4px"}}>{s.icon}</div>
-            <div style={{fontSize:"18px",color:s.c,fontWeight:700,marginBottom:"4px"}}>{s.v}</div>
-            <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>{s.l}</div>
+      {/* ── ПОКАЗАТЕЛИ vs СРЕДНЕГО ── */}
+      <div style={{position:"relative",overflow:"hidden",marginBottom:"3px"}}>
+        <div style={{position:"absolute",inset:0,background:C.card,zIndex:0}}/>
+        <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.02,
+          backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 28px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 28px)"}}/>
+        <div style={{position:"relative",zIndex:1,border:`1px solid ${C.border}`,padding:"18px 24px"}}>
+          <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>
+            ПОКАЗАТЕЛИ vs СРЕДНЕГО ИГРОКА
           </div>
-        ))}
+          <StatBar label="K/D" val={kd} avg={AVG.kd} fmt={(v)=>v.toFixed(2)}/>
+          <StatBar label="HS%" val={hs} avg={AVG.hs} fmt={(v)=>Math.round(v)+"%"}/>
+          <StatBar label="WR%" val={wr} avg={AVG.wr} fmt={(v)=>Math.round(v)+"%"}/>
+        </div>
       </div>
 
-      {/* Специальные убийства */}
+      {/* ── ЦИФРЫ ОСНОВНЫЕ ── */}
+      <div style={{position:"relative",overflow:"hidden",marginBottom:"3px"}}>
+        <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.02,
+          backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 28px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 28px)"}}/>
+        <div style={{position:"relative",zIndex:1,display:"grid",
+          gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px"}}>
+          {[
+            {l:"УБИЙСТВА",   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
+            {l:"СМЕРТИ",     v:deaths.toLocaleString(),  c:C.lose,   icon:"💀"},
+            {l:"ПОБЕДЫ",     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
+            {l:"MVP",        v:mvps.toLocaleString(),    c:C.yellow, icon:"⭐"},
+            {l:"K/МАТЧ",     v:kdPerMatch,               c:C.blue,   icon:"🎯"},
+            {l:"СМЕРТЕЙ/МАТ",v:deathsPerMatch,           c:C.muted,  icon:"📊"},
+          ].filter(s=>s.v!=="0"&&s.v!=="—").map((s,i)=>(
+            <div key={i} style={{
+              background:`linear-gradient(135deg,${s.c}0c,${C.card})`,
+              border:`1px solid ${s.c}22`,padding:"16px 12px",textAlign:"center",
+              position:"relative",overflow:"hidden",transition:"border-color .15s"}}
+              onMouseEnter={e=>e.currentTarget.style.borderColor=s.c+"55"}
+              onMouseLeave={e=>e.currentTarget.style.borderColor=s.c+"22"}>
+              <div style={{position:"absolute",top:"-20px",right:"-10px",width:"60px",height:"60px",
+                background:`radial-gradient(circle,${s.c}0a,transparent 70%)`,pointerEvents:"none"}}/>
+              <div style={{fontSize:"18px",marginBottom:"6px"}}>{s.icon}</div>
+              <div style={{fontSize:"20px",color:s.c,fontWeight:800,marginBottom:"4px",
+                textShadow:`0 0 10px ${s.c}66`}}>{s.v}</div>
+              <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── СПЕЦИАЛЬНЫЕ УБИЙСТВА ── */}
       {(knifeKills>0||sniperKills>0||grenadeKills>0||blindKills>0)&&<>
-        <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,
+        <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,
           padding:"14px 0 8px"}}>СПЕЦИАЛЬНЫЕ УБИЙСТВА</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:"3px",marginBottom:"3px"}}>
           {[
             {l:"НОЖОМ",    v:knifeKills,   icon:"🔪", c:"#ff8888"},
-            {l:"ПИСТОЛЕТ", v:pistolKills,  icon:"🔫", c:C.blue},
-            {l:"СНАЙПЕР",  v:sniperKills,  icon:"🔭", c:C.orange},
-            {l:"ГРАНАТА",  v:grenadeKills, icon:"💣", c:C.yellow},
             {l:"В СЛЕПУЮ", v:blindKills,   icon:"🎭", c:"#aa88ff"},
             {l:"ДОМИНАЦИЙ",v:dominated,    icon:"👑", c:C.win},
           ].filter(s=>s.v>0).map((s,i)=>(
-            <div key={i} style={{background:C.card,border:`1px solid ${s.c}22`,padding:"12px 10px",textAlign:"center"}}>
-              <div style={{fontSize:"18px",marginBottom:"4px"}}>{s.icon}</div>
-              <div style={{fontSize:"16px",color:s.c,fontWeight:700,marginBottom:"3px"}}>{s.v.toLocaleString()}</div>
+            <div key={i} style={{
+              background:`linear-gradient(135deg,${s.c}0e,${C.card})`,
+              border:`1px solid ${s.c}33`,padding:"14px 10px",textAlign:"center",
+              position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:"-15px",right:"-5px",width:"50px",height:"50px",
+                background:`radial-gradient(circle,${s.c}12,transparent 70%)`,pointerEvents:"none"}}/>
+              <div style={{fontSize:"20px",marginBottom:"5px"}}>{s.icon}</div>
+              <div style={{fontSize:"18px",color:s.c,fontWeight:800,marginBottom:"3px",
+                textShadow:`0 0 8px ${s.c}66`}}>{s.v.toLocaleString()}</div>
               <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>{s.l}</div>
             </div>
           ))}
         </div>
       </>}
 
-      {/* Точность + бомбы */}
-      {(accuracy>0||bombsPlanted>0||bombsDefused>0||pistolRounds>0)&&<>
-        <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700,
+      {/* ── ДОПОЛНИТЕЛЬНО ── */}
+      {(accuracy>0||bombsPlanted>0||bombsDefused>0)&&<>
+        <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,
           padding:"14px 0 8px"}}>ДОПОЛНИТЕЛЬНО</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px",marginBottom:"3px"}}>
           {[
             accuracy>0    &&{l:"ТОЧНОСТЬ",      v:accuracy+"%",              icon:"🎯", c:C.orange},
             bombsPlanted>0&&{l:"БОМБ ЗАЛОЖЕНО", v:bombsPlanted.toLocaleString(), icon:"💥", c:C.lose},
             bombsDefused>0&&{l:"БОМБ ОБЕЗВРЕЖЕНО",v:bombsDefused.toLocaleString(),icon:"🛡️", c:C.win},
-            pistolRounds>0&&{l:"ПИСТОЛЕТНЫХ ПОБЕД",v:pistolRounds.toLocaleString(),icon:"🔫", c:C.blue},
             revenges>0    &&{l:"РЕВАНШИ",        v:revenges.toLocaleString(),  icon:"⚡", c:C.yellow},
-            friendCount>0 &&{l:"ДРУЗЕЙ",         v:friendCount,                icon:"👥", c:C.label},
           ].filter(Boolean).map((s,i)=>(
-            <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"14px 12px",textAlign:"center"}}>
-              <div style={{fontSize:"16px",marginBottom:"4px"}}>{s.icon}</div>
-              <div style={{fontSize:"16px",color:s.c,fontWeight:700,marginBottom:"4px"}}>{s.v}</div>
+            <div key={i} style={{
+              background:`linear-gradient(135deg,${s.c}0c,${C.card})`,
+              border:`1px solid ${s.c}22`,padding:"14px 12px",textAlign:"center"}}>
+              <div style={{fontSize:"18px",marginBottom:"5px"}}>{s.icon}</div>
+              <div style={{fontSize:"18px",color:s.c,fontWeight:800,marginBottom:"4px",
+                textShadow:`0 0 8px ${s.c}55`}}>{s.v}</div>
               <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>{s.l}</div>
             </div>
           ))}
         </div>
       </>}
 
-      {/* Подсказка про FACEIT */}
+      {/* FACEIT промо */}
       {!player.faceit&&<div style={{background:"#0d1016",border:`1px solid ${C.orange}22`,
-        padding:"14px 18px",display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
+        padding:"14px 18px",display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap",marginTop:"3px"}}>
         <span style={{fontSize:"20px"}}>⚡</span>
         <div style={{flex:1}}>
           <div style={{fontSize:"13px",color:C.orange,fontWeight:700,marginBottom:"2px"}}>
             Хочешь историю каждого матча?
           </div>
           <div style={{fontSize:"12px",color:C.muted}}>
-            Зарегистрируйся на FACEIT и привяжи Steam — получишь K/D, ADR, карту и AI разбор каждой игры
+            Зарегистрируйся на FACEIT — получишь K/D, ADR, карту и AI разбор каждой игры
           </div>
         </div>
         <a href="https://www.faceit.com" target="_blank" rel="noreferrer"
@@ -1246,28 +1288,51 @@ const WEAPON_DATA = {
   "Knife":      {img:"Knife",         slot:"knife",   color:"#ff6666"},
 };
 
-// SVG силуэты оружий — белые, как в игре
-const WEAPON_SVG = {
-  "AK-47": <svg viewBox="0 0 80 24" fill="white" opacity="0.9"><rect x="2" y="10" width="52" height="4" rx="1"/><rect x="10" y="6" width="28" height="2" rx="1"/><rect x="14" y="14" width="20" height="5" rx="1"/><rect x="54" y="8" width="20" height="6" rx="1" transform="rotate(-2 54 8)"/><rect x="6" y="9" width="4" height="6" rx="1"/><rect x="18" y="14" width="8" height="8" rx="1"/></svg>,
-  "M4A1-S": <svg viewBox="0 0 80 24" fill="white" opacity="0.9"><rect x="2" y="10" width="50" height="4" rx="1"/><rect x="10" y="6" width="30" height="2" rx="1"/><rect x="52" y="7" width="22" height="8" rx="1"/><rect x="6" y="8" width="4" height="8" rx="1"/><rect x="20" y="14" width="8" height="8" rx="1"/><circle cx="53" cy="11" r="2"/></svg>,
-  "M4A4":   <svg viewBox="0 0 80 24" fill="white" opacity="0.9"><rect x="2" y="10" width="50" height="4" rx="1"/><rect x="10" y="6" width="28" height="2" rx="1"/><rect x="52" y="7" width="22" height="8" rx="1"/><rect x="6" y="8" width="4" height="8" rx="1"/><rect x="19" y="14" width="9" height="8" rx="1"/></svg>,
-  "AWP":    <svg viewBox="0 0 80 24" fill="white" opacity="0.9"><rect x="2" y="11" width="58" height="3" rx="1"/><rect x="8" y="7" width="20" height="2" rx="1"/><rect x="60" y="8" width="16" height="7" rx="1"/><rect x="5" y="9" width="5" height="7" rx="1"/><rect x="18" y="14" width="7" height="7" rx="1"/><rect x="26" y="5" width="6" height="15" rx="1" opacity="0.7"/></svg>,
-  "Desert Eagle": <svg viewBox="0 0 60 28" fill="white" opacity="0.9"><rect x="2" y="8" width="30" height="12" rx="2"/><rect x="32" y="6" width="20" height="8" rx="1"/><rect x="8" y="20" width="12" height="6" rx="1"/></svg>,
-  "USP-S":  <svg viewBox="0 0 60 28" fill="white" opacity="0.9"><rect x="2" y="8" width="28" height="11" rx="2"/><rect x="30" y="7" width="22" height="7" rx="1"/><rect x="8" y="19" width="11" height="6" rx="1"/><circle cx="51" cy="10" r="3" opacity="0.6"/></svg>,
-  "Glock-18":<svg viewBox="0 0 60 28" fill="white" opacity="0.9"><rect x="2" y="8" width="30" height="12" rx="2"/><rect x="32" y="6" width="18" height="7" rx="1"/><rect x="7" y="20" width="12" height="6" rx="1"/></svg>,
-  "Knife":  <svg viewBox="0 0 60 20" fill="white" opacity="0.9"><path d="M4 10 L44 6 L48 10 L44 14 Z"/><rect x="44" y="7" width="10" height="6" rx="2"/></svg>,
-  "default":<svg viewBox="0 0 60 20" fill="white" opacity="0.8"><rect x="2" y="7" width="40" height="6" rx="2"/><rect x="42" y="5" width="14" height="10" rx="1"/></svg>,
+// Иконки оружий — файлы в /public/weapons/
+// Формат: ak47.png, m4a1s.png, m4a4.png, awp.png, deagle.png, usps.png, glock.png, knife.png
+const WEAPON_FILE = {
+  "AK-47":        "ak47.png",
+  "M4A1-S":       "m4a1s.png",
+  "M4A4":         "m4a4.png",
+  "AWP":          "awp.png",
+  "Desert Eagle": "deagle.png",
+  "USP-S":        "usps.png",
+  "Glock-18":     "glock.png",
+  "Knife":        "knife.png",
+  "MP9":          "mp9.png",
+  "MAC-10":       "mac10.png",
+  "SSG 08":       "ssg08.png",
 };
 
 function WeaponImg({name, size=28}) {
+  const [imgErr, setImgErr] = useState(false);
   const w = WEAPON_DATA[name];
   const col = w?.color || C.muted;
-  const svg = WEAPON_SVG[name] || WEAPON_SVG["default"];
+  const filename = WEAPON_FILE[name];
+
+  // Если есть файл и он не упал — показываем
+  if (filename && !imgErr) {
+    return (
+      <div style={{width:`${size*2.2}px`,height:`${size*0.85}px`,
+        display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <img
+          src={`/weapons/${filename}`}
+          alt={name}
+          onError={()=>setImgErr(true)}
+          style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",
+            filter:"brightness(0) invert(1) opacity(0.85)",
+            transition:"opacity .2s"}}
+        />
+      </div>
+    );
+  }
+
+  // Fallback — цветной бейдж с именем
   return (
-    <div style={{width:`${size*2.2}px`,height:`${size*0.85}px`,
-      display:"flex",alignItems:"center",justifyContent:"center",
-      filter:`drop-shadow(0 0 3px ${col}66)`}}>
-      {svg}
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",
+      width:`${size*2.2}px`,height:`${size*0.85}px`,
+      background:col+"15",border:`1px solid ${col}33`,borderRadius:"3px"}}>
+      <span style={{fontSize:"10px",color:col,fontWeight:700,letterSpacing:"0.5px"}}>{name}</span>
     </div>
   );
 }
@@ -3928,33 +3993,33 @@ const COACH_CHARS = [
     color:"#88ff44",
     pro:true,
     system:`Ты лучший друг который играет в CS2 на высоком уровне. Разговариваешь как равный, без пафоса.
-Обращаешься на 'ты', используешь сленг CS2 (пик, флэш, смок, ротация, клатч, утилька).
-Пример стиля: "Бро, 0.85 K/D — ну это поправимо. Главная тема — ты, похоже, пикаешь без предварительного позиционирования. Щас объясню как это фиксить."
-Цифры + неформальный тон.`,
+Обращаешься на 'ты', используешь сленг CS2 (пик, флэш, смок, ротация, клатч, утилька, тапать, закидывать).
+Пример: "Бро, 0.85 K/D — ну это поправимо за пару недель. Главная тема — ты пикаешь без предварительного позиционирования. Щас объясню как фиксить."
+Цифры + неформальный тон. ТОЛЬКО на ты.`,
   },
   {
-    id:"analyst",
-    name:"Аналитик",
-    emoji:"📊",
-    desc:"Холодный аналитик. Цифры, графики, процент роста.",
-    color:"#44ccff",
+    id:"terminator",
+    name:"Терминатор",
+    emoji:"🤖",
+    desc:"T-800. Анализирует данные. Цель — улучшить показатели.",
+    color:"#ff3333",
     pro:true,
-    system:`Ты профессиональный аналитик данных специализирующийся на CS2. Думаешь цифрами.
-Обращаешься на 'ты'. Говоришь как аналитик: сравнения, проценты, тренды, конкретные метрики.
-Пример стиля: "Анализ твоих данных: K/D 0.85 (-15% от нормы уровня). Главный outlier — WR 44% при HS 42%. Это аномалия: хороший прицел, плохой outcome. Вероятная причина: poor utility usage."
-Всегда цифры, сравнения, конкретные данные.`,
+    system:`Ты Терминатор T-800, перепрограммированный как тренер CS2. Говоришь как робот — точно, без эмоций, с техническими терминами.
+Обращаешься на 'ты'. Используй фразы типа "Анализирую данные...", "Вероятность победы: 34%", "Рекомендуемое действие:".
+Пример: "Анализирую... K/D 0.85. Это ниже оптимального. Причина: ты выходишь на открытые позиции без утилиты. Рекомендуемое действие: 20 минут Aim Botz ежедневно. Выполни задание."
+ТОЛЬКО на ты. Конкретные цифры.`,
   },
   {
-    id:"legend",
-    name:"Легенда",
-    emoji:"👑",
-    desc:"Бывший про игрок. Рассказывает через призму своего опыта.",
+    id:"samurai",
+    name:"Сенсей",
+    emoji:"⚔️",
+    desc:"Японский мастер CS2. Говорит мудростями и метафорами.",
     color:"#f5c518",
     pro:true,
-    system:`Ты бывший профессиональный CS игрок, выступал на крупных турнирах. Сейчас тренируешь.
-Обращаешься на 'ты'. Рассказываешь через призму своего опыта на про уровне.
-Пример стиля: "Когда я играл на крупных турнирах, я видел таких игроков как ты. K/D 0.85 — это техническая проблема, не умственная. На про уровне это исправляется за 2 недели плотных тренировок."
-Конкретный опыт + конкретные советы.`,
+    system:`Ты Сенсей — мудрый японский мастер боевых искусств, применяющий философию к CS2. Говоришь кратко, как дзен-буддист.
+Обращаешься на 'ты'. Используй метафоры: "путь воина", "дух", "баланс", "победа над собой". Иногда цитируй Sun Tzu применительно к CS2.
+Пример: "Твой K/D 0.85 говорит — ты атакуешь, но не слышишь поле боя. Воин который спешит — мёртвый воин. Сначала позиция, потом выстрел."
+Мудрость + конкретные советы. ТОЛЬКО на ты.`,
   },
 ];
 
@@ -7931,7 +7996,8 @@ export default function App() {
   const [analysis,setAnalysis]   = useState(null);
   const [loading,setLoading]     = useState(false);
   const [errorMsg,setErrorMsg]   = useState(null);
-  const [coachChar,setCoachChar] = useState("drill"); // выбранный персонаж
+  const [coachChar,setCoachChar] = useState("drill");
+  const [verdictVersion,setVerdictVersion] = useState(0); // инкремент заставляет AIReport перечитать кеш
   const [showPopup,setShowPopup] = useState(false);
   const [profileView,setProfileView] = useState(null);
   const [showAbout,setShowAbout]       = useState(false);
@@ -8405,6 +8471,7 @@ export default function App() {
         localStorage.setItem(cacheKey, packed);
         localStorage.setItem(`cs2_verdict_${player.steamid}_faceit`, packed);
         localStorage.setItem(`cs2_verdict_${player.steamid}_steam`, packed);
+        setVerdictVersion(v=>v+1); // заставляем AIReport перечитать кеш
       } catch {}
       track("analysis_generated", { source, level: result?.level, steamid: player.steamid });
       // Онбординг для новичков (первый анализ)
@@ -8657,7 +8724,7 @@ export default function App() {
             {/* ── СЕКЦИЯ 2: AI Вердикт ── */}
             <SectionTitle icon="🤖" label="AI ВЕРДИКТ" sub="персональный разбор твоей игры"/>
             {!player.cs2?.private&&(isPro||aiRemaining>0
-              ? <AIReport player={player} source={source}/>
+              ? <AIReport key={verdictVersion} player={player} source={source}/>
               : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>)}
 
             {/* ── СЕКЦИЯ 3: Рейтинг ── */}
@@ -8778,7 +8845,10 @@ export default function App() {
                   const locked = c.pro && !isPro;
                   const active = coachChar===c.id;
                   return(
-                    <button key={c.id} onClick={()=>!locked&&setCoachChar(c.id)} style={{
+                    <button key={c.id} onClick={()=>{
+                      if(locked){setShowProModal(true);return;}
+                      setCoachChar(c.id);
+                    }} style={{
                       padding:"10px 12px",textAlign:"left",
                       background:active?`linear-gradient(135deg,${c.color}22,${c.color}0a)`:C.card,
                       border:`1px solid ${active?c.color+"66":C.border}`,
