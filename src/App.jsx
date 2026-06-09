@@ -408,9 +408,19 @@ function HeroCard({player, source}) {
               <span style={{fontSize:"28px",color:"#fff",fontWeight:800,textShadow:"0 2px 12px rgba(0,0,0,0.8)"}}>{player.username}</span>
               {flag(player.country||fc?.country)&&<span style={{fontSize:"18px"}}>{flag(player.country||fc?.country)}</span>}
             </div>
-            <div style={{fontSize:"13px",color:C.muted,marginBottom:"8px",display:"flex",gap:"12px",flexWrap:"wrap"}}>
+            <div style={{fontSize:"13px",color:C.muted,marginBottom:"8px",display:"flex",gap:"12px",flexWrap:"wrap",alignItems:"center"}}>
               {player.created&&<span>⭐ Steam с {new Date(player.created*1000).getFullYear()} г.</span>}
               {player.steam_level!=null&&<span>Lvl {player.steam_level}</span>}
+              {cs2.playtime&&parseInt(cs2.playtime)>0&&<span style={{display:"flex",alignItems:"center",gap:"3px"}}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {Math.round(parseInt(cs2.playtime)/60)}ч в игре
+              </span>}
+              {cs2.wins&&parseInt(cs2.wins)>0&&<span style={{color:C.win}}>
+                🏆 {parseInt(cs2.wins).toLocaleString()} побед
+              </span>}
+              {fc?.elo&&<span style={{color:LVL_COLOR[fc?.level]||C.orange,fontWeight:700}}>
+                ⚡ {fc.elo} ELO
+              </span>}
               {fc?.nickname&&fc.nickname!==player.username&&<span style={{color:C.orange}}>⚡ {fc?.nickname}</span>}
             </div>
             {/* Форма */}
@@ -1335,54 +1345,50 @@ function WeaponsPanel({cs2}) {
           const barW = Math.round(w.kills/total*100);
           return (
             <div key={w.name} className="hov-row" style={{
-              padding:"12px 20px",
+              padding:"10px 20px",
               borderBottom:i<sorted.length-1?`1px solid ${C.border}22`:"none",
-              display:"grid",gridTemplateColumns:"100px 1fr 70px 60px 60px",
+              display:"grid",gridTemplateColumns:"70px 1fr 70px 60px 60px",
               gap:"14px",alignItems:"center",transition:"background .15s",
-              background:i%2===0?"rgba(0,0,0,0.1)":"transparent"}}>
+              background:i%2===0?"rgba(0,0,0,0.08)":"transparent"}}>
 
-              {/* Цветной бейдж имени */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <div style={{padding:"4px 10px",
-                  background:`linear-gradient(90deg,${col}22,${col}14)`,
-                  border:`1px solid ${col}44`,
-                  fontSize:"11px",color:col,fontWeight:800,
-                  letterSpacing:"0.5px",textAlign:"center",
-                  boxShadow:`0 0 8px ${col}22`,whiteSpace:"nowrap",
-                  maxWidth:"96px",overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {w.name}
-                </div>
+              {/* Белая картинка оружия */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",
+                background:"rgba(255,255,255,0.03)",borderRadius:"4px",
+                padding:"4px",height:"36px"}}>
+                <WeaponImg name={w.name} size={28}/>
               </div>
 
-              {/* Бар */}
+              {/* Название + бар */}
               <div>
-                <div style={{height:"5px",background:"#111108",borderRadius:"3px",overflow:"hidden"}}>
+                <div style={{fontSize:"12px",color:C.value,fontWeight:600,marginBottom:"3px"}}>
+                  {w.name}
+                </div>
+                <div style={{height:"4px",background:"#111108",borderRadius:"2px",overflow:"hidden"}}>
                   <div style={{height:"100%",width:`${barW}%`,
                     background:`linear-gradient(90deg,${col}55,${col})`,
-                    borderRadius:"3px",transition:"width .8s ease",
-                    boxShadow:`0 0 6px ${col}44`}}/>
+                    borderRadius:"2px",transition:"width .8s ease",
+                    boxShadow:`0 0 5px ${col}44`}}/>
                 </div>
               </div>
 
               {/* Убийства */}
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"15px",color:col,fontWeight:800,
-                  textShadow:`0 0 6px ${col}44`}}>{w.kills.toLocaleString()}</div>
-                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px",marginTop:"1px"}}>УБИЙСТВ</div>
+                <div style={{fontSize:"14px",color:col,fontWeight:800}}>{w.kills.toLocaleString()}</div>
+                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>УБИЙСТВ</div>
               </div>
 
               {/* HS% */}
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"14px",color:w.hspc>=50?C.win:w.hspc>=30?C.yellow:C.muted,fontWeight:700}}>
+                <div style={{fontSize:"13px",color:w.hspc>=50?C.win:w.hspc>=30?C.yellow:C.muted,fontWeight:700}}>
                   {w.hspc}%
                 </div>
-                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px",marginTop:"1px"}}>HS%</div>
+                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>HS%</div>
               </div>
 
               {/* Точность */}
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"14px",color:C.label,fontWeight:600}}>{w.acc}%</div>
-                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px",marginTop:"1px"}}>ТОЧНОСТЬ</div>
+                <div style={{fontSize:"13px",color:C.label,fontWeight:600}}>{w.acc}%</div>
+                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>ТОЧНОСТЬ</div>
               </div>
             </div>
           );
@@ -1741,26 +1747,39 @@ function PlayerRating({player, source}) {
           </div>
         </div>
 
-        {/* Бары K/D, HS%, WR% */}
+        {/* Бары K/D, HS%, WR% с иконками-пояснениями */}
         <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-          {stats.map((s,i)=>(
+          {[
+            {name:"K/D", val:kd.toFixed(2), avg:avg.kd.toFixed(2), pct:kdPct, color:C.blue,
+             icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="9" r="3"/><path d="M9 3a6 6 0 1 0 6 6"/><line x1="15" y1="15" x2="21" y2="21"/></svg>,
+             label:"Убийства / Смерти", tip:"норма 0.75–1.0"},
+            {name:"HS%", val:Math.round(hs)+"%", avg:avg.hs+"%", pct:hsPct, color:C.orange,
+             icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="5"/><path d="M8 8h8M12 3v10"/><path d="M9 21h6M12 17v4"/></svg>,
+             label:"Попадания в голову", tip:"норма 25–35%"},
+            {name:"WR%", val:Math.round(wr)+"%", avg:avg.wr+"%", pct:wrPct, color:"#aa88ff",
+             icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>,
+             label:"Процент побед", tip:"норма 43–50%"},
+          ].map((s,i)=>(
             <div key={i}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px",fontSize:"12px"}}>
-                <span style={{color:C.muted,letterSpacing:"1px"}}>{s.name}</span>
-                <span>
-                  <span style={{color:s.color,fontWeight:700}}>{s.val}</span>
-                  <span style={{color:C.muted}}> / avg {s.avg}</span>
-                </span>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                  <span style={{color:s.color,opacity:0.8,display:"flex"}}>{s.icon}</span>
+                  <span style={{fontSize:"11px",color:s.color,fontWeight:700,letterSpacing:"0.5px"}}>{s.name}</span>
+                  <span style={{fontSize:"10px",color:C.muted}}>{s.label}</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                  <span style={{fontSize:"11px",color:C.muted}}>avg {s.avg}</span>
+                  <span style={{fontSize:"13px",color:s.color,fontWeight:800,minWidth:"36px",textAlign:"right"}}>{s.val}</span>
+                </div>
               </div>
               <div style={{height:"5px",background:"#111108",borderRadius:"3px",overflow:"hidden",position:"relative"}}>
-                {/* Линия среднего */}
-                <div style={{position:"absolute",left:`${Math.round(50)}%`,top:0,bottom:0,
-                  width:"1px",background:C.muted+"44"}}/>
+                <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:"1px",background:C.muted+"33"}}/>
                 <div style={{height:"100%",width:`${s.pct}%`,
                   background:`linear-gradient(90deg,${s.color}66,${s.color})`,
                   borderRadius:"3px",transition:"width 1.2s ease",
                   boxShadow:`0 0 6px ${s.color}44`}}/>
               </div>
+              <div style={{fontSize:"9px",color:C.muted,marginTop:"2px",textAlign:"right"}}>{s.tip}</div>
             </div>
           ))}
         </div>
@@ -4406,83 +4425,82 @@ function DayAction({player, source, streak}) {
   })();
 
   return (
-    <div style={{background:"linear-gradient(135deg,#1a1a0a,#141409)",
-      border:`2px solid ${target.color}44`,borderLeft:`4px solid ${target.color}`,
-      padding:"20px 22px",marginBottom:"10px",animation:"up .4s ease both",position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",top:"-20px",right:"-20px",width:"120px",height:"120px",
-        background:`radial-gradient(circle,${target.color}12,transparent 70%)`,pointerEvents:"none"}}/>
+    <div style={{background:C.card,border:`1px solid ${target.color}33`,
+      borderLeft:`3px solid ${target.color}`,
+      padding:"16px 20px",marginBottom:"10px",animation:"up .4s ease both",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:0,right:0,width:"80px",height:"80px",
+        background:`radial-gradient(circle,${target.color}0a,transparent 70%)`,pointerEvents:"none"}}/>
 
-      <div style={{fontSize:"11px",color:target.color,letterSpacing:"3px",fontWeight:700,marginBottom:"12px"}}>
-        ⚡ ГЛАВНОЕ ДЕЙСТВИЕ СЕГОДНЯ
+      {/* Заголовок */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
+        <span style={{fontSize:"10px",color:target.color,letterSpacing:"3px",fontWeight:700}}>⚡ ЦЕЛЬ</span>
+        <span style={{fontSize:"11px",color:target.color,background:target.color+"18",
+          border:`1px solid ${target.color}33`,padding:"2px 10px",fontWeight:700}}>+{target.xp} XP</span>
       </div>
 
-      <div style={{display:"flex",gap:"16px",alignItems:"flex-start",flexWrap:"wrap",marginBottom:"14px"}}>
-        <div style={{flex:1,minWidth:"160px"}}>
-          <div style={{fontSize:"16px",color:"#f5eed8",fontWeight:700,marginBottom:"4px"}}>
-            {target.icon} До достижения <span style={{color:target.color}}>{target.name}</span>
-          </div>
-          <div style={{fontSize:"13px",color:"#9a9270",marginBottom:"10px"}}>
-            осталось <span style={{color:target.color,fontWeight:700}}>{target.left}</span>
-          </div>
-          <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden",marginBottom:"6px"}}>
-            <div style={{height:"100%",width:`${target.progress}%`,background:target.color,
-              borderRadius:"3px",boxShadow:`0 0 8px ${target.color}66`,transition:"width 1s ease"}}/>
-          </div>
-          <div style={{fontSize:"11px",color:"#6a6450"}}>{target.progress}% выполнено</div>
+      {/* Цель + прогресс */}
+      <div style={{marginBottom:"14px"}}>
+        <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"3px"}}>
+          До <span style={{color:target.color}}>{target.name}</span>
+          <span style={{fontSize:"12px",color:C.muted,marginLeft:"8px",fontWeight:400}}>
+            — осталось {target.left}
+          </span>
         </div>
-        <div style={{background:target.color+"18",border:`1px solid ${target.color}33`,
-          padding:"8px 16px",display:"flex",alignItems:"center",gap:"8px",alignSelf:"flex-start"}}>
-          <span style={{fontSize:"16px"}}>⭐</span>
-          <span style={{fontSize:"14px",color:target.color,fontWeight:700}}>+{target.xp} XP</span>
+        <div style={{height:"4px",background:"#111108",borderRadius:"2px",overflow:"hidden",marginBottom:"4px"}}>
+          <div style={{height:"100%",width:`${target.progress}%`,
+            background:`linear-gradient(90deg,${target.color}66,${target.color})`,
+            borderRadius:"2px",boxShadow:`0 0 6px ${target.color}55`,transition:"width 1s ease"}}/>
         </div>
+        <div style={{fontSize:"10px",color:C.muted}}>{target.progress}% выполнено</div>
       </div>
 
-      <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+      {/* Действия */}
+      <div style={{display:"flex",flexDirection:"column",gap:"4px",marginBottom:streak>0?"12px":"0"}}>
         {target.actions.map((a,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"center",gap:"10px",
-            background:"#0d0d09",padding:"9px 12px",border:`1px solid ${C.border}`}}>
-            <div style={{width:"18px",height:"18px",borderRadius:"3px",
-              border:`2px solid ${target.color}66`,flexShrink:0,
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px",color:target.color}}>
-              {i+1}
-            </div>
-            <span style={{fontSize:"13px",color:"#ddd6bc"}}>{a}</span>
+          <div key={i} style={{display:"flex",alignItems:"center",gap:"8px",padding:"7px 10px",
+            background:"rgba(0,0,0,0.2)",border:`1px solid ${C.border}22`}}>
+            <span style={{fontSize:"10px",color:target.color,fontWeight:700,
+              width:"16px",height:"16px",border:`1px solid ${target.color}44`,
+              display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
+            <span style={{fontSize:"12px",color:C.label}}>{a}</span>
           </div>
         ))}
       </div>
+
+      {/* Стрик */}
       {streak>0&&(
-        <div style={{marginTop:"12px",paddingTop:"12px",borderTop:`1px solid ${C.border}44`,
-          display:"flex",alignItems:"center",gap:"12px"}}>
-          <span style={{fontSize:"13px",color:streak>=7?"#aa44ff":streak>=3?C.win:C.yellow,fontWeight:700}}>
-            🔥 {streak} {streak===1?"день":"дней"} подряд
+        <div style={{display:"flex",alignItems:"center",gap:"10px",paddingTop:"10px",
+          borderTop:`1px solid ${C.border}22`}}>
+          <span style={{fontSize:"12px",color:streak>=7?"#aa44ff":streak>=3?C.win:C.yellow,fontWeight:700,flexShrink:0}}>
+            🔥 {streak} дней
           </span>
-          <div style={{flex:1,display:"flex",gap:"3px"}}>
+          <div style={{flex:1,display:"flex",gap:"2px"}}>
             {Array.from({length:7}).map((_,i)=>(
-              <div key={i} style={{flex:1,height:"3px",borderRadius:"1px",
+              <div key={i} style={{flex:1,height:"2px",borderRadius:"1px",
                 background:i<streak?(streak>=7?"#aa44ff":streak>=3?C.win:C.yellow):"#1a1a10"}}/>
             ))}
           </div>
-          {streak<7
-            ?<span style={{fontSize:"11px",color:C.muted}}>до 7: ещё {7-streak}</span>
-            :<span style={{fontSize:"11px",color:"#aa44ff"}}>MAX 🏆</span>}
+          <span style={{fontSize:"10px",color:C.muted,flexShrink:0}}>
+            {streak<7?`до 7: ещё ${7-streak}`:"MAX 🏆"}
+          </span>
         </div>
       )}
 
-      {/* Квест на завтра */}
-      <div style={{marginTop:"10px",paddingTop:"10px",borderTop:`1px solid ${C.border}44`,
-        display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
-        <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",flexShrink:0}}>🎯 ЗАВТРА:</div>
-        <div style={{flex:1,fontSize:"12px",color:C.label}}>
+      {/* Завтра */}
+      <div style={{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px",
+        fontSize:"11px",color:C.muted}}>
+        <span style={{color:C.yellow,fontWeight:700,flexShrink:0}}>ЗАВТРА</span>
+        <span style={{color:C.label}}>
           {kd<1.0
-            ? <>Доведи K/D до <span style={{color:C.blue,fontWeight:700}}>1.0</span> — сыграй {Math.max(1,Math.ceil((1.0-kd)*10))} матча фокусируясь на дуэлях</>
+            ? <>Доведи K/D до <span style={{color:C.blue}}>1.0</span> — сыграй {Math.max(1,Math.ceil((1.0-kd)*10))} матча на дуэлях</>
             : hs<40
-            ? <>Подними HS% до <span style={{color:C.orange,fontWeight:700}}>40%</span> — 20 мин Aim Botz только в голову</>
+            ? <>Подними HS% до <span style={{color:C.orange}}>40%</span> — 20 мин Aim Botz в голову</>
             : wr<50
-            ? <>Выиграй <span style={{color:C.win,fontWeight:700}}>{Math.max(1,Math.ceil((50-wr)/5))} матча</span> — сыграй только на лучшей карте</>
-            : <>Удержи серию: сыграй <span style={{color:C.yellow,fontWeight:700}}>1 матч</span> и поддержи текущий уровень</>
+            ? <>Выиграй <span style={{color:C.win}}>{Math.max(1,Math.ceil((50-wr)/5))} матча</span> на лучшей карте</>
+            : <>Удержи уровень: 1 матч сегодня</>
           }
-        </div>
-        <div style={{fontSize:"11px",color:C.yellow,fontWeight:700,flexShrink:0}}>+{target.xp} XP</div>
+        </span>
+        <span style={{marginLeft:"auto",color:C.yellow,fontWeight:700,flexShrink:0}}>+{target.xp} XP</span>
       </div>
     </div>
   );
@@ -6382,16 +6400,22 @@ function AIReport({player, source}) {
   // Загружаем кэш при входе
   useEffect(()=>{
     if (!player?.steamid) return;
-    try {
-      const cached = JSON.parse(localStorage.getItem(cacheKey)||"null");
-      if (cached?.result && cached?.date) {
-        setReport(cached.result);
-        setCacheDate(cached.date);
-        setLoaded(true);
-      } else {
-        load();
-      }
-    } catch { load(); }
+    // Проверяем оба возможных кеш-ключа (source может меняться)
+    const keys = [cacheKey, `cs2_verdict_${player.steamid}_faceit`, `cs2_verdict_${player.steamid}_steam`];
+    let found = null;
+    for (const k of keys) {
+      try {
+        const c = JSON.parse(localStorage.getItem(k)||"null");
+        if (c?.result && Object.keys(c.result).length > 0) { found = c; break; }
+      } catch {}
+    }
+    if (found) {
+      setReport(found.result);
+      setCacheDate(found.date);
+      setLoaded(true);
+    } else {
+      load();
+    }
   }, [player?.steamid, source]);
 
   async function load() {
