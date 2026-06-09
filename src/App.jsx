@@ -1097,12 +1097,12 @@ function SteamStatsPanel({player}) {
         <div style={{position:"relative",zIndex:1,display:"grid",
           gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px"}}>
           {[
-            {l:"УБИЙСТВА",   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
-            {l:"СМЕРТИ",     v:deaths.toLocaleString(),  c:C.lose,   icon:"💀"},
-            {l:T.wins_col||"ПОБЕДЫ",     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
+            {l:t("kills_label","УБИЙСТВА"),   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
+            {l:t("deaths_label","СМЕРТИ"),     v:deaths.toLocaleString(),  c:C.lose,   icon:"💀"},
+            {l:t("wins_label","ПОБЕДЫ"),     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
             {l:"MVP",        v:mvps.toLocaleString(),    c:C.yellow, icon:"⭐"},
-            {l:"K/МАТЧ",     v:kdPerMatch,               c:C.blue,   icon:"🎯"},
-            {l:"СМЕРТЕЙ/МАТ",v:deathsPerMatch,           c:C.muted,  icon:"📊"},
+            {l:t("k_match","K/МАТЧ"),     v:kdPerMatch,               c:C.blue,   icon:"🎯"},
+            {l:t("d_match","СМЕРТЕЙ/МАТ"),v:deathsPerMatch,           c:C.muted,  icon:"📊"},
           ].filter(s=>s.v!=="0"&&s.v!=="—").map((s,i)=>(
             <div key={i} style={{
               background:`linear-gradient(135deg,${s.c}0c,${C.card})`,
@@ -1252,14 +1252,15 @@ function MapPool({faceit}) {
 }
 
 // ── Weapons Panel ─────────────────────────────────────────────────────────────
-const TRANSLATIONS = {
-  ru: {
+const TRANSLATIONS = {  ru: {
     tab_overview:"ОБЗОР",tab_coach:"🎯 ТРЕНЕР",tab_practice:"📚 ПРАКТИКА",
     tab_matches:"🎮 МАТЧИ",tab_maps:"🗺️ КАРТЫ",tab_history:"📋 ИСТОРИЯ",
     tab_leaders:"🏆 ЛИДЕРЫ",tab_friends:"👥 ДРУЗЬЯ",
     login:"Войти через Steam",logout:"Выйти",
     profile:"Мой профиль",settings:"Настройки",
     wins:"побед",hours:"ч",matches:"матчей",
+    kills_label:"УБИЙСТВА",deaths_label:"СМЕРТИ",wins_label:"ПОБЕДЫ",
+    k_match:"K/МАТЧ",d_match:"СМЕРТЕЙ/МАТ",
     get_analysis:"ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА",analyzing:"АНАЛИЗИРУЮ...",login_first:"ВОЙДИ ЧЕРЕЗ STEAM",
     skill_rating:"РЕЙТИНГ НАВЫКОВ",choose_coach:"ВЫБЕРИ ТРЕНЕРА",
     best_map:"🏆 ЛУЧШАЯ КАРТА",worst_map:"⚠️ ХУДШАЯ КАРТА",
@@ -1273,7 +1274,7 @@ const TRANSLATIONS = {
     weapons_title:"ОРУЖИЯ",weapons_sub:"статистика по оружию",
     source_label:"Источник данных",main_problem:"ГЛАВНАЯ ПРОБЛЕМА",
     premier_tab:"🏅 Premier Рейтинг",stats_tab:"📊 Статистика",
-    current_rank:"ТЕКУЩИЙ РАНГ",best_rank:"ЛУЧШИЙ РАНГ",wins_col:"ПОБЕДЫ",
+    current_rank:t("current_rank","ТЕКУЩИЙ РАНГ"),best_rank:t("best_rank","ЛУЧШИЙ РАНГ"),wins_col:"ПОБЕДЫ",
     update:"↻ Обновить",loading:"Загружаем...",no_data:"Нет данных",
     go_to_coach:"🎯 ПОЛНЫЙ РАЗБОР И ЧАТ С ТРЕНЕРОМ →",
     prac_title:"ПРАКТИКА",prac_sub:"упражнения и материалы",
@@ -1290,6 +1291,8 @@ const TRANSLATIONS = {
     login:"Login via Steam",logout:"Logout",
     profile:"My Profile",settings:"Settings",
     wins:"wins",hours:"h",matches:"matches",
+    kills_label:"KILLS",deaths_label:"DEATHS",wins_label:"WINS",
+    k_match:"K/MATCH",d_match:"D/MATCH",
     get_analysis:"GET COACH ANALYSIS",analyzing:"ANALYZING...",login_first:"LOGIN VIA STEAM",
     skill_rating:"SKILL RATING",choose_coach:"CHOOSE COACH",
     best_map:"🏆 BEST MAP",worst_map:"⚠️ WORST MAP",
@@ -1314,6 +1317,14 @@ const TRANSLATIONS = {
     login_btn:"Login via Steam to start",
   },
 };
+
+// Глобальный хелпер — любой компонент может использовать без prop drilling
+// Обновляется через window._lang при смене языка
+let _currentLang = "ru";
+function t(key, fallback) {
+  const T = TRANSLATIONS[_currentLang] || TRANSLATIONS.ru;
+  return T[key] || fallback || key;
+}
 
 const WEAPON_DATA = {
   // name → {img: Steam market hash, slot}
@@ -6789,8 +6800,9 @@ function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
       setReport(found.result);
       setCacheDate(found.date);
       setLoaded(true);
-    } else if (verdictVersion === 0) {
-      load();
+    } else {
+      // Только при первой загрузке запрашиваем с сервера (не при ручном verdictVersion bump)
+      if (verdictVersion === 0) load();
     }
   }, [player?.steamid, source, verdictVersion]);
 
@@ -8211,7 +8223,7 @@ export default function App() {
   const [showProCelebration,setShowProCelebration] = useState(false);
   const [showChecklist,setShowChecklist] = useState(true);
   const [profileDropdown,setProfileDropdown] = useState(false);
-  const [lang,setLang] = useState(()=>{ try{ return localStorage.getItem("cs2_lang")||"ru"; }catch{ return "ru"; } });
+  const [lang,setLang] = useState(()=>{ try{ const l=localStorage.getItem("cs2_lang")||"ru"; _currentLang=l; return l; }catch{ return "ru"; } });
   const T = TRANSLATIONS[lang] || TRANSLATIONS.ru;
   const [showSettings,setShowSettings] = useState(false);
   const [showOnboarding,setShowOnboarding] = useState(false);
@@ -8719,7 +8731,12 @@ export default function App() {
 
   const lc = ANALYSIS_COLOR[analysis?.level] || C.yellow;
 
-  const setLangPersist = (v) => { setLang(v); try{ localStorage.setItem("cs2_lang",v); }catch{} };
+  const setLangPersist = (v) => {
+    const newLang = typeof v === 'function' ? v(lang) : v;
+    setLang(newLang);
+    _currentLang = newLang;
+    try{ localStorage.setItem("cs2_lang", newLang); }catch{}
+  };
 
   // ── Layout ────────────────────────────────────────────────────────────────
   return (
