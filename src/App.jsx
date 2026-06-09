@@ -6941,7 +6941,6 @@ function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
     </div>
   );
 }
-}
 
 
 // ── Support Panel ─────────────────────────────────────────────────────────────
