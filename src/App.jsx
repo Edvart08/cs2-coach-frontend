@@ -411,7 +411,7 @@ function HeroCard({player, source}) {
             <div style={{fontSize:"13px",color:C.muted,marginBottom:"8px",display:"flex",gap:"12px",flexWrap:"wrap"}}>
               {player.created&&<span>⭐ Steam с {new Date(player.created*1000).getFullYear()} г.</span>}
               {player.steam_level!=null&&<span>Lvl {player.steam_level}</span>}
-              {fc?.nickname&&fc.nickname!==player.username&&<span style={{color:C.orange}}>⚡ {fc.nickname}</span>}
+              {fc?.nickname&&fc.nickname!==player.username&&<span style={{color:C.orange}}>⚡ {fc?.nickname}</span>}
             </div>
             {/* Форма */}
             {form.length>0&&(
@@ -3454,11 +3454,11 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                   {/* FACEIT LVL бейдж на аватаре */}
                   {fc?.level&&<div style={{position:"absolute",bottom:"-10px",left:"50%",
                     transform:"translateX(-50%)",
-                    background:LVL_COLOR[fc.level]||C.yellow,color:"#080807",
+                    background:LVL_COLOR[fc?.level]||C.yellow,color:"#080807",
                     fontSize:"11px",fontWeight:900,padding:"3px 12px",
                     letterSpacing:"1px",whiteSpace:"nowrap",
-                    boxShadow:`0 2px 12px ${LVL_COLOR[fc.level]||C.yellow}66`}}>
-                    LVL {fc.level}
+                    boxShadow:`0 2px 12px ${LVL_COLOR[fc?.level]||C.yellow}66`}}>
+                    LVL {fc?.level}
                   </div>}
                 </div>
 
@@ -3484,8 +3484,8 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                     {matchCount>0&&<span style={{fontSize:"12px",color:C.muted}}>
                       🎮 {matchCount.toLocaleString()} матчей
                     </span>}
-                    {fc?.elo&&<span style={{fontSize:"12px",color:LVL_COLOR[fc.level]||C.yellow,fontWeight:700}}>
-                      ⚡ FACEIT {fc.elo} ELO
+                    {fc?.elo&&<span style={{fontSize:"12px",color:LVL_COLOR[fc?.level]||C.yellow,fontWeight:700}}>
+                      ⚡ FACEIT {fc?.elo} ELO
                     </span>}
                   </div>
 
@@ -3639,11 +3639,11 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                   <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"20px",fontWeight:700}}>CLUTCH SUCCESS</div>
                   <div style={{display:"flex",justifyContent:"space-around",gap:"8px",marginBottom:"20px"}}>
                     {[
-                      {l:"1v1",v:fc.lifetime.clutch1v1||fc.lifetime["1v1"],c:C.win},
-                      {l:"1v2",v:fc.lifetime.clutch1v2||fc.lifetime["1v2"],c:C.yellow},
-                      {l:"1v3",v:fc.lifetime.clutch1v3||fc.lifetime["1v3"],c:C.orange},
-                      {l:"1v4",v:fc.lifetime.clutch1v4||fc.lifetime["1v4"],c:C.lose},
-                      {l:"1v5",v:fc.lifetime.clutch1v5||fc.lifetime["1v5"],c:"#aa66ff"},
+                      {l:"1v1",v:fc?.lifetime?.clutch1v1||fc?.lifetime?.["1v1"],c:C.win},
+                      {l:"1v2",v:fc?.lifetime?.clutch1v2||fc?.lifetime?.["1v2"],c:C.yellow},
+                      {l:"1v3",v:fc?.lifetime?.clutch1v3||fc?.lifetime?.["1v3"],c:C.orange},
+                      {l:"1v4",v:fc?.lifetime?.clutch1v4||fc?.lifetime?.["1v4"],c:C.lose},
+                      {l:"1v5",v:fc?.lifetime?.clutch1v5||fc?.lifetime?.["1v5"],c:"#aa66ff"},
                     ].map((x,j)=>{
                       const n=parseInt(x.v)||0;
                       const r=28, circ=2*Math.PI*r;
@@ -3671,16 +3671,16 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                       );
                     })}
                   </div>
-                  {fc.lifetime.entrySuccess&&<div style={{
+                  {fc?.lifetime?.entrySuccess&&<div style={{
                     background:"#0d0d16",border:`1px solid ${C.blue}33`,padding:"14px",
                     display:"flex",alignItems:"center",gap:"14px"}}>
                     <div>
                       <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>ENTRY SUCCESS</div>
-                      <div style={{fontSize:"28px",color:C.blue,fontWeight:800}}>{fc.lifetime.entrySuccess}%</div>
+                      <div style={{fontSize:"28px",color:C.blue,fontWeight:800}}>{fc?.lifetime?.entrySuccess}%</div>
                       <div style={{fontSize:"11px",color:C.muted}}>за раунд</div>
                     </div>
                     <div style={{flex:1,height:"6px",background:"#1a1a1a",borderRadius:"3px",overflow:"hidden"}}>
-                      <div style={{height:"100%",width:`${fc.lifetime.entrySuccess}%`,
+                      <div style={{height:"100%",width:`${fc?.lifetime?.entrySuccess}%`,
                         background:`linear-gradient(90deg,${C.blue}66,${C.blue})`,
                         filter:`drop-shadow(0 0 4px ${C.blue})`}}/>
                     </div>
@@ -4667,7 +4667,7 @@ function OnboardingModal({player, onClose, onGoTab}) {
               {player?.faceit?.elo
                 ? <div style={{padding:"12px",background:"#0a140a",border:`1px solid ${C.win}44`,
                     marginBottom:"16px",fontSize:"13px",color:C.win}}>
-                    ✓ FACEIT уже подключён — уровень {player.faceit.level}, {player.faceit.elo} ELO
+                    ✓ FACEIT уже подключён — уровень {player.faceit?.level}, {player.faceit?.elo} ELO
                   </div>
                 : <a href="https://www.faceit.com/ru/players-registration" target="_blank" rel="noreferrer"
                     style={{display:"block",padding:"12px",background:"#ff7733",color:"#fff",
@@ -6405,8 +6405,8 @@ function AIReport({player, source}) {
       hs:fc.lifetime?.hs||"0", matches:fc.lifetime?.matches||"0",
       adr:fc.lifetime?.adr||"", clutch1v1:fc.lifetime?.clutch1v1||"",
       entrySuccess:fc.lifetime?.entrySuccess||"",
-      rank:"", faceit_level:String(fc.level||""), faceit_elo:String(fc.elo||""),
-      maps:arr(fc.maps), recent_matches:recentMatches,
+      rank:"", faceit_level:String(fc?.level||""), faceit_elo:String(fc?.elo||""),
+      maps:arr(fc?.maps), recent_matches:recentMatches,
       extra: {
         kills:cs2.kills||"", deaths:cs2.deaths||"",
         mvps:cs2.mvps||"", sniper_kills:cs2.sniper_kills||"",
@@ -6866,7 +6866,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
 
   const stats = source==="faceit"&&fc ? {
     kd:fc.lifetime?.kd, winrate:fc.lifetime?.winrate, hs:fc.lifetime?.hs,
-    matches:fc.lifetime?.matches, faceit_level:String(fc.level||""), faceit_elo:String(fc.elo||"")
+    matches:fc.lifetime?.matches, faceit_level:String(fc?.level||""), faceit_elo:String(fc?.elo||"")
   } : {kd:cs2.kd, winrate:cs2.winrate, hs:cs2.hs, matches:cs2.matches,
        faceit_level:String(fc?.level||""), faceit_elo:String(fc?.elo||"")};
 
@@ -6916,7 +6916,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
     const steamid = player?.steamid||"";
     const username = player?.username||"Аноним";
     const proStatus = isPro?"PRO активен":"Бесплатный";
-    const detail = `Пользователь: ${username}\nSteam ID: ${steamid}\nСтатус: ${proStatus}\nFACEIT: ${fc?.level?"Уровень "+fc.level+" · "+fc.elo+" ELO":"нет"}\nK/D: ${stats.kd||"?"} · WR: ${stats.winrate||"?"}% · HS: ${stats.hs||"?"}%\nМатчей: ${stats.matches||"?"}\n\nВопрос: ${userMsg}`;
+    const detail = `Пользователь: ${username}\nSteam ID: ${steamid}\nСтатус: ${proStatus}\nFACEIT: ${fc?.level?"Уровень "+fc?.level+" · "+fc?.elo+" ELO":"нет"}\nK/D: ${stats.kd||"?"} · WR: ${stats.winrate||"?"}% · HS: ${stats.hs||"?"}%\nМатчей: ${stats.matches||"?"}\n\nВопрос: ${userMsg}`;
     try {
       await fetch(`${BACKEND}/support`, {
         method:"POST", headers:{"Content-Type":"application/json"},
@@ -7487,7 +7487,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"3px"}}>{player.username}</div>
                 <div style={{fontSize:"11px",color:C.muted}}>
-                  {player.faceit?.elo?`FACEIT LVL ${player.faceit.level} · ${player.faceit.elo} ELO`:`Steam Lvl ${player.steam_level||"—"}`}
+                  {player.faceit?.elo?`FACEIT LVL ${player.faceit?.level} · ${player.faceit?.elo} ELO`:`Steam Lvl ${player.steam_level||"—"}`}
                 </div>
                 <div style={{fontSize:"11px",marginTop:"4px"}}>
                   <span style={{color:isPro?C.yellow:C.muted,background:isPro?C.yellow+"18":"transparent",
@@ -7535,7 +7535,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
               title="FACEIT"
               icon="⚡"
               connected={hasFaceit}
-              info={hasFaceit ? `LVL ${player.faceit.level} · ${player.faceit.elo} ELO · ${player.faceit.nickname}` : ""}
+              info={hasFaceit ? `LVL ${player.faceit?.level} · ${player.faceit?.elo} ELO · ${player.faceit?.nickname}` : ""}
               linkHref="https://www.faceit.com/ru/players-registration"
             />
 
@@ -7720,7 +7720,7 @@ export default function App() {
     ()=>{ try{ return parseInt(localStorage.getItem("cs2_analysis_count")||"0"); }catch{ return 0; } }
   );
 
-  const hasFaceit = !!(player?.faceit && (player.faceit.elo || arr(player.faceit.matches).length));
+  const hasFaceit = !!(player?.faceit && (player?.faceit?.elo || arr(player.faceit?.matches).length));
 
   // ── streak tracking ─────────────────────────────────────────────────────────
   useEffect(()=>{
@@ -7842,7 +7842,7 @@ export default function App() {
         username: player.username,
         avatar: player.avatar||"",
         stats:{kd:lbKd, winrate:lbWr, hs:lbHs, matches:lbM,
-          rank: fc2?.elo?`FACEIT ${fc2.level}`:"Steam",
+          rank: fc2?.elo?`FACEIT ${fc2?.level}`:"Steam",
           kills:lbKills, deaths:lbDeaths, mvp:lbMvp, playtime:lbPt,
           wins: String(parseInt(player.cs2?.wins)||0),
           premier_rating: String(player.cs2?.premier_rating||""),
@@ -8092,7 +8092,7 @@ export default function App() {
           fetch(`${BACKEND}/leaderboard/add`,{method:"POST",headers:{"Content-Type":"application/json"},
             body:JSON.stringify({steamid:p.steamid, username:p.username, avatar:p.avatar||"",
               stats:{kd:lbKd, winrate:lbWr, hs:lbHs, matches:lbM,
-                rank:fc2?.elo?`FACEIT ${fc2.level}`:"Steam",
+                rank:fc2?.elo?`FACEIT ${fc2?.level}`:"Steam",
                 kills:cs22.kills||"0", deaths:cs22.deaths||"0", mvp:cs22.mvps||"0", playtime:cs22.playtime||"0"},
               level:levelLabel, overall:String(lbOverall)})
           }).catch(()=>{});
@@ -8122,10 +8122,10 @@ export default function App() {
     const statsPayload = source === "faceit" && fc
       ? { kd:fc.lifetime?.kd||"0", winrate:fc.lifetime?.winrate||"0",
           hltv:"0", hs:fc.lifetime?.hs||"0",
-          adr:arr(fc.matches)[0]?.adr||"0",
+          adr:arr(fc?.matches)[0]?.adr||"0",
           clutch1v1:"0", entrySuccess:"0",
-          rank:String(fc.elo||0), matches:fc.lifetime?.matches||"0",
-          steamid:player.steamid, maps:arr(fc.maps) }
+          rank:String(fc?.elo||0), matches:fc?.lifetime?.matches||"0",
+          steamid:player.steamid, maps:arr(fc?.maps) }
       : { kd:cs2.kd||"0", winrate:cs2.winrate||"0",
           hltv:"0", hs:cs2.hs||"0",
           adr:"0", clutch1v1:"0", entrySuccess:"0",
@@ -8198,13 +8198,13 @@ export default function App() {
           stats:{
             ...statsPayload,
             kills: source==="faceit"&&fc
-              ? String(arr(fc.matches).reduce((s,m)=>s+parseInt(m.kills||0),0) || cs2?.kills || 0)
+              ? String(arr(fc?.matches).reduce((s,m)=>s+parseInt(m.kills||0),0) || cs2?.kills || 0)
               : (cs2?.kills||"0"),
             deaths: source==="faceit"&&fc
-              ? String(arr(fc.matches).reduce((s,m)=>s+parseInt(m.deaths||0),0) || cs2?.deaths || 0)
+              ? String(arr(fc?.matches).reduce((s,m)=>s+parseInt(m.deaths||0),0) || cs2?.deaths || 0)
               : (cs2?.deaths||"0"),
             mvp: source==="faceit"&&fc
-              ? String(arr(fc.matches).reduce((s,m)=>s+parseInt(m.mvps||0),0) || cs2?.mvps || 0)
+              ? String(arr(fc?.matches).reduce((s,m)=>s+parseInt(m.mvps||0),0) || cs2?.mvps || 0)
               : (cs2?.mvps||"0"),
             playtime: cs2?.playtime||"0",
           },
@@ -8337,7 +8337,7 @@ export default function App() {
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:"13px",color:C.value,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{player.username}</div>
                         <div style={{fontSize:"10px",color:isPro?C.yellow:C.muted,marginTop:"1px"}}>
-                          {isPro?"⚡ PRO активен":hasFaceit?`FACEIT LVL ${player.faceit.level}`:`Steam Lvl ${player.steam_level||"—"}`}
+                          {isPro?"⚡ PRO активен":hasFaceit?`FACEIT LVL ${player.faceit?.level}`:`Steam Lvl ${player.steam_level||"—"}`}
                         </div>
                       </div>
                     </div>
@@ -8489,12 +8489,12 @@ export default function App() {
                 <div style={{display:"grid",className:"stat-grid",
                   gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:"3px",position:"relative"}}>
                   {(source==="faceit"&&player.faceit?[
-                    {l:"K/D",v:player.faceit.lifetime?.kd||"—",c:parseFloat(player.faceit.lifetime?.kd)>=1?C.win:C.lose},
-                    {l:"WIN %",v:player.faceit.lifetime?.winrate?(player.faceit.lifetime.winrate+"%"):"—",c:parseInt(player.faceit.lifetime?.winrate)>=50?C.win:C.yellow},
-                    {l:"HS %",v:player.faceit.lifetime?.hs?(player.faceit.lifetime.hs+"%"):"—",c:parseInt(player.faceit.lifetime?.hs)>=40?C.win:C.orange},
-                    {l:"FACEIT ELO",v:player.faceit.elo||"—",c:LVL_COLOR[player.faceit.level]||C.yellow},
-                    {l:"МАТЧИ",v:player.faceit.lifetime?.matches||"—",c:C.label},
-                    {l:"ADR",v:arr(player.faceit.matches)[0]?.adr||"—",c:C.orange},
+                    {l:"K/D",v:player.faceit?.lifetime?.kd||"—",c:parseFloat(player.faceit?.lifetime?.kd)>=1?C.win:C.lose},
+                    {l:"WIN %",v:player.faceit?.lifetime?.winrate?(player.faceit?.lifetime?.winrate+"%"):"—",c:parseInt(player.faceit?.lifetime?.winrate)>=50?C.win:C.yellow},
+                    {l:"HS %",v:player.faceit?.lifetime?.hs?(player.faceit?.lifetime?.hs+"%"):"—",c:parseInt(player.faceit?.lifetime?.hs)>=40?C.win:C.orange},
+                    {l:"FACEIT ELO",v:player.faceit?.elo||"—",c:LVL_COLOR[player.faceit?.level]||C.yellow},
+                    {l:"МАТЧИ",v:player.faceit?.lifetime?.matches||"—",c:C.label},
+                    {l:"ADR",v:arr(player.faceit?.matches)[0]?.adr||"—",c:C.orange},
                   ]:[
                     {l:"K/D",v:player.cs2?.kd||"—",c:parseFloat(player.cs2?.kd)>=1?C.win:C.lose},
                     {l:"WIN %",v:player.cs2?.winrate?(player.cs2.winrate+"%"):"—",c:parseInt(player.cs2?.winrate)>=50?C.win:C.yellow},
