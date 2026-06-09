@@ -1099,7 +1099,7 @@ function SteamStatsPanel({player}) {
           {[
             {l:"УБИЙСТВА",   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
             {l:"СМЕРТИ",     v:deaths.toLocaleString(),  c:C.lose,   icon:"💀"},
-            {l:{T.wins_col||"ПОБЕДЫ"},     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
+            {l:T.wins_col||"ПОБЕДЫ",     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
             {l:"MVP",        v:mvps.toLocaleString(),    c:C.yellow, icon:"⭐"},
             {l:"K/МАТЧ",     v:kdPerMatch,               c:C.blue,   icon:"🎯"},
             {l:"СМЕРТЕЙ/МАТ",v:deathsPerMatch,           c:C.muted,  icon:"📊"},
