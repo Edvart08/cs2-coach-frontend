@@ -1284,6 +1284,8 @@ const TRANSLATIONS = {
     refresh:"↻ refresh",
   },
 };
+
+const WEAPON_DATA = {
   // name → {img: Steam market hash, slot}
   "AK-47":      {img:"AK-47",         slot:"rifle",   color:"#e8a44a"},
   "M4A1-S":     {img:"M4A1-S",        slot:"rifle",   color:"#7abfff"},
