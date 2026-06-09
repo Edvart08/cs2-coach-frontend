@@ -7740,7 +7740,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
 // ── Practice Tab ──────────────────────────────────────────────────────────────
 const PRACTICE_ITEMS = [
   // ВОРКШОП
-  {id:1,cat:"workshop",diff:t("any_level","Любой"),icon:"🎯",title:"aim_botz",map:null,
+  {id:1,cat:"workshop",diff:"Любой",icon:"🎯",title:"aim_botz",map:null,
    desc:"Лучшая карта для тренировки прицела — стоячие, двигающиеся боты, настройка дистанции.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=243702660",type:"steam"},
   {id:2,cat:"workshop",diff:"Средний",icon:"🔫",title:"Recoil Master",map:null,
@@ -7761,7 +7761,7 @@ const PRACTICE_ITEMS = [
   {id:7,cat:"workshop",diff:"Средний",icon:"⚡",title:"Yprac Prefire Ancient",map:"Ancient",
    desc:"Тренировка всех углов Ancient — карта которую мало кто учит, поэтому даёт преимущество.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2134123524",type:"steam"},
-  {id:8,cat:"workshop",diff:t("any_level","Любой"),icon:"🎮",title:"1v1 Arena",map:null,
+  {id:8,cat:"workshop",diff:"Любой",icon:"🎮",title:"1v1 Arena",map:null,
    desc:"Случайные дуэли 1v1. Лучший способ проверить прицел в боевых условиях.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=149093839",type:"steam"},
   {id:9,cat:"workshop",diff:"Средний",icon:"💨",title:"Smoke Training Mirage",map:"Mirage",
@@ -7831,8 +7831,8 @@ const CATS = [
   {id:"positions",label:"Позиции", icon:"🗺️"},
   {id:"callouts",label:"Карты",    icon:"📍"},
 ];
-const DIFFS = ["Начинающий","Средний","Продвинутый",t("any_level","Любой")];
-const DIFF_COLOR = {"Начинающий":C.win,"Средний":C.yellow,"Продвинутый":C.lose,t("any_level","Любой"):C.blue};
+const DIFFS = ["Начинающий","Средний","Продвинутый","Любой"];
+const DIFF_COLOR = {"Начинающий":C.win,"Средний":C.yellow,"Продвинутый":C.lose,"Любой":C.blue,"Any":C.blue,"Beginner":C.win,"Intermediate":C.yellow,"Advanced":C.lose};
 
 const MAP_IMAGES = {
   Mirage:  { src: "/maps/mirage.webp"  },
@@ -7892,7 +7892,7 @@ function PracticeTab({player}) {
   const filtered = cat==="callouts" ? [] : PRACTICE_ITEMS.filter(item=>{
     if(cat!=="all"&&item.cat!==cat) return false;
     if(diff!=="all"&&item.diff!==diff) return false;
-    if(diff===t("for_you","Для вас")&&!forYouIds.includes(item.id)) return false;
+    if(diff==="for_you"&&!forYouIds.includes(item.id)) return false;
     if(search){
       const q=search.toLowerCase();
       return item.title.toLowerCase().includes(q)||(item.map||"").toLowerCase().includes(q)||item.desc.toLowerCase().includes(q);
@@ -7986,7 +7986,7 @@ function PracticeTab({player}) {
       {/* Cards */}
       {cat!=="callouts"&&<>
         <div style={{fontSize:"12px",color:C.muted,marginBottom:"12px"}}>
-          {diff===t("for_you","Для вас")&&!player?"Войди через Steam для персональных рекомендаций":
+          {diff==="for_you"&&!player?"Войди через Steam для персональных рекомендаций":
            `${filtered.length} материал${filtered.length===1?"":"ов"}`}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:"3px"}}>
@@ -8041,7 +8041,7 @@ function PracticeTab({player}) {
             );
           })}
         </div>
-        {diff===t("for_you","Для вас")&&!player&&(
+        {diff==="for_you"&&!player&&(
           <div style={{textAlign:"center",padding:"40px",background:C.card,border:`1px solid ${C.border}`}}>
             <div style={{fontSize:"28px",marginBottom:"12px"}}>⭐</div>
             <div style={{fontSize:"14px",color:C.label}}>Войди через Steam — подберём материалы под твои слабые стороны</div>
