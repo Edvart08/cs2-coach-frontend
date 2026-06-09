@@ -1264,9 +1264,9 @@ const TRANSLATIONS = {
     login_first:"ВОЙДИ ЧЕРЕЗ STEAM",
     skill_rating:"РЕЙТИНГ НАВЫКОВ",choose_coach:"ВЫБЕРИ ТРЕНЕРА",
     best_map:"🏆 ЛУЧШАЯ КАРТА",worst_map:"⚠️ ХУДШАЯ КАРТА",
-    role:"ТВОЯ РОЛЬ",next_step:T.next_step||"СЛЕДУЮЩИЙ ШАГ",weekly_plan:T.weekly_plan||"📅 ПЛАН НА НЕДЕЛЮ",
-    mental:T.mental||"🧠 ПСИХОЛОГИЧЕСКИЙ ПРОФИЛЬ",strengths:T.strengths||"✓ СИЛЬНЫЕ СТОРОНЫ",problems:T.problems||"✗ ПРОБЛЕМЫ",
-    refresh:T.refresh||"↻ обновить",
+    role:"ТВОЯ РОЛЬ",next_step:"СЛЕДУЮЩИЙ ШАГ",weekly_plan:"📅 ПЛАН НА НЕДЕЛЮ",
+    mental:"🧠 ПСИХОЛОГИЧЕСКИЙ ПРОФИЛЬ",strengths:"✓ СИЛЬНЫЕ СТОРОНЫ",problems:"✗ ПРОБЛЕМЫ",
+    refresh:"↻ обновить",
   },
   en: {
     tab_overview:"OVERVIEW",tab_coach:"🎯 COACH",tab_practice:"📚 PRACTICE",
@@ -3736,7 +3736,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
               {/* Левая — Rings скилла */}
               <div style={{background:C.bg,padding:"24px 28px"}}>
                 <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"20px",fontWeight:700}}>
-                  {T.skill_rating||"РЕЙТИНГ НАВЫКОВ"}
+                  "РЕЙТИНГ НАВЫКОВ"
                 </div>
                 <div style={{display:"flex",justifyContent:"space-around",gap:"16px"}}>
                   {[
