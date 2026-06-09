@@ -1274,7 +1274,7 @@ const TRANSLATIONS = {  ru: {
     weapons_title:"ОРУЖИЯ",weapons_sub:"статистика по оружию",
     source_label:"Источник данных",main_problem:"ГЛАВНАЯ ПРОБЛЕМА",
     premier_tab:"🏅 Premier Рейтинг",stats_tab:"📊 Статистика",
-    current_rank:t("current_rank","ТЕКУЩИЙ РАНГ"),best_rank:t("best_rank","ЛУЧШИЙ РАНГ"),wins_col:"ПОБЕДЫ",
+    current_rank:"ТЕКУЩИЙ РАНГ",best_rank:"ЛУЧШИЙ РАНГ",wins_col:"ПОБЕДЫ",
     update:"↻ Обновить",loading:"Загружаем...",no_data:"Нет данных",
     go_to_coach:"🎯 ПОЛНЫЙ РАЗБОР И ЧАТ С ТРЕНЕРОМ →",
     prac_title:"ПРАКТИКА",prac_sub:"упражнения и материалы",
