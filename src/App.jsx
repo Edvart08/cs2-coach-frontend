@@ -1,6 +1,475 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
+const TRANSLATIONS = {  ru: {
+    tab_overview:"ОБЗОР",tab_coach:"🎯 ТРЕНЕР",tab_practice:"📚 ПРАКТИКА",
+    tab_matches:"🎮 МАТЧИ",tab_maps:"🗺️ КАРТЫ",tab_history:"📋 ИСТОРИЯ",
+    tab_leaders:"🏆 ЛИДЕРЫ",tab_friends:"👥 ДРУЗЬЯ",
+    login:"Войти через Steam",logout:"Выйти",
+    profile:"Мой профиль",settings:"Настройки",
+    wins:"побед",hours:"ч",matches:"матчей",
+    kills_label:"УБИЙСТВА",deaths_label:"СМЕРТИ",wins_label:"ПОБЕДЫ",
+    k_match:"K/МАТЧ",d_match:"СМЕРТЕЙ/МАТ",
+    get_analysis:"ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА",analyzing:"АНАЛИЗИРУЮ...",login_first:"ВОЙДИ ЧЕРЕЗ STEAM",
+    skill_rating:"РЕЙТИНГ НАВЫКОВ",choose_coach:"ВЫБЕРИ ТРЕНЕРА",
+    best_map:"🏆 ЛУЧШАЯ КАРТА",worst_map:"⚠️ ХУДШАЯ КАРТА",
+    role:"ТВОЯ РОЛЬ",next_step:"СЛЕДУЮЩИЙ ШАГ",weekly_plan:"📅 ПЛАН НА НЕДЕЛЮ",
+    mental:"🧠 ПСИХОЛОГИЧЕСКИЙ ПРОФИЛЬ",strengths:"✓ СИЛЬНЫЕ СТОРОНЫ",problems:"✗ ПРОБЛЕМЫ",
+    refresh:"↻ обновить",
+    ai_verdict:"AI ВЕРДИКТ",ai_verdict_sub:"персональный разбор твоей игры",
+    rating_title:"РЕЙТИНГ",rating_sub:"Coach Rating на основе твоей статистики",
+    today_title:"СЕГОДНЯ",today_sub:"главное действие для роста",
+    progress_title:"ПРОГРЕСС",progress_sub:"как ты изменился",
+    weapons_title:"ОРУЖИЯ",weapons_sub:"статистика по оружию",
+    source_label:"Источник данных",main_problem:"ГЛАВНАЯ ПРОБЛЕМА",
+    premier_tab:"🏅 Premier Рейтинг",stats_tab:"📊 Статистика",
+    current_rank:"ТЕКУЩИЙ РАНГ",best_rank:"ЛУЧШИЙ РАНГ",wins_col:"ПОБЕДЫ",
+    update:"↻ Обновить",loading:"Загружаем...",no_data:"Нет данных",
+    go_to_coach:"🎯 ПОЛНЫЙ РАЗБОР И ЧАТ С ТРЕНЕРОМ →",
+    prac_title:"ПРАКТИКА",prac_sub:"упражнения и материалы",
+    history_title:"ИСТОРИЯ",history_sub:"история разборов",
+    maps_title:"КАРТЫ",maps_sub:"статистика по картам",
+    friends_title:"ДРУЗЬЯ",friends_sub:"сравнение с друзьями",
+    steam_since:"Steam с",lvl:"Уровень",
+    login_btn:"Войти через Steam чтобы начать",
+    auto_1:"Переключись на Aimlabs / KovaaK's — workshop aim_botz уже не даёт прогресса на этом уровне",
+    auto_2:"Recoil Master workshop: отработай первые 5 пуль AK47 — они дают больше всего хедшотов",
+    auto_3:"Изучи все раскидки на 2 основных картах до автоматизма — без этого уровень 10 закрыт",
+    auto_4:"Играй IGL роль 1 матч: давай callouts, предлагай стратегии — понимание игры растёт",
+    auto_5:"После каждого матча: был ли ты полезен команде или просто стрелял? MVP — это вклад",
+    auto_6:"Посмотри демо: найди 3 момента где стрелял в тело — понять почему прицел был низко",
+    auto_7:"Каждый день — 1 новая раскидка на любой карте. За 200 матчей это 200 инструментов",
+    auto_8:"Изучи 3 стандартные раскидки на лучшей карте — смок мидл, смок CT, молотов на кит",
+    auto_9:"На этом опыте учи IGL: давай callouts, читай игру соперника, выигрывай тактически",
+    auto_10:"Делай перерыв каждые 2 часа — с таким количеством часов важна свежесть восприятия",
+    auto_11:"1000 убийств — хорошее начало. Aim_botz: 500 фрагов ежедневно для роста механики",
+    auto_12:"Разбери своё худшее соотношение K/D за последние 20 матчей — найди общий паттерн",
+    auto_13:"Веди заметки: после каждого матча 1 строчка — что сделал хорошо, что исправить",
+    auto_14:"Ставь себе цель: минимум 3 матча в день. Главное — регулярность, не результат",
+    auto_15:"Не rush B каждый раунд — чередуй атаки, читай мини-карту, реагируй на ротации",
+    auto_16:"Разбери 5 смертей из последнего матча — найди паттерн где проигрываешь дуэли",
+    auto_17:"Серия 5+ — ты в зоне. Главное правило: стоп если проиграл 2 подряд, отдохни",
+    auto_18:"Пробуй новые позиции и углы — 500 матчей на одних и тех же точках = потолок",
+    auto_19:"Aim_botz: 500 убийств только в голову, без спрея — пока не выйдет уверенно",
+    auto_20:"Учи раскидки под entry: 1 смок + 1 флэш на каждую карту — даёт больше MVP",
+    auto_21:"Ежедневный warmup стал твоим ритуалом — не пропускай его во время серии",
+    auto_22:"10+ серия побед",
+    auto_23:"3+ серия побед",
+    auto_24:"Огненная серия",
+    auto_25:"5+ серия побед",
+    auto_26:"Машина смерти",
+    auto_27:"Доминирующий",
+    auto_28:"Непобедимый",
+    ach_sniper1:"Снайпер-новичок",
+    ach_hs30:"HS% выше 30%",
+    ach_hs40:"HS% выше 40%",
+    ach_hs55:"HS% выше 55%",
+    ach_marksman:"Меткий стрелок",
+    ach_acc25:"Точность выше 25%",
+    done_check:"✅ ВЫПОЛНЕНО",
+    tr_best_map_streak:"Играй на своей лучшей карте пока идёт серия — не экспериментируй",
+    tr_remember:"Анализируй что делаешь правильно сейчас — запомни это состояние игры",
+    tr_lvl5:"На уровне 5+ противники знают базовые раскидки — учи нестандартные позиции",
+    tr_aim_daily:"Aim_botz ежедневно: на этом уровне механика решает половину дуэлей",
+    tr_demo78:"Смотри демо игроков уровня 7-8 на своей роли — копируй позиционирование",
+    tr_lvl8:"На уровне 8+ нужен разбор каждого матча: 3 ошибки и 1 что сделал хорошо",
+    tr_mvp:"MVP = первый в команде. Фокус: entry fragging, открывать раунды, не ждать",
+    tr_cstrafe2:"Работай над counter-strafe — точность в движении даёт +20% к фрагам",
+    tr_2k_goal:"Ставь цель: 2000 убийств за следующие 3 месяца = ~22 матча в неделю",
+    tr_10k:"10к убийств — ты ветеран. Теперь считай ADR и impact, не просто kills",
+    tr_warmup500:"Aim_botz: ежедневная разминка 500 убийств",
+    tr_last_loss:"Разбери последний проигранный матч — найди 1 паттерн ошибок",
+    tr_new_smoke:"Выучи 1 новую раскидку на лучшей карте",
+    sup_pro_date_a:"📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата.",
+    tr_dm_pistol:"Deathmatch: стреляй только пистолетом — заставляет прицеливаться точнее",
+    tr_aim300:"Aim_botz headshot only: минимум 300 убийств подряд с точностью выше 60%",
+    tr_awp_dm:"Переключись на AWP на 1 deathmatch-сессию — учит ставить прицел на уровень головы",
+    tr_cstrafe:"Counter-strafe практика: движение → стоп → выстрел. Цель — 0 пуль в движении",
+    tr_dm15:"Deathmatch 15 минут: фокус только на первый выстрел, не спрей",
+    tr_aggro:"Играй агрессивнее на входе — больше дуэлей = больше шансов поднять K/D",
+    tr_aim1000:"Aim_botz: 1000 убийств ежедневно — без этого K/D 1.5+ не даётся",
+    tr_micro:"Micro-adjustments: стреляй по маленьким движущимся мишеням в workshop",
+    tr_util:"Учи utility на 1 карте: 2 смока, 1 молотов, 1 флэш — и применяй каждый раунд",
+    tr_lost_match:"Посмотри 1 проигранный матч: найди раунды где команда проигрывала из-за позиций",
+    tr_round_review:"После каждого проигранного раунда: 1 вывод почему проиграли, 1 исправление",
+    tr_grinder:"Уже 500 матчей — ты гриндер. Теперь фокус на качестве: играй медленнее, думай больше",
+    tr_streak3:"Серия 3+ побед: не меняй стиль игры, не force-buy — сохраняй темп",
+    tr_warmup:"Перед каждым матчем серии: 10 минут aim warmup — не прыгать в игру холодным",
+    sup_q_pro:"У меня активна Pro версия",
+    sup_q_activate:"Как активировать PRO?",
+    sup_q_data:"Данные не загружаются",
+    sup_q_faceit:"FACEIT не подключается",
+    sup_q_rating:"Как работает Coach Rating?",
+    sup_q_limit:"Лимит анализов",
+    my_profile:"Мой профиль",
+    logout_btn:"Выйти",
+    data_label:"Данные",
+    reconnect_fail:"Не удалось восстановить подключение. Попробуй переподключить код.",
+    login_steam:"Войти через Steam",
+    about:"О нас",
+    pro_plans:"Тарифы Pro",
+    connect_faceit:"Подключить FACEIT аккаунт",
+    first_analysis:"Получить первый AI разбор",
+    talk_coach:"Поговорить с AI тренером",
+    first_training:"Выполнить первую тренировку",
+    login_steam2:"Войти через Steam",
+    fighter_n:"Боец",
+    sniper_n:"Снайпер",
+    veteran_n:"Ветеран",
+    master_n:"Мастер",
+    elite_n:"Элита",
+    legend_n:"Легенда",
+    ach_hs:"HS Машина",
+    ach_frag:"Фраггер",
+    ach_winner:"Победитель",
+    t15min:"15 мин",
+    t20min:"20 мин",
+    t10min:"10 мин",
+    t25min:"25 мин",
+    cat_mech:"МЕХАНИКА",
+    cat_prac:"ПРАКТИКА",
+    cat_psych:"ПСИХОЛОГИЯ",
+    cat_tact:"ТАКТИКА",
+    cat_maps:"КАРТЫ",
+    diff_begin:"Начинающий",
+    diff_mid:"Средний",
+    diff_adv:"Продвинутый",
+    diff_any:"Любой",
+    diff_pro:"Про",
+    enter_key:"Ввести ключ",
+    pro_feat1:"Анализ слабых карт",
+    pro_feat2:"PRO значок в лидерборде",
+    pro_feat3:"Приоритетная поддержка",
+    all_period:"Всё",
+    you_suffix:" (ты)",
+    settings_t:"Настройки",
+    pro_active_q:"про активна",
+    not_loading:"не загружается",
+    rank_none:"Без ранга",
+    rank_gray:"Серый",
+    rank_lblue:"Голубой",
+    rank_blue:"Синий",
+    rank_purple:"Фиолетовый",
+    rank_pink:"Розовый",
+    rank_red:"Красный",
+    rank_gold:"Золотой",
+    lbl_kills:"УБИЙСТВА",
+    lbl_deaths:"СМЕРТИ",
+    lbl_wins:"ПОБЕДЫ",
+    lbl_mvp:"MVP",
+    lbl_kmatch:"K/МАТЧ",
+    lbl_dmatch:"СМЕРТЕЙ/МАТ",
+    lbl_knife:"НОЖОМ",
+    lbl_blind:"В СЛЕПУЮ",
+    lbl_doms:"ДОМИНАЦИЙ",
+    lbl_acc:"ТОЧНОСТЬ",
+    lbl_planted:"БОМБ ЗАЛОЖЕНО",
+    lbl_defused:"БОМБ ОБЕЗВРЕЖЕНО",
+    lbl_rev:"РЕВАНШИ",
+    lbl_win:"ПОБЕДА",
+    lbl_loss:"ПОРАЖЕНИЕ",
+    lbl_aim:"АИМ",
+    lbl_form:"ФОРМА",
+    lbl_wr:"WR",
+    lbl_good:"ХОРОШО",
+    lbl_avg:"СРЕДНЕ",
+    lbl_improve:"РАБОТАЙ",
+    stats_vs_avg:"ПОКАЗАТЕЛИ vs СРЕДНЕГО ИГРОКА",
+    spec_kills:"СПЕЦИАЛЬНЫЕ УБИЙСТВА",
+    additional:"ДОПОЛНИТЕЛЬНО",
+    all:"Все",
+    rifles:"Винтовки",
+    sniper:"Снайпер",
+    pistols:"Пистолеты",
+    knife_cat:"Нож",
+    kills_btn:"Убийства",
+    hs_btn:"HS%",
+    acc_btn:"Точность",
+    kills_col:"УБИЙСТВ",
+    hs_col:"HS%",
+    acc_col:"ТОЧНОСТЬ",
+    period_cmp:"СРАВНЕНИЕ ПЕРИОДОВ",
+    prog_hist:"ИСТОРИЯ ПРОГРЕССА",
+    no_changes:"БЕЗ ИЗМЕНЕНИЙ",
+    progress_up:"ПРОГРЕСС ▲",
+    progress_down:"СПАД ▼",
+    stable:"СТАБИЛЬНО",
+    was:"было",
+    became:"стало",
+    coach_rating:"CS2 COACH РЕЙТИНГ",
+    lvl_recruit:"НОВОБРАНЕЦ",
+    lvl_fighter:"БОЕЦ",
+    lvl_sniper_r:"СНАЙПЕР",
+    lvl_veteran:"ВЕТЕРАН",
+    lvl_master:"МАСТЕР",
+    lvl_elite:"ЭЛИТА",
+    lvl_legend:"ЛЕГЕНДА",
+    lb_hint:"Нажми на игрока — откроется профиль",
+    no_rank:"Нет ранга",
+    col_player:"ИГРОК",
+    col_matches:"МАТЧИ",
+    col_level:"УРОВЕНЬ",
+    daily_goal:"⚡ ЦЕЛЬ",
+    tomorrow:"ЗАВТРА",
+    choose_coach_h:"ВЫБЕРИ ТРЕНЕРА",
+    data_src:"Источник данных:",
+    faceit_lbl:"FACEIT",
+    steam_lbl:"STEAM",
+    support_greeting:"Привет! 👋 Чем могу помочь? Выбери вопрос или напиши своё.",
+    support_placeholder:"Напиши вопрос...",
+    call_operator:"Позвать оператора",
+    net_err:"Ошибка сети",
+    conn_err:"Ошибка подключения",
+    matches_err:"Не удалось загрузить матчи",
+    no_data_s:"Нет данных",
+    no_matches:"Нет матчей",
+    update_btn:"Обновить",
+    update_lb:"↻ Обновить",
+    loading_s:"Загружаем...",
+  },
+  en: {
+    tab_overview:"OVERVIEW",tab_coach:"🎯 COACH",tab_practice:"📚 PRACTICE",
+    tab_matches:"🎮 MATCHES",tab_maps:"🗺️ MAPS",tab_history:"📋 HISTORY",
+    tab_leaders:"🏆 LEADERS",tab_friends:"👥 FRIENDS",
+    login:"Login via Steam",logout:"Logout",
+    profile:"My Profile",settings:"Settings",
+    wins:"wins",hours:"h",matches:"matches",
+    kills_label:"KILLS",deaths_label:"DEATHS",wins_label:"WINS",
+    k_match:"K/MATCH",d_match:"D/MATCH",
+    get_analysis:"GET COACH ANALYSIS",analyzing:"ANALYZING...",login_first:"LOGIN VIA STEAM",
+    skill_rating:"SKILL RATING",choose_coach:"CHOOSE COACH",
+    best_map:"🏆 BEST MAP",worst_map:"⚠️ WORST MAP",
+    role:"YOUR ROLE",next_step:"NEXT STEP",weekly_plan:"📅 WEEKLY PLAN",
+    mental:"🧠 MENTAL PROFILE",strengths:"✓ STRENGTHS",problems:"✗ PROBLEMS",
+    refresh:"↻ refresh",
+    ai_verdict:"AI VERDICT",ai_verdict_sub:"personal game analysis",
+    rating_title:"RATING",rating_sub:"Coach Rating based on your stats",
+    today_title:"TODAY",today_sub:"main action for growth",
+    progress_title:"PROGRESS",progress_sub:"how you improved",
+    weapons_title:"WEAPONS",weapons_sub:"weapon statistics",
+    source_label:"Data source",main_problem:"MAIN PROBLEM",
+    premier_tab:"🏅 Premier Rating",stats_tab:"📊 Statistics",
+    current_rank:"CURRENT RANK",best_rank:"BEST RANK",wins_col:"WINS",
+    update:"↻ Update",loading:"Loading...",no_data:"No data",
+    go_to_coach:"🎯 FULL ANALYSIS & COACH CHAT →",
+    prac_title:"PRACTICE",prac_sub:"exercises and materials",
+    history_title:"HISTORY",history_sub:"analysis history",
+    maps_title:"MAPS",maps_sub:"map statistics",
+    friends_title:"FRIENDS",friends_sub:"compare with friends",
+    steam_since:"Steam since",lvl:"Level",
+    login_btn:"Login via Steam to start",
+    auto_1:"Switch to Aimlabs / KovaaK's — aim_botz no longer gives progress",
+    auto_2:"Recoil Master workshop: master the first 5 AK47 bullets — they get most kills",
+    auto_3:"Learn all lineups on 2 main maps to automatism — level 10 needs it",
+    auto_4:"Play IGL for 1 match: give callouts, suggest strats — deeper game understanding",
+    auto_5:"After each match: were you useful or just shooting? MVP is impact",
+    auto_6:"Watch your demo: find 3 moments you shot the body — understand why your crosshair was low",
+    auto_7:"Every day — 1 new lineup on any map. Over 200 matches that's 200+ lineups",
+    auto_8:"Learn 3 standard lineups on your best map — mid smoke, CT smoke, entry molotov",
+    auto_9:"With this experience learn IGL: callouts, read the enemy, win with your head",
+    auto_10:"Take a break every 2 hours — freshness matters with this many hours",
+    auto_11:"1000 kills is a good start. Aim_botz: 500 frags daily to grow",
+    auto_12:"Review your worst K/D in the last 20 matches — find the common cause",
+    auto_13:"Keep notes: 1 line after each match — what went well and what to fix",
+    auto_14:"Set a goal: at least 3 matches a day. Consistency beats marathons",
+    auto_15:"Don't rush B every round — vary attacks, read the minimap, react to info",
+    auto_16:"Analyze 5 deaths from your last match — find the pattern where you lose duels",
+    auto_17:"5+ streak — you're in the zone. Rule: stop after 2 losses in a row, rest 30 min",
+    auto_18:"Try new positions and angles — 500 matches on the same spots = plateau",
+    auto_19:"Aim_botz: 500 headshot-only kills, no spray — until confidence comes",
+    auto_20:"Learn entry lineups: 1 smoke + 1 flash per map — more openings",
+    auto_21:"Daily warmup is your ritual — don't skip it during streaks",
+    auto_22:"10+ win streak",
+    auto_23:"3+ win streak",
+    auto_24:"Fire streak",
+    auto_25:"5+ win streak",
+    auto_26:"Death Machine",
+    auto_27:"Dominating",
+    auto_28:"Unbeatable",
+    ach_sniper1:"Rookie Sniper",
+    ach_hs30:"HS% above 30%",
+    ach_hs40:"HS% above 40%",
+    ach_hs55:"HS% above 55%",
+    ach_marksman:"Marksman",
+    ach_acc25:"Accuracy above 25%",
+    done_check:"✅ DONE",
+    tr_best_map_streak:"Play your best map while the streak lasts — don't experiment",
+    tr_remember:"Analyze what you're doing right now — remember this game state",
+    tr_lvl5:"At level 5+ opponents know basic lineups — learn unconventional positions",
+    tr_aim_daily:"Aim_botz daily: at this level mechanics decide half the duels",
+    tr_demo78:"Watch level 7-8 players' demos in your role — copy their positioning",
+    tr_lvl8:"At level 8+ you need to review every match: 3 mistakes and 1 thing done well",
+    tr_mvp:"MVP = first in the team. Focus: entry fragging, opening rounds, not waiting",
+    tr_cstrafe2:"Work on counter-strafe — accuracy in motion gives +20% frags",
+    tr_2k_goal:"Set a goal: 2000 kills in the next 3 months = ~22 matches a week",
+    tr_10k:"10k kills — you're a veteran. Now track ADR and impact, not just kills",
+    tr_warmup500:"Aim_botz: daily 500-kill warmup",
+    tr_last_loss:"Review your last lost match — find 1 error pattern",
+    tr_new_smoke:"Learn 1 new lineup on your best map",
+    sup_pro_date_a:"📅 Open ⚡ PRO → «My subscription» — the exact date is shown there.",
+    tr_dm_pistol:"Deathmatch: pistol only — forces more precise aim",
+    tr_aim300:"Aim_botz headshot only: at least 300 kills in a row with 60%+ accuracy",
+    tr_awp_dm:"Switch to AWP for 1 deathmatch session — teaches head-level crosshair placement",
+    tr_cstrafe:"Counter-strafe practice: move → stop → shoot. Goal — 0 bullets while moving",
+    tr_dm15:"Deathmatch 15 min: focus only on first shot, no spray",
+    tr_aggro:"Play more aggressive on entry — more duels = more chances to raise K/D",
+    tr_aim1000:"Aim_botz: 1000 kills daily — K/D 1.5+ doesn't come without it",
+    tr_micro:"Micro-adjustments: shoot small moving targets in workshop",
+    tr_util:"Learn utility on 1 map: 2 smokes, 1 molotov, 1 flash — use them every round",
+    tr_lost_match:"Watch 1 lost match: find rounds where the team lost due to positioning",
+    tr_round_review:"After each lost round: 1 takeaway why you lost, 1 fix",
+    tr_grinder:"500 matches already — you're a grinder. Now focus on quality: play slower, think more",
+    tr_streak3:"3+ win streak: don't change playstyle, no force-buys — keep the tempo",
+    tr_warmup:"Before each match in a streak: 10 min aim warmup — don't jump in cold",
+    sup_q_pro:"Is my Pro active?",
+    sup_q_activate:"How to activate PRO?",
+    sup_q_data:"Data not loading",
+    sup_q_faceit:"FACEIT won't connect",
+    sup_q_rating:"How does Coach Rating work?",
+    sup_q_limit:"Analysis limit",
+    my_profile:"My Profile",
+    logout_btn:"Logout",
+    data_label:"Data",
+    reconnect_fail:"Failed to restore connection. Try reconnecting the code.",
+    login_steam:"Login via Steam",
+    about:"About us",
+    pro_plans:"Pro plans",
+    connect_faceit:"Connect FACEIT account",
+    first_analysis:"Get first AI analysis",
+    talk_coach:"Talk to AI coach",
+    first_training:"Complete first training",
+    login_steam2:"Login via Steam",
+    fighter_n:"Fighter",
+    sniper_n:"Sniper",
+    veteran_n:"Veteran",
+    master_n:"Master",
+    elite_n:"Elite",
+    legend_n:"Legend",
+    ach_hs:"HS Machine",
+    ach_frag:"Fragger",
+    ach_winner:"Winner",
+    t15min:"15 min",
+    t20min:"20 min",
+    t10min:"10 min",
+    t25min:"25 min",
+    cat_mech:"MECHANICS",
+    cat_prac:"PRACTICE",
+    cat_psych:"PSYCHOLOGY",
+    cat_tact:"TACTICS",
+    cat_maps:"MAPS",
+    diff_begin:"Beginner",
+    diff_mid:"Intermediate",
+    diff_adv:"Advanced",
+    diff_any:"Any",
+    diff_pro:"Pro",
+    enter_key:"Enter key",
+    pro_feat1:"Weak maps analysis",
+    pro_feat2:"PRO badge in leaderboard",
+    pro_feat3:"Priority support",
+    all_period:"All",
+    you_suffix:" (you)",
+    settings_t:"Settings",
+    pro_active_q:"pro active",
+    not_loading:"not loading",
+    rank_none:"No rank",
+    rank_gray:"Gray",
+    rank_lblue:"Light Blue",
+    rank_blue:"Blue",
+    rank_purple:"Purple",
+    rank_pink:"Pink",
+    rank_red:"Red",
+    rank_gold:"Gold",
+    lbl_kills:"KILLS",
+    lbl_deaths:"DEATHS",
+    lbl_wins:"WINS",
+    lbl_mvp:"MVP",
+    lbl_kmatch:"K/MATCH",
+    lbl_dmatch:"D/MATCH",
+    lbl_knife:"KNIFE",
+    lbl_blind:"BLIND",
+    lbl_doms:"DOMINIONS",
+    lbl_acc:"ACCURACY",
+    lbl_planted:"BOMBS PLANTED",
+    lbl_defused:"BOMBS DEFUSED",
+    lbl_rev:"REVENGES",
+    lbl_win:"WIN",
+    lbl_loss:"LOSS",
+    lbl_aim:"AIM",
+    lbl_form:"FORM",
+    lbl_wr:"WR",
+    lbl_good:"GOOD",
+    lbl_avg:"AVERAGE",
+    lbl_improve:"IMPROVE",
+    stats_vs_avg:"STATS vs AVERAGE PLAYER",
+    spec_kills:"SPECIAL KILLS",
+    additional:"ADDITIONAL",
+    all:"All",
+    rifles:"Rifles",
+    sniper:"Sniper",
+    pistols:"Pistols",
+    knife_cat:"Knife",
+    kills_btn:"Kills",
+    hs_btn:"HS%",
+    acc_btn:"Accuracy",
+    kills_col:"KILLS",
+    hs_col:"HS%",
+    acc_col:"ACCURACY",
+    period_cmp:"PERIOD COMPARISON",
+    prog_hist:"PROGRESS HISTORY",
+    no_changes:"NO CHANGES",
+    progress_up:"PROGRESS ▲",
+    progress_down:"DECLINE ▼",
+    stable:"STABLE",
+    was:"was",
+    became:"became",
+    coach_rating:"CS2 COACH RATING",
+    lvl_recruit:"RECRUIT",
+    lvl_fighter:"FIGHTER",
+    lvl_sniper_r:"SNIPER",
+    lvl_veteran:"VETERAN",
+    lvl_master:"MASTER",
+    lvl_elite:"ELITE",
+    lvl_legend:"LEGEND",
+    lb_hint:"Click player to open profile",
+    no_rank:"No rank",
+    col_player:"PLAYER",
+    col_matches:"MATCHES",
+    col_level:"LEVEL",
+    daily_goal:"⚡ GOAL",
+    tomorrow:"TOMORROW",
+    choose_coach_h:"CHOOSE COACH",
+    data_src:"Data source:",
+    faceit_lbl:"FACEIT",
+    steam_lbl:"STEAM",
+    support_greeting:"Hi! 👋 How can I help? Choose a question or type your own.",
+    support_placeholder:"Type your question...",
+    call_operator:"Call operator",
+    net_err:"Network error",
+    conn_err:"Connection error",
+    matches_err:"Failed to load matches",
+    no_data_s:"No data",
+    no_matches:"No matches",
+    update_btn:"Update",
+    update_lb:"↻ Update",
+    loading_s:"Loading...",
+  },
+};
+
+// Глобальный хелпер — любой компонент может использовать без prop drilling
+// Обновляется через window._lang при смене языка
+let _currentLang = (()=>{ try{ return localStorage.getItem("cs2_lang")||"ru"; }catch{ return "ru"; } })();
+function t(key, fallback) {
+  const T = TRANSLATIONS[_currentLang] || TRANSLATIONS.ru;
+  return T[key] || fallback || key;
+}
+
+// Перевод значений сложности при отображении (данные хранят русские ключи)
+const DIFF_EN = {"Начинающий":"Beginner","Средний":"Intermediate","Продвинутый":"Advanced","Любой":"Any","Про":"Pro"};
+function tDiff(d) { return _currentLang==="en" ? (DIFF_EN[d]||d) : d; }
+const CAT_EN = {"МЕХАНИКА":"MECHANICS","ПРАКТИКА":"PRACTICE","ПСИХОЛОГИЯ":"PSYCHOLOGY","ТАКТИКА":"TACTICS","КАРТЫ":"MAPS","АНАЛИЗ":"ANALYSIS","РЕЖИМ":"MODE"};
+function tCat(c) { return _currentLang==="en" ? (CAT_EN[c]||c) : c; }
+
+
 // ── PostHog Analytics ─────────────────────────────────────────────────────────
 // Вставь сюда свой ключ: posthog.com → Settings → Project API Key
 const PH_KEY = "phc_maMsR3miBxUvchHy9yTFykNfZg8FWM49WauSYRNnDgZS";
@@ -44,14 +513,14 @@ const C = {
 
 // ── Premier Rank System ────────────────────────────────────────────────────────
 const PREMIER_RANKS = [
-  {min:0,     max:4999,  key:"rank_none",  def:"Без ранга",   color:"#8a8a8a", gradient:"#555,#888"},
-  {min:5000,  max:9999,  key:"rank_gray",  def:"Серый",        color:"#9aacb8", gradient:"#6a7a86,#9aacb8"},
-  {min:10000, max:14999, key:"rank_lblue", def:"Голубой",      color:"#6abadf", gradient:"#3a8abf,#6abadf"},
-  {min:15000, max:19999, key:"rank_blue",  def:"Синий",        color:"#3d72d7", gradient:"#2255b0,#3d72d7"},
-  {min:20000, max:24999, key:"rank_purple",key_def:"Фиолетовый",color:"#8855cc", gradient:"#6633aa,#8855cc"},
-  {min:25000, max:29999, key:"rank_pink",  def:"Розовый",      color:"#dd4499", gradient:"#bb2277,#dd4499"},
-  {min:30000, max:34999, key:"rank_red",   def:"Красный",      color:"#dd3333", gradient:"#bb1111,#dd3333"},
-  {min:35000, max:99999, key:"rank_gold",  def:"Золотой",      color:"#f5c518", gradient:"#d4a017,#f5c518"},
+  {min:0,     max:4999,  label:t("rank_none","Без ранга"),   color:"#8a8a8a", gradient:"#555,#888"},
+  {min:5000,  max:9999,  label:t("rank_gray","Серый"),        color:"#9aacb8", gradient:"#6a7a86,#9aacb8"},
+  {min:10000, max:14999, label:t("rank_lblue","Голубой"),      color:"#6abadf", gradient:"#3a8abf,#6abadf"},
+  {min:15000, max:19999, label:t("rank_blue","Синий"),        color:"#3d72d7", gradient:"#2255b0,#3d72d7"},
+  {min:20000, max:24999, label:t("rank_purple","Фиолетовый"),   color:"#8855cc", gradient:"#6633aa,#8855cc"},
+  {min:25000, max:29999, label:t("rank_pink","Розовый"),      color:"#dd4499", gradient:"#bb2277,#dd4499"},
+  {min:30000, max:34999, label:t("rank_red","Красный"),      color:"#dd3333", gradient:"#bb1111,#dd3333"},
+  {min:35000, max:99999, label:t("rank_gold","Золотой"),      color:"#f5c518", gradient:"#d4a017,#f5c518"},
 ];
 
 function getPremierRank(rating) {
@@ -108,9 +577,6 @@ function PremierRankIcon({rating, size=32}) {
 function PremierBadge({rating, showLabel=true, size=28}) {
   const n = parseInt(rating) || 0;
   const rank = getPremierRank(n);
-  // Вызываем функцию перевода t() прямо здесь, когда весь контекст уже гарантированно загружен
-  const translatedLabel = t(rank.key, rank.def); 
-
   return (
     <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
       <PremierRankIcon rating={n} size={size}/>
@@ -120,7 +586,7 @@ function PremierBadge({rating, showLabel=true, size=28}) {
             {n.toLocaleString()}
           </div>
           <div style={{fontSize:"10px",color:rank.color,opacity:0.7,letterSpacing:"0.5px"}}>
-            {translatedLabel}
+            {rank.label}
           </div>
         </div>
       )}
@@ -678,7 +1144,7 @@ function SteamMMMatches({steamid}) {
           r = await fetch(`${BACKEND}/steam/matches/${steamid}?limit=10`);
           d = await r.json();
         } else {
-          setErr("Не удалось восстановить подключение. Попробуй переподключить код.");
+          setErr(t("reconnect_fail","Не удалось восстановить подключение. Попробуй переподключить код."));
           setLoading(false);
           return;
         }
@@ -1255,242 +1721,6 @@ function MapPool({faceit}) {
 }
 
 // ── Weapons Panel ─────────────────────────────────────────────────────────────
-const TRANSLATIONS = {  ru: {
-    tab_overview:"ОБЗОР",tab_coach:"🎯 ТРЕНЕР",tab_practice:"📚 ПРАКТИКА",
-    tab_matches:"🎮 МАТЧИ",tab_maps:"🗺️ КАРТЫ",tab_history:"📋 ИСТОРИЯ",
-    tab_leaders:"🏆 ЛИДЕРЫ",tab_friends:"👥 ДРУЗЬЯ",
-    login:"Войти через Steam",logout:"Выйти",
-    profile:"Мой профиль",settings:"Настройки",
-    wins:"побед",hours:"ч",matches:"матчей",
-    kills_label:"УБИЙСТВА",deaths_label:"СМЕРТИ",wins_label:"ПОБЕДЫ",
-    k_match:"K/МАТЧ",d_match:"СМЕРТЕЙ/МАТ",
-    get_analysis:"ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА",analyzing:"АНАЛИЗИРУЮ...",login_first:"ВОЙДИ ЧЕРЕЗ STEAM",
-    skill_rating:"РЕЙТИНГ НАВЫКОВ",choose_coach:"ВЫБЕРИ ТРЕНЕРА",
-    best_map:"🏆 ЛУЧШАЯ КАРТА",worst_map:"⚠️ ХУДШАЯ КАРТА",
-    role:"ТВОЯ РОЛЬ",next_step:"СЛЕДУЮЩИЙ ШАГ",weekly_plan:"📅 ПЛАН НА НЕДЕЛЮ",
-    mental:"🧠 ПСИХОЛОГИЧЕСКИЙ ПРОФИЛЬ",strengths:"✓ СИЛЬНЫЕ СТОРОНЫ",problems:"✗ ПРОБЛЕМЫ",
-    refresh:"↻ обновить",
-    ai_verdict:"AI ВЕРДИКТ",ai_verdict_sub:"персональный разбор твоей игры",
-    rating_title:"РЕЙТИНГ",rating_sub:"Coach Rating на основе твоей статистики",
-    today_title:"СЕГОДНЯ",today_sub:"главное действие для роста",
-    progress_title:"ПРОГРЕСС",progress_sub:"как ты изменился",
-    weapons_title:"ОРУЖИЯ",weapons_sub:"статистика по оружию",
-    source_label:"Источник данных",main_problem:"ГЛАВНАЯ ПРОБЛЕМА",
-    premier_tab:"🏅 Premier Рейтинг",stats_tab:"📊 Статистика",
-    current_rank:"ТЕКУЩИЙ РАНГ",best_rank:"ЛУЧШИЙ РАНГ",wins_col:"ПОБЕДЫ",
-    update:"↻ Обновить",loading:"Загружаем...",no_data:"Нет данных",
-    go_to_coach:"🎯 ПОЛНЫЙ РАЗБОР И ЧАТ С ТРЕНЕРОМ →",
-    prac_title:"ПРАКТИКА",prac_sub:"упражнения и материалы",
-    history_title:"ИСТОРИЯ",history_sub:"история разборов",
-    maps_title:"КАРТЫ",maps_sub:"статистика по картам",
-    friends_title:"ДРУЗЬЯ",friends_sub:"сравнение с друзьями",
-    steam_since:"Steam с",lvl:"Уровень",
-    login_btn:"Войти через Steam чтобы начать",
-    rank_none:"Без ранга",
-    rank_gray:"Серый",
-    rank_lblue:"Голубой",
-    rank_blue:"Синий",
-    rank_purple:"Фиолетовый",
-    rank_pink:"Розовый",
-    rank_red:"Красный",
-    rank_gold:"Золотой",
-    lbl_kills:"УБИЙСТВА",
-    lbl_deaths:"СМЕРТИ",
-    lbl_wins:"ПОБЕДЫ",
-    lbl_mvp:"MVP",
-    lbl_kmatch:"K/МАТЧ",
-    lbl_dmatch:"СМЕРТЕЙ/МАТ",
-    lbl_knife:"НОЖОМ",
-    lbl_blind:"В СЛЕПУЮ",
-    lbl_doms:"ДОМИНАЦИЙ",
-    lbl_acc:"ТОЧНОСТЬ",
-    lbl_planted:"БОМБ ЗАЛОЖЕНО",
-    lbl_defused:"БОМБ ОБЕЗВРЕЖЕНО",
-    lbl_rev:"РЕВАНШИ",
-    lbl_win:"ПОБЕДА",
-    lbl_loss:"ПОРАЖЕНИЕ",
-    lbl_aim:"АИМ",
-    lbl_form:"ФОРМА",
-    lbl_wr:"WR",
-    lbl_good:"ХОРОШО",
-    lbl_avg:"СРЕДНЕ",
-    lbl_improve:"РАБОТАЙ",
-    stats_vs_avg:"ПОКАЗАТЕЛИ vs СРЕДНЕГО ИГРОКА",
-    spec_kills:"СПЕЦИАЛЬНЫЕ УБИЙСТВА",
-    additional:"ДОПОЛНИТЕЛЬНО",
-    all:"Все",
-    rifles:"Винтовки",
-    sniper:"Снайпер",
-    pistols:"Пистолеты",
-    knife_cat:"Нож",
-    kills_btn:"Убийства",
-    hs_btn:"HS%",
-    acc_btn:"Точность",
-    kills_col:"УБИЙСТВ",
-    hs_col:"HS%",
-    acc_col:"ТОЧНОСТЬ",
-    period_cmp:"СРАВНЕНИЕ ПЕРИОДОВ",
-    prog_hist:"ИСТОРИЯ ПРОГРЕССА",
-    no_changes:"БЕЗ ИЗМЕНЕНИЙ",
-    progress_up:"ПРОГРЕСС ▲",
-    progress_down:"СПАД ▼",
-    stable:"СТАБИЛЬНО",
-    was:"было",
-    became:"стало",
-    coach_rating:"CS2 COACH РЕЙТИНГ",
-    lvl_recruit:"НОВОБРАНЕЦ",
-    lvl_fighter:"БОЕЦ",
-    lvl_sniper_r:"СНАЙПЕР",
-    lvl_veteran:"ВЕТЕРАН",
-    lvl_master:"МАСТЕР",
-    lvl_elite:"ЭЛИТА",
-    lvl_legend:"ЛЕГЕНДА",
-    lb_hint:"Нажми на игрока — откроется профиль",
-    no_rank:"Нет ранга",
-    col_player:"ИГРОК",
-    col_matches:"МАТЧИ",
-    col_level:"УРОВЕНЬ",
-    daily_goal:"⚡ ЦЕЛЬ",
-    tomorrow:"ЗАВТРА",
-    choose_coach_h:"ВЫБЕРИ ТРЕНЕРА",
-    data_src:"Источник данных:",
-    faceit_lbl:"FACEIT",
-    steam_lbl:"STEAM",
-    support_greeting:"Привет! 👋 Чем могу помочь? Выбери вопрос или напиши своё.",
-    support_placeholder:"Напиши вопрос...",
-    call_operator:"Позвать оператора",
-    net_err:"Ошибка сети",
-    conn_err:"Ошибка подключения",
-    matches_err:"Не удалось загрузить матчи",
-    no_data_s:"Нет данных",
-    no_matches:"Нет матчей",
-    update_btn:"Обновить",
-    update_lb:"↻ Обновить",
-    loading_s:"Загружаем...",
-  },
-  en: {
-    tab_overview:"OVERVIEW",tab_coach:"🎯 COACH",tab_practice:"📚 PRACTICE",
-    tab_matches:"🎮 MATCHES",tab_maps:"🗺️ MAPS",tab_history:"📋 HISTORY",
-    tab_leaders:"🏆 LEADERS",tab_friends:"👥 FRIENDS",
-    login:"Login via Steam",logout:"Logout",
-    profile:"My Profile",settings:"Settings",
-    wins:"wins",hours:"h",matches:"matches",
-    kills_label:"KILLS",deaths_label:"DEATHS",wins_label:"WINS",
-    k_match:"K/MATCH",d_match:"D/MATCH",
-    get_analysis:"GET COACH ANALYSIS",analyzing:"ANALYZING...",login_first:"LOGIN VIA STEAM",
-    skill_rating:"SKILL RATING",choose_coach:"CHOOSE COACH",
-    best_map:"🏆 BEST MAP",worst_map:"⚠️ WORST MAP",
-    role:"YOUR ROLE",next_step:"NEXT STEP",weekly_plan:"📅 WEEKLY PLAN",
-    mental:"🧠 MENTAL PROFILE",strengths:"✓ STRENGTHS",problems:"✗ PROBLEMS",
-    refresh:"↻ refresh",
-    ai_verdict:"AI VERDICT",ai_verdict_sub:"personal game analysis",
-    rating_title:"RATING",rating_sub:"Coach Rating based on your stats",
-    today_title:"TODAY",today_sub:"main action for growth",
-    progress_title:"PROGRESS",progress_sub:"how you improved",
-    weapons_title:"WEAPONS",weapons_sub:"weapon statistics",
-    source_label:"Data source",main_problem:"MAIN PROBLEM",
-    premier_tab:"🏅 Premier Rating",stats_tab:"📊 Statistics",
-    current_rank:"CURRENT RANK",best_rank:"BEST RANK",wins_col:"WINS",
-    update:"↻ Update",loading:"Loading...",no_data:"No data",
-    go_to_coach:"🎯 FULL ANALYSIS & COACH CHAT →",
-    prac_title:"PRACTICE",prac_sub:"exercises and materials",
-    history_title:"HISTORY",history_sub:"analysis history",
-    maps_title:"MAPS",maps_sub:"map statistics",
-    friends_title:"FRIENDS",friends_sub:"compare with friends",
-    steam_since:"Steam since",lvl:"Level",
-    login_btn:"Login via Steam to start",
-    rank_none:"No rank",
-    rank_gray:"Gray",
-    rank_lblue:"Light Blue",
-    rank_blue:"Blue",
-    rank_purple:"Purple",
-    rank_pink:"Pink",
-    rank_red:"Red",
-    rank_gold:"Gold",
-    lbl_kills:"KILLS",
-    lbl_deaths:"DEATHS",
-    lbl_wins:"WINS",
-    lbl_mvp:"MVP",
-    lbl_kmatch:"K/MATCH",
-    lbl_dmatch:"D/MATCH",
-    lbl_knife:"KNIFE",
-    lbl_blind:"BLIND",
-    lbl_doms:"DOMINIONS",
-    lbl_acc:"ACCURACY",
-    lbl_planted:"BOMBS PLANTED",
-    lbl_defused:"BOMBS DEFUSED",
-    lbl_rev:"REVENGES",
-    lbl_win:"WIN",
-    lbl_loss:"LOSS",
-    lbl_aim:"AIM",
-    lbl_form:"FORM",
-    lbl_wr:"WR",
-    lbl_good:"GOOD",
-    lbl_avg:"AVERAGE",
-    lbl_improve:"IMPROVE",
-    stats_vs_avg:"STATS vs AVERAGE PLAYER",
-    spec_kills:"SPECIAL KILLS",
-    additional:"ADDITIONAL",
-    all:"All",
-    rifles:"Rifles",
-    sniper:"Sniper",
-    pistols:"Pistols",
-    knife_cat:"Knife",
-    kills_btn:"Kills",
-    hs_btn:"HS%",
-    acc_btn:"Accuracy",
-    kills_col:"KILLS",
-    hs_col:"HS%",
-    acc_col:"ACCURACY",
-    period_cmp:"PERIOD COMPARISON",
-    prog_hist:"PROGRESS HISTORY",
-    no_changes:"NO CHANGES",
-    progress_up:"PROGRESS ▲",
-    progress_down:"DECLINE ▼",
-    stable:"STABLE",
-    was:"was",
-    became:"became",
-    coach_rating:"CS2 COACH RATING",
-    lvl_recruit:"RECRUIT",
-    lvl_fighter:"FIGHTER",
-    lvl_sniper_r:"SNIPER",
-    lvl_veteran:"VETERAN",
-    lvl_master:"MASTER",
-    lvl_elite:"ELITE",
-    lvl_legend:"LEGEND",
-    lb_hint:"Click player to open profile",
-    no_rank:"No rank",
-    col_player:"PLAYER",
-    col_matches:"MATCHES",
-    col_level:"LEVEL",
-    daily_goal:"⚡ GOAL",
-    tomorrow:"TOMORROW",
-    choose_coach_h:"CHOOSE COACH",
-    data_src:"Data source:",
-    faceit_lbl:"FACEIT",
-    steam_lbl:"STEAM",
-    support_greeting:"Hi! 👋 How can I help? Choose a question or type your own.",
-    support_placeholder:"Type your question...",
-    call_operator:"Call operator",
-    net_err:"Network error",
-    conn_err:"Connection error",
-    matches_err:"Failed to load matches",
-    no_data_s:"No data",
-    no_matches:"No matches",
-    update_btn:"Update",
-    update_lb:"↻ Update",
-    loading_s:"Loading...",
-  },
-};
-
-// Глобальный хелпер — любой компонент может использовать без prop drilling
-// Обновляется через window._lang при смене языка
-let _currentLang = "ru";
-function t(key, fallback) {
-  const T = TRANSLATIONS[_currentLang] || TRANSLATIONS.ru;
-  return T[key] || fallback || key;
-}
-
 const WEAPON_DATA = {
   // name → {img: Steam market hash, slot}
   "AK-47":      {img:"AK-47",         slot:"rifle",   color:"#e8a44a"},
@@ -1638,7 +1868,7 @@ function WeaponsPanel({cs2}) {
     hspc: w.kills>0 ? Math.round(w.hs/w.kills*100) : 0,
   }));
 
-  const slots = [{id:"all",l:t("all","Все")},{id:"rifle",l:t("rifles","Винтовки")},{id:"sniper",l:t("sniper","Снайпер")},{id:"pistol",l:t("pistols","Пистолеты")},{id:"knife",l:t("knife_cat","Нож")}];
+  const slots = [{id:"all",l:t("all","Все")},{id:"rifle",l:t("rifles","Винтовки")},{id:"sniper",l:t("sniper",t("sniper_n","Снайпер"))},{id:"pistol",l:t("pistols","Пистолеты")},{id:"knife",l:t("knife_cat","Нож")}];
   const filtered = filter==="all" ? weapons : weapons.filter(w=>w.slot===filter);
   const sorted = [...filtered].sort((a,b)=>sortBy==="kills"?b.kills-a.kills:sortBy==="hs"?b.hspc-a.hspc:b.acc-a.acc);
   const total = weapons.reduce((s,w)=>s+w.kills,0)||1;
@@ -2024,12 +2254,12 @@ function PlayerRating({player, source}) {
 
   // Система уровней CS2 Coach
   const coachLevels=[
-    {min:0,  max:19,  name:t("lvl_recruit","НОВОБРАНЕЦ"), icon:"🪖", color:"#8a8070", next:"Боец"},
-    {min:20, max:34,  name:t("lvl_fighter","БОЕЦ"),       icon:"⚔️", color:"#c8a060", next:t("sniper","Снайпер")},
-    {min:35, max:49,  name:t("lvl_sniper_r","СНАЙПЕР"),    icon:"🔭", color:"#74c6f5", next:"Ветеран"},
-    {min:50, max:64,  name:t("lvl_veteran","ВЕТЕРАН"),    icon:"🎖️", color:"#f5c518", next:"Мастер"},
-    {min:65, max:79,  name:t("lvl_master","МАСТЕР"),     icon:"🏆", color:"#ff8844", next:"Элита"},
-    {min:80, max:89,  name:t("lvl_elite","ЭЛИТА"),      icon:"💀", color:"#ff4466", next:"Легенда"},
+    {min:0,  max:19,  name:t("lvl_recruit","НОВОБРАНЕЦ"), icon:"🪖", color:"#8a8070", next:t("fighter_n","Боец")},
+    {min:20, max:34,  name:t("lvl_fighter","БОЕЦ"),       icon:"⚔️", color:"#c8a060", next:t("sniper",t("sniper_n","Снайпер"))},
+    {min:35, max:49,  name:t("lvl_sniper_r","СНАЙПЕР"),    icon:"🔭", color:"#74c6f5", next:t("veteran_n","Ветеран")},
+    {min:50, max:64,  name:t("lvl_veteran","ВЕТЕРАН"),    icon:"🎖️", color:"#f5c518", next:t("master_n","Мастер")},
+    {min:65, max:79,  name:t("lvl_master","МАСТЕР"),     icon:"🏆", color:"#ff8844", next:t("elite_n","Элита")},
+    {min:80, max:89,  name:t("lvl_elite","ЭЛИТА"),      icon:"💀", color:"#ff4466", next:t("legend_n","Легенда")},
     {min:90, max:100, name:t("lvl_legend","ЛЕГЕНДА"),    icon:"👑", color:"#aa44ff", next:null},
   ];
   const coachLvl = coachLevels.find(l=>overall>=l.min&&overall<=l.max)||coachLevels[0];
@@ -2137,86 +2367,86 @@ function AchievementModal({a, onClose}) {
   // тренировки под каждое достижение
   const tips = {
     headshot: [
-      {cat:"AIM",      dur:"20 мин", task:"Aim_botz: 500 убийств только в голову, без спрея — пока не выйдет уверенно"},
-      {cat:"МЕХАНИКА", dur:"15 мин", task:"Recoil Master workshop: отработай первые 5 пуль AK47 — они дают больше всего хедшотов"},
-      {cat:"ПРАКТИКА", dur:"10 мин", task:"Deathmatch: стреляй только пистолетом — заставляет прицеливаться точнее"},
+      {cat:"AIM",      dur:t("t20min","20 мин"), task:t("auto_19","Aim_botz: 500 убийств только в голову, без спрея — пока не выйдет уверенно")},
+      {cat:"МЕХАНИКА", dur:t("t15min","15 мин"), task:t("auto_2","Recoil Master workshop: отработай первые 5 пуль AK47 — они дают больше всего хедшотов")},
+      {cat:"ПРАКТИКА", dur:t("t10min","10 мин"), task:t("tr_dm_pistol","Deathmatch: стреляй только пистолетом — заставляет прицеливаться точнее")},
     ],
     sniper: [
-      {cat:"AIM",      dur:"20 мин", task:"Aim_botz headshot only: минимум 300 убийств подряд с точностью выше 60%"},
-      {cat:"МЕХАНИКА", dur:"15 мин", task:"Переключись на AWP на 1 deathmatch-сессию — учит ставить прицел на уровень головы"},
-      {cat:t("analysis","АНАЛИЗ"),   dur:"10 мин", task:"Посмотри демо: найди 3 момента где стрелял в тело — понять почему прицел был низко"},
+      {cat:"AIM",      dur:t("t20min","20 мин"), task:t("tr_aim300","Aim_botz headshot only: минимум 300 убийств подряд с точностью выше 60%")},
+      {cat:"МЕХАНИКА", dur:t("t15min","15 мин"), task:t("tr_awp_dm","Переключись на AWP на 1 deathmatch-сессию — учит ставить прицел на уровень головы")},
+      {cat:"АНАЛИЗ",   dur:t("t10min","10 мин"), task:t("auto_6","Посмотри демо: найди 3 момента где стрелял в тело — понять почему прицел был низко")},
     ],
     fragger: [
-      {cat:"МЕХАНИКА", dur:"15 мин", task:"Counter-strafe практика: движение → стоп → выстрел. Цель — 0 пуль в движении"},
-      {cat:"AIM",      dur:"20 мин", task:"Deathmatch 15 минут: фокус только на первый выстрел, не спрей"},
-      {cat:t("tactics","ТАКТИКА"),  dur:"10 мин", task:"Играй агрессивнее на входе — больше дуэлей = больше шансов поднять K/D"},
+      {cat:"МЕХАНИКА", dur:t("t15min","15 мин"), task:t("tr_cstrafe","Counter-strafe практика: движение → стоп → выстрел. Цель — 0 пуль в движении")},
+      {cat:"AIM",      dur:t("t20min","20 мин"), task:t("tr_dm15","Deathmatch 15 минут: фокус только на первый выстрел, не спрей")},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),  dur:t("t10min","10 мин"), task:t("tr_aggro","Играй агрессивнее на входе — больше дуэлей = больше шансов поднять K/D")},
     ],
     elite: [
-      {cat:"AIM",      dur:"25 мин", task:"Aim_botz: 1000 убийств ежедневно — без этого K/D 1.5+ не даётся"},
-      {cat:"МЕХАНИКА", dur:"20 мин", task:"Micro-adjustments: стреляй по маленьким движущимся мишеням в workshop"},
-      {cat:t("analysis","АНАЛИЗ"),   dur:"15 мин", task:"Разбери 5 смертей из последнего матча — найди паттерн где проигрываешь дуэли"},
+      {cat:"AIM",      dur:t("t25min","25 мин"), task:t("tr_aim1000","Aim_botz: 1000 убийств ежедневно — без этого K/D 1.5+ не даётся")},
+      {cat:"МЕХАНИКА", dur:t("t20min","20 мин"), task:t("tr_micro","Micro-adjustments: стреляй по маленьким движущимся мишеням в workshop")},
+      {cat:"АНАЛИЗ",   dur:t("t15min","15 мин"), task:t("auto_16","Разбери 5 смертей из последнего матча — найди паттерн где проигрываешь дуэли")},
     ],
     winner: [
-      {cat:t("tactics","ТАКТИКА"),  dur:"15 мин", task:"Учи utility на 1 карте: 2 смока, 1 молотов, 1 флэш — и применяй каждый раунд"},
-      {cat:t("analysis","АНАЛИЗ"),   dur:"20 мин", task:"Посмотри 1 проигранный матч: найди раунды где команда проигрывала из-за позиций"},
-      {cat:t("tactics","ТАКТИКА"),  dur:"10 мин", task:"Не rush B каждый раунд — чередуй атаки, читай мини-карту, реагируй на ротации"},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),  dur:t("t15min","15 мин"), task:t("tr_util","Учи utility на 1 карте: 2 смока, 1 молотов, 1 флэш — и применяй каждый раунд")},
+      {cat:"АНАЛИЗ",   dur:t("t20min","20 мин"), task:t("tr_lost_match","Посмотри 1 проигранный матч: найди раунды где команда проигрывала из-за позиций")},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),  dur:t("t10min","10 мин"), task:t("auto_15","Не rush B каждый раунд — чередуй атаки, читай мини-карту, реагируй на ротации")},
     ],
     dominator: [
-      {cat:t("tactics","ТАКТИКА"),  dur:"20 мин", task:"Изучи 3 стандартные раскидки на лучшей карте — смок мидл, смок CT, молотов на кит"},
-      {cat:t("analysis","АНАЛИЗ"),   dur:"15 мин", task:"После каждого проигранного раунда: 1 вывод почему проиграли, 1 исправление"},
-      {cat:t("tactics","ТАКТИКА"),  dur:"10 мин", task:"Играй IGL роль 1 матч: давай callouts, предлагай стратегии — понимание игры растёт"},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),  dur:t("t20min","20 мин"), task:t("auto_8","Изучи 3 стандартные раскидки на лучшей карте — смок мидл, смок CT, молотов на кит")},
+      {cat:"АНАЛИЗ",   dur:t("t15min","15 мин"), task:t("tr_round_review","После каждого проигранного раунда: 1 вывод почему проиграли, 1 исправление")},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),  dur:t("t10min","10 мин"), task:t("auto_4","Играй IGL роль 1 матч: давай callouts, предлагай стратегии — понимание игры растёт")},
     ],
     veteran: [
-      {cat:t("mode","РЕЖИМ"),    dur:"—",      task:"Ставь себе цель: минимум 3 матча в день. Главное — регулярность, не результат"},
-      {cat:t("tactics","ТАКТИКА"),  dur:"15 мин", task:"Каждый день — 1 новая раскидка на любой карте. За 200 матчей это 200 инструментов"},
-      {cat:t("analysis","АНАЛИЗ"),   dur:"10 мин", task:"Веди заметки: после каждого матча 1 строчка — что сделал хорошо, что исправить"},
+      {cat:"РЕЖИМ",    dur:"—",      task:t("auto_14","Ставь себе цель: минимум 3 матча в день. Главное — регулярность, не результат")},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),  dur:t("t15min","15 мин"), task:t("auto_7","Каждый день — 1 новая раскидка на любой карте. За 200 матчей это 200 инструментов")},
+      {cat:"АНАЛИЗ",   dur:t("t10min","10 мин"), task:t("auto_13","Веди заметки: после каждого матча 1 строчка — что сделал хорошо, что исправить")},
     ],
     grinder: [
-      {cat:t("mode","РЕЖИМ"),    dur:"—",      task:"Уже 500 матчей — ты гриндер. Теперь фокус на качестве: играй медленнее, думай больше"},
-      {cat:t("analysis","АНАЛИЗ"),   dur:"20 мин", task:"Разбери своё худшее соотношение K/D за последние 20 матчей — найди общий паттерн"},
-      {cat:t("tactics","ТАКТИКА"),  dur:"15 мин", task:"Пробуй новые позиции и углы — 500 матчей на одних и тех же точках = потолок"},
+      {cat:"РЕЖИМ",    dur:"—",      task:t("tr_grinder","Уже 500 матчей — ты гриндер. Теперь фокус на качестве: играй медленнее, думай больше")},
+      {cat:"АНАЛИЗ",   dur:t("t20min","20 мин"), task:t("auto_12","Разбери своё худшее соотношение K/D за последние 20 матчей — найди общий паттерн")},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),  dur:t("t15min","15 мин"), task:t("auto_18","Пробуй новые позиции и углы — 500 матчей на одних и тех же точках = потолок")},
     ],
     streak3: [
-      {cat:"ПСИХОЛОГИЯ",dur:"—",     task:"Серия 3+ побед: не меняй стиль игры, не force-buy — сохраняй темп"},
-      {cat:"AIM",       dur:"15 мин", task:"Перед каждым матчем серии: 10 минут aim warmup — не прыгать в игру холодным"},
-      {cat:t("tactics","ТАКТИКА"),   dur:"10 мин", task:"Играй на своей лучшей карте пока идёт серия — не экспериментируй"},
+      {cat:"ПСИХОЛОГИЯ",dur:"—",     task:t("tr_streak3","Серия 3+ побед: не меняй стиль игры, не force-buy — сохраняй темп")},
+      {cat:"AIM",       dur:t("t15min","15 мин"), task:t("tr_warmup","Перед каждым матчем серии: 10 минут aim warmup — не прыгать в игру холодным")},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),   dur:t("t10min","10 мин"), task:t("tr_best_map_streak","Играй на своей лучшей карте пока идёт серия — не экспериментируй")},
     ],
     streak5: [
-      {cat:"ПСИХОЛОГИЯ",dur:"—",     task:"Серия 5+ — ты в зоне. Главное правило: стоп если проиграл 2 подряд, отдохни"},
-      {cat:"AIM",       dur:"20 мин", task:"Ежедневный warmup стал твоим ритуалом — не пропускай его во время серии"},
-      {cat:t("tactics","ТАКТИКА"),   dur:"10 мин", task:"Анализируй что делаешь правильно сейчас — запомни это состояние игры"},
+      {cat:"ПСИХОЛОГИЯ",dur:"—",     task:t("auto_17","Серия 5+ — ты в зоне. Главное правило: стоп если проиграл 2 подряд, отдохни")},
+      {cat:"AIM",       dur:t("t20min","20 мин"), task:t("auto_21","Ежедневный warmup стал твоим ритуалом — не пропускай его во время серии")},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),   dur:t("t10min","10 мин"), task:t("tr_remember","Анализируй что делаешь правильно сейчас — запомни это состояние игры")},
     ],
     faceit5: [
-      {cat:t("tactics","ТАКТИКА"),   dur:"15 мин", task:"На уровне 5+ противники знают базовые раскидки — учи нестандартные позиции"},
-      {cat:"AIM",       dur:"20 мин", task:"Aim_botz ежедневно: на этом уровне механика решает половину дуэлей"},
-      {cat:t("analysis","АНАЛИЗ"),    dur:"15 мин", task:"Смотри демо игроков уровня 7-8 на своей роли — копируй позиционирование"},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),   dur:t("t15min","15 мин"), task:t("tr_lvl5","На уровне 5+ противники знают базовые раскидки — учи нестандартные позиции")},
+      {cat:"AIM",       dur:t("t20min","20 мин"), task:t("tr_aim_daily","Aim_botz ежедневно: на этом уровне механика решает половину дуэлей")},
+      {cat:"АНАЛИЗ",    dur:t("t15min","15 мин"), task:t("tr_demo78","Смотри демо игроков уровня 7-8 на своей роли — копируй позиционирование")},
     ],
     faceit8: [
-      {cat:t("analysis","АНАЛИЗ"),    dur:"20 мин", task:"На уровне 8+ нужен разбор каждого матча: 3 ошибки и 1 что сделал хорошо"},
-      {cat:t("tactics","ТАКТИКА"),   dur:"20 мин", task:"Изучи все раскидки на 2 основных картах до автоматизма — без этого уровень 10 закрыт"},
-      {cat:"AIM",       dur:"15 мин", task:"Переключись на Aimlabs / KovaaK's — workshop aim_botz уже не даёт прогресса на этом уровне"},
+      {cat:"АНАЛИЗ",    dur:t("t20min","20 мин"), task:t("tr_lvl8","На уровне 8+ нужен разбор каждого матча: 3 ошибки и 1 что сделал хорошо")},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),   dur:t("t20min","20 мин"), task:t("auto_3","Изучи все раскидки на 2 основных картах до автоматизма — без этого уровень 10 закрыт")},
+      {cat:"AIM",       dur:t("t15min","15 мин"), task:t("auto_1","Переключись на Aimlabs / KovaaK's — workshop aim_botz уже не даёт прогресса на этом уровне")},
     ],
     mvp100: [
-      {cat:t("tactics","ТАКТИКА"),   dur:"15 мин", task:"MVP = первый в команде. Фокус: entry fragging, открывать раунды, не ждать"},
-      {cat:t("analysis","АНАЛИЗ"),    dur:"10 мин", task:"После каждого матча: был ли ты полезен команде или просто стрелял? MVP — это вклад"},
-      {cat:t("tactics","ТАКТИКА"),   dur:"10 мин", task:"Учи раскидки под entry: 1 смок + 1 флэш на каждую карту — даёт больше MVP"},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),   dur:t("t15min","15 мин"), task:t("tr_mvp","MVP = первый в команде. Фокус: entry fragging, открывать раунды, не ждать")},
+      {cat:"АНАЛИЗ",    dur:t("t10min","10 мин"), task:t("auto_5","После каждого матча: был ли ты полезен команде или просто стрелял? MVP — это вклад")},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),   dur:t("t10min","10 мин"), task:t("auto_20","Учи раскидки под entry: 1 смок + 1 флэш на каждую карту — даёт больше MVP")},
     ],
     kills1k: [
-      {cat:"AIM",       dur:"20 мин", task:"1000 убийств — хорошее начало. Aim_botz: 500 фрагов ежедневно для роста механики"},
-      {cat:"МЕХАНИКА",  dur:"15 мин", task:"Работай над counter-strafe — точность в движении даёт +20% к фрагам"},
-      {cat:t("mode","РЕЖИМ"),     dur:"—",      task:"Ставь цель: 2000 убийств за следующие 3 месяца = ~22 матча в неделю"},
+      {cat:"AIM",       dur:t("t20min","20 мин"), task:t("auto_11","1000 убийств — хорошее начало. Aim_botz: 500 фрагов ежедневно для роста механики")},
+      {cat:"МЕХАНИКА",  dur:t("t15min","15 мин"), task:t("tr_cstrafe2","Работай над counter-strafe — точность в движении даёт +20% к фрагам")},
+      {cat:"РЕЖИМ",     dur:"—",      task:t("tr_2k_goal","Ставь цель: 2000 убийств за следующие 3 месяца = ~22 матча в неделю")},
     ],
     kills10k: [
-      {cat:t("analysis","АНАЛИЗ"),    dur:"20 мин", task:"10к убийств — ты ветеран. Теперь считай ADR и impact, не просто kills"},
-      {cat:t("tactics","ТАКТИКА"),   dur:"15 мин", task:"На этом опыте учи IGL: давай callouts, читай игру соперника, выигрывай тактически"},
-      {cat:t("mode","РЕЖИМ"),     dur:"—",      task:"Делай перерыв каждые 2 часа — с таким количеством часов важна свежесть восприятия"},
+      {cat:"АНАЛИЗ",    dur:t("t20min","20 мин"), task:t("tr_10k","10к убийств — ты ветеран. Теперь считай ADR и impact, не просто kills")},
+      {cat:t("tactics",t("cat_tact","ТАКТИКА")),   dur:t("t15min","15 мин"), task:t("auto_9","На этом опыте учи IGL: давай callouts, читай игру соперника, выигрывай тактически")},
+      {cat:"РЕЖИМ",     dur:"—",      task:t("auto_10","Делай перерыв каждые 2 часа — с таким количеством часов важна свежесть восприятия")},
     ],
   };
 
   const trainings = tips[a.id] || [
-    {cat:"AIM",     dur:"20 мин", task:"Aim_botz: ежедневная разминка 500 убийств"},
-    {cat:t("analysis","АНАЛИЗ"),  dur:"15 мин", task:"Разбери последний проигранный матч — найди 1 паттерн ошибок"},
-    {cat:t("tactics","ТАКТИКА"), dur:"10 мин", task:"Выучи 1 новую раскидку на лучшей карте"},
+    {cat:"AIM",     dur:t("t20min","20 мин"), task:t("tr_warmup500","Aim_botz: ежедневная разминка 500 убийств")},
+    {cat:"АНАЛИЗ",  dur:t("t15min","15 мин"), task:t("tr_last_loss","Разбери последний проигранный матч — найди 1 паттерн ошибок")},
+    {cat:t("tactics",t("cat_tact","ТАКТИКА")), dur:t("t10min","10 мин"), task:t("tr_new_smoke","Выучи 1 новую раскидку на лучшей карте")},
   ];
   const prog = Math.min(99, Math.round((a.val / a.target) * 100));
   const remaining = a.target > a.val ? Math.ceil(a.target - a.val) : 0;
@@ -2237,7 +2467,7 @@ function AchievementModal({a, onClose}) {
               <div>
                 <div style={{fontSize:"16px",color:a.done?C.yellow:C.value,fontWeight:700,marginBottom:"3px"}}>{a.name}</div>
                 <div style={{fontSize:"11px",color:a.done?a.color:C.muted,letterSpacing:"1px"}}>
-                  {a.done ? "✅ ВЫПОЛНЕНО" : `${a.val}${a.unit} из ${a.target}${a.unit}`}
+                  {a.done ? t("done_check","✅ ВЫПОЛНЕНО") : `${a.val}${a.unit} из ${a.target}${a.unit}`}
                 </div>
               </div>
             </div>
@@ -2387,31 +2617,31 @@ function Achievements({player, source}) {
 
   const ALL_ACH = [
     // Aim
-    {id:"hs30",   cat:"aim",     icon:"🎯",name:"Снайпер-новичок",   desc:"HS% выше 30%",           done:hs>=30,  val:Math.round(hs),   target:30,  unit:"%",  color:C.orange},
-    {id:"hs40",   cat:"aim",     icon:"🔴",name:"HS Машина",          desc:"HS% выше 40%",           done:hs>=40,  val:Math.round(hs),   target:40,  unit:"%",  color:C.orange},
-    {id:"hs55",   cat:"aim",     icon:"💥",name:"Headshot Hunter",    desc:"HS% выше 55%",           done:hs>=55,  val:Math.round(hs),   target:55,  unit:"%",  color:C.orange},
-    {id:"acc25",  cat:"aim",     icon:"🎯",name:"Меткий стрелок",     desc:"Точность выше 25%",      done:accuracy>=25,val:accuracy,       target:25,  unit:"%",  color:C.yellow},
+    {id:"hs30",   cat:"aim",     icon:"🎯",name:t("ach_sniper1","Снайпер-новичок"),   desc:t("ach_hs30","HS% выше 30%"),           done:hs>=30,  val:Math.round(hs),   target:30,  unit:"%",  color:C.orange},
+    {id:"hs40",   cat:"aim",     icon:"🔴",name:t("ach_hs","HS Машина"),          desc:t("ach_hs40","HS% выше 40%"),           done:hs>=40,  val:Math.round(hs),   target:40,  unit:"%",  color:C.orange},
+    {id:"hs55",   cat:"aim",     icon:"💥",name:"Headshot Hunter",    desc:t("ach_hs55","HS% выше 55%"),           done:hs>=55,  val:Math.round(hs),   target:55,  unit:"%",  color:C.orange},
+    {id:"acc25",  cat:"aim",     icon:"🎯",name:t("ach_marksman","Меткий стрелок"),     desc:t("ach_acc25","Точность выше 25%"),      done:accuracy>=25,val:accuracy,       target:25,  unit:"%",  color:C.yellow},
     // Clutching
-    {id:"clutch1",cat:"clutch",  icon:"😤",name:"Clutch King",        desc:"3+ серия побед",         done:streak>=3,val:streak,           target:3,   unit:"",   color:C.blue},
-    {id:"clutch2",cat:"clutch",  icon:"🔥",name:"Огненная серия",     desc:"5+ серия побед",         done:streak>=5,val:streak,           target:5,   unit:"",   color:C.lose},
-    {id:"clutch3",cat:"clutch",  icon:"⚡",name:"Непобедимый",        desc:"10+ серия побед",        done:streak>=10,val:streak,          target:10,  unit:"",   color:C.yellow},
+    {id:"clutch1",cat:"clutch",  icon:"😤",name:"Clutch King",        desc:t("auto_23","3+ серия побед"),         done:streak>=3,val:streak,           target:3,   unit:"",   color:C.blue},
+    {id:"clutch2",cat:"clutch",  icon:"🔥",name:t("auto_24","Огненная серия"),     desc:t("auto_25","5+ серия побед"),         done:streak>=5,val:streak,           target:5,   unit:"",   color:C.lose},
+    {id:"clutch3",cat:"clutch",  icon:"⚡",name:t("auto_28","Непобедимый"),        desc:t("auto_22","10+ серия побед"),        done:streak>=10,val:streak,          target:10,  unit:"",   color:C.yellow},
     // Impact
-    {id:"kd1",    cat:"impact",  icon:"⚔️",name:"Фраггер",            desc:"K/D выше 1.0",           done:kd>=1.0, val:kd.toFixed(2),   target:1.0, unit:"",   color:C.blue},
-    {id:"kd15",   cat:"impact",  icon:"💀",name:"Элита",               desc:"K/D выше 1.5",           done:kd>=1.5, val:kd.toFixed(2),   target:1.5, unit:"",   color:C.blue},
-    {id:"kd2",    cat:"impact",  icon:"👾",name:"Машина смерти",       desc:"K/D выше 2.0",           done:kd>=2.0, val:kd.toFixed(2),   target:2.0, unit:"",   color:C.blue},
+    {id:"kd1",    cat:"impact",  icon:"⚔️",name:t("ach_frag","Фраггер"),            desc:"K/D выше 1.0",           done:kd>=1.0, val:kd.toFixed(2),   target:1.0, unit:"",   color:C.blue},
+    {id:"kd15",   cat:"impact",  icon:"💀",name:t("elite_n","Элита"),               desc:"K/D выше 1.5",           done:kd>=1.5, val:kd.toFixed(2),   target:1.5, unit:"",   color:C.blue},
+    {id:"kd2",    cat:"impact",  icon:"👾",name:t("auto_26","Машина смерти"),       desc:"K/D выше 2.0",           done:kd>=2.0, val:kd.toFixed(2),   target:2.0, unit:"",   color:C.blue},
     {id:"dom50",  cat:"impact",  icon:"👑",name:"Доминатор",           desc:"50+ доминаций",          done:dominated>=50,val:dominated,    target:50,  unit:"",   color:C.win},
     {id:"mvp",    cat:"impact",  icon:"🥇",name:"MVP x100",            desc:"100 MVP наград",         done:mvps>=100,val:mvps,            target:100, unit:"",   color:C.yellow},
     {id:"mvp500", cat:"impact",  icon:"🏅",name:"MVP Легенда",         desc:"500 MVP наград",         done:mvps>=500,val:mvps,            target:500, unit:"",   color:C.yellow},
     // Results
-    {id:"win50",  cat:"results", icon:"🏆",name:"Победитель",          desc:"50%+ WinRate",           done:wr>=50,  val:Math.round(wr),   target:50,  unit:"%",  color:C.win},
-    {id:"win60",  cat:"results", icon:"🎖️",name:"Доминирующий",       desc:"60%+ WinRate",           done:wr>=60,  val:Math.round(wr),   target:60,  unit:"%",  color:C.win},
-    {id:"m100",   cat:"results", icon:"🎮",name:"Ветеран",             desc:"100 матчей",             done:matches>=100,val:matches,       target:100, unit:"",   color:C.label},
+    {id:"win50",  cat:"results", icon:"🏆",name:t("ach_winner","Победитель"),          desc:"50%+ WinRate",           done:wr>=50,  val:Math.round(wr),   target:50,  unit:"%",  color:C.win},
+    {id:"win60",  cat:"results", icon:"🎖️",name:t("auto_27","Доминирующий"),       desc:"60%+ WinRate",           done:wr>=60,  val:Math.round(wr),   target:60,  unit:"%",  color:C.win},
+    {id:"m100",   cat:"results", icon:"🎮",name:t("veteran_n","Ветеран"),             desc:"100 матчей",             done:matches>=100,val:matches,       target:100, unit:"",   color:C.label},
     {id:"m500",   cat:"results", icon:"⚙️",name:"Гриндер",             desc:"500 матчей",             done:matches>=500,val:matches,       target:500, unit:"",   color:C.label},
-    {id:"m1000",  cat:"results", icon:"🌟",name:"Легенда",             desc:"1000 матчей",            done:matches>=1000,val:matches,      target:1000,unit:"",   color:C.yellow},
+    {id:"m1000",  cat:"results", icon:"🌟",name:t("legend_n","Легенда"),             desc:"1000 матчей",            done:matches>=1000,val:matches,      target:1000,unit:"",   color:C.yellow},
     // Weapons / Style
     {id:"knife5", cat:"style",   icon:"🔪",name:"Ножевой мастер",      desc:"5+ убийств ножом",       done:knifeKills>=5,  val:knifeKills, target:5,   unit:"",   color:"#ff8888"},
     {id:"knife50",cat:"style",   icon:"🗡️",name:"Нинзя",              desc:"50+ убийств ножом",      done:knifeKills>=50, val:knifeKills, target:50,  unit:"",   color:"#ff8888"},
-    {id:"sniper", cat:"style",   icon:"🔭",name:t("sniper","Снайпер"),             desc:"100+ убийств снайпером", done:sniperKills>=100,val:sniperKills,target:100,unit:"",   color:C.blue},
+    {id:"sniper", cat:"style",   icon:"🔭",name:t("sniper",t("sniper_n","Снайпер")),             desc:"100+ убийств снайпером", done:sniperKills>=100,val:sniperKills,target:100,unit:"",   color:C.blue},
     // Kills milestones
     {id:"k1k",    cat:"impact",  icon:"⚔️",name:"1000 убийств",        desc:"Накопи 1000 фрагов",     done:kills>=1000, val:kills,        target:1000, unit:"",  color:"#aa88ff"},
     {id:"k5k",    cat:"impact",  icon:"🗡️",name:"5000 убийств",       desc:"Накопи 5000 фрагов",     done:kills>=5000, val:kills,        target:5000, unit:"",  color:"#aa88ff"},
@@ -2808,7 +3038,7 @@ function WeekGoal({player, source}) {
           `${(kdGap).toFixed(2)} K/D до цели`,
           `≈ ${killsNeeded} убийств без лишних смертей`,
         ],
-        unlock:{icon:"⚔️", name:"Фраггер", done:kd>=1.0},
+        unlock:{icon:"⚔️", name:t("ach_frag","Фраггер"), done:kd>=1.0},
       };
     }
     if (hs < 40) {
@@ -2816,7 +3046,7 @@ function WeekGoal({player, source}) {
       return {
         label:"Улучшить прицел до 40% HS", from:Math.round(hs)+"%", to:"40%", progress:Math.max(5,prog),
         details:[`${40-Math.round(hs)}% HS до цели`, `Тренируй Recoil Master каждый день`],
-        unlock:{icon:"🎯", name:"HS Машина", done:hs>=40},
+        unlock:{icon:"🎯", name:t("ach_hs","HS Машина"), done:hs>=40},
       };
     }
     if (wr < 52) {
@@ -2824,7 +3054,7 @@ function WeekGoal({player, source}) {
       return {
         label:"Поднять WR выше 52%", from:Math.round(wr)+"%", to:"52%", progress:Math.max(5,prog),
         details:[`${52-Math.round(wr)}% WR до цели`, `Разбирай проигранные раунды`],
-        unlock:{icon:"🏆", name:"Победитель", done:wr>=52},
+        unlock:{icon:"🏆", name:t("ach_winner","Победитель"), done:wr>=52},
       };
     }
     if (kd < 1.4) {
@@ -2832,7 +3062,7 @@ function WeekGoal({player, source}) {
       return {
         label:"Закрепить K/D выше 1.4", from:kd.toFixed(2), to:"1.40", progress:Math.max(5,prog),
         details:[`${(1.4-kd).toFixed(2)} K/D до цели`, `Фокус на trade kills`],
-        unlock:{icon:"💀", name:"Элита", done:kd>=1.4},
+        unlock:{icon:"💀", name:t("elite_n","Элита"), done:kd>=1.4},
       };
     }
     if (lvl > 0 && lvl < 10) {
@@ -3097,23 +3327,23 @@ function TodayRecs({player, source}) {
 
   // AIM — всегда
   recs.push({
-    icon:"🎯", time:"15 мин", cat:"AIM", color:C.lose,
+    icon:"🎯", time:t("t15min","15 мин"), cat:"AIM", color:C.lose,
     text:"Aim_botz: 500 убийств с места",
     why: hs<40 ? `HS% ${Math.round(hs)}% — ниже цели 40%` : `Поддерживай точность стрельбы`,
-    unlock: hs < 40 ? {icon:"🎯", name:"HS Машина", pct:Math.round(hs/40*100)} : null,
+    unlock: hs < 40 ? {icon:"🎯", name:t("ach_hs","HS Машина"), pct:Math.round(hs/40*100)} : null,
   });
 
   // Recoil если HS низкий
   if (hs < 40) recs.push({
-    icon:"💥", time:"20 мин", cat:"МЕХАНИКА", color:C.orange,
+    icon:"💥", time:t("t20min","20 мин"), cat:"МЕХАНИКА", color:C.orange,
     text:"Recoil Master: спрей AK и M4",
     why: `HS% ${Math.round(hs)}% — не хватает ${40-Math.round(hs)}% до достижения`,
-    unlock: {icon:"🎯", name:"HS Машина", pct:Math.round(hs/40*100)},
+    unlock: {icon:"🎯", name:t("ach_hs","HS Машина"), pct:Math.round(hs/40*100)},
   });
 
   // Counter-strafe если K/D плохой
   if (kd < 1.0) recs.push({
-    icon:"🏃", time:"15 мин", cat:"ДВИЖЕНИЕ", color:C.blue,
+    icon:"🏃", time:t("t15min","15 мин"), cat:"ДВИЖЕНИЕ", color:C.blue,
     text:"Counter-strafe: стоп → выстрел",
     why: `K/D ${kd.toFixed(2)} — до Фраггера не хватает ${(1.0-kd).toFixed(2)}`,
     unlock: {icon:"⚔️", name:"Фраггер K/D>1.0", pct:Math.round(Math.min(99,kd/1.0*100))},
@@ -3121,7 +3351,7 @@ function TodayRecs({player, source}) {
 
   // Prefire — всегда
   recs.push({
-    icon:"🗺️", time:"20 мин", cat:"КАРТЫ", color:"#44ddaa",
+    icon:"🗺️", time:t("t20min","20 мин"), cat:"КАРТЫ", color:"#44ddaa",
     text:"Prefire Workshop: 10 позиций на лучшей карте",
     why: `Знание позиций = меньше смертей на карте`,
     unlock: null,
@@ -3129,13 +3359,13 @@ function TodayRecs({player, source}) {
 
   // Анализ или гранаты
   if (wr < 50) recs.push({
-    icon:"📹", time:"15 мин", cat:t("analysis","АНАЛИЗ"), color:"#aa88ff",
+    icon:"📹", time:t("t15min","15 мин"), cat:"АНАЛИЗ", color:"#aa88ff",
     text:"Пересмотри 1 проигранный раунд",
     why: `WR ${Math.round(wr)}% — разбор раундов поднимет понимание игры`,
     unlock: {icon:"🏆", name:"Победитель WR>50%", pct:Math.round(wr/50*100)},
   });
   else recs.push({
-    icon:"💣", time:"10 мин", cat:"ГРАНАТЫ", color:C.yellow,
+    icon:"💣", time:t("t10min","10 мин"), cat:"ГРАНАТЫ", color:C.yellow,
     text:"Выучи 1 новый смок или молотов",
     why: `Utility = больше влияния на раунд без риска`,
     unlock: null,
@@ -3272,7 +3502,7 @@ function WeekComparison({player}) {
             <div style={{fontSize:"11px",color:C.muted}}>{prev.date} → {now.date} ({diffDays} дней)</div>
           </div>
           <div style={{display:"flex",gap:"3px"}}>
-            {[["week","7 дн"],["month","30 дн"],["all","Всё"]].map(([p,l])=>(
+            {[["week","7 дн"],["month","30 дн"],["all",t("all_period","Всё")]].map(([p,l])=>(
               <button key={p} onClick={()=>setPeriod(p)} style={{
                 padding:"4px 10px",background:period===p?C.yellow+"22":"transparent",
                 border:`1px solid ${period===p?C.yellow+"55":C.border}`,
@@ -4591,7 +4821,7 @@ function Leaderboard({myId, myIsPro, onProfile}) {
                 <div style={{minWidth:0}}>
                   <div style={{fontSize:"14px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:500,
                     overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                    {p.username}{isMe?" (ты)":""}
+                    {p.username}{isMe?t("you_suffix"," (ты)"):""}
                   </div>
                   <div style={{fontSize:"10px",color:C.muted,marginTop:"1px"}}>
                     {p.stats?.kd?`K/D ${p.stats.kd}`:""}
@@ -4646,7 +4876,7 @@ function Leaderboard({myId, myIsPro, onProfile}) {
               {p.avatar?<img src={p.avatar} alt="" style={{width:"28px",height:"28px",borderRadius:"2px",flexShrink:0}}/>
                 :<div style={{width:"28px",height:"28px",background:"#1a1a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",flexShrink:0}}>👤</div>}
               <span style={{fontSize:"14px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                {p.username}{isMe?" (ты)":""}
+                {p.username}{isMe?t("you_suffix"," (ты)"):""}
               </span>
               {(p.is_pro||(isMe&&myIsPro))&&<span style={{fontSize:"9px",color:C.yellow,background:C.yellow+"22",
                 border:`1px solid ${C.yellow}44`,padding:"1px 5px",letterSpacing:"1px",flexShrink:0}}>PRO</span>}
@@ -4821,19 +5051,19 @@ function TrainingPlan({player, source}) {
   useEffect(() => {
     const tasks = [];
     // Aim warmup — всегда
-    tasks.push({id:"aim",cat:"AIM",dur:"15 мин",task:"Aim_botz: 500 убийств с места, фокус на голову",priority:true});
+    tasks.push({id:"aim",cat:"AIM",dur:t("t15min","15 мин"),task:"Aim_botz: 500 убийств с места, фокус на голову",priority:true});
     // Recoil если HS низкий
-    if (hs < 45) tasks.push({id:"recoil",cat:"МЕХАНИКА",dur:"20 мин",task:"Workshop: Recoil Master — отработать спрей AK и M4",priority:true});
+    if (hs < 45) tasks.push({id:"recoil",cat:"МЕХАНИКА",dur:t("t20min","20 мин"),task:"Workshop: Recoil Master — отработать спрей AK и M4",priority:true});
     // Movement если KD низкий
-    if (kd < 1.0) tasks.push({id:"move",cat:"МЕХАНИКА",dur:"15 мин",task:"Counter-strafe практика: двигаться → остановиться → стрелять"});
+    if (kd < 1.0) tasks.push({id:"move",cat:"МЕХАНИКА",dur:t("t15min","15 мин"),task:"Counter-strafe практика: двигаться → остановиться → стрелять"});
     // Prefire на картах
-    tasks.push({id:"prefire",cat:"КАРТЫ",dur:"20 мин",task:"Prefire Workshop: отработать 10 ключевых позиций на своей лучшей карте"});
+    tasks.push({id:"prefire",cat:"КАРТЫ",dur:t("t20min","20 мин"),task:"Prefire Workshop: отработать 10 ключевых позиций на своей лучшей карте"});
     // Deathmatch
-    tasks.push({id:"dm",cat:"РАЗМИНКА",dur:"10 мин",task:"Deathmatch перед игрой: только хедшоты, пистолетный раунд"});
+    tasks.push({id:"dm",cat:"РАЗМИНКА",dur:t("t10min","10 мин"),task:"Deathmatch перед игрой: только хедшоты, пистолетный раунд"});
     // Demo если WR низкий
-    if (wr < 50) tasks.push({id:"demo",cat:t("analysis","АНАЛИЗ"),dur:"15 мин",task:"Посмотри 1 раунд из проигранного матча — найди момент где ошибся"});
+    if (wr < 50) tasks.push({id:"demo",cat:"АНАЛИЗ",dur:t("t15min","15 мин"),task:"Посмотри 1 раунд из проигранного матча — найди момент где ошибся"});
     // Utility
-    tasks.push({id:"util",cat:t("tactics","ТАКТИКА"),dur:"10 мин",task:"Выучи 1 новый смок или молотов на часто играемой карте"});
+    tasks.push({id:"util",cat:t("tactics",t("cat_tact","ТАКТИКА")),dur:t("t10min","10 мин"),task:"Выучи 1 новый смок или молотов на часто играемой карте"});
     setPlan(tasks.slice(0,5));
   }, [player?.steamid, source]);
 
@@ -4951,25 +5181,25 @@ function DayAction({player, source, streak}) {
   // Находим ближайшую незакрытую ачивку
   const target = (() => {
     if (kd < 1.0) return {
-      icon:"⚔️", name:"Фраггер", progress:Math.round(Math.min(99,kd/1.0*100)),
+      icon:"⚔️", name:t("ach_frag","Фраггер"), progress:Math.round(Math.min(99,kd/1.0*100)),
       left:(1.0-kd).toFixed(2)+" K/D",
       actions:["500 убийств в Aim Botz · 15 мин","Counter-strafe тренировка · 15 мин"],
       xp:25, color:"#74c6f5",
     };
     if (hs < 40) return {
-      icon:"🎯", name:"HS Машина", progress:Math.round(Math.min(99,hs/40*100)),
+      icon:"🎯", name:t("ach_hs","HS Машина"), progress:Math.round(Math.min(99,hs/40*100)),
       left:(40-Math.round(hs))+"% HS",
       actions:["Recoil Master: спрей AK · 20 мин","Aim Botz: только хедшоты · 15 мин"],
       xp:20, color:"#ff8844",
     };
     if (wr < 50) return {
-      icon:"🏆", name:"Победитель", progress:Math.round(Math.min(99,wr/50*100)),
+      icon:"🏆", name:t("ach_winner","Победитель"), progress:Math.round(Math.min(99,wr/50*100)),
       left:(50-Math.round(wr))+"% WR",
       actions:["Разбери последний проигрыш · 15 мин","Prefire Workshop: лучшая карта · 20 мин"],
       xp:20, color:"#55ee55",
     };
     return {
-      icon:"💀", name:"Элита", progress:Math.round(Math.min(99,kd/1.5*100)),
+      icon:"💀", name:t("elite_n","Элита"), progress:Math.round(Math.min(99,kd/1.5*100)),
       left:(1.5-kd).toFixed(2)+" K/D",
       actions:["Aim Botz: 1000 убийств · 20 мин","Prefire Workshop · 20 мин"],
       xp:30, color:"#ff4466",
@@ -5595,8 +5825,8 @@ function Footer({onAbout, onPro, onLeaderboard}) {
             <div>
               <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>СЕРВИС</div>
               {[
-                {label:t("about_us","О нас"), action:onAbout},
-                {label:"Тарифы Pro", action:onPro},
+                {label:t("about_us",t("about","О нас")), action:onAbout},
+                {label:t("pro_plans","Тарифы Pro"), action:onPro},
                 {label:"Таблица лидеров", action:onLeaderboard},
               ].map((l,i)=>(
                 <div key={i} style={{marginBottom:"8px"}}>
@@ -5800,12 +6030,12 @@ function ShareModal({steamid, player, source, onClose}) {
 function SetupChecklist({player, hasFaceit, analysisCount, onDismiss}) {
   const cs2 = player?.cs2 || {};
   const steps = [
-    {id:"steam",    done:true,             label:"Войти через Steam",              action:null},
+    {id:"steam",    done:true,             label:t("login_steam",t("login_steam2","Войти через Steam")),              action:null},
     {id:"stats",    done:!cs2.private,     label:"Открыть статистику CS2 в Steam", action:"privacy"},
-    {id:"faceit",   done:hasFaceit,        label:"Подключить FACEIT аккаунт",      action:"faceit"},
-    {id:"analysis", done:analysisCount>0,  label:"Получить первый AI разбор",      action:null},
-    {id:"chat",     done:!!localStorage.getItem("cs2_chat_done"),    label:"Поговорить с AI тренером",    action:null},
-    {id:"training", done:!!localStorage.getItem("cs2_training_done"),label:"Выполнить первую тренировку", action:null},
+    {id:"faceit",   done:hasFaceit,        label:t("connect_faceit","Подключить FACEIT аккаунт"),      action:"faceit"},
+    {id:"analysis", done:analysisCount>0,  label:t("first_analysis","Получить первый AI разбор"),      action:null},
+    {id:"chat",     done:!!localStorage.getItem("cs2_chat_done"),    label:t("talk_coach","Поговорить с AI тренером"),    action:null},
+    {id:"training", done:!!localStorage.getItem("cs2_training_done"),label:t("first_training","Выполнить первую тренировку"), action:null},
   ];
   const done = steps.filter(s=>s.done).length;
   const pct  = Math.round(done/steps.length*100);
@@ -5917,9 +6147,9 @@ function ProModal({player, isPro, onClose, onActivated}) {
     {icon:"🤖", title:"AI разбор после каждой игры",   desc:"Что сделал не так — конкретно, с картами и цифрами"},
     {icon:"💬", title:"Безлимитный AI чат",             desc:"Спрашивай тренера сколько угодно, без дневных лимитов"},
     {icon:"📈", title:"Персональный прогресс",          desc:"История рейтинга, рост K/D, достижения разблокированы"},
-    {icon:"🎯", title:"Анализ слабых карт",             desc:"AI находит твои худшие карты и говорит что конкретно исправить"},
-    {icon:"⚡", title:"PRO значок в лидерборде",        desc:"Выделяйся среди других игроков"},
-    {icon:"🎧", title:"Приоритетная поддержка",         desc:"Ответ в течение часа, прямая связь с тренером"},
+    {icon:"🎯", title:t("pro_feat1","Анализ слабых карт"),             desc:"AI находит твои худшие карты и говорит что конкретно исправить"},
+    {icon:"⚡", title:t("pro_feat2","PRO значок в лидерборде"),        desc:"Выделяйся среди других игроков"},
+    {icon:"🎧", title:t("pro_feat3","Приоритетная поддержка"),         desc:"Ответ в течение часа, прямая связь с тренером"},
   ];
 
   const plans = {
@@ -5947,8 +6177,8 @@ function ProModal({player, isPro, onClose, onActivated}) {
         {/* Tabs */}
         <div style={{display:"flex",margin:"18px 24px 0",gap:"4px"}}>
           {(isPro
-            ? [["info","⚡ Моя подписка"],["plans","Продлить"],["activate","Ввести ключ"]]
-            : [["plans","Тарифы"],["activate","Ввести ключ"]]
+            ? [["info","⚡ Моя подписка"],["plans","Продлить"],["activate",t("enter_key","Ввести ключ")]]
+            : [["plans","Тарифы"],["activate",t("enter_key","Ввести ключ")]]
           ).map(([t,l])=>(
             <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"9px",
               background:tab===t?C.yellow+"22":"transparent",
@@ -6073,7 +6303,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
 
               {/* Что включено */}
               <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>ЧТО ВКЛЮЧЕНО:</div>
-              {[["🤖","Безлимитный AI разбор каждой игры"],["💬","AI чат без ограничений"],["⚡","PRO значок в лидерборде"],["🎯","Анализ слабых карт"],["🎧","Приоритетная поддержка"]].map(([icon,text],i)=>(
+              {[["🤖","Безлимитный AI разбор каждой игры"],["💬","AI чат без ограничений"],["⚡",t("pro_feat2","PRO значок в лидерборде")],["🎯",t("pro_feat1","Анализ слабых карт")],["🎧",t("pro_feat3","Приоритетная поддержка")]].map(([icon,text],i)=>(
                 <div key={i} style={{display:"flex",gap:"10px",alignItems:"center",padding:"8px 0",
                   borderBottom:`1px solid ${C.border}44`}}>
                   <span style={{fontSize:"16px"}}>{icon}</span>
@@ -6178,7 +6408,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
             </div>
 
             <div style={{fontSize:"11px",color:C.muted,textAlign:"center",lineHeight:1.6}}>
-              После оплаты получишь ключ активации во вкладке "Ввести ключ"
+              После оплаты получишь ключ активации во вкладке t("enter_key","Ввести ключ")
             </div>
           </>}
 
@@ -6320,9 +6550,9 @@ function LandingPage({onLogin}) {
   },[]);
 
   const INSIGHTS = [
-    {text:"Ты теряешь дуэли из-за стрельбы в движении", tag:"МЕХАНИКА"},
-    {text:"Win Rate падает на КТ стороне Mirage", tag:"КАРТЫ"},
-    {text:"Слишком ранний выход без прикрытия", tag:t("tactics","ТАКТИКА")},
+    {text:"Ты теряешь дуэли из-за стрельбы в движении", tag:t("cat_mech","МЕХАНИКА")},
+    {text:"Win Rate падает на КТ стороне Mirage", tag:t("cat_maps","КАРТЫ")},
+    {text:"Слишком ранний выход без прикрытия", tag:t("tactics",t("cat_tact","ТАКТИКА"))},
     {text:"Низкий процент добиваний после первого убийства", tag:"АНАЛИТИКА"},
     {text:"Лучший результат в матчах с AWP", tag:"ОРУЖИЕ"},
   ];
@@ -6686,7 +6916,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
   const rb = report.rating_breakdown || {};
   const skillBars = [
     {l:"AIM",         v:rb.aim||60,       c:"#ff6655"},
-    {l:t("tactics","ТАКТИКА"),     v:rb.game_sense||55, c:C.blue},
+    {l:t("tactics",t("cat_tact","ТАКТИКА")),     v:rb.game_sense||55, c:C.blue},
     {l:"СТАБИЛЬНОСТЬ",v:rb.consistency||50,c:C.yellow},
     {l:t("utility","УТИЛИТИ"),     v:rb.utility||40,   c:"#88ff88"},
     {l:t("clutch","КЛАТЧ"),       v:rb.clutch||45,    c:"#aa88ff"},
@@ -7204,7 +7434,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
         if(!isPro) return "❌ У тебя сейчас нет активной PRO подписки.\n\nОформить можно нажав ⚡ PRO в шапке.";
         try {
           const pd = JSON.parse(localStorage.getItem(`cs2_pro_data_${player?.steamid}`)||"null");
-          if(!pd?.activated_at) return "📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата.";
+          if(!pd?.activated_at) return t("sup_pro_date_a","📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата.");
           if(pd.plan==="lifetime") return "✅ Подписка НАВСЕГДА — срок не ограничен! 🎉";
           const days = pd.plan==="year"?365:pd.plan==="month"?30:0;
           if(!days) return "📅 Открой ⚡ PRO → «Моя подписка» для деталей.";
@@ -7213,7 +7443,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
           const date = new Date(expiresMs).toLocaleDateString("ru-RU",{day:"2-digit",month:"long",year:"numeric"});
           if(daysLeft===0) return `❌ Подписка истекла ${date}.\n\nОформи снова — кнопка ⚡ PRO в шапке.`;
           return `📅 PRO действует до ${date}\n\nОсталось: ${daysLeft} ${daysLeft===1?t("day","день"):daysLeft<5?t("days_few","дня"):t("days","дней")}`;
-        } catch { return "📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата."; }
+        } catch { return t("sup_pro_date_a","📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата."); }
       }
     },
     {
@@ -7222,7 +7452,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
       icon:"⚡",
       keywords:[
         "у меня про","есть про","есть подписка","активна про","активен про",
-        "про активна","про активен","pro активна","pro активен","pro у меня",
+        t("pro_active_q","про активна"),"про активен","pro активна","pro активен","pro у меня",
         "у меня pro","активирована подписка","есть ли у меня","моя подписка",
         "у меня подписка","куплена подписка","куплен про","оплатил про",
         "оплатил подписку","есть ли про","активна ли подписка","куплена ли"
@@ -7235,7 +7465,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
       id:"no_data",
       label:t("sup_no_data","Данные не грузятся"),
       icon:"📊",
-      keywords:["не загружается","не грузит","пустой профиль","нет данных","не показывает","не отображается","не работает статистика","данные пропали","нет статистики","пусто на сайте"],
+      keywords:[t("not_loading","не загружается"),"не грузит","пустой профиль","нет данных","не показывает","не отображается","не работает статистика","данные пропали","нет статистики","пусто на сайте"],
       answer:()=>"Если данные не загружаются:\n1. Профиль Steam должен быть открыт (Конфиденциальность → Публичный)\n2. Статистика CS2 тоже должна быть открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — нажми «Позвать оператора»!"
     },
     {
@@ -7546,34 +7776,34 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
   // FAQ — автоответы на частые вопросы
   const FAQ_AUTO = [
     {
-      q: "У меня активна Pro версия",
-      keywords: ["про активна","pro активна","pro версия","активирован про","про активирован","показывает про"],
+      q: t("sup_q_pro","У меня активна Pro версия"),
+      keywords: [t("pro_active_q","про активна"),"pro активна","pro версия","активирован про","про активирован","показывает про"],
       answer: isPro
         ? "✅ Да, у тебя активна PRO версия! Все функции доступны: безлимитный AI разбор, приоритетная поддержка и PRO значок в лидерборде."
         : "Не вижу активной PRO подписки на твоём аккаунте. Попробуй:\n1. Выйди и войди снова через Steam\n2. Если оплатил — подожди 1-2 минуты и обнови страницу\n3. Если проблема осталась — я передам в поддержку"
     },
     {
-      q: "Как активировать PRO?",
+      q: t("sup_q_activate","Как активировать PRO?"),
       keywords: ["как активировать","активировать про","ввести ключ","у меня есть ключ"],
       answer: "Для активации PRO:\n1. Нажми кнопку **⚡ PRO** в шапке сайта\n2. Выбери вкладку **\"Ввести ключ\"**\n3. Введи ключ в формате CS2PRO-XXXX-XXXX-XXXX\n\nЕсли ключа нет — выбери тариф и оплати картой через ЮКассу."
     },
     {
-      q: "Данные не загружаются",
-      keywords: ["не загружается","не грузит","пустой профиль","нет данных","ошибка загрузки"],
+      q: t("sup_q_data","Данные не загружаются"),
+      keywords: [t("not_loading","не загружается"),"не грузит","пустой профиль","нет данных","ошибка загрузки"],
       answer: "Если данные не загружаются:\n1. Убедись что профиль Steam **открыт** (Настройки → Конфиденциальность → Публичный)\n2. Статистика CS2 должна быть открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — опиши проблему, передам в поддержку."
     },
     {
-      q: "FACEIT не подключается",
+      q: t("sup_q_faceit","FACEIT не подключается"),
       keywords: ["faceit не","не подключается faceit","нет faceit","не видит faceit"],
       answer: "Если FACEIT не подключается:\n1. Убедись что в FACEIT привязан тот же Steam аккаунт\n2. Подожди 30 секунд — данные грузятся параллельно\n3. Если аккаунт новый (менее 10 матчей) — статистика может быть недоступна"
     },
     {
-      q: "Как работает Coach Rating?",
+      q: t("sup_q_rating","Как работает Coach Rating?"),
       keywords: ["coach rating","рейтинг тренера","как считается рейтинг","что значит рейтинг"],
       answer: "Coach Rating считается по формуле:\n• K/D — 45% веса\n• HS% — 25% веса\n• WR% — 30% веса\n\nКаждый показатель сравнивается со средним для твоего уровня FACEIT. Результат — от 1 до 99, показывает % игроков которых ты обгоняешь."
     },
     {
-      q: "Лимит анализов",
+      q: t("sup_q_limit","Лимит анализов"),
       keywords: [t("limit","лимит"),"закончился","израсходовал","нет разборов","сколько разборов"],
       answer: `Бесплатно: 1 AI разбор в неделю.\n\nС PRO: безлимитно.\n\nТвой текущий остаток: ${isPro?"безлимит (PRO)":aiRemaining+" разбора(ов) на этой неделе"}`
     },
@@ -7647,12 +7877,12 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
   }
 
   const FAQ_LIST = [
-    {q:"Как активировать PRO?", icon:"⚡"},
-    {q:"У меня активна Pro версия", icon:"🔍"},
-    {q:"Данные не загружаются", icon:"📊"},
-    {q:"FACEIT не подключается", icon:"🎮"},
-    {q:"Как работает Coach Rating?", icon:"🏆"},
-    {q:"Лимит анализов", icon:"📋"},
+    {q:t("sup_q_activate","Как активировать PRO?"), icon:"⚡"},
+    {q:t("sup_q_pro","У меня активна Pro версия"), icon:"🔍"},
+    {q:t("sup_q_data","Данные не загружаются"), icon:"📊"},
+    {q:t("sup_q_faceit","FACEIT не подключается"), icon:"🎮"},
+    {q:t("sup_q_rating","Как работает Coach Rating?"), icon:"🏆"},
+    {q:t("sup_q_limit","Лимит анализов"), icon:"📋"},
   ];
 
   const QUICK = ["Почему я умираю первым?","Как апнуть FACEIT?","Что тренировать?","Лучшая карта для меня?"];
@@ -7827,7 +8057,7 @@ const PRACTICE_ITEMS = [
 ];
 
 const CATS = [
-  {id:"all",     label:"Всё",       icon:"🎮"},
+  {id:"all",     label:t("all_period","Всё"),       icon:"🎮"},
   {id:"workshop",label:"Воркшоп",  icon:"🔧"},
   {id:"grenades",label:"Гранаты",  icon:"💨"},
   {id:"movement",label:"Движение", icon:"🏃"},
@@ -7835,7 +8065,7 @@ const CATS = [
   {id:"callouts",label:"Карты",    icon:"📍"},
 ];
 const DIFFS = ["Начинающий","Средний","Продвинутый","Любой"];
-const DIFF_COLOR = {"Начинающий":C.win,"Средний":C.yellow,"Продвинутый":C.lose,"Любой":C.blue,"Any":C.blue,"Beginner":C.win,"Intermediate":C.yellow,"Advanced":C.lose};
+const DIFF_COLOR = {"Начинающий":C.win,"Средний":C.yellow,"Продвинутый":C.lose,"Любой":C.blue};
 
 const MAP_IMAGES = {
   Mirage:  { src: "/maps/mirage.webp"  },
@@ -7941,15 +8171,15 @@ function PracticeTab({player}) {
         <div style={{display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap",
           padding:"10px 14px",background:"#0d0d09",border:`1px solid ${C.border}`,marginBottom:"16px"}}>
           <span style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginRight:"4px",whiteSpace:"nowrap"}}>
-            УРОВЕНЬ:
+            {t("level_filter","УРОВЕНЬ:")}
           </span>
           {[
-            {id:"all",    label:t("all","Все"),        color:C.label},
-            {id:"Начинающий", label:"Новичок",  color:C.win},
-            {id:"Средний",    label:"Средний",  color:C.yellow},
-            {id:"Продвинутый",label:"Про",      color:C.lose},
-            {id:t("any_level","Любой"),      label:t("any_level","Любой"),    color:C.blue},
-            {id:t("for_you","Для вас"),    label:player?"⭐ Для тебя":t("for_you","Для вас"), color:"#cc88ff"},
+            {id:"all",          label:t("all","Все"),               color:C.label},
+            {id:"Начинающий",   label:t("diff_begin","Новичок"),    color:C.win},
+            {id:"Средний",      label:t("diff_mid","Средний"),      color:C.yellow},
+            {id:"Продвинутый",  label:t("diff_pro","Про"),          color:C.lose},
+            {id:"Любой",        label:t("diff_any","Любой"),        color:C.blue},
+            {id:"for_you",      label:player?t("for_you_logged","⭐ Для тебя"):t("for_you","Для вас"), color:"#cc88ff"},
           ].map(d=>{
             const active = diff===d.id;
             return(
@@ -8019,7 +8249,7 @@ function PracticeTab({player}) {
                   </div>
                   <span style={{padding:"2px 9px",background:dc+"18",color:dc,
                     border:`1px solid ${dc}33`,fontSize:"10px",fontWeight:700,flexShrink:0}}>
-                    {item.diff}
+                    {tDiff(item.diff)}
                   </span>
                 </div>
                 <p style={{fontSize:"13px",color:C.label,lineHeight:1.65,margin:0,flex:1}}>{item.desc}</p>
@@ -8113,8 +8343,8 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
   const SECTIONS = [
     {id:"account", label:"Аккаунт"},
     {id:"connections", label:"Подключения"},
-    {id:"preferences", label:"Настройки"},
-    {id:"data", label:"Данные"},
+    {id:"preferences", label:t("settings_t","Настройки")},
+    {id:"data", label:t("data_label","Данные")},
   ];
 
   return (
@@ -9028,8 +9258,8 @@ export default function App() {
                       </div>
                     </div>
                     {[
-                      {icon:"👤",label:"Мой профиль",action:()=>{setProfileView({steamid:player?.steamid});setProfileDropdown(false);}},
-                      {icon:"⚙️",label:"Настройки",action:()=>{setShowSettings(true);setProfileDropdown(false);}},
+                      {icon:"👤",label:t("my_profile","Мой профиль"),action:()=>{setProfileView({steamid:player?.steamid});setProfileDropdown(false);}},
+                      {icon:"⚙️",label:t("settings_t","Настройки"),action:()=>{setShowSettings(true);setProfileDropdown(false);}},
                       {icon:"⚡",label:"PRO подписка",action:()=>{setShowProModal(true);setProfileDropdown(false);}},
                       {icon:"📤",label:"Поделиться",action:()=>{setShareOpen(true);setProfileDropdown(false);}},
                     ].map((item,i)=>(
@@ -9289,7 +9519,7 @@ export default function App() {
               <div style={{animation:"up .4s ease both"}}>
                 <AIVerdict report={{
                   verdict: analysis?.overall||"",
-                  role: analysis?.level==="Про"?"RIFLER":analysis?.level===t("good_lbl","Хороший")?"ENTRY FRAGGER":"RIFLER",
+                  role: analysis?.level===t("diff_pro","Про")?"RIFLER":analysis?.level===t("good_lbl","Хороший")?"ENTRY FRAGGER":"RIFLER",
                   roast: analysis?.mainProblem||"",
                   strengths: arr(analysis?.strengths).map((s,i)=>typeof s==="object"?{stat:s?.stat||"",value:"",verdict:s?.comment||"",tip:""}:{stat:"",value:"",verdict:String(s),tip:""}),
                   problems: arr(analysis?.weaknesses).map((w,i)=>typeof w==="object"?{stat:w?.stat||"",value:"",reason:w?.problem||"",fix:w?.fix||"",priority:i+1}:{stat:"",value:"",reason:String(w),fix:"",priority:i+1}),
