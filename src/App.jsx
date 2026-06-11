@@ -32,6 +32,267 @@ const TRANSLATIONS = {  ru: {
     friends_title:"ДРУЗЬЯ",friends_sub:"сравнение с друзьями",
     steam_since:"Steam с",lvl:"Уровень",
     login_btn:"Войти через Steam чтобы начать",
+    ach_knife_master:"Ножевой мастер",
+    ach_ninja:"Нинзя",
+    ach_bomber:"Бомбардир",
+    ach_sapper2:"Сапёр",
+    ach_knife5:"5+ убийств ножом",
+    ach_knife50:"50+ убийств ножом",
+    ach_sniper100:"100+ убийств снайпером",
+    ach_1000k:"1000 убийств",
+    ach_5000k:"5000 убийств",
+    ach_10kk:"10к убийств",
+    ach_1000k_goal:"Накопи 1000 фрагов",
+    ach_5000k_goal:"Накопи 5000 фрагов",
+    ach_10000k_goal:"Накопи 10000 фрагов",
+    ach_defuse10:"10+ бомб обезврежено",
+    ach_plant50:"50+ бомб заложено",
+    ach_faceit5:"FACEIT уровень 5",
+    ach_faceit_elite:"FACEIT Элита",
+    ach_faceit8:"FACEIT уровень 8",
+    ach_faceit_legend:"FACEIT Легенда",
+    ach_faceit10:"FACEIT уровень 10",
+    ach_elo2k:"FACEIT ELO выше 2000",
+    ach_100h_cs2:"100 часов в CS2",
+    ach_500h_cs2:"500 часов в CS2",
+    ach_100h:"100 часов",
+    wt_5matches:"Сыграть 5 матчей на этой неделе",
+    wt_3wins:"Выиграть 3 матча подряд",
+    wt_hs45:"HS% выше 45% в двух матчах",
+    wt_kd10:"K/D выше 1.0 в трёх матчах",
+    period_30d:"30 дней",
+    period_all:"За всё время",
+    period_7d:"7 дн",
+    period_30d_s:"30 дн",
+    notif_kd:"K/D превысил 1.0 — цель достигнута",
+    notif_hs:"40%+ хедшотов — отличная точность",
+    notif_200m:"200 матчей — ты опытный игрок",
+    notif_100mvp:"100 MVP — настоящий лидер команды",
+    char_drill_desc:"Строгий военный тренер. Режет правду без сахара.",
+    char_mentor_desc:"Спокойный опытный наставник. Объясняет всё по делу.",
+    char_bro_desc:"Твой друг-про игрок. Говорит как равный, по-братски.",
+    char_term_desc:"T-800. Анализирует данные. Цель — улучшить показатели.",
+    char_sensei_desc:"Японский мастер CS2. Говорит мудростями и метафорами.",
+    snap30:"Снапшоты K/D, WR, HS за 30 дней",
+    steam_faceit_data:"Данные Steam и FACEIT",
+    match_hist_conn:"Подключение к истории матчей",
+    logout_q:"Выйти из аккаунта?",
+    saved_msg:"Сохранено! Обнови страницу чтобы увидеть в профиле.",
+    wrong_code:"Неверный код. Проверь и попробуй снова.",
+    net_err_late:"Ошибка сети — попробуй позже",
+    enter_auth:"Введи код аутентификации",
+    notif_on:"Уведомления о матчах активны",
+    notif_tg:"Получай уведомления о матчах в Telegram",
+    conn_lost:"Соединение потеряно. Попробуй ещё раз.",
+    no_answer:"Не смог ответить, попробуй ещё.",
+    q_dying:"Почему я умираю первым?",
+    q_rankup:"Как апнуть FACEIT?",
+    q_practice2:"Что тренировать?",
+    q_bestmap:"Лучшая карта для меня?",
+    pro_act:"🎉 Pro активирован!",
+    pro_act_promo:"🎉 PRO активирован бесплатно по промокоду!",
+    promo_nf:"Промокод не найден",
+    open_pay:"ОТКРЫВАЮ ОПЛАТУ...",
+    activating:"АКТИВИРУЮ...",
+    act_pro:"АКТИВИРОВАТЬ PRO",
+    s1_desc:"Нажми кнопку входа — данные CS2 и FACEIT подтянутся автоматически",
+    s2_desc:"Нейросеть изучает статистику и составляет персональный отчёт",
+    s3_desc:"Конкретные проблемы, план тренировок и ответы на любые вопросы",
+    ws_aim_botz:"Лучшая карта для тренировки прицела — стоячие, двигающиеся боты, настройка дистанции.",
+    ws_recoil:"Визуальный тренажёр отдачи всего оружия в реальном времени. Самый быстрый способ выучить спрей.",
+    ws_kz:"Тренировка движения, прыжков, стрейфов. Улучшает механику и контроль.",
+    ws_prefire_mirage:"Боты на всех стандартных позициях Mirage. Тренировка префайра и углов.",
+    ws_prefire_inferno:"Все углы бананы, B и апа. Обязательно для Inferno.",
+    ws_prefire_dust:"Базовые углы Dust2. Идеально для новичков — все стандартные позиции.",
+    ws_prefire_ancient:"Тренировка всех углов Ancient — карта которую мало кто учит, поэтому даёт преимущество.",
+    ws_1v1:"Случайные дуэли 1v1. Лучший способ проверить прицел в боевых условиях.",
+    ws_smoke_mirage:"Специальная карта с точками для изучения смоков — стоишь на маркере и бросаешь.",
+    ws_fast_aim:"Продвинутый тренажёр рефлексов и микро-коррекции прицела. Для опытных игроков.",
+    ws_smokes_mirage:"Обязательные смоки на Mirage: Jungle, CT, Stairs, Short, Connector. Знание этих 5 уже делает тебя полезным.",
+    ws_smokes_dust:"Xbox smoke, Long A cross, CT rush — три обязательных смока на Dust2.",
+    ws_util_inferno:"Смоки на Banana, Car, CT. Флешки и молотовы для контроля B на Inferno.",
+    ws_util_mirage2:"Молотов на A ramp, поп-флеш через угол на А. Эффективная атака А через гранаты.",
+    ws_smokes_nuke:"Smokes для контроля Outside, Lobby, Ramp. Nuke без смоков невозможен.",
+    ws_smokes_ancient:"CT, Mid, B-site смоки на Ancient. Мало кто знает — даёт большое преимущество.",
+    ws_bhop:"Bunny hop — прыжки с ускорением. Поможет в ротациях и некоторых позициях.",
+    ws_jumps:"Прыжок на ящик Short, буст на рампу. Позиции недоступные без знания прыжков.",
+    ws_advanced_move:"Air-strafe, W-стрейфы, контроль точности при движении. Продвинутая механика.",
+    ws_pos_inferno:"Carp, Balcony, Orange, Fountain. Правильное расположение на B Inferno.",
+    ws_awp_angles:"Лучшие AWP углы на Mirage, Inferno, Dust2. Для снайперов всех уровней.",
+    ws_info_pos:"Позиции для сбора информации без риска. Для саппорта и лёрка.",
+    da_aim500:"500 убийств в Aim Botz · 15 мин",
+    da_cstrafe15:"Counter-strafe тренировка · 15 мин",
+    da_recoil20:"Recoil Master: спрей AK · 20 мин",
+    da_hs15:"Aim Botz: только хедшоты · 15 мин",
+    da_review:"Разбери последний проигрыш · 15 мин",
+    da_prefire:"Prefire Workshop: лучшая карта · 20 мин",
+    da_1000:"Aim Botz: 1000 убийств · 20 мин",
+    da_prefire20:"Prefire Workshop · 20 мин",
+    tp_aim500:"Aim_botz: 500 убийств с места",
+    tp_aim500_hs:"Aim_botz: 500 убийств с места, фокус на голову",
+    tp_recoil:"Workshop: Recoil Master — отработать спрей AK и M4",
+    tp_cstrafe:"Counter-strafe практика: двигаться → остановиться → стрелять",
+    tp_prefire10:"Prefire Workshop: отработать 10 ключевых позиций на своей лучшей карте",
+    tp_dm_warmup:"Deathmatch перед игрой: только хедшоты, пистолетный раунд",
+    tp_review1:"Посмотри 1 раунд из проигранного матча — найди момент где ошибся",
+    tp_new_util:"Выучи 1 новый смок или молотов на часто играемой карте",
+    tp_recoil2:"Recoil Master: спрей AK и M4",
+    tp_cstrafe2:"Counter-strafe: стоп → выстрел",
+    tp_prefire10b:"Prefire Workshop: 10 позиций на лучшей карте",
+    tp_review_round:"Пересмотри 1 проигранный раунд",
+    tp_new_smoke:"Выучи 1 новый смок или молотов",
+    onb_welcome:"Добро пожаловать!",
+    onb_step1:"Ты вошёл через Steam — это уже первый шаг",
+    onb_faceit:"Подключи FACEIT",
+    onb_faceit_sub:"Получи детальную статистику по каждому матчу",
+    onb_mm:"Подключи историю матчей",
+    onb_mm_sub:"Введи код аутентификации Steam для доступа к MM матчам",
+    onb_ready:"Всё готово!",
+    onb_ready_sub:"AI тренер знает твою игру и готов помочь",
+    pro_f1:"Что сделал не так — конкретно, с картами и цифрами",
+    pro_f2:"Спрашивай тренера сколько угодно, без дневных лимитов",
+    pro_f3:"История рейтинга, рост K/D, достижения разблокированы",
+    pro_f4:"AI находит твои худшие карты и говорит что конкретно исправить",
+    pro_f5:"Выделяйся среди других игроков",
+    pro_f6:"Ответ в течение часа, прямая связь с тренером",
+    pro_month_price:"~$3.3 · отмена в любой момент",
+    pro_year_price:"~$22 · экономия 40%",
+    pro_deal:"ВЫГОДНО",
+    pro_year_lbl:"ГОД",
+    pro_inc1:"Безлимитный AI разбор каждой игры",
+    pro_inc2:"AI чат без ограничений",
+    streak_legend:"ЛЕГЕНДА 🏆",
+    streak_good:"ХОРОШО ⚡",
+    streak_start:"НАЧАЛО 🌱",
+    saved_reload:"Сохранено! Обнови страницу чтобы увидеть в профиле.",
+    logout_confirm:"Выйти из аккаунта?",
+    eg_7794:"Например: 7794",
+    wrong_code:"Неверный код. Проверь и попробуй снова.",
+    net_err_later:"Ошибка сети — попробуй позже",
+    enter_auth_code:"Введи код аутентификации",
+    notif_active:"Уведомления о матчах активны",
+    notif_tg:"Получай уведомления о матчах в Telegram",
+    ask_coach_ph:"Спроси тренера...",
+    conn_lost:"Соединение потеряно. Попробуй ещё раз.",
+    no_answer:"Не смог ответить, попробуй ещё.",
+    q1:"Почему я умираю первым?",
+    q2:"Как апнуть FACEIT?",
+    q3:"Что тренировать?",
+    q4:"Лучшая карта для меня?",
+    pro_activated:"🎉 Pro активирован!",
+    pro_activated_promo:"🎉 PRO активирован бесплатно по промокоду!",
+    promo_not_found:"Промокод не найден",
+    payments_unavail:"Платежи временно недоступны. Используй активацию ключом.",
+    opening_payment:"ОТКРЫВАЮ ОПЛАТУ...",
+    activating:"АКТИВИРУЮ...",
+    activate_pro:"АКТИВИРОВАТЬ PRO",
+    char_drill_desc:"Строгий военный тренер. Режет правду без сахара.",
+    char_mentor_desc:"Спокойный опытный наставник. Объясняет всё по делу.",
+    char_bro_desc:"Твой друг-про игрок. Говорит как равный, по-братски.",
+    char_term_desc:"T-800. Анализирует данные. Цель — улучшить показатели.",
+    char_sensei_desc:"Японский мастер CS2. Говорит мудростями и метафорами.",
+    step1_desc:"Нажми кнопку входа — данные CS2 и FACEIT подтянутся автоматически",
+    step2_desc:"Нейросеть изучает статистику и составляет персональный отчёт",
+    step3_desc:"Конкретные проблемы, план тренировок и ответы на любые вопросы",
+    match_dynamics:"ДИНАМИКА МАТЧЕЙ",
+    game_profile:"ПРОФИЛЬ ИГРЫ",
+    indicators:"ПОКАЗАТЕЛИ",
+    map_pool:"ПУЛ КАРТ · FACEIT",
+    best_label:"ЛУЧШАЯ",
+    worst_label:"ХУДШАЯ",
+    ban_label:"БАНИТЬ",
+    weapons_header:"🔫 ОРУЖИЯ",
+    accuracy_col:"ТОЧНОСТЬ",
+    click_ai:"нажми → AI разбор",
+    ai_analyzing_match:"AI анализирует матч...",
+    click_again_ai:"Нажми ещё раз для AI разбора",
+    progress_history:"📊 ИСТОРИЯ ПРОГРЕССА",
+    coach_rating_h:"🏅 CS2 COACH РЕЙТИНГ",
+    daily_goal_h:"⚡ ЦЕЛЬ",
+    tomorrow_h:"ЗАВТРА",
+    period_cmp_h:"📊 СРАВНЕНИЕ ПЕРИОДОВ",
+    achievements_h:"🏅 ДОСТИЖЕНИЯ",
+    achievements_h2:"ДОСТИЖЕНИЯ",
+    table_empty:"ТАБЛИЦА ПУСТА",
+    history_empty_h:"ИСТОРИЯ ПУСТА",
+    col_player:"ИГРОК",
+    player_profile:"ПРОФИЛЬ ИГРОКА",
+    steam_stats:"STEAM СТАТИСТИКА",
+    support_h:"ПОДДЕРЖКА",
+    leave_msg:"ИЛИ ОСТАВЬ СООБЩЕНИЕ",
+    msg_sent:"Сообщение отправлено!",
+    reply_24h:"Ответим в течение 24 часов",
+    knowledge_base:"База знаний CS2",
+    kb_sub:"Воркшоп, гранаты, движение, позиции и карты",
+    settings_h:"⚙️ НАСТРОЙКИ",
+    lang_setting:"Язык / Language",
+    lang_ui:"Язык интерфейса",
+    notifications:"Уведомления",
+    notif_sub:"Достижения и апдейты",
+    theme_h:"Тема",
+    dark_only:"Только тёмная тема",
+    pro_active_h:"PRO АКТИВЕН",
+    all_features:"Все функции доступны",
+    plan_lbl:"ПЛАН",
+    activated:"АКТИВИРОВАН",
+    forever:"Навсегда",
+    no_expiry:"Срок не ограничен",
+    whats_included:"ЧТО ВКЛЮЧЕНО:",
+    click_close:"нажми в любом месте чтобы закрыть",
+    try_pro:"ПОПРОБОВАТЬ PRO →",
+    about_service:"О СЕРВИСЕ",
+    how_it_works:"КАК ЭТО РАБОТАЕТ",
+    technology:"ТЕХНОЛОГИИ",
+    privacy:"КОНФИДЕНЦИАЛЬНОСТЬ",
+    questions_support:"Вопросы и поддержка",
+    service_h:"СЕРВИС",
+    socials_h:"СОЦСЕТИ",
+    online_now_h:"СЕЙЧАС ОНЛАЙН",
+    players_on_site:"игроков на сайте",
+    auth_code_h:"КОД АУТЕНТИФИКАЦИИ",
+    few_data:"МАЛО ДАННЫХ",
+    extra_metrics:"📊 ДОПОЛНИТЕЛЬНЫЕ МЕТРИКИ",
+    coach_h:"ТРЕНЕР",
+    data_snap:"Снапшоты K/D, WR, HS за 30 дней",
+    data_steamfaceit:"Данные Steam и FACEIT",
+    data_matchhist:"Подключение к истории матчей",
+    connected:"Подключён",
+    not_connected:"Аккаунт не подключён",
+    player_not_found:"Игрок не найден",
+    search_error:"Ошибка поиска",
+    rank_ge:"Глобал Элита",
+    rank_sm:"Верховный Мастер",
+    rank_le:"Легендарный Орёл",
+    rank_mg:"Мастер Страж",
+    rank_gs:"Золотой Страж",
+    rank_she:"Серебро Высшее",
+    rank_s:"Серебро",
+    support_faq:"Поддержка и FAQ",
+    cs2_ai_coach:"CS2 AI ТРЕНЕР",
+    cs2_ai_pro:"⚡ CS2 AI ТРЕНЕР PRO",
+    ai_analyzing:"🤖 AI ТРЕНЕР АНАЛИЗИРУЕТ",
+    ai_personal:"🤖 AI ТРЕНЕР · ПЕРСОНАЛЬНЫЙ РАЗБОР",
+    ai_coach_analysis:"🤖 AI ТРЕНЕР · РАЗБОР",
+    analyzing_stats2:"Анализируем твою статистику...",
+    main_problem_pre:"⚠️ ГЛАВНАЯ ПРОБЛЕМА:",
+    ai_coach_lbl:"AI ТРЕНЕР",
+    page_title:"Разбор твоей игры",
+    page_sub:"Steam + FACEIT аналитика · AI-тренер",
+    main_problem_x:"✗ ГЛАВНАЯ ПРОБЛЕМА",
+    checklist_title:"🚀 Настройка профиля",
+    step_analyzing:"Анализируем K/D, WR, HS%...",
+    step_maps:"Изучаем статистику карт...",
+    step_role:"Определяем роль и стиль игры...",
+    step_verdict:"Формируем персональный вердикт...",
+    tab_overview2:"ОБЗОР",
+    open_cs2_stats:"Открыть статистику CS2 в Steam",
+    sec_profile:"ПРОФИЛЬ",
+    sec_history:"ИСТОРИЯ",
+    sec_friends:"ДРУЗЬЯ",
+    sec_practice:"ПРАКТИКА",
+    menu_pro:"PRO подписка",
+    menu_share:"Поделиться",
+    search_faceit:"поиск по FACEIT нику...",
     auto_1:"Переключись на Aimlabs / KovaaK's — workshop aim_botz уже не даёт прогресса на этом уровне",
     auto_2:"Recoil Master workshop: отработай первые 5 пуль AK47 — они дают больше всего хедшотов",
     auto_3:"Изучи все раскидки на 2 основных картах до автоматизма — без этого уровень 10 закрыт",
@@ -258,6 +519,267 @@ const TRANSLATIONS = {  ru: {
     friends_title:"FRIENDS",friends_sub:"compare with friends",
     steam_since:"Steam since",lvl:"Level",
     login_btn:"Login via Steam to start",
+    ach_knife_master:"Knife Master",
+    ach_ninja:"Ninja",
+    ach_bomber:"Bomber",
+    ach_sapper2:"Sapper",
+    ach_knife5:"5+ knife kills",
+    ach_knife50:"50+ knife kills",
+    ach_sniper100:"100+ sniper kills",
+    ach_1000k:"1000 kills",
+    ach_5000k:"5000 kills",
+    ach_10kk:"10k kills",
+    ach_1000k_goal:"Get 1000 frags",
+    ach_5000k_goal:"Get 5000 frags",
+    ach_10000k_goal:"Get 10000 frags",
+    ach_defuse10:"10+ bombs defused",
+    ach_plant50:"50+ bombs planted",
+    ach_faceit5:"FACEIT level 5",
+    ach_faceit_elite:"FACEIT Elite",
+    ach_faceit8:"FACEIT level 8",
+    ach_faceit_legend:"FACEIT Legend",
+    ach_faceit10:"FACEIT level 10",
+    ach_elo2k:"FACEIT ELO above 2000",
+    ach_100h_cs2:"100 hours in CS2",
+    ach_500h_cs2:"500 hours in CS2",
+    ach_100h:"100 hours",
+    wt_5matches:"Play 5 matches this week",
+    wt_3wins:"Win 3 matches in a row",
+    wt_hs45:"HS% above 45% in two matches",
+    wt_kd10:"K/D above 1.0 in three matches",
+    period_30d:"30 days",
+    period_all:"All time",
+    period_7d:"7 d",
+    period_30d_s:"30 d",
+    notif_kd:"K/D exceeded 1.0 — goal reached",
+    notif_hs:"40%+ headshots — excellent accuracy",
+    notif_200m:"200 matches — you're an experienced player",
+    notif_100mvp:"100 MVP — true team leader",
+    char_drill_desc:"Strict military coach. Cuts to the truth without sugar-coating.",
+    char_mentor_desc:"Calm experienced mentor. Explains everything to the point.",
+    char_bro_desc:"Your pro player friend. Talks as an equal, like a bro.",
+    char_term_desc:"T-800. Analyzes data. Goal — improve stats.",
+    char_sensei_desc:"Japanese CS2 master. Speaks in wisdom and metaphors.",
+    snap30:"K/D, WR, HS snapshots for 30 days",
+    steam_faceit_data:"Steam and FACEIT data",
+    match_hist_conn:"Match history connection",
+    logout_q:"Logout from account?",
+    saved_msg:"Saved! Refresh the page to see in profile.",
+    wrong_code:"Wrong code. Check and try again.",
+    net_err_late:"Network error — try again later",
+    enter_auth:"Enter authentication code",
+    notif_on:"Match notifications active",
+    notif_tg:"Get match notifications in Telegram",
+    conn_lost:"Connection lost. Try again.",
+    no_answer:"Couldn't answer, try again.",
+    q_dying:"Why do I die first?",
+    q_rankup:"How to rank up on FACEIT?",
+    q_practice2:"What to practice?",
+    q_bestmap:"Best map for me?",
+    pro_act:"🎉 Pro activated!",
+    pro_act_promo:"🎉 PRO activated free with promo code!",
+    promo_nf:"Promo code not found",
+    open_pay:"OPENING PAYMENT...",
+    activating:"ACTIVATING...",
+    act_pro:"ACTIVATE PRO",
+    s1_desc:"Click login — CS2 and FACEIT data will load automatically",
+    s2_desc:"The AI studies your stats and creates a personal report",
+    s3_desc:"Specific problems, training plan and answers to any questions",
+    ws_aim_botz:"Best map for aim training — standing, moving bots, distance settings.",
+    ws_recoil:"Visual recoil trainer for all weapons in real time. Fastest way to learn spray patterns.",
+    ws_kz:"Movement, jump, strafe training. Improves mechanics and control.",
+    ws_prefire_mirage:"Bots on all standard Mirage positions. Prefire and angle training.",
+    ws_prefire_inferno:"All banana, B and apo angles. Essential for Inferno.",
+    ws_prefire_dust:"Basic Dust2 angles. Ideal for beginners — all standard positions.",
+    ws_prefire_ancient:"Training all Ancient angles — a map few people learn, giving you an edge.",
+    ws_1v1:"Random 1v1 duels. Best way to test aim in combat conditions.",
+    ws_smoke_mirage:"Special map with smoke spots — stand on marker and throw.",
+    ws_fast_aim:"Advanced reflex and micro-adjustment trainer. For experienced players.",
+    ws_smokes_mirage:"Essential Mirage smokes: Jungle, CT, Stairs, Short, Connector. Knowing these 5 makes you useful.",
+    ws_smokes_dust:"Xbox smoke, Long A cross, CT rush — three essential Dust2 smokes.",
+    ws_util_inferno:"Banana, Car, CT smokes. Flashbangs and molotovs for B control on Inferno.",
+    ws_util_mirage2:"Molotov on A ramp, pop-flash through the corner. Effective A execute through nades.",
+    ws_smokes_nuke:"Smokes for Outside, Lobby, Ramp control. Nuke without smokes is impossible.",
+    ws_smokes_ancient:"CT, Mid, B-site smokes on Ancient. Few know them — gives huge advantage.",
+    ws_bhop:"Bunny hop — accelerated jumps. Helps with rotations and certain positions.",
+    ws_jumps:"Short box jump, ramp boost. Positions inaccessible without jump knowledge.",
+    ws_advanced_move:"Air-strafe, W-strafes, accuracy control while moving. Advanced mechanics.",
+    ws_pos_inferno:"Carp, Balcony, Orange, Fountain. Correct B Inferno positioning.",
+    ws_awp_angles:"Best AWP angles on Mirage, Inferno, Dust2. For snipers of all levels.",
+    ws_info_pos:"Low-risk information gathering positions. For support and lurker roles.",
+    da_aim500:"500 kills in Aim Botz · 15 min",
+    da_cstrafe15:"Counter-strafe training · 15 min",
+    da_recoil20:"Recoil Master: AK spray · 20 min",
+    da_hs15:"Aim Botz: headshots only · 15 min",
+    da_review:"Analyze last loss · 15 min",
+    da_prefire:"Prefire Workshop: best map · 20 min",
+    da_1000:"Aim Botz: 1000 kills · 20 min",
+    da_prefire20:"Prefire Workshop · 20 min",
+    tp_aim500:"Aim_botz: 500 kills from stationary",
+    tp_aim500_hs:"Aim_botz: 500 kills from stationary, focus on headshots",
+    tp_recoil:"Workshop: Recoil Master — practice AK and M4 spray",
+    tp_cstrafe:"Counter-strafe practice: move → stop → shoot",
+    tp_prefire10:"Prefire Workshop: practice 10 key positions on your best map",
+    tp_dm_warmup:"Deathmatch before game: headshots only, pistol round",
+    tp_review1:"Watch 1 round from a lost match — find the mistake",
+    tp_new_util:"Learn 1 new smoke or molotov on a frequently played map",
+    tp_recoil2:"Recoil Master: AK and M4 spray",
+    tp_cstrafe2:"Counter-strafe: stop → shoot",
+    tp_prefire10b:"Prefire Workshop: 10 positions on best map",
+    tp_review_round:"Review 1 lost round",
+    tp_new_smoke:"Learn 1 new smoke or molotov",
+    onb_welcome:"Welcome!",
+    onb_step1:"You logged in via Steam — that's the first step",
+    onb_faceit:"Connect FACEIT",
+    onb_faceit_sub:"Get detailed statistics for each match",
+    onb_mm:"Connect match history",
+    onb_mm_sub:"Enter your Steam authentication code for access to MM matches",
+    onb_ready:"All set!",
+    onb_ready_sub:"AI coach knows your game and is ready to help",
+    pro_f1:"What you did wrong — specifically, with maps and numbers",
+    pro_f2:"Ask the coach as much as you want, no daily limits",
+    pro_f3:"Rating history, K/D growth, achievements unlocked",
+    pro_f4:"AI finds your worst maps and tells you exactly what to fix",
+    pro_f5:"Stand out among other players",
+    pro_f6:"Reply within an hour, direct connection with coach",
+    pro_month_price:"~$3.3 · cancel anytime",
+    pro_year_price:"~$22 · save 40%",
+    pro_deal:"BEST VALUE",
+    pro_year_lbl:"YEAR",
+    pro_inc1:"Unlimited AI analysis of every game",
+    pro_inc2:"AI chat without limits",
+    streak_legend:"LEGEND 🏆",
+    streak_good:"GREAT ⚡",
+    streak_start:"BEGINNING 🌱",
+    saved_reload:"Saved! Refresh the page to see in your profile.",
+    logout_confirm:"Logout from account?",
+    eg_7794:"E.g.: 7794",
+    wrong_code:"Wrong code. Check and try again.",
+    net_err_later:"Network error — try again later",
+    enter_auth_code:"Enter authentication code",
+    notif_active:"Match notifications active",
+    notif_tg:"Get match notifications in Telegram",
+    ask_coach_ph:"Ask the coach...",
+    conn_lost:"Connection lost. Please try again.",
+    no_answer:"Couldn't answer, please try again.",
+    q1:"Why do I die first?",
+    q2:"How to rank up on FACEIT?",
+    q3:"What to practice?",
+    q4:"Best map for me?",
+    pro_activated:"🎉 Pro activated!",
+    pro_activated_promo:"🎉 PRO activated for free with promo code!",
+    promo_not_found:"Promo code not found",
+    payments_unavail:"Payments temporarily unavailable. Use key activation.",
+    opening_payment:"OPENING PAYMENT...",
+    activating:"ACTIVATING...",
+    activate_pro:"ACTIVATE PRO",
+    char_drill_desc:"Strict military coach. Cuts to the truth without sugar-coating.",
+    char_mentor_desc:"Calm experienced mentor. Explains everything to the point.",
+    char_bro_desc:"Your pro gamer friend. Talks as an equal, like a bro.",
+    char_term_desc:"T-800. Analyzes data. Goal — improve stats.",
+    char_sensei_desc:"Japanese CS2 master. Speaks in wisdom and metaphors.",
+    step1_desc:"Click the login button — CS2 and FACEIT data will load automatically",
+    step2_desc:"The neural network studies your stats and creates a personal report",
+    step3_desc:"Specific problems, training plan and answers to any questions",
+    match_dynamics:"MATCH DYNAMICS",
+    game_profile:"GAME PROFILE",
+    indicators:"STATS",
+    map_pool:"MAP POOL · FACEIT",
+    best_label:"BEST",
+    worst_label:"WORST",
+    ban_label:"BAN",
+    weapons_header:"🔫 WEAPONS",
+    accuracy_col:"ACCURACY",
+    click_ai:"click → AI analysis",
+    ai_analyzing_match:"AI analyzing match...",
+    click_again_ai:"Click again for AI analysis",
+    progress_history:"📊 PROGRESS HISTORY",
+    coach_rating_h:"🏅 CS2 COACH RATING",
+    daily_goal_h:"⚡ GOAL",
+    tomorrow_h:"TOMORROW",
+    period_cmp_h:"📊 PERIOD COMPARISON",
+    achievements_h:"🏅 ACHIEVEMENTS",
+    achievements_h2:"ACHIEVEMENTS",
+    table_empty:"TABLE EMPTY",
+    history_empty_h:"HISTORY EMPTY",
+    col_player:"PLAYER",
+    player_profile:"PLAYER PROFILE",
+    steam_stats:"STEAM STATISTICS",
+    support_h:"SUPPORT",
+    leave_msg:"OR LEAVE A MESSAGE",
+    msg_sent:"Message sent!",
+    reply_24h:"We'll reply within 24 hours",
+    knowledge_base:"CS2 Knowledge Base",
+    kb_sub:"Workshop, grenades, movement, positions and maps",
+    settings_h:"⚙️ SETTINGS",
+    lang_setting:"Language",
+    lang_ui:"Interface language",
+    notifications:"Notifications",
+    notif_sub:"Achievements and updates",
+    theme_h:"Theme",
+    dark_only:"Dark theme only",
+    pro_active_h:"PRO ACTIVE",
+    all_features:"All features available",
+    plan_lbl:"PLAN",
+    activated:"ACTIVATED",
+    forever:"Forever",
+    no_expiry:"No expiration",
+    whats_included:"WHAT'S INCLUDED:",
+    click_close:"click anywhere to close",
+    try_pro:"TRY PRO →",
+    about_service:"ABOUT THE SERVICE",
+    how_it_works:"HOW IT WORKS",
+    technology:"TECHNOLOGY",
+    privacy:"PRIVACY",
+    questions_support:"Questions and support",
+    service_h:"SERVICE",
+    socials_h:"SOCIALS",
+    online_now_h:"ONLINE NOW",
+    players_on_site:"players online",
+    auth_code_h:"AUTHENTICATION CODE",
+    few_data:"INSUFFICIENT DATA",
+    extra_metrics:"📊 ADDITIONAL METRICS",
+    coach_h:"COACH",
+    data_snap:"K/D, WR, HS snapshots for 30 days",
+    data_steamfaceit:"Steam and FACEIT data",
+    data_matchhist:"Match history connection",
+    connected:"Connected",
+    not_connected:"Account not connected",
+    player_not_found:"Player not found",
+    search_error:"Search error",
+    rank_ge:"Global Elite",
+    rank_sm:"Supreme Master",
+    rank_le:"Legendary Eagle",
+    rank_mg:"Master Guardian",
+    rank_gs:"Gold Nova",
+    rank_she:"Silver Elite",
+    rank_s:"Silver",
+    support_faq:"Support and FAQ",
+    cs2_ai_coach:"CS2 AI COACH",
+    cs2_ai_pro:"⚡ CS2 AI COACH PRO",
+    ai_analyzing:"🤖 AI COACH ANALYZING",
+    ai_personal:"🤖 AI COACH · PERSONAL ANALYSIS",
+    ai_coach_analysis:"🤖 AI COACH · ANALYSIS",
+    analyzing_stats2:"Analyzing your stats...",
+    main_problem_pre:"⚠️ MAIN PROBLEM:",
+    ai_coach_lbl:"AI COACH",
+    page_title:"Your Game Analysis",
+    page_sub:"Steam + FACEIT analytics · AI coach",
+    main_problem_x:"✗ MAIN PROBLEM",
+    checklist_title:"🚀 Profile setup",
+    step_analyzing:"Analyzing K/D, WR, HS%...",
+    step_maps:"Studying map stats...",
+    step_role:"Determining role and playstyle...",
+    step_verdict:"Building personal verdict...",
+    tab_overview2:"OVERVIEW",
+    open_cs2_stats:"Open CS2 stats in Steam",
+    sec_profile:"PROFILE",
+    sec_history:"HISTORY",
+    sec_friends:"FRIENDS",
+    sec_practice:"PRACTICE",
+    menu_pro:"PRO subscription",
+    menu_share:"Share",
+    search_faceit:"search by FACEIT nick...",
     auto_1:"Switch to Aimlabs / KovaaK's — aim_botz no longer gives progress",
     auto_2:"Recoil Master workshop: master the first 5 AK47 bullets — they get most kills",
     auto_3:"Learn all lineups on 2 main maps to automatism — level 10 needs it",
@@ -696,7 +1218,7 @@ function Skel({w="100%",h=14,mb=8}){return <div className="skel" style={{width:w
 
 function Sparkline({data,color=C.yellow,h=72,label=""}){
   if(!data||data.length<2) return(
-    <div style={{height:h,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontSize:"12px",letterSpacing:"2px"}}>МАЛО ДАННЫХ</div>
+    <div style={{height:h,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontSize:"12px",letterSpacing:"2px"}}>{t("few_data","МАЛО ДАННЫХ")}</div>
   );
   const w=300,pad=8,nums=data.map(d=>parseFloat(d)||0);
   const mn=Math.min(...nums),mx=Math.max(...nums),rng=mx-mn||1;
@@ -785,7 +1307,7 @@ function SteamPopup({onLogin,onSkip}) {
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",animation:"fadeIn .3s ease"}}>
       <div style={{background:C.card,border:`1px solid ${C.border}`,borderTop:`2px solid ${C.yellow}`,padding:"52px 48px",maxWidth:"420px",width:"90%",textAlign:"center",animation:"slideUp .35s ease",boxShadow:`0 0 60px ${C.yellow}12`}}>
         <div style={{fontSize:"46px",marginBottom:"18px"}}>🎯</div>
-        <div style={{fontSize:"11px",letterSpacing:"5px",color:C.yellow,marginBottom:"10px"}}>CS2 AI ТРЕНЕР</div>
+        <div style={{fontSize:"11px",letterSpacing:"5px",color:C.yellow,marginBottom:"10px"}}>{t("cs2_ai_coach","CS2 AI ТРЕНЕР")}</div>
         <h2 style={{color:C.value,fontWeight:400,margin:"0 0 12px",fontSize:"22px"}}>Войди через Steam</h2>
         <p style={{color:C.label,fontSize:"13px",lineHeight:1.8,margin:"0 0 30px"}}>
           Аватар, ник и статистика CS2 — напрямую из твоего профиля.<br/>
@@ -983,7 +1505,7 @@ function ChartsSection({faceit}) {
 
   return (
     <div style={{animation:"up .4s ease both"}}>
-      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>ДИНАМИКА МАТЧЕЙ</div>
+      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>{t("match_dynamics","ДИНАМИКА МАТЧЕЙ")}</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:"3px",marginBottom:"10px"}}>
         <Chart title="K/D RATIO" data={kdData} color={C.yellow}/>
         <Chart title="HEADSHOT %" data={hsData} color={C.orange} unit="%"/>
@@ -992,11 +1514,11 @@ function ChartsSection({faceit}) {
       {/* Radar */}
       <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"20px",display:"flex",gap:"28px",alignItems:"center",flexWrap:"wrap"}}>
         <div style={{flex:"0 0 auto"}}>
-          <div style={{fontSize:"12px",letterSpacing:"2px",color:C.label,marginBottom:"10px"}}>ПРОФИЛЬ ИГРЫ</div>
+          <div style={{fontSize:"12px",letterSpacing:"2px",color:C.label,marginBottom:"10px"}}>{t("game_profile","ПРОФИЛЬ ИГРЫ")}</div>
           <Radar axes={radarAxes}/>
         </div>
         <div style={{flex:1,minWidth:"180px"}}>
-          <div style={{fontSize:"12px",letterSpacing:"2px",color:C.label,marginBottom:"14px"}}>ПОКАЗАТЕЛИ</div>
+          <div style={{fontSize:"12px",letterSpacing:"2px",color:C.label,marginBottom:"14px"}}>{t("indicators","ПОКАЗАТЕЛИ")}</div>
           {radarAxes.map((a,i)=>(
             <div key={i} style={{marginBottom:"12px"}}>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",marginBottom:"4px"}}>
@@ -1077,7 +1599,7 @@ function SteamMatchConnect({steamid, onConnected}) {
           </div>
 
           <div style={{marginBottom:"12px"}}>
-            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>КОД АУТЕНТИФИКАЦИИ</div>
+            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>{t("auth_code_h","КОД АУТЕНТИФИКАЦИИ")}</div>
             <input value={authCode} onChange={e=>setAuthCode(e.target.value)}
               placeholder="XXXX-XXXXX-XXXX"
               style={{width:"100%",background:"#0d0d09",border:`1px solid ${C.border}`,
@@ -1593,7 +2115,7 @@ function SteamStatsPanel({player}) {
       {/* ── СПЕЦИАЛЬНЫЕ УБИЙСТВА ── */}
       {(knifeKills>0||sniperKills>0||grenadeKills>0||blindKills>0)&&<>
         <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,
-          padding:"14px 0 8px"}}>СПЕЦИАЛЬНЫЕ УБИЙСТВА</div>
+          padding:"14px 0 8px"}}>{t("spec_kills","СПЕЦИАЛЬНЫЕ УБИЙСТВА")}</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:"3px",marginBottom:"3px"}}>
           {[
             {l:t("lbl_knife","НОЖОМ"),    v:knifeKills,   icon:"🔪", c:"#ff8888"},
@@ -1618,7 +2140,7 @@ function SteamStatsPanel({player}) {
       {/* ── ДОПОЛНИТЕЛЬНО ── */}
       {(accuracy>0||bombsPlanted>0||bombsDefused>0)&&<>
         <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,
-          padding:"14px 0 8px"}}>ДОПОЛНИТЕЛЬНО</div>
+          padding:"14px 0 8px"}}>{t("additional","ДОПОЛНИТЕЛЬНО")}</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px",marginBottom:"3px"}}>
           {[
             accuracy>0    &&{l:t("lbl_acc","ТОЧНОСТЬ"),      v:accuracy+"%",              icon:"🎯", c:C.orange},
@@ -1676,19 +2198,19 @@ function MapPool({faceit}) {
   const bans=maps.filter(m=>parseFloat(m.winrate)<45).slice(-2);
   return (
     <div style={{animation:"up .4s ease both"}}>
-      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>ПУЛ КАРТ · FACEIT</div>
+      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>{t("map_pool","ПУЛ КАРТ · FACEIT")}</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:"3px",marginBottom:"12px"}}>
         <div style={{background:"#0d1a0d",border:`1px solid #1e3a1e`,padding:"16px 18px"}}>
-          <div style={{fontSize:"11px",color:"#55aa55",letterSpacing:"2px",marginBottom:"5px"}}>ЛУЧШАЯ</div>
+          <div style={{fontSize:"11px",color:"#55aa55",letterSpacing:"2px",marginBottom:"5px"}}>{t("best_label","ЛУЧШАЯ")}</div>
           <div style={{fontSize:"18px",color:"#66dd66",fontWeight:700}}>{best.map} · {best.winrate}%</div>
         </div>
         <div style={{background:"#1a0d0d",border:`1px solid #3a1e1e`,padding:"16px 18px"}}>
-          <div style={{fontSize:"11px",color:"#cc5555",letterSpacing:"2px",marginBottom:"5px"}}>ХУДШАЯ</div>
+          <div style={{fontSize:"11px",color:"#cc5555",letterSpacing:"2px",marginBottom:"5px"}}>{t("worst_label","ХУДШАЯ")}</div>
           <div style={{fontSize:"18px",color:C.lose,fontWeight:700}}>{worst.map} · {worst.winrate}%</div>
         </div>
         {bans.length>0&&(
           <div style={{background:"#1a1408",border:`1px solid #3a2e14`,padding:"16px 18px"}}>
-            <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"5px"}}>БАНИТЬ</div>
+            <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"5px"}}>{t("ban_label","БАНИТЬ")}</div>
             <div style={{fontSize:"16px",color:C.yellow,fontWeight:700}}>{bans.map(b=>b.map).join(", ")}</div>
           </div>
         )}
@@ -1880,7 +2402,7 @@ function WeaponsPanel({cs2}) {
       {/* Header */}
       <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
         display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
-        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>🔫 ОРУЖИЯ</span>
+        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{t("weapons_header","🔫 ОРУЖИЯ")}</span>
         <div style={{display:"flex",gap:"4px"}}>
           {[["kills",t("kills_btn","Убийства")],["hs",t("hs_btn","HS%")],["acc",t("acc_btn","Точность")]].map(([k,l])=>(
             <button key={k} onClick={()=>setSortBy(k)} style={{
@@ -1957,7 +2479,7 @@ function WeaponsPanel({cs2}) {
               {/* Точность */}
               <div style={{textAlign:"center"}}>
                 <div style={{fontSize:"13px",color:C.label,fontWeight:600}}>{w.acc}%</div>
-                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>ТОЧНОСТЬ</div>
+                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>{t("accuracy_col","ТОЧНОСТЬ")}</div>
               </div>
             </div>
           );
@@ -1992,7 +2514,7 @@ function ScoreCardsCollapsible({player, source}) {
         color:C.muted,cursor:"pointer",padding:"12px 20px",
         display:"flex",justifyContent:"space-between",alignItems:"center",
         fontFamily:"inherit",fontSize:"12px",letterSpacing:"2px"}}>
-        <span>📊 ДОПОЛНИТЕЛЬНЫЕ МЕТРИКИ</span>
+        <span>{t("extra_metrics","📊 ДОПОЛНИТЕЛЬНЫЕ МЕТРИКИ")}</span>
         <span style={{fontSize:"14px"}}>{open?"▲":"▼"}</span>
       </button>
       {open&&<ScoreCards player={player} source={source}/>}
@@ -2072,7 +2594,7 @@ function RecentMatchesOverview({faceit}) {
         <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>
           🎮 ПОСЛЕДНИЕ МАТЧИ
         </span>
-        <span style={{fontSize:"11px",color:C.muted}}>нажми → AI разбор</span>
+        <span style={{fontSize:"11px",color:C.muted}}>{t("click_ai","нажми → AI разбор")}</span>
       </div>
       {matches.map((m,i)=>{
         const win = m.result==="1";
@@ -2119,7 +2641,7 @@ function RecentMatchesOverview({faceit}) {
                 <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                   <div style={{width:"6px",height:"6px",borderRadius:"50%",background:C.yellow,
                     animation:"pulse 1.2s infinite"}}/>
-                  <span style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px"}}>AI анализирует матч...</span>
+                  <span style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px"}}>{t("ai_analyzing_match","AI анализирует матч...")}</span>
                 </div>
               ):ai?(
                 <div style={{fontSize:"13px",color:C.text,lineHeight:1.7,
@@ -2127,7 +2649,7 @@ function RecentMatchesOverview({faceit}) {
                   🤖 {ai}
                 </div>
               ):(
-                <div style={{fontSize:"12px",color:C.muted}}>Нажми ещё раз для AI разбора</div>
+                <div style={{fontSize:"12px",color:C.muted}}>{t("click_again_ai","Нажми ещё раз для AI разбора")}</div>
               )}
             </div>}
           </div>
@@ -2177,7 +2699,7 @@ function ProgressHistory({player, source}) {
       <div style={{position:"absolute",top:"-30px",right:"-30px",width:"160px",height:"160px",
         background:`radial-gradient(circle,${diffColor}12,transparent 70%)`,pointerEvents:"none"}}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"8px"}}>
-        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>📊 ИСТОРИЯ ПРОГРЕССА</span>
+        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{t("progress_history","📊 ИСТОРИЯ ПРОГРЕССА")}</span>
         <span style={{fontSize:"11px",color:C.muted}}>{first.date} — {last.date}</span>
       </div>
       <div className="progress-row" style={{display:"flex",alignItems:"center",gap:"20px",marginBottom:"16px",flexWrap:"wrap"}}>
@@ -2278,7 +2800,7 @@ function PlayerRating({player, source}) {
       <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${coachLvl.color}88,${coachLvl.color},${coachLvl.color}88,transparent)`,position:"relative",zIndex:1}}/>
 
       <div style={{border:`1px solid ${coachLvl.color}22`,borderTop:"none",padding:"18px 20px",position:"relative",zIndex:1}}>
-        <div style={{fontSize:"10px",color:coachLvl.color,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>🏅 CS2 COACH РЕЙТИНГ</div>
+        <div style={{fontSize:"10px",color:coachLvl.color,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>{t("coach_rating_h","🏅 CS2 COACH РЕЙТИНГ")}</div>
 
         <div className="rating-row" style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"18px"}}>
           {/* Уровень */}
@@ -2369,7 +2891,7 @@ function AchievementModal({a, onClose}) {
     headshot: [
       {cat:"AIM",      dur:t("t20min","20 мин"), task:t("auto_19","Aim_botz: 500 убийств только в голову, без спрея — пока не выйдет уверенно")},
       {cat:"МЕХАНИКА", dur:t("t15min","15 мин"), task:t("auto_2","Recoil Master workshop: отработай первые 5 пуль AK47 — они дают больше всего хедшотов")},
-      {cat:"ПРАКТИКА", dur:t("t10min","10 мин"), task:t("tr_dm_pistol","Deathmatch: стреляй только пистолетом — заставляет прицеливаться точнее")},
+      {cat:t("sec_practice","ПРАКТИКА"), dur:t("t10min","10 мин"), task:t("tr_dm_pistol","Deathmatch: стреляй только пистолетом — заставляет прицеливаться точнее")},
     ],
     sniper: [
       {cat:"AIM",      dur:t("t20min","20 мин"), task:t("tr_aim300","Aim_botz headshot only: минимум 300 убийств подряд с точностью выше 60%")},
@@ -2568,7 +3090,7 @@ function AchievementsCollapsible({player, source}) {
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
           <span style={{fontSize:"16px"}}>🏅</span>
           <div style={{textAlign:"left"}}>
-            <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>ДОСТИЖЕНИЯ</div>
+            <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{t("achievements_h2","ДОСТИЖЕНИЯ")}</div>
             <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>
               <span style={{color:C.yellow,fontWeight:700}}>{unlocked}</span>/{total} разблокировано
             </div>
@@ -2639,24 +3161,24 @@ function Achievements({player, source}) {
     {id:"m500",   cat:"results", icon:"⚙️",name:"Гриндер",             desc:"500 матчей",             done:matches>=500,val:matches,       target:500, unit:"",   color:C.label},
     {id:"m1000",  cat:"results", icon:"🌟",name:t("legend_n","Легенда"),             desc:"1000 матчей",            done:matches>=1000,val:matches,      target:1000,unit:"",   color:C.yellow},
     // Weapons / Style
-    {id:"knife5", cat:"style",   icon:"🔪",name:"Ножевой мастер",      desc:"5+ убийств ножом",       done:knifeKills>=5,  val:knifeKills, target:5,   unit:"",   color:"#ff8888"},
-    {id:"knife50",cat:"style",   icon:"🗡️",name:"Нинзя",              desc:"50+ убийств ножом",      done:knifeKills>=50, val:knifeKills, target:50,  unit:"",   color:"#ff8888"},
-    {id:"sniper", cat:"style",   icon:"🔭",name:t("sniper",t("sniper_n","Снайпер")),             desc:"100+ убийств снайпером", done:sniperKills>=100,val:sniperKills,target:100,unit:"",   color:C.blue},
+    {id:"knife5", cat:"style",   icon:"🔪",name:t("ach_knife_master","Ножевой мастер"),      desc:t("ach_knife5","5+ убийств ножом"),       done:knifeKills>=5,  val:knifeKills, target:5,   unit:"",   color:"#ff8888"},
+    {id:"knife50",cat:"style",   icon:"🗡️",name:t("ach_ninja","Нинзя"),              desc:t("ach_knife50","50+ убийств ножом"),      done:knifeKills>=50, val:knifeKills, target:50,  unit:"",   color:"#ff8888"},
+    {id:"sniper", cat:"style",   icon:"🔭",name:t("sniper",t("sniper_n","Снайпер")),             desc:t("ach_sniper100","100+ убийств снайпером"), done:sniperKills>=100,val:sniperKills,target:100,unit:"",   color:C.blue},
     // Kills milestones
-    {id:"k1k",    cat:"impact",  icon:"⚔️",name:"1000 убийств",        desc:"Накопи 1000 фрагов",     done:kills>=1000, val:kills,        target:1000, unit:"",  color:"#aa88ff"},
-    {id:"k5k",    cat:"impact",  icon:"🗡️",name:"5000 убийств",       desc:"Накопи 5000 фрагов",     done:kills>=5000, val:kills,        target:5000, unit:"",  color:"#aa88ff"},
-    {id:"k10k",   cat:"impact",  icon:"💣",name:"10к убийств",         desc:"Накопи 10000 фрагов",    done:kills>=10000,val:kills,        target:10000,unit:"",  color:"#aa88ff"},
+    {id:"k1k",    cat:"impact",  icon:"⚔️",name:t("ach_1000k","1000 убийств"),        desc:t("ach_1000k_goal","Накопи 1000 фрагов"),     done:kills>=1000, val:kills,        target:1000, unit:"",  color:"#aa88ff"},
+    {id:"k5k",    cat:"impact",  icon:"🗡️",name:t("ach_5000k","5000 убийств"),       desc:t("ach_5000k_goal","Накопи 5000 фрагов"),     done:kills>=5000, val:kills,        target:5000, unit:"",  color:"#aa88ff"},
+    {id:"k10k",   cat:"impact",  icon:"💣",name:t("ach_10kk","10к убийств"),         desc:t("ach_10000k_goal","Накопи 10000 фрагов"),    done:kills>=10000,val:kills,        target:10000,unit:"",  color:"#aa88ff"},
     // Bomb
-    {id:"bomb10", cat:"tactics", icon:"💥",name:"Сапёр",               desc:"10+ бомб обезврежено",   done:bombsDefused>=10,val:bombsDefused,target:10,unit:"",  color:C.win},
-    {id:"plant50",cat:"tactics", icon:"🕹️",name:"Бомбардир",           desc:"50+ бомб заложено",      done:bombsPlanted>=50,val:bombsPlanted,target:50,unit:"",  color:C.lose},
+    {id:"bomb10", cat:"tactics", icon:"💥",name:t("ach_sapper2","Сапёр"),               desc:t("ach_defuse10","10+ бомб обезврежено"),   done:bombsDefused>=10,val:bombsDefused,target:10,unit:"",  color:C.win},
+    {id:"plant50",cat:"tactics", icon:"🕹️",name:t("ach_bomber","Бомбардир"),           desc:t("ach_plant50","50+ бомб заложено"),      done:bombsPlanted>=50,val:bombsPlanted,target:50,unit:"",  color:C.lose},
     // FACEIT
-    {id:"fl5",    cat:"results", icon:"⚡",name:"FACEIT Pro",          desc:"FACEIT уровень 5",        done:lvl>=5,  val:lvl,              target:5,   unit:"",   color:C.orange},
-    {id:"fl8",    cat:"results", icon:"🌠",name:"FACEIT Элита",        desc:"FACEIT уровень 8",        done:lvl>=8,  val:lvl,              target:8,   unit:"",   color:C.orange},
-    {id:"fl10",   cat:"results", icon:"🔱",name:"FACEIT Легенда",      desc:"FACEIT уровень 10",       done:lvl>=10, val:lvl,              target:10,  unit:"",   color:C.orange},
-    {id:"elo2k",  cat:"results", icon:"💎",name:"2000 ELO",            desc:"FACEIT ELO выше 2000",    done:elo>=2000,val:elo,             target:2000,unit:"",   color:C.yellow},
+    {id:"fl5",    cat:"results", icon:"⚡",name:"FACEIT Pro",          desc:t("ach_faceit5","FACEIT уровень 5"),        done:lvl>=5,  val:lvl,              target:5,   unit:"",   color:C.orange},
+    {id:"fl8",    cat:"results", icon:"🌠",name:t("ach_faceit_elite","FACEIT Элита"),        desc:t("ach_faceit8","FACEIT уровень 8"),        done:lvl>=8,  val:lvl,              target:8,   unit:"",   color:C.orange},
+    {id:"fl10",   cat:"results", icon:"🔱",name:t("ach_faceit_legend","FACEIT Легенда"),      desc:t("ach_faceit10","FACEIT уровень 10"),       done:lvl>=10, val:lvl,              target:10,  unit:"",   color:C.orange},
+    {id:"elo2k",  cat:"results", icon:"💎",name:"2000 ELO",            desc:t("ach_elo2k","FACEIT ELO выше 2000"),    done:elo>=2000,val:elo,             target:2000,unit:"",   color:C.yellow},
     // Time
-    {id:"h100",   cat:"results", icon:"⏱",name:"100 часов",           desc:"100 часов в CS2",        done:hours>=100,val:hours,           target:100, unit:"ч", color:C.muted},
-    {id:"h500",   cat:"results", icon:"🕐",name:"500 часов",           desc:"500 часов в CS2",        done:hours>=500,val:hours,           target:500, unit:"ч", color:C.label},
+    {id:"h100",   cat:"results", icon:"⏱",name:t("ach_100h","100 часов"),           desc:t("ach_100h_cs2","100 часов в CS2"),        done:hours>=100,val:hours,           target:100, unit:"ч", color:C.muted},
+    {id:"h500",   cat:"results", icon:"🕐",name:"500 часов",           desc:t("ach_500h_cs2","500 часов в CS2"),        done:hours>=500,val:hours,           target:500, unit:"ч", color:C.label},
   ];
 
   const CATS = [
@@ -2679,7 +3201,7 @@ function Achievements({player, source}) {
         {/* Header */}
         <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
           display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
-          <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>🏅 ДОСТИЖЕНИЯ</span>
+          <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{t("achievements_h","🏅 ДОСТИЖЕНИЯ")}</span>
           <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
             <div style={{height:"5px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden",width:"80px"}}>
               <div style={{height:"100%",width:`${Math.round(unlocked/ALL_ACH.length*100)}%`,
@@ -2866,7 +3388,7 @@ function WeeklyReport({player, source, isPro, onUpgrade}) {
             </div>
             <div style={{background:"#160a0a",border:`1px solid ${C.lose}33`,padding:"12px 14px"}}>
               <div style={{fontSize:"10px",color:C.lose,letterSpacing:"2px",fontWeight:700,marginBottom:"6px"}}>
-                ✗ ГЛАВНАЯ ПРОБЛЕМА
+                {t("main_problem_x","✗ ГЛАВНАЯ ПРОБЛЕМА")}
               </div>
               <div style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{report.concern}</div>
             </div>
@@ -3244,10 +3766,10 @@ function WeeklyMissions({player, source}) {
   };
 
   const missions = [
-    {id:"m1", text:"Сыграть 5 матчей на этой неделе",     xp:10, done:matches.length>=5||recentWins>=3},
-    {id:"m2", text:"Выиграть 3 матча подряд",              xp:15, done:recentWins>=3},
-    {id:"m3", text:"HS% выше 45% в двух матчах",           xp:10, done:recentGoodHS>=2},
-    {id:"m4", text:"K/D выше 1.0 в трёх матчах",          xp:15, done:recentGoodKD>=3},
+    {id:"m1", text:t("wt_5matches","Сыграть 5 матчей на этой неделе"),     xp:10, done:matches.length>=5||recentWins>=3},
+    {id:"m2", text:t("wt_3wins","Выиграть 3 матча подряд"),              xp:15, done:recentWins>=3},
+    {id:"m3", text:t("wt_hs45","HS% выше 45% в двух матчах"),           xp:10, done:recentGoodHS>=2},
+    {id:"m4", text:t("wt_kd10","K/D выше 1.0 в трёх матчах"),          xp:15, done:recentGoodKD>=3},
   ];
 
   const completedXP = missions.filter(m=>m.done||done.includes(m.id)).reduce((s,m)=>s+m.xp,0);
@@ -3328,7 +3850,7 @@ function TodayRecs({player, source}) {
   // AIM — всегда
   recs.push({
     icon:"🎯", time:t("t15min","15 мин"), cat:"AIM", color:C.lose,
-    text:"Aim_botz: 500 убийств с места",
+    text:t("tp_aim500","Aim_botz: 500 убийств с места"),
     why: hs<40 ? `HS% ${Math.round(hs)}% — ниже цели 40%` : `Поддерживай точность стрельбы`,
     unlock: hs < 40 ? {icon:"🎯", name:t("ach_hs","HS Машина"), pct:Math.round(hs/40*100)} : null,
   });
@@ -3336,7 +3858,7 @@ function TodayRecs({player, source}) {
   // Recoil если HS низкий
   if (hs < 40) recs.push({
     icon:"💥", time:t("t20min","20 мин"), cat:"МЕХАНИКА", color:C.orange,
-    text:"Recoil Master: спрей AK и M4",
+    text:t("tp_recoil2","Recoil Master: спрей AK и M4"),
     why: `HS% ${Math.round(hs)}% — не хватает ${40-Math.round(hs)}% до достижения`,
     unlock: {icon:"🎯", name:t("ach_hs","HS Машина"), pct:Math.round(hs/40*100)},
   });
@@ -3344,7 +3866,7 @@ function TodayRecs({player, source}) {
   // Counter-strafe если K/D плохой
   if (kd < 1.0) recs.push({
     icon:"🏃", time:t("t15min","15 мин"), cat:"ДВИЖЕНИЕ", color:C.blue,
-    text:"Counter-strafe: стоп → выстрел",
+    text:t("tp_cstrafe2","Counter-strafe: стоп → выстрел"),
     why: `K/D ${kd.toFixed(2)} — до Фраггера не хватает ${(1.0-kd).toFixed(2)}`,
     unlock: {icon:"⚔️", name:"Фраггер K/D>1.0", pct:Math.round(Math.min(99,kd/1.0*100))},
   });
@@ -3352,7 +3874,7 @@ function TodayRecs({player, source}) {
   // Prefire — всегда
   recs.push({
     icon:"🗺️", time:t("t20min","20 мин"), cat:"КАРТЫ", color:"#44ddaa",
-    text:"Prefire Workshop: 10 позиций на лучшей карте",
+    text:t("tp_prefire10b","Prefire Workshop: 10 позиций на лучшей карте"),
     why: `Знание позиций = меньше смертей на карте`,
     unlock: null,
   });
@@ -3360,13 +3882,13 @@ function TodayRecs({player, source}) {
   // Анализ или гранаты
   if (wr < 50) recs.push({
     icon:"📹", time:t("t15min","15 мин"), cat:"АНАЛИЗ", color:"#aa88ff",
-    text:"Пересмотри 1 проигранный раунд",
+    text:t("tp_review_round","Пересмотри 1 проигранный раунд"),
     why: `WR ${Math.round(wr)}% — разбор раундов поднимет понимание игры`,
     unlock: {icon:"🏆", name:"Победитель WR>50%", pct:Math.round(wr/50*100)},
   });
   else recs.push({
     icon:"💣", time:t("t10min","10 мин"), cat:"ГРАНАТЫ", color:C.yellow,
-    text:"Выучи 1 новый смок или молотов",
+    text:t("tp_new_smoke","Выучи 1 новый смок или молотов"),
     why: `Utility = больше влияния на раунд без риска`,
     unlock: null,
   });
@@ -3470,7 +3992,7 @@ function WeekComparison({player}) {
     { label:"WR%",  prev:parseFloat(prev.wr||0), now:parseFloat(now.wr||0), fmt:(v)=>Math.round(v)+"%", color:"#aa88ff" },
   ];
 
-  const periodLabel = period==="week"?t("7days","7 дней"):period==="month"?"30 дней":"За всё время";
+  const periodLabel = period==="week"?t("7days","7 дней"):period==="month"?t("period_30d","30 дней"):t("period_all","За всё время");
   const diffDays = Math.round((new Date(now.date)-new Date(prev.date))/(24*60*60*1000));
 
   // Рейтинг тогда и сейчас
@@ -3498,11 +4020,11 @@ function WeekComparison({player}) {
         {/* Заголовок + переключатель */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"8px"}}>
           <div>
-            <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"2px"}}>📊 СРАВНЕНИЕ ПЕРИОДОВ</div>
+            <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"2px"}}>{t("period_cmp_h","📊 СРАВНЕНИЕ ПЕРИОДОВ")}</div>
             <div style={{fontSize:"11px",color:C.muted}}>{prev.date} → {now.date} ({diffDays} дней)</div>
           </div>
           <div style={{display:"flex",gap:"3px"}}>
-            {[["week","7 дн"],["month","30 дн"],["all",t("all_period","Всё")]].map(([p,l])=>(
+            {[["week",t("period_7d","7 дн")],["month",t("period_30d_s","30 дн")],["all",t("all_period","Всё")]].map(([p,l])=>(
               <button key={p} onClick={()=>setPeriod(p)} style={{
                 padding:"4px 10px",background:period===p?C.yellow+"22":"transparent",
                 border:`1px solid ${period===p?C.yellow+"55":C.border}`,
@@ -3670,8 +4192,8 @@ function FriendsTab({myPlayer, source}) {
       const r = await fetch(`${BACKEND}/faceit/by-nickname/${encodeURIComponent(search.trim())}`);
       const d = await r.json();
       if (d?.nickname) setSearchResult(d);
-      else setSearchErr("Игрок не найден");
-    } catch { setSearchErr("Ошибка поиска"); }
+      else setSearchErr(t("player_not_found","Игрок не найден"));
+    } catch { setSearchErr(t("search_error","Ошибка поиска")); }
     setSearching(false);
   }
 
@@ -3876,7 +4398,7 @@ function SearchBar({onSelect}) {
   return (
     <div style={{position:"relative",width:"220px"}}>
       <input value={q} onChange={e=>setQ(e.target.value)} onFocus={()=>setOpen(true)}
-        placeholder="поиск по FACEIT нику..."
+        placeholder={t("search_faceit","поиск по FACEIT нику...")}
         style={{width:"100%",background:"#111109",border:`1px solid ${C.border}`,
           color:C.yellow,fontSize:"13px",padding:"9px 13px",fontFamily:"'Segoe UI',system-ui,sans-serif"}}/>
       {open&&q.trim().length>=2&&(
@@ -3966,13 +4488,13 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
   };
   const premierLabel = (r) => {
     const n = parseInt(r)||0;
-    if (n >= 30000) return "Глобал Элита";
-    if (n >= 25000) return "Верховный Мастер";
-    if (n >= 20000) return "Легендарный Орёл";
-    if (n >= 15000) return "Мастер Страж";
-    if (n >= 10000) return "Золотой Страж";
-    if (n >= 5000)  return "Серебро Высшее";
-    if (n > 0)      return "Серебро";
+    if (n >= 30000) return t("rank_ge","Глобал Элита");
+    if (n >= 25000) return t("rank_sm","Верховный Мастер");
+    if (n >= 20000) return t("rank_le","Легендарный Орёл");
+    if (n >= 15000) return t("rank_mg","Мастер Страж");
+    if (n >= 10000) return t("rank_gs","Золотой Страж");
+    if (n >= 5000)  return t("rank_she","Серебро Высшее");
+    if (n > 0)      return t("rank_s","Серебро");
     return null;
   };
 
@@ -3986,7 +4508,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
           borderBottom:`1px solid ${C.border}`,padding:"12px 28px",
           display:"flex",justifyContent:"space-between",alignItems:"center",backdropFilter:"blur(12px)"}}>
           <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-            <span style={{fontSize:"11px",letterSpacing:"4px",color:C.muted,fontWeight:700}}>ПРОФИЛЬ ИГРОКА</span>
+            <span style={{fontSize:"11px",letterSpacing:"4px",color:C.muted,fontWeight:700}}>{t("player_profile","ПРОФИЛЬ ИГРОКА")}</span>
           </div>
           <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
             color:C.label,cursor:"pointer",padding:"6px 18px",fontSize:"12px",fontFamily:"inherit",
@@ -4280,7 +4802,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                   </div>}
                 </>) : (
                   <div>
-                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"20px",fontWeight:700}}>STEAM СТАТИСТИКА</div>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"20px",fontWeight:700}}>{t("steam_stats","STEAM СТАТИСТИКА")}</div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
                       {[
                         {l:t("kills_col","УБИЙСТВ"),  v:cs2.kills?parseInt(cs2.kills).toLocaleString():"—",  c:C.yellow, icon:"⚔️"},
@@ -4355,7 +4877,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
               {/* Оружия */}
               {cs2.kills&&(
                 <div style={{background:C.bg,padding:"24px 28px"}}>
-                  <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"18px",fontWeight:700}}>ОРУЖИЯ</div>
+                  <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"18px",fontWeight:700}}>{t("weapons_col","ОРУЖИЯ")}</div>
                   {(()=>{
                     const kills=parseInt(cs2.kills)||0;
                     const sniper=parseInt(cs2.sniper_kills)||0;
@@ -4470,7 +4992,7 @@ const COACH_CHARS = [
     id:"drill",
     name:t("char_drill","Сержант"),
     emoji:"🪖",
-    desc:"Строгий военный тренер. Режет правду без сахара.",
+    desc:t("char_drill_desc",t("char_drill_desc","Строгий военный тренер. Режет правду без сахара.")),
     color:"#ff6644",
     pro:false,
     system:`Ты Сержант — жёсткий военный тренер по CS2. Говоришь коротко, по-военному, без лишних слов. 
@@ -4482,7 +5004,7 @@ const COACH_CHARS = [
     id:"mentor",
     name:t("char_mentor","Ментор"),
     emoji:"🎯",
-    desc:"Спокойный опытный наставник. Объясняет всё по делу.",
+    desc:t("char_mentor_desc",t("char_mentor_desc","Спокойный опытный наставник. Объясняет всё по делу.")),
     color:"#74c6f5",
     pro:false,
     system:`Ты опытный CS2 ментор. Говоришь спокойно, по делу, как старший товарищ который всё видел.
@@ -4494,7 +5016,7 @@ const COACH_CHARS = [
     id:"friend",
     name:"Бро",
     emoji:"😎",
-    desc:"Твой друг-про игрок. Говорит как равный, по-братски.",
+    desc:t("char_bro_desc",t("char_bro_desc","Твой друг-про игрок. Говорит как равный, по-братски.")),
     color:"#88ff44",
     pro:true,
     system:`Ты лучший друг который играет в CS2 на высоком уровне. Разговариваешь как равный, без пафоса.
@@ -4506,7 +5028,7 @@ const COACH_CHARS = [
     id:"terminator",
     name:"Терминатор",
     emoji:"🤖",
-    desc:"T-800. Анализирует данные. Цель — улучшить показатели.",
+    desc:t("char_term_desc",t("char_term_desc","T-800. Анализирует данные. Цель — улучшить показатели.")),
     color:"#ff3333",
     pro:true,
     system:`Ты Терминатор T-800, перепрограммированный как тренер CS2. Говоришь как робот — точно, без эмоций, с техническими терминами.
@@ -4518,7 +5040,7 @@ const COACH_CHARS = [
     id:"samurai",
     name:t("char_sensei","Сенсей"),
     emoji:"⚔️",
-    desc:"Японский мастер CS2. Говорит мудростями и метафорами.",
+    desc:t("char_sensei_desc",t("char_sensei_desc","Японский мастер CS2. Говорит мудростями и метафорами.")),
     color:"#f5c518",
     pro:true,
     system:`Ты Сенсей — мудрый японский мастер боевых искусств, применяющий философию к CS2. Говоришь кратко, как дзен-буддист.
@@ -4587,7 +5109,7 @@ function CoachChat({player, source, analysis, charId, isPro}) {
       const d = await r.json();
       setMsgs(m=>[...m, {from:"coach", text:d.reply||"..."}]);
     } catch {
-      setMsgs(m=>[...m, {from:"coach", text:"Соединение потеряно. Попробуй ещё раз."}]);
+      setMsgs(m=>[...m, {from:"coach", text:t("conn_lost",t("conn_lost","Соединение потеряно. Попробуй ещё раз."))}]);
     }
     setLoading(false);
   }
@@ -4691,7 +5213,7 @@ function Leaderboard({myId, myIsPro, onProfile}) {
   if (!data.length) return (
     <div style={{textAlign:"center",padding:"70px",color:C.muted}}>
       <div style={{fontSize:"36px",marginBottom:"14px"}}>🏆</div>
-      <div style={{fontSize:"13px",letterSpacing:"3px"}}>ТАБЛИЦА ПУСТА</div>
+      <div style={{fontSize:"13px",letterSpacing:"3px"}}>{t("table_empty","ТАБЛИЦА ПУСТА")}</div>
       <div style={{fontSize:"13px",color:C.muted,marginTop:"8px",marginBottom:"20px"}}>
         Данные появятся автоматически при следующем входе
       </div>
@@ -4775,10 +5297,10 @@ function Leaderboard({myId, myIsPro, onProfile}) {
           padding:"8px 14px",fontSize:"10px",letterSpacing:"2px",color:C.muted,
           borderBottom:`1px solid ${C.border}`,borderTop:`1px solid ${C.border}`}}>
           <div>#</div>
-          <div>ИГРОК</div>
+          <div>{t("col_player","ИГРОК")}</div>
           <div>ТЕКУЩИЙ РАНГ</div>
           <div>ЛУЧШИЙ РАНГ</div>
-          <div style={{textAlign:"right"}}>ПОБЕДЫ</div>
+          <div style={{textAlign:"right"}}>{t("col_wins","ПОБЕДЫ")}</div>
         </div>
       )}
 
@@ -4787,7 +5309,7 @@ function Leaderboard({myId, myIsPro, onProfile}) {
         <div style={{display:"grid",gridTemplateColumns:"40px 1fr 110px 100px",gap:"2px",
           padding:"8px 14px",fontSize:"10px",letterSpacing:"2px",color:C.muted,
           borderBottom:`1px solid ${C.border}`,borderTop:`1px solid ${C.border}`}}>
-          <div>#</div><div>ИГРОК</div><div>УРОВЕНЬ</div>
+          <div>#</div><div>{t("col_player","ИГРОК")}</div><div>УРОВЕНЬ</div>
           <div style={{textAlign:"right"}}>{STAT_SORTS.find(s=>s.id===sortKey)?.label?.toUpperCase()}</div>
         </div>
       )}
@@ -4905,7 +5427,7 @@ function HistoryTab({steamid}) {
   if (!data.length) return (
     <div style={{textAlign:"center",padding:"60px",color:C.muted}}>
       <div style={{fontSize:"28px",marginBottom:"12px"}}>📋</div>
-      <div style={{fontSize:"13px",letterSpacing:"3px"}}>ИСТОРИЯ ПУСТА</div>
+      <div style={{fontSize:"13px",letterSpacing:"3px"}}>{t("history_empty_h","ИСТОРИЯ ПУСТА")}</div>
     </div>
   );
   return (
@@ -5051,19 +5573,19 @@ function TrainingPlan({player, source}) {
   useEffect(() => {
     const tasks = [];
     // Aim warmup — всегда
-    tasks.push({id:"aim",cat:"AIM",dur:t("t15min","15 мин"),task:"Aim_botz: 500 убийств с места, фокус на голову",priority:true});
+    tasks.push({id:"aim",cat:"AIM",dur:t("t15min","15 мин"),task:t("tp_aim500_hs","Aim_botz: 500 убийств с места, фокус на голову"),priority:true});
     // Recoil если HS низкий
-    if (hs < 45) tasks.push({id:"recoil",cat:"МЕХАНИКА",dur:t("t20min","20 мин"),task:"Workshop: Recoil Master — отработать спрей AK и M4",priority:true});
+    if (hs < 45) tasks.push({id:"recoil",cat:"МЕХАНИКА",dur:t("t20min","20 мин"),task:t("tp_recoil","Workshop: Recoil Master — отработать спрей AK и M4"),priority:true});
     // Movement если KD низкий
-    if (kd < 1.0) tasks.push({id:"move",cat:"МЕХАНИКА",dur:t("t15min","15 мин"),task:"Counter-strafe практика: двигаться → остановиться → стрелять"});
+    if (kd < 1.0) tasks.push({id:"move",cat:"МЕХАНИКА",dur:t("t15min","15 мин"),task:t("tp_cstrafe","Counter-strafe практика: двигаться → остановиться → стрелять")});
     // Prefire на картах
-    tasks.push({id:"prefire",cat:"КАРТЫ",dur:t("t20min","20 мин"),task:"Prefire Workshop: отработать 10 ключевых позиций на своей лучшей карте"});
+    tasks.push({id:"prefire",cat:"КАРТЫ",dur:t("t20min","20 мин"),task:t("tp_prefire10","Prefire Workshop: отработать 10 ключевых позиций на своей лучшей карте")});
     // Deathmatch
-    tasks.push({id:"dm",cat:"РАЗМИНКА",dur:t("t10min","10 мин"),task:"Deathmatch перед игрой: только хедшоты, пистолетный раунд"});
+    tasks.push({id:"dm",cat:"РАЗМИНКА",dur:t("t10min","10 мин"),task:t("tp_dm_warmup","Deathmatch перед игрой: только хедшоты, пистолетный раунд")});
     // Demo если WR низкий
-    if (wr < 50) tasks.push({id:"demo",cat:"АНАЛИЗ",dur:t("t15min","15 мин"),task:"Посмотри 1 раунд из проигранного матча — найди момент где ошибся"});
+    if (wr < 50) tasks.push({id:"demo",cat:"АНАЛИЗ",dur:t("t15min","15 мин"),task:t("tp_review1","Посмотри 1 раунд из проигранного матча — найди момент где ошибся")});
     // Utility
-    tasks.push({id:"util",cat:t("tactics",t("cat_tact","ТАКТИКА")),dur:t("t10min","10 мин"),task:"Выучи 1 новый смок или молотов на часто играемой карте"});
+    tasks.push({id:"util",cat:t("tactics",t("cat_tact","ТАКТИКА")),dur:t("t10min","10 мин"),task:t("tp_new_util","Выучи 1 новый смок или молотов на часто играемой карте")});
     setPlan(tasks.slice(0,5));
   }, [player?.steamid, source]);
 
@@ -5183,25 +5705,25 @@ function DayAction({player, source, streak}) {
     if (kd < 1.0) return {
       icon:"⚔️", name:t("ach_frag","Фраггер"), progress:Math.round(Math.min(99,kd/1.0*100)),
       left:(1.0-kd).toFixed(2)+" K/D",
-      actions:["500 убийств в Aim Botz · 15 мин","Counter-strafe тренировка · 15 мин"],
+      actions:[t("da_aim500","500 убийств в Aim Botz · 15 мин"),t("da_cstrafe15","Counter-strafe тренировка · 15 мин")],
       xp:25, color:"#74c6f5",
     };
     if (hs < 40) return {
       icon:"🎯", name:t("ach_hs","HS Машина"), progress:Math.round(Math.min(99,hs/40*100)),
       left:(40-Math.round(hs))+"% HS",
-      actions:["Recoil Master: спрей AK · 20 мин","Aim Botz: только хедшоты · 15 мин"],
+      actions:[t("da_recoil20","Recoil Master: спрей AK · 20 мин"),t("da_hs15","Aim Botz: только хедшоты · 15 мин")],
       xp:20, color:"#ff8844",
     };
     if (wr < 50) return {
       icon:"🏆", name:t("ach_winner","Победитель"), progress:Math.round(Math.min(99,wr/50*100)),
       left:(50-Math.round(wr))+"% WR",
-      actions:["Разбери последний проигрыш · 15 мин","Prefire Workshop: лучшая карта · 20 мин"],
+      actions:[t("da_review","Разбери последний проигрыш · 15 мин"),t("da_prefire","Prefire Workshop: лучшая карта · 20 мин")],
       xp:20, color:"#55ee55",
     };
     return {
       icon:"💀", name:t("elite_n","Элита"), progress:Math.round(Math.min(99,kd/1.5*100)),
       left:(1.5-kd).toFixed(2)+" K/D",
-      actions:["Aim Botz: 1000 убийств · 20 мин","Prefire Workshop · 20 мин"],
+      actions:[t("da_1000","Aim Botz: 1000 убийств · 20 мин"),t("da_prefire20","Prefire Workshop · 20 мин")],
       xp:30, color:"#ff4466",
     };
   })();
@@ -5215,7 +5737,7 @@ function DayAction({player, source, streak}) {
 
       {/* Заголовок */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
-        <span style={{fontSize:"10px",color:target.color,letterSpacing:"3px",fontWeight:700}}>⚡ ЦЕЛЬ</span>
+        <span style={{fontSize:"10px",color:target.color,letterSpacing:"3px",fontWeight:700}}>{t("daily_goal_h","⚡ ЦЕЛЬ")}</span>
         <span style={{fontSize:"11px",color:target.color,background:target.color+"18",
           border:`1px solid ${target.color}33`,padding:"2px 10px",fontWeight:700}}>+{target.xp} XP</span>
       </div>
@@ -5271,7 +5793,7 @@ function DayAction({player, source, streak}) {
       {/* Завтра */}
       <div style={{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px",
         fontSize:"11px",color:C.muted}}>
-        <span style={{color:C.yellow,fontWeight:700,flexShrink:0}}>ЗАВТРА</span>
+        <span style={{color:C.yellow,fontWeight:700,flexShrink:0}}>{t("tomorrow_h","ЗАВТРА")}</span>
         <span style={{color:C.label}}>
           {kd<1.0
             ? <>Доведи K/D до <span style={{color:C.blue}}>1.0</span> — сыграй {Math.max(1,Math.ceil((1.0-kd)*10))} матча на дуэлях</>
@@ -5296,7 +5818,7 @@ function DailyStreak({streak}) {
   const milestones = [1,3,5,7];
   const nextMilestone = milestones.find(m=>m>streak) || 7;
   const streakColor = streak>=7?"#aa44ff":streak>=5?C.win:streak>=3?C.yellow:C.orange;
-  const label = streak>=7?"ЛЕГЕНДА 🏆":streak>=5?t("fire","ОГОНЬ 🔥"):streak>=3?"ХОРОШО ⚡":"НАЧАЛО 🌱";
+  const label = streak>=7?t("streak_legend","ЛЕГЕНДА 🏆"):streak>=5?t("fire","ОГОНЬ 🔥"):streak>=3?t("streak_good","ХОРОШО ⚡"):t("streak_start","НАЧАЛО 🌱");
 
   return (
     <div style={{background:C.card,border:`1px solid ${streakColor}44`,
@@ -5352,7 +5874,7 @@ function OnboardingModal({player, onClose, onGoTab}) {
 
   async function connectCode() {
     if (!authCode.trim()) {
-      setCodeErr("Введи код аутентификации");
+      setCodeErr(t("enter_auth_code",t("enter_auth","Введи код аутентификации")));
       return;
     }
     setCodeLoading(true); setCodeErr("");
@@ -5367,28 +5889,28 @@ function OnboardingModal({player, onClose, onGoTab}) {
         setCodeDone(true);
         setStep(3);
       } else {
-        setCodeErr(d.detail || "Неверный код. Проверь и попробуй снова.");
+        setCodeErr(d.detail || t("wrong_code",t("wrong_code","Неверный код. Проверь и попробуй снова.")));
       }
-    } catch { setCodeErr("Ошибка сети — попробуй позже"); }
+    } catch { setCodeErr(t("net_err_later",t("net_err_late","Ошибка сети — попробуй позже"))); }
     setCodeLoading(false);
   }
 
   const STEPS = [
     {
-      num:1, icon:"🎮", title:"Добро пожаловать!",
-      sub:"Ты вошёл через Steam — это уже первый шаг",
+      num:1, icon:"🎮", title:t("onb_welcome","Добро пожаловать!"),
+      sub:t("onb_step1","Ты вошёл через Steam — это уже первый шаг"),
     },
     {
-      num:2, icon:"⚡", title:"Подключи FACEIT",
-      sub:"Получи детальную статистику по каждому матчу",
+      num:2, icon:"⚡", title:t("onb_faceit","Подключи FACEIT"),
+      sub:t("onb_faceit_sub","Получи детальную статистику по каждому матчу"),
     },
     {
-      num:3, icon:"🔑", title:"Подключи историю матчей",
-      sub:"Введи код аутентификации Steam для доступа к MM матчам",
+      num:3, icon:"🔑", title:t("onb_mm","Подключи историю матчей"),
+      sub:t("onb_mm_sub","Введи код аутентификации Steam для доступа к MM матчам"),
     },
     {
-      num:4, icon:"🏆", title:"Всё готово!",
-      sub:"AI тренер знает твою игру и готов помочь",
+      num:4, icon:"🏆", title:t("onb_ready","Всё готово!"),
+      sub:t("onb_ready_sub","AI тренер знает твою игру и готов помочь"),
     },
   ];
 
@@ -5676,7 +6198,7 @@ function Logo({size=32, withText=true}) {
       </svg>
       {withText&&<div>
         <div style={{fontSize:"15px",color:"#f5c518",fontWeight:700,letterSpacing:"2px",lineHeight:1.1}}>CS2</div>
-        <div style={{fontSize:"9px",color:"#9a9270",letterSpacing:"3px",lineHeight:1}}>ТРЕНЕР</div>
+        <div style={{fontSize:"9px",color:"#9a9270",letterSpacing:"3px",lineHeight:1}}>{t("coach_h","ТРЕНЕР")}</div>
       </div>}
     </div>
   );
@@ -5723,7 +6245,7 @@ function AboutModal({onClose}) {
           <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
             <Logo size={40}/>
             <div>
-              <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"10px"}}>О СЕРВИСЕ</div>
+              <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"10px"}}>{t("about_service","О СЕРВИСЕ")}</div>
               <div style={{fontSize:"18px",color:C.value,fontWeight:700}}>CS2 AI Тренер</div>
             </div>
           </div>
@@ -5749,7 +6271,7 @@ function AboutModal({onClose}) {
           </div>
 
           <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"20px"}}>
-            <div style={{fontSize:"12px",letterSpacing:"2px",color:C.yellow,marginBottom:"10px"}}>КАК ЭТО РАБОТАЕТ</div>
+            <div style={{fontSize:"12px",letterSpacing:"2px",color:C.yellow,marginBottom:"10px"}}>{t("how_it_works","КАК ЭТО РАБОТАЕТ")}</div>
             {[
               "1. Войди через Steam — данные подтянутся автоматически",
               "2. AI Report загрузится сразу — увидишь свои сильные и слабые стороны",
@@ -5762,13 +6284,13 @@ function AboutModal({onClose}) {
 
           <div className="about-tech-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"20px"}}>
             <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
-              <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>ТЕХНОЛОГИИ</div>
+              <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{t("technology","ТЕХНОЛОГИИ")}</div>
               {["Steam Web API","FACEIT Open API","Groq AI (LLaMA 3.3)","React + FastAPI"].map((t,i)=>(
                 <div key={i} style={{fontSize:"13px",color:C.label,marginBottom:"4px"}}>· {t}</div>
               ))}
             </div>
             <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
-              <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>КОНФИДЕНЦИАЛЬНОСТЬ</div>
+              <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{t("privacy","КОНФИДЕНЦИАЛЬНОСТЬ")}</div>
               <div style={{fontSize:"13px",color:C.label,lineHeight:1.6}}>
                 Мы не храним пароли и личные данные. Используется только публичная статистика Steam и FACEIT.
               </div>
@@ -5776,7 +6298,7 @@ function AboutModal({onClose}) {
           </div>
 
           <div style={{textAlign:"center",padding:"16px",background:"#111109",border:`1px solid ${C.border}`}}>
-            <div style={{fontSize:"13px",color:C.muted,marginBottom:"6px"}}>Вопросы и поддержка</div>
+            <div style={{fontSize:"13px",color:C.muted,marginBottom:"6px"}}>{t("questions_support","Вопросы и поддержка")}</div>
             <div style={{fontSize:"14px",color:C.yellow}}>Telegram: @cs2coach_support</div>
           </div>
         </div>
@@ -5823,7 +6345,7 @@ function Footer({onAbout, onPro, onLeaderboard}) {
           {/* Links */}
           <div style={{display:"flex",gap:"64px",flexWrap:"wrap"}}>
             <div>
-              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>СЕРВИС</div>
+              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>{t("service_h","СЕРВИС")}</div>
               {[
                 {label:t("about_us",t("about","О нас")), action:onAbout},
                 {label:t("pro_plans","Тарифы Pro"), action:onPro},
@@ -5841,7 +6363,7 @@ function Footer({onAbout, onPro, onLeaderboard}) {
               ))}
             </div>
             <div>
-              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>СОЦСЕТИ</div>
+              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>{t("socials_h","СОЦСЕТИ")}</div>
               {SOCIALS.map((s,i)=>(
                 <a key={i} href={s.url} target="_blank" rel="noreferrer"
                   style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px",
@@ -5857,7 +6379,7 @@ function Footer({onAbout, onPro, onLeaderboard}) {
 
           {/* Online */}
           <div style={{textAlign:"right"}}>
-            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"6px"}}>СЕЙЧАС ОНЛАЙН</div>
+            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"6px"}}>{t("online_now_h","СЕЙЧАС ОНЛАЙН")}</div>
             <div style={{display:"flex",alignItems:"center",gap:"8px",justifyContent:"flex-end"}}>
               <div style={{width:"8px",height:"8px",background:C.win,borderRadius:"50%",
                 animation:"pulse 2s infinite",boxShadow:`0 0 6px ${C.win}`}}/>
@@ -5869,7 +6391,7 @@ function Footer({onAbout, onPro, onLeaderboard}) {
                 {online}
               </span>
             </div>
-            <div style={{fontSize:"12px",color:C.muted,marginTop:"4px"}}>игроков на сайте</div>
+            <div style={{fontSize:"12px",color:C.muted,marginTop:"4px"}}>{t("players_on_site","игроков на сайте")}</div>
           </div>
         </div>
 
@@ -6031,7 +6553,7 @@ function SetupChecklist({player, hasFaceit, analysisCount, onDismiss}) {
   const cs2 = player?.cs2 || {};
   const steps = [
     {id:"steam",    done:true,             label:t("login_steam",t("login_steam2","Войти через Steam")),              action:null},
-    {id:"stats",    done:!cs2.private,     label:"Открыть статистику CS2 в Steam", action:"privacy"},
+    {id:"stats",    done:!cs2.private,     label:t("open_cs2_stats","Открыть статистику CS2 в Steam"), action:"privacy"},
     {id:"faceit",   done:hasFaceit,        label:t("connect_faceit","Подключить FACEIT аккаунт"),      action:"faceit"},
     {id:"analysis", done:analysisCount>0,  label:t("first_analysis","Получить первый AI разбор"),      action:null},
     {id:"chat",     done:!!localStorage.getItem("cs2_chat_done"),    label:t("talk_coach","Поговорить с AI тренером"),    action:null},
@@ -6049,8 +6571,8 @@ function SetupChecklist({player, hasFaceit, analysisCount, onDismiss}) {
       <button onClick={onDismiss} style={{position:"absolute",top:"12px",right:"14px",background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"16px"}}>✕</button>
       <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"16px",flexWrap:"wrap"}}>
         <div>
-          <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,marginBottom:"2px"}}>🚀 Настройка профиля</div>
-          <div style={{fontSize:"13px",color:C.muted}}>{done} из {steps.length} шагов</div>
+          <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,marginBottom:"2px"}}>{t("checklist_title","🚀 Настройка профиля")}</div>
+          <div style={{fontSize:"13px",color:C.muted}}>{done} {t("of_lbl","из")} {steps.length} {t("steps_lbl","шагов")}</div>
         </div>
         <div style={{flex:1,minWidth:"120px"}}>
           <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
@@ -6111,7 +6633,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
       const r = await fetch(`${BACKEND}/promo/check?code=${promo.trim()}&plan=${selPlan}`);
       const d = await r.json();
       if (d.ok) setPromoInfo(d);
-      else setPromoErr(d.detail||"Промокод не найден");
+      else setPromoErr(d.detail||t("promo_not_found",t("promo_nf","Промокод не найден")));
     } catch { setPromoErr(t("net_err","Ошибка сети")); }
     setPromoLoading(false);
   }
@@ -6122,7 +6644,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
     try {
       const r = await fetch(`${BACKEND}/activate-key`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({steamid:player.steamid,key:key.trim().toUpperCase()})});
       const d = await r.json();
-      if(d.ok){setMsg({ok:true,text:"🎉 Pro активирован!"});onActivated();}
+      if(d.ok){setMsg({ok:true,text:t("pro_activated",t("pro_act","🎉 Pro активирован!"))});onActivated();}
       else setMsg({ok:false,text:d.detail||t("error","Ошибка")});
     }catch{setMsg({ok:false,text:t("net_err","Ошибка сети")});}
     setLoading(false);
@@ -6136,25 +6658,25 @@ function ProModal({player, isPro, onClose, onActivated}) {
       if (promoInfo && promo.trim()) body.promo = promo.trim();
       const r=await fetch(`${BACKEND}/payment/create`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
       const d=await r.json();
-      if (d.free) { setMsg({ok:true,text:"🎉 PRO активирован бесплатно по промокоду!"}); onActivated(); }
+      if (d.free) { setMsg({ok:true,text:t("pro_activated_promo",t("pro_act_promo","🎉 PRO активирован бесплатно по промокоду!"))}); onActivated(); }
       else if(d.url) window.open(d.url,"_blank");
-      else alert("Платежи временно недоступны. Используй активацию ключом.");
+      else alert(t("payments_unavail","Платежи временно недоступны. Используй активацию ключом."));
     }catch{alert(t("net_err","Ошибка сети"));}
     setPayLoading(null);
   }
 
   const PRO_F = [
-    {icon:"🤖", title:"AI разбор после каждой игры",   desc:"Что сделал не так — конкретно, с картами и цифрами"},
-    {icon:"💬", title:"Безлимитный AI чат",             desc:"Спрашивай тренера сколько угодно, без дневных лимитов"},
-    {icon:"📈", title:"Персональный прогресс",          desc:"История рейтинга, рост K/D, достижения разблокированы"},
-    {icon:"🎯", title:t("pro_feat1","Анализ слабых карт"),             desc:"AI находит твои худшие карты и говорит что конкретно исправить"},
-    {icon:"⚡", title:t("pro_feat2","PRO значок в лидерборде"),        desc:"Выделяйся среди других игроков"},
-    {icon:"🎧", title:t("pro_feat3","Приоритетная поддержка"),         desc:"Ответ в течение часа, прямая связь с тренером"},
+    {icon:"🤖", title:"AI разбор после каждой игры",   desc:t("pro_f1","Что сделал не так — конкретно, с картами и цифрами")},
+    {icon:"💬", title:"Безлимитный AI чат",             desc:t("pro_f2","Спрашивай тренера сколько угодно, без дневных лимитов")},
+    {icon:"📈", title:"Персональный прогресс",          desc:t("pro_f3","История рейтинга, рост K/D, достижения разблокированы")},
+    {icon:"🎯", title:t("pro_feat1","Анализ слабых карт"),             desc:t("pro_f4","AI находит твои худшие карты и говорит что конкретно исправить")},
+    {icon:"⚡", title:t("pro_feat2","PRO значок в лидерборде"),        desc:t("pro_f5","Выделяйся среди других игроков")},
+    {icon:"🎧", title:t("pro_feat3","Приоритетная поддержка"),         desc:t("pro_f6","Ответ в течение часа, прямая связь с тренером")},
   ];
 
   const plans = {
-    month: {period:t("month","МЕСЯЦ"), price:"299 ₽", sub:"~$3.3 · отмена в любой момент", plan:"month"},
-    year:  {period:"ГОД",   price:"1990 ₽", sub:"~$22 · экономия 40%", plan:"year", badge:"ВЫГОДНО"},
+    month: {period:t("month","МЕСЯЦ"), price:"299 ₽", sub:t("pro_month_price","~$3.3 · отмена в любой момент"), plan:"month"},
+    year:  {period:t("pro_year_lbl","ГОД"),   price:"1990 ₽", sub:t("pro_year_price","~$22 · экономия 40%"), plan:"year", badge:t("pro_deal","ВЫГОДНО")},
   };
   const p = plans[selPlan];
 
@@ -6167,7 +6689,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
         {/* Header */}
         <div style={{padding:"24px 24px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
-            <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"6px"}}>⚡ CS2 AI ТРЕНЕР PRO</div>
+            <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"6px"}}>{t("cs2_ai_pro","⚡ CS2 AI ТРЕНЕР PRO")}</div>
             <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"4px"}}>Стань лучше быстрее</div>
             <div style={{fontSize:"13px",color:C.muted}}>AI тренер который знает твою игру лично</div>
           </div>
@@ -6194,8 +6716,8 @@ function ProModal({player, isPro, onClose, onActivated}) {
               {/* PRO активен */}
               <div style={{textAlign:"center",padding:"20px 0 16px"}}>
                 <div style={{fontSize:"48px",marginBottom:"8px"}}>⚡</div>
-                <div style={{fontSize:"20px",color:C.yellow,fontWeight:800,marginBottom:"4px"}}>PRO АКТИВЕН</div>
-                <div style={{fontSize:"13px",color:C.muted}}>Все функции доступны</div>
+                <div style={{fontSize:"20px",color:C.yellow,fontWeight:800,marginBottom:"4px"}}>{t("pro_active_h","PRO АКТИВЕН")}</div>
+                <div style={{fontSize:"13px",color:C.muted}}>{t("all_features","Все функции доступны")}</div>
               </div>
 
               {/* Детали подписки — с fallback из localStorage */}
@@ -6230,11 +6752,11 @@ function ProModal({player, isPro, onClose, onActivated}) {
                   <div style={{background:"#0d0d09",border:`1px solid ${C.yellow}33`,padding:"16px 20px",marginBottom:"12px"}}>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
                       <div>
-                        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>ПЛАН</div>
+                        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>{t("plan_lbl","ПЛАН")}</div>
                         <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>{planLabel}</div>
                       </div>
                       <div>
-                        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>АКТИВИРОВАН</div>
+                        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>{t("activated","АКТИВИРОВАН")}</div>
                         <div style={{fontSize:"13px",color:C.label}}>{activatedStr}</div>
                       </div>
                     </div>
@@ -6284,8 +6806,8 @@ function ProModal({player, isPro, onClose, onActivated}) {
                         display:"flex",alignItems:"center",gap:"8px"}}>
                         <span style={{fontSize:"20px",color:C.win}}>∞</span>
                         <div>
-                          <div style={{fontSize:"13px",color:C.win,fontWeight:700}}>Навсегда</div>
-                          <div style={{fontSize:"11px",color:C.muted}}>Срок не ограничен</div>
+                          <div style={{fontSize:"13px",color:C.win,fontWeight:700}}>{t("forever","Навсегда")}</div>
+                          <div style={{fontSize:"11px",color:C.muted}}>{t("no_expiry","Срок не ограничен")}</div>
                         </div>
                       </div>
                     )}
@@ -6302,8 +6824,8 @@ function ProModal({player, isPro, onClose, onActivated}) {
               })()}
 
               {/* Что включено */}
-              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>ЧТО ВКЛЮЧЕНО:</div>
-              {[["🤖","Безлимитный AI разбор каждой игры"],["💬","AI чат без ограничений"],["⚡",t("pro_feat2","PRO значок в лидерборде")],["🎯",t("pro_feat1","Анализ слабых карт")],["🎧",t("pro_feat3","Приоритетная поддержка")]].map(([icon,text],i)=>(
+              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{t("whats_included","ЧТО ВКЛЮЧЕНО:")}</div>
+              {[["🤖",t("pro_inc1","Безлимитный AI разбор каждой игры")],["💬",t("pro_inc2","AI чат без ограничений")],["⚡",t("pro_feat2","PRO значок в лидерборде")],["🎯",t("pro_feat1","Анализ слабых карт")],["🎧",t("pro_feat3","Приоритетная поддержка")]].map(([icon,text],i)=>(
                 <div key={i} style={{display:"flex",gap:"10px",alignItems:"center",padding:"8px 0",
                   borderBottom:`1px solid ${C.border}44`}}>
                   <span style={{fontSize:"16px"}}>{icon}</span>
@@ -6386,7 +6908,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
                 color:"#080807",border:"none",cursor:payLoading?"not-allowed":"pointer",
                 fontSize:"15px",fontWeight:800,fontFamily:"inherit",letterSpacing:"1px",
                 marginBottom:"12px",transition:"opacity .2s"}}>
-              {payLoading?"ОТКРЫВАЮ ОПЛАТУ...":
+              {payLoading?t("opening_payment",t("open_pay","ОТКРЫВАЮ ОПЛАТУ...")):
                 promoInfo ? `ПОЛУЧИТЬ PRO — ${promoInfo.final_price} ₽` :
                 `ПОЛУЧИТЬ PRO — ${plans[selPlan].price}`}
             </button>
@@ -6434,7 +6956,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
               style={{width:"100%",padding:"14px",background:loading?C.yellow+"88":C.yellow,
                 color:"#080807",border:"none",cursor:loading?"not-allowed":"pointer",
                 fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>
-              {loading?"АКТИВИРУЮ...":"АКТИВИРОВАТЬ PRO"}
+              {loading?t("activating",t("activating","АКТИВИРУЮ...")):t("activate_pro",t("act_pro","АКТИВИРОВАТЬ PRO"))}
             </button>
           </>}
         </div>
@@ -6485,7 +7007,7 @@ function ProCelebration({onClose}) {
           fontFamily:"inherit",letterSpacing:"2px"}}>
           НАЧАТЬ ТРЕНИРОВКУ →
         </button>
-        <div style={{fontSize:"11px",color:C.muted,marginTop:"10px"}}>нажми в любом месте чтобы закрыть</div>
+        <div style={{fontSize:"11px",color:C.muted,marginTop:"10px"}}>{t("click_close","нажми в любом месте чтобы закрыть")}</div>
       </div>
     </div>,
     document.body
@@ -6527,7 +7049,7 @@ function PaywallOverlay({feature,onUpgrade}) {
       <div style={{fontSize:"28px",marginBottom:"12px"}}>⚡</div>
       <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"8px"}}>{feature} — Pro функция</div>
       <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>Дневной лимит исчерпан.<br/>Получи Pro — безлимитный AI.</div>
-      <button onClick={onUpgrade} style={{padding:"12px 32px",background:C.yellow,color:"#080807",border:"none",cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>ПОПРОБОВАТЬ PRO →</button>
+      <button onClick={onUpgrade} style={{padding:"12px 32px",background:C.yellow,color:"#080807",border:"none",cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>{t("try_pro","ПОПРОБОВАТЬ PRO →")}</button>
     </div>
   );
 }
@@ -6760,9 +7282,9 @@ function LandingPage({onLogin}) {
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:"24px"}}>
             {[
-              {n:"01",title:"Войди через Steam",desc:"Нажми кнопку входа — данные CS2 и FACEIT подтянутся автоматически"},
-              {n:"02",title:"AI анализирует",desc:"Нейросеть изучает статистику и составляет персональный отчёт"},
-              {n:"03",title:"Получи разбор",desc:"Конкретные проблемы, план тренировок и ответы на любые вопросы"},
+              {n:"01",title:"Войди через Steam",desc:t("step1_desc",t("s1_desc","Нажми кнопку входа — данные CS2 и FACEIT подтянутся автоматически"))},
+              {n:"02",title:"AI анализирует",desc:t("step2_desc",t("s2_desc","Нейросеть изучает статистику и составляет персональный отчёт"))},
+              {n:"03",title:"Получи разбор",desc:t("step3_desc",t("s3_desc","Конкретные проблемы, план тренировок и ответы на любые вопросы"))},
             ].map((s,i)=>(
               <div key={i} data-id={`step${i}`} style={{textAlign:"center",...anim(`step${i}`,i*0.15)}}>
                 <div style={{
@@ -6859,10 +7381,10 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
   const T = TRANSLATIONS[lang] || TRANSLATIONS.ru;
   const [step, setStep] = useState(0);
   const steps = [
-    "Анализируем K/D, WR, HS%...",
-    "Изучаем статистику карт...",
-    "Определяем роль и стиль игры...",
-    "Формируем персональный вердикт...",
+    t("step_analyzing","Анализируем K/D, WR, HS%..."),
+    t("step_maps","Изучаем статистику карт..."),
+    t("step_role","Определяем роль и стиль игры..."),
+    t("step_verdict","Формируем персональный вердикт..."),
   ];
 
   useEffect(()=>{
@@ -6879,7 +7401,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
       <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"28px"}}>
         <div style={{width:"10px",height:"10px",background:C.yellow,borderRadius:"50%",
           animation:"pulse 1.2s infinite",boxShadow:`0 0 10px ${C.yellow}`}}/>
-        <span style={{fontSize:"12px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>🤖 AI ТРЕНЕР АНАЛИЗИРУЕТ</span>
+        <span style={{fontSize:"12px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>{t("ai_analyzing","🤖 AI ТРЕНЕР АНАЛИЗИРУЕТ")}</span>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"28px"}}>
         {steps.map((s,i)=>(
@@ -6940,7 +7462,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
           <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",
             boxShadow:`0 0 8px ${C.yellow}`,flexShrink:0}}/>
           <span style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>
-            🤖 AI ТРЕНЕР · ПЕРСОНАЛЬНЫЙ РАЗБОР
+            {t("ai_personal","🤖 AI ТРЕНЕР · ПЕРСОНАЛЬНЫЙ РАЗБОР")}
           </span>
           {report.role&&(
             <div style={{display:"flex",alignItems:"center",gap:"6px",
@@ -7267,7 +7789,7 @@ function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
           <div style={{width:"7px",height:"7px",background:C.yellow,borderRadius:"50%",
             boxShadow:`0 0 6px ${C.yellow}`,flexShrink:0}}/>
           <span style={{fontSize:"10px",letterSpacing:"4px",color:C.yellow,fontWeight:700,flex:1}}>
-            🤖 AI ТРЕНЕР · РАЗБОР
+            {t("ai_coach_analysis","🤖 AI ТРЕНЕР · РАЗБОР")}
           </span>
           {cacheDate&&<span style={{fontSize:"10px",color:C.muted}}>{cacheDate}</span>}
           <button onClick={()=>{try{const keys=[cacheKey,`cs2_verdict_${player?.steamid}_faceit`,`cs2_verdict_${player?.steamid}_steam`];keys.forEach(k=>localStorage.removeItem(k));}catch{}load();}}
@@ -7279,7 +7801,7 @@ function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
         {loading&&(
           <div style={{padding:"24px",display:"flex",alignItems:"center",gap:"12px"}}>
             <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",animation:"pulse 1.2s infinite"}}/>
-            <span style={{fontSize:"13px",color:C.muted}}>Анализируем твою статистику...</span>
+            <span style={{fontSize:"13px",color:C.muted}}>{t("analyzing_stats2","Анализируем твою статистику...")}</span>
           </div>
         )}
 
@@ -7316,7 +7838,7 @@ function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
                 borderLeft:`3px solid ${C.lose}`,padding:"10px 14px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
                   <span style={{fontSize:"10px",color:C.lose,fontWeight:700,letterSpacing:"1px"}}>
-                    ⚠️ ГЛАВНАЯ ПРОБЛЕМА: {pr.stat||""}
+                    {t("main_problem_pre","⚠️ ГЛАВНАЯ ПРОБЛЕМА:")} {pr.stat||""}
                   </span>
                 </div>
                 <div style={{fontSize:"12px",color:C.text,lineHeight:1.5}}>
@@ -7363,7 +7885,7 @@ function SupportPanel({onClose}) {
         display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0e0e0e"}}>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
           <div style={{width:"7px",height:"7px",background:C.blue,borderRadius:"50%"}}/>
-          <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>ПОДДЕРЖКА</span>
+          <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>{t("support_h","ПОДДЕРЖКА")}</span>
         </div>
         <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px"}}>✕</button>
       </div>
@@ -7387,7 +7909,7 @@ function SupportPanel({onClose}) {
               </a>
             ))}
           </div>
-          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>ИЛИ ОСТАВЬ СООБЩЕНИЕ</div>
+          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{t("leave_msg","ИЛИ ОСТАВЬ СООБЩЕНИЕ")}</div>
           <textarea value={msg} onChange={e=>setMsg(e.target.value)}
             placeholder="Опиши проблему..."
             style={{width:"100%",height:"80px",background:"#111109",border:`1px solid ${C.border}`,
@@ -7402,8 +7924,8 @@ function SupportPanel({onClose}) {
         </> : (
           <div style={{textAlign:"center",padding:"20px 0"}}>
             <div style={{fontSize:"28px",marginBottom:"10px"}}>✅</div>
-            <div style={{fontSize:"14px",color:C.win,fontWeight:700}}>Сообщение отправлено!</div>
-            <div style={{fontSize:"13px",color:C.label,marginTop:"6px"}}>Ответим в течение 24 часов</div>
+            <div style={{fontSize:"14px",color:C.win,fontWeight:700}}>{t("msg_sent","Сообщение отправлено!")}</div>
+            <div style={{fontSize:"13px",color:C.label,marginTop:"6px"}}>{t("reply_24h","Ответим в течение 24 часов")}</div>
           </div>
         )}
       </div>
@@ -7664,7 +8186,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
           <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",
             animation:"pulse 2s infinite",boxShadow:`0 0 6px ${C.win}`}}/>
-          <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>ПОДДЕРЖКА</span>
+          <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>{t("support_h","ПОДДЕРЖКА")}</span>
         </div>
         <button onClick={onClose} style={{background:"transparent",border:"none",
           color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
@@ -7871,7 +8393,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
         body: JSON.stringify({messages:newMsgs.filter(m=>m.role!=="system"), stats})
       });
       const d = await r.json();
-      setMsgs(m=>[...m, {role:"assistant",content:d.reply||"Не смог ответить, попробуй ещё."}]);
+      setMsgs(m=>[...m, {role:"assistant",content:d.reply||t("no_answer",t("no_answer","Не смог ответить, попробуй ещё."))}]);
     } catch { setMsgs(m=>[...m, {role:"assistant",content:"Ошибка сервера."}]); }
     setLoading(false);
   }
@@ -7885,7 +8407,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
     {q:t("sup_q_limit","Лимит анализов"), icon:"📋"},
   ];
 
-  const QUICK = ["Почему я умираю первым?","Как апнуть FACEIT?","Что тренировать?","Лучшая карта для меня?"];
+  const QUICK = [t("q1",t("q_dying","Почему я умираю первым?")),t("q2",t("q_rankup","Как апнуть FACEIT?")),t("q3",t("q_practice2","Что тренировать?")),t("q4",t("q_bestmap","Лучшая карта для меня?"))];
 
   return (
     <div className="chat-panel" style={{position:"fixed",bottom:"80px",right:"24px",width:"380px",maxHeight:"580px",
@@ -7897,7 +8419,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
             <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
-            <span style={{fontSize:"13px",color:C.yellow,fontWeight:700,letterSpacing:"2px"}}>AI ТРЕНЕР</span>
+            <span style={{fontSize:"13px",color:C.yellow,fontWeight:700,letterSpacing:"2px"}}>{t("ai_coach_lbl","AI ТРЕНЕР")}</span>
           </div>
           <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
             <button onClick={()=>setMsgs(CHAT_INIT)} title="Очистить" style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"13px",opacity:.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=.6}>🗑</button>
@@ -7955,7 +8477,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
         <div style={{padding:"12px 14px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"8px",flexShrink:0}}>
           <input value={input} onChange={e=>setInput(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&(e.preventDefault(),send())}
-            placeholder="Спроси тренера..."
+            placeholder={t("ask_coach_ph","Спроси тренера...")}
             style={{flex:1,background:"#0d0d09",border:`1px solid ${C.border}`,color:C.text,
               padding:"9px 12px",fontFamily:"inherit",fontSize:"13px",outline:"none"}}/>
           <button onClick={send} disabled={loading||!input.trim()}
@@ -7974,54 +8496,54 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
 const PRACTICE_ITEMS = [
   // ВОРКШОП
   {id:1,cat:"workshop",diff:"Любой",icon:"🎯",title:"aim_botz",map:null,
-   desc:"Лучшая карта для тренировки прицела — стоячие, двигающиеся боты, настройка дистанции.",
+   desc:t("ws_aim_botz","Лучшая карта для тренировки прицела — стоячие, двигающиеся боты, настройка дистанции."),
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=243702660",type:"steam"},
   {id:2,cat:"workshop",diff:"Средний",icon:"🔫",title:"Recoil Master",map:null,
-   desc:"Визуальный тренажёр отдачи всего оружия в реальном времени. Самый быстрый способ выучить спрей.",
+   desc:t("ws_recoil","Визуальный тренажёр отдачи всего оружия в реальном времени. Самый быстрый способ выучить спрей."),
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=419404847",type:"steam"},
   {id:3,cat:"workshop",diff:"Начинающий",icon:"🏃",title:"KZ Climb Beginner",map:null,
-   desc:"Тренировка движения, прыжков, стрейфов. Улучшает механику и контроль.",
+   desc:t("ws_kz","Тренировка движения, прыжков, стрейфов. Улучшает механику и контроль."),
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2756420180",type:"steam"},
   {id:4,cat:"workshop",diff:"Средний",icon:"⚡",title:"Yprac Prefire Mirage",map:"Mirage",
-   desc:"Боты на всех стандартных позициях Mirage. Тренировка префайра и углов.",
+   desc:t("ws_prefire_mirage","Боты на всех стандартных позициях Mirage. Тренировка префайра и углов."),
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2070817221",type:"steam"},
   {id:5,cat:"workshop",diff:"Средний",icon:"⚡",title:"Yprac Prefire Inferno",map:"Inferno",
-   desc:"Все углы бананы, B и апа. Обязательно для Inferno.",
+   desc:t("ws_prefire_inferno","Все углы бананы, B и апа. Обязательно для Inferno."),
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2072029536",type:"steam"},
   {id:6,cat:"workshop",diff:"Начинающий",icon:"⚡",title:"Yprac Prefire Dust2",map:"Dust2",
-   desc:"Базовые углы Dust2. Идеально для новичков — все стандартные позиции.",
+   desc:t("ws_prefire_dust","Базовые углы Dust2. Идеально для новичков — все стандартные позиции."),
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2070818064",type:"steam"},
   {id:7,cat:"workshop",diff:"Средний",icon:"⚡",title:"Yprac Prefire Ancient",map:"Ancient",
-   desc:"Тренировка всех углов Ancient — карта которую мало кто учит, поэтому даёт преимущество.",
+   desc:t("ws_prefire_ancient","Тренировка всех углов Ancient — карта которую мало кто учит, поэтому даёт преимущество."),
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2134123524",type:"steam"},
   {id:8,cat:"workshop",diff:"Любой",icon:"🎮",title:"1v1 Arena",map:null,
-   desc:"Случайные дуэли 1v1. Лучший способ проверить прицел в боевых условиях.",
+   desc:t("ws_1v1","Случайные дуэли 1v1. Лучший способ проверить прицел в боевых условиях."),
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=149093839",type:"steam"},
   {id:9,cat:"workshop",diff:"Средний",icon:"💨",title:"Smoke Training Mirage",map:"Mirage",
-   desc:"Специальная карта с точками для изучения смоков — стоишь на маркере и бросаешь.",
+   desc:t("ws_smoke_mirage","Специальная карта с точками для изучения смоков — стоишь на маркере и бросаешь."),
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2693216004",type:"steam"},
   {id:10,cat:"workshop",diff:"Продвинутый",icon:"🏆",title:"Fast Aim Reflex Training",map:null,
-   desc:"Продвинутый тренажёр рефлексов и микро-коррекции прицела. Для опытных игроков.",
+   desc:t("ws_fast_aim","Продвинутый тренажёр рефлексов и микро-коррекции прицела. Для опытных игроков."),
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=368026786",type:"steam"},
 
   // ГРАНАТЫ — реальные видео
   {id:11,cat:"grenades",diff:"Начинающий",icon:"💨",title:"Mirage — 5 базовых смоков CT",map:"Mirage",
-   desc:"Обязательные смоки на Mirage: Jungle, CT, Stairs, Short, Connector. Знание этих 5 уже делает тебя полезным.",
+   desc:t("ws_smokes_mirage","Обязательные смоки на Mirage: Jungle, CT, Stairs, Short, Connector. Знание этих 5 уже делает тебя полезным."),
    url:"https://www.youtube.com/watch?v=UBxpvAFkBSE",type:"youtube"},
   {id:12,cat:"grenades",diff:"Начинающий",icon:"💨",title:"Dust2 — стандартные смоки",map:"Dust2",
-   desc:"Xbox smoke, Long A cross, CT rush — три обязательных смока на Dust2.",
+   desc:t("ws_smokes_dust","Xbox smoke, Long A cross, CT rush — три обязательных смока на Dust2."),
    url:"https://www.youtube.com/watch?v=FhLVxUzghYg",type:"youtube"},
   {id:13,cat:"grenades",diff:"Начинающий",icon:"💨",title:"Inferno — Banana и B контроль",map:"Inferno",
-   desc:"Смоки на Banana, Car, CT. Флешки и молотовы для контроля B на Inferno.",
+   desc:t("ws_util_inferno","Смоки на Banana, Car, CT. Флешки и молотовы для контроля B на Inferno."),
    url:"https://www.youtube.com/watch?v=x5t0eoMeRak",type:"youtube"},
   {id:14,cat:"grenades",diff:"Средний",icon:"🔥",title:"Mirage — молотовы и флешки А",map:"Mirage",
-   desc:"Молотов на A ramp, поп-флеш через угол на А. Эффективная атака А через гранаты.",
+   desc:t("ws_util_mirage2","Молотов на A ramp, поп-флеш через угол на А. Эффективная атака А через гранаты."),
    url:"https://www.youtube.com/watch?v=2Wh2TmpYn0k",type:"youtube"},
   {id:15,cat:"grenades",diff:"Средний",icon:"💨",title:"Nuke — важные смоки",map:"Nuke",
-   desc:"Smokes для контроля Outside, Lobby, Ramp. Nuke без смоков невозможен.",
+   desc:t("ws_smokes_nuke","Smokes для контроля Outside, Lobby, Ramp. Nuke без смоков невозможен."),
    url:"https://www.youtube.com/watch?v=lOvhBXFAH1A",type:"youtube"},
   {id:16,cat:"grenades",diff:"Средний",icon:"💨",title:"Ancient — базовые смоки",map:"Ancient",
-   desc:"CT, Mid, B-site смоки на Ancient. Мало кто знает — даёт большое преимущество.",
+   desc:t("ws_smokes_ancient","CT, Mid, B-site смоки на Ancient. Мало кто знает — даёт большое преимущество."),
    url:"https://www.youtube.com/watch?v=g2kMcJeH2jQ",type:"youtube"},
 
   // ДВИЖЕНИЕ
@@ -8029,13 +8551,13 @@ const PRACTICE_ITEMS = [
    desc:"Counter-strafe — как правильно останавливаться перед выстрелом. Самый важный механический навык.",
    url:"https://www.youtube.com/watch?v=8GpLR5YQPQM",type:"youtube"},
   {id:18,cat:"movement",diff:"Средний",icon:"🐇",title:"Бхоп — основы и практика",map:null,
-   desc:"Bunny hop — прыжки с ускорением. Поможет в ротациях и некоторых позициях.",
+   desc:t("ws_bhop","Bunny hop — прыжки с ускорением. Поможет в ротациях и некоторых позициях."),
    url:"https://www.youtube.com/watch?v=q3vPWC4Ek5w",type:"youtube"},
   {id:19,cat:"movement",diff:"Средний",icon:"📐",title:"Прыжки на позиции — Mirage",map:"Mirage",
-   desc:"Прыжок на ящик Short, буст на рампу. Позиции недоступные без знания прыжков.",
+   desc:t("ws_jumps","Прыжок на ящик Short, буст на рампу. Позиции недоступные без знания прыжков."),
    url:"https://www.youtube.com/watch?v=RzD8FpGp5pA",type:"youtube"},
   {id:20,cat:"movement",diff:"Продвинутый",icon:"🌀",title:"Стрейфы и движение в CS2",map:null,
-   desc:"Air-strafe, W-стрейфы, контроль точности при движении. Продвинутая механика.",
+   desc:t("ws_advanced_move","Air-strafe, W-стрейфы, контроль точности при движении. Продвинутая механика."),
    url:"https://www.youtube.com/watch?v=4yK4pU5KjQU",type:"youtube"},
 
   // ПОЗИЦИИ
@@ -8043,16 +8565,16 @@ const PRACTICE_ITEMS = [
    desc:"Window, Jungle, B passive, standard CT. Позиции с максимальным контролем информации.",
    url:"https://www.youtube.com/watch?v=N8WPW5hLMiU",type:"youtube"},
   {id:22,cat:"positions",diff:"Начинающий",icon:"🗺️",title:"Inferno — позиции B сайта",map:"Inferno",
-   desc:"Carp, Balcony, Orange, Fountain. Правильное расположение на B Inferno.",
+   desc:t("ws_pos_inferno","Carp, Balcony, Orange, Fountain. Правильное расположение на B Inferno."),
    url:"https://www.youtube.com/watch?v=bTJBuIbjWqc",type:"youtube"},
   {id:23,cat:"positions",diff:"Средний",icon:"🎯",title:"Off-angles и нестандартные позиции",map:null,
    desc:"Позиции которых не ожидают. Один из самых эффективных способов получить лёгкие килы.",
    url:"https://www.youtube.com/watch?v=YLPZ2mH5sTI",type:"youtube"},
   {id:24,cat:"positions",diff:"Средний",icon:"🔭",title:"AWP позиции — топ карты",map:null,
-   desc:"Лучшие AWP углы на Mirage, Inferno, Dust2. Для снайперов всех уровней.",
+   desc:t("ws_awp_angles","Лучшие AWP углы на Mirage, Inferno, Dust2. Для снайперов всех уровней."),
    url:"https://www.youtube.com/watch?v=EUy9y3wkbRs",type:"youtube"},
   {id:25,cat:"positions",diff:"Продвинутый",icon:"🔍",title:"Lurk и информационные позиции",map:null,
-   desc:"Позиции для сбора информации без риска. Для саппорта и лёрка.",
+   desc:t("ws_info_pos","Позиции для сбора информации без риска. Для саппорта и лёрка."),
    url:"https://www.youtube.com/watch?v=pf5w_7EJKqE",type:"youtube"},
 ];
 
@@ -8136,8 +8658,8 @@ function PracticeTab({player}) {
   return(
     <div style={{animation:"up .4s ease both"}}>
       <div style={{marginBottom:"16px"}}>
-        <h2 style={{fontSize:"22px",color:C.value,fontWeight:700,margin:"0 0 4px"}}>База знаний CS2</h2>
-        <p style={{fontSize:"13px",color:C.muted,margin:0}}>Воркшоп, гранаты, движение, позиции и карты</p>
+        <h2 style={{fontSize:"22px",color:C.value,fontWeight:700,margin:"0 0 4px"}}>{t("knowledge_base","База знаний CS2")}</h2>
+        <p style={{fontSize:"13px",color:C.muted,margin:0}}>{t("kb_sub","Воркшоп, гранаты, движение, позиции и карты")}</p>
       </div>
 
       {/* Поиск */}
@@ -8318,7 +8840,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             <div style={{width:"8px",height:"8px",borderRadius:"50%",
               background:connected?C.win:"#ff4444",flexShrink:0}}/>
             <span style={{fontSize:"12px",color:connected?C.win:C.lose,fontWeight:600}}>
-              {connected?"Подключён":"Аккаунт не подключён"}
+              {connected?t("connected","Подключён"):t("not_connected","Аккаунт не подключён")}
             </span>
           </div>
           {info&&<div style={{fontSize:"11px",color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{info}</div>}
@@ -8359,7 +8881,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
         {/* Header */}
         <div style={{padding:"18px 24px",borderBottom:`1px solid ${C.border}`,
           display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>⚙️ НАСТРОЙКИ</div>
+          <div style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>{t("settings_h","⚙️ НАСТРОЙКИ")}</div>
           <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
             color:C.muted,cursor:"pointer",width:"28px",height:"28px",fontSize:"14px"}}>✕</button>
         </div>
@@ -8414,7 +8936,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
               <div style={{fontFamily:"monospace",color:C.blue,fontSize:"12px"}}>{player?.steamid||"—"}</div>
             </div>
 
-            <button onClick={()=>{if(window.confirm("Выйти из аккаунта?")){ onLogout(); onClose(); }}}
+            <button onClick={()=>{if(window.confirm(t("logout_confirm",t("logout_q","Выйти из аккаунта?")))){ onLogout(); onClose(); }}}
               style={{width:"100%",padding:"9px",background:"transparent",border:`1px solid ${C.lose}44`,
                 color:C.lose,cursor:"pointer",fontSize:"12px",fontFamily:"inherit",fontWeight:700}}>
               🚪 Выйти из аккаунта
@@ -8446,7 +8968,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
               title="TELEGRAM"
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill={tgLinked?"#66ee66":"#9a9270"}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.03 9.566c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.48 14.4l-2.96-.924c-.643-.2-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.836.186z"/></svg>}
               connected={tgLinked}
-              info={tgLinked?"Уведомления о матчах активны":"Получай уведомления о матчах в Telegram"}
+              info={tgLinked?t("notif_active",t("notif_on","Уведомления о матчах активны")):t("notif_tg",t("notif_tg","Получай уведомления о матчах в Telegram"))}
               onLink={(e)=>{
                 e.preventDefault();
                 window.open("https://t.me/cs2coach_support","_blank");
@@ -8465,8 +8987,8 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
               padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
               <div>
-                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>Язык / Language</div>
-                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Язык интерфейса</div>
+                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>{t("lang_setting","Язык / Language")}</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{t("lang_ui","Язык интерфейса")}</div>
               </div>
               <div style={{display:"flex",gap:"4px"}}>
                 {[["ru","🇷🇺 RU"],["en","🇬🇧 EN"]].map(([l,label])=>(
@@ -8485,8 +9007,8 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
               padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
               <div>
-                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>Уведомления</div>
-                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Достижения и апдейты</div>
+                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>{t("notifications","Уведомления")}</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{t("notif_sub","Достижения и апдейты")}</div>
               </div>
               <Toggle on={notifOn} onToggle={()=>toggle("cs2_notif",!notifOn,setNotifOn)}/>
             </div>
@@ -8495,8 +9017,8 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
               padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
               <div>
-                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>Тема</div>
-                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Только тёмная тема</div>
+                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>{t("theme_h","Тема")}</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{t("dark_only","Только тёмная тема")}</div>
               </div>
               <div style={{fontSize:"12px",color:C.muted,padding:"5px 10px",
                 border:`1px solid ${C.border}`,background:"#0d0d09"}}>
@@ -8523,7 +9045,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
               <div style={{display:"flex",gap:"8px"}}>
                 <input
                   id="premier_input"
-                  placeholder="Например: 7794"
+                  placeholder={t("eg_7794","Например: 7794")}
                   defaultValue={(()=>{try{return JSON.parse(localStorage.getItem("cs2_player_v3")||"null")?.cs2?.premier_rating||"";}catch{return "";}})()}
                   style={{flex:1,background:"#111109",border:`1px solid ${C.yellow}44`,
                     color:C.yellow,padding:"8px 12px",fontFamily:"monospace",fontSize:"14px"}}/>
@@ -8541,7 +9063,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
                     const pd = JSON.parse(localStorage.getItem(pdKey)||"{}");
                     pd.premier_rating = val;
                     localStorage.setItem(pdKey, JSON.stringify(pd));
-                    alert("Сохранено! Обнови страницу чтобы увидеть в профиле.");
+                    alert(t("saved_reload",t("saved_msg","Сохранено! Обнови страницу чтобы увидеть в профиле.")));
                   }catch{}
                 }} style={{padding:"8px 16px",background:C.yellow,color:"#080807",
                   border:"none",cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"inherit"}}>
@@ -8551,9 +9073,9 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             </div>}
 
             {[
-              {label:"История рейтинга", desc:"Снапшоты K/D, WR, HS за 30 дней", key_prefix:"cs2_rating_history_"},
-              {label:"Кеш профиля", desc:"Данные Steam и FACEIT", key_prefix:"cs2_player_v3"},
-              {label:"Steam auth код", desc:"Подключение к истории матчей", key_prefix:"cs2_steam_auth_"},
+              {label:"История рейтинга", desc:t("data_snap",t("snap30","Снапшоты K/D, WR, HS за 30 дней")), key_prefix:"cs2_rating_history_"},
+              {label:"Кеш профиля", desc:t("data_steamfaceit",t("steam_faceit_data","Данные Steam и FACEIT")), key_prefix:"cs2_player_v3"},
+              {label:"Steam auth код", desc:t("data_matchhist",t("match_hist_conn","Подключение к истории матчей")), key_prefix:"cs2_steam_auth_"},
             ].map((item,i)=>(
               <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                 padding:"11px 14px",background:"#0d0d09",border:`1px solid ${C.border}`,
@@ -8698,10 +9220,10 @@ export default function App() {
         const mvps = parseInt(cs22.mvps)||0;
         // Проверяем какие ачивки только что разблокировались
         const prevData = JSON.parse(localStorage.getItem(`cs2_prev_stats_${player.steamid}`)||"{}");
-        if (prevData.kd && kd >= 1.0 && prevData.kd < 1.0) notifs.push({icon:"⚔️",title:"Достижение: Фраггер!",text:"K/D превысил 1.0 — цель достигнута",color:C.blue});
-        if (prevData.hs && hs >= 40 && prevData.hs < 40) notifs.push({icon:"🎯",title:"Достижение: HS Машина!",text:"40%+ хедшотов — отличная точность",color:C.orange});
-        if (prevData.matches && matches >= 200 && prevData.matches < 200) notifs.push({icon:"🎖️",title:"Достижение: Ветеран!",text:"200 матчей — ты опытный игрок",color:C.yellow});
-        if (prevData.mvps && mvps >= 100 && prevData.mvps < 100) notifs.push({icon:"🥇",title:"Достижение: MVP x100!",text:"100 MVP — настоящий лидер команды",color:C.yellow});
+        if (prevData.kd && kd >= 1.0 && prevData.kd < 1.0) notifs.push({icon:"⚔️",title:"Достижение: Фраггер!",text:t("notif_kd","K/D превысил 1.0 — цель достигнута"),color:C.blue});
+        if (prevData.hs && hs >= 40 && prevData.hs < 40) notifs.push({icon:"🎯",title:"Достижение: HS Машина!",text:t("notif_hs","40%+ хедшотов — отличная точность"),color:C.orange});
+        if (prevData.matches && matches >= 200 && prevData.matches < 200) notifs.push({icon:"🎖️",title:"Достижение: Ветеран!",text:t("notif_200m","200 матчей — ты опытный игрок"),color:C.yellow});
+        if (prevData.mvps && mvps >= 100 && prevData.mvps < 100) notifs.push({icon:"🥇",title:"Достижение: MVP x100!",text:t("notif_100mvp","100 MVP — настоящий лидер команды"),color:C.yellow});
         // Стрик при повторном входе
         const cur = parseInt(localStorage.getItem("cs2_streak")||"0");
         // Стрик показывается отдельным StreakToast — не дублируем в notifications
@@ -9260,8 +9782,8 @@ export default function App() {
                     {[
                       {icon:"👤",label:t("my_profile","Мой профиль"),action:()=>{setProfileView({steamid:player?.steamid});setProfileDropdown(false);}},
                       {icon:"⚙️",label:t("settings_t","Настройки"),action:()=>{setShowSettings(true);setProfileDropdown(false);}},
-                      {icon:"⚡",label:"PRO подписка",action:()=>{setShowProModal(true);setProfileDropdown(false);}},
-                      {icon:"📤",label:"Поделиться",action:()=>{setShareOpen(true);setProfileDropdown(false);}},
+                      {icon:"⚡",label:t("menu_pro","PRO подписка"),action:()=>{setShowProModal(true);setProfileDropdown(false);}},
+                      {icon:"📤",label:t("menu_share","Поделиться"),action:()=>{setShareOpen(true);setProfileDropdown(false);}},
                     ].map((item,i)=>(
                       <button key={i} onClick={item.action}
                         style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",padding:"10px 14px",
@@ -9295,14 +9817,14 @@ export default function App() {
         {/* Page title */}
         <div style={{marginBottom:"24px"}}>
           <h1 style={{fontSize:"clamp(26px,5vw,42px)",fontWeight:400,margin:"0 0 4px",color:C.value,letterSpacing:"2px"}}>
-            Разбор твоей игры
+            {t("page_title","Разбор твоей игры")}
           </h1>
-          <p style={{color:C.muted,fontSize:"13px",margin:0}}>Steam + FACEIT аналитика · AI-тренер</p>
+          <p style={{color:C.muted,fontSize:"13px",margin:0}}>{t("page_sub","Steam + FACEIT аналитика · AI-тренер")}</p>
         </div>
 
         {/* Main tabs */}
         <div style={{className:"desktop-nav",display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:"22px",flexWrap:"wrap"}}>
-          {[["overview","ОБЗОР"],["coach",T.tab_coach||"🎯 ТРЕНЕР"],["practice",T.tab_practice||"📚 ПРАКТИКА"],["matches",T.tab_matches||t("tab_matches_icon","🎮 МАТЧИ")],["maps",T.tab_maps||"🗺️ КАРТЫ"],["history",T.tab_history||"📋 ИСТОРИЯ"],["leaderboard",T.tab_leaders||"🏆 ЛИДЕРЫ"],["friends",T.tab_friends||"👥 ДРУЗЬЯ"]].map(([t,l])=>(
+          {[["overview",t("tab_overview2","ОБЗОР")],["coach",T.tab_coach||"🎯 ТРЕНЕР"],["practice",T.tab_practice||"📚 ПРАКТИКА"],["matches",T.tab_matches||t("tab_matches_icon","🎮 МАТЧИ")],["maps",T.tab_maps||"🗺️ КАРТЫ"],["history",T.tab_history||"📋 ИСТОРИЯ"],["leaderboard",T.tab_leaders||"🏆 ЛИДЕРЫ"],["friends",T.tab_friends||"👥 ДРУЗЬЯ"]].map(([t,l])=>(
             <button key={t} onClick={()=>{ setMainTab(t); track("tab_opened",{tab:t}); }} style={{
               padding:"11px 18px",background:"transparent",
               color:mainTab===t?C.yellow:C.muted,border:"none",
@@ -9326,7 +9848,7 @@ export default function App() {
             {source==="steam"&&player.cs2?.private&&<PrivateWarning/>}
 
             {/* ── СЕКЦИЯ 1: Профиль ── */}
-            <SectionTitle icon="👤" label="ПРОФИЛЬ"/>
+            <SectionTitle icon="👤" label={t("sec_profile","ПРОФИЛЬ")}/>
             <HeroCard player={player} source={source}/>
 
             {/* ── СЕКЦИЯ 2: AI Вердикт ── */}
@@ -9638,7 +10160,7 @@ export default function App() {
           border:`2px solid ${C.blue}`,borderRadius:"50%",cursor:"pointer",
           fontSize:"20px",boxShadow:`0 4px 16px ${C.blue}33`,zIndex:199,
           transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}
-        title="Поддержка и FAQ">
+        title={t("support_faq","Поддержка и FAQ")}>
         💬
       </button>
     </div>
