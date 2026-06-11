@@ -1200,7 +1200,7 @@ function useCountUp(target, dur=900) {
   const [v,setV] = useState(0);
   const from = useRef(0);
   useEffect(()=>{
-    const t=parseFloat(target)||0; let raf,start;
+    const tgt=parseFloat(target)||0; let raf,start;
     const tick=(now)=>{
       if(!start)start=now;
       const p=Math.min((now-start)/dur,1),e=1-Math.pow(1-p,3);
@@ -4384,16 +4384,16 @@ function FriendsTab({myPlayer, source}) {
 // ── Search ────────────────────────────────────────────────────────────────────
 function SearchBar({onSelect}) {
   const [q,setQ]=useState(""), [res,setRes]=useState([]), [open,setOpen]=useState(false), [loading,setLoading]=useState(false);
-  const t=useRef(null);
+  const inputRef=useRef(null);
   useEffect(()=>{
     if(q.trim().length<2){setRes([]);return;}
-    clearTimeout(t.current); setLoading(true);
-    t.current=setTimeout(async()=>{
+    clearTimeout(inputRef.current); setLoading(true);
+    inputRef.current=setTimeout(async()=>{
       try{const r=await fetch(`${BACKEND}/search/${encodeURIComponent(q.trim())}`);const d=await r.json();setRes(d.results||[]);}
       catch{setRes([]);}
       setLoading(false); setOpen(true);
     },350);
-    return()=>clearTimeout(t.current);
+    return()=>clearTimeout(inputRef.current);
   },[q]);
   return (
     <div style={{position:"relative",width:"220px"}}>
@@ -6133,7 +6133,7 @@ function OnboardingModal({player, onClose, onGoTab}) {
 }
 
 function NotificationToast({notifications, onClose}) {
-  useEffect(()=>{ const t=setTimeout(onClose, 5000); return()=>clearTimeout(t); },[]);
+  useEffect(()=>{ const closeTimer1=setTimeout(onClose, 5000); return()=>clearTimeout(closeTimer1); },[]);
   if (!notifications?.length) return null;
   return (
     <div style={{position:"fixed",top:"70px",left:"50%",transform:"translateX(-50%)",
@@ -6158,7 +6158,7 @@ function NotificationToast({notifications, onClose}) {
 
 // ── Streak Toast ───────────────────────────────────────────────────────────────
 function StreakToast({streak, onClose}) {
-  useEffect(()=>{ const t=setTimeout(onClose, 4000); return()=>clearTimeout(t); },[]);
+  useEffect(()=>{ const closeTimer2=setTimeout(onClose, 4000); return()=>clearTimeout(closeTimer2); },[]);
   const msg = streak>=30?"👑 30 дней подряд! Ты легенда!":
     streak>=14?"🔥 2 недели подряд! Невероятно!":
     streak>=7?"🏆 Неделя подряд! Серия выполнена!":
@@ -6209,13 +6209,13 @@ function Logo({size=32, withText=true}) {
 function useOnline() {
   const [n, setN] = useState(()=>Math.floor(Math.random()*60)+64);
   useEffect(()=>{
-    const t = setInterval(()=>{
+    const countTimer = setInterval(()=>{
       setN(prev => {
         const delta = Math.floor(Math.random()*7)-3;
         return Math.max(58, Math.min(156, prev+delta));
       });
     }, 7000);
-    return ()=>clearInterval(t);
+    return ()=>clearInterval(countTimer);
   },[]);
   return n;
 }
@@ -6969,8 +6969,8 @@ function ProModal({player, isPro, onClose, onActivated}) {
 // ── PRO Celebration ───────────────────────────────────────────────────────────
 function ProCelebration({onClose}) {
   useEffect(()=>{
-    const t = setTimeout(onClose, 5000);
-    return ()=>clearTimeout(t);
+    const closeTimer3 = setTimeout(onClose, 5000);
+    return ()=>clearTimeout(serverTimer);
   },[]);
   return createPortal(
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.96)",
@@ -7060,8 +7060,8 @@ function LandingPage({onLogin}) {
   const [tick, setTick] = useState(0);
   const [visible, setVisible] = useState({});
   useEffect(()=>{
-    const t = setInterval(()=>setTick(x=>x+1), 3500);
-    return ()=>clearInterval(t);
+    const tickTimer = setInterval(()=>setTick(x=>x+1), 3500);
+    return ()=>clearInterval(tickTimer);
   },[]);
   useEffect(()=>{
     const io = new IntersectionObserver(entries=>{
@@ -8107,8 +8107,8 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
       }catch{}
     };
     poll();
-    const t = setInterval(poll,2000);
-    return()=>clearInterval(t);
+    const pollTimer = setInterval(poll,2000);
+    return()=>clearInterval(pollTimer);
   },[steamid]);
 
   const sending = useRef(false);
@@ -9306,11 +9306,11 @@ export default function App() {
 
   // ── cold start wake-up ──────────────────────────────────────────────────────
   useEffect(()=>{
-    const t = setTimeout(()=>setServerStatus('slow'), 2500);
+    const serverTimer = setTimeout(()=>setServerStatus('slow'), 2500);
     fetch(`${BACKEND}/health`).then(()=>{
-      clearTimeout(t); setServerStatus('ready');
-    }).catch(()=>{ clearTimeout(t); setServerStatus('ready'); });
-    return ()=>clearTimeout(t);
+      clearTimeout(serverTimer); setServerStatus('ready');
+    }).catch(()=>{ clearTimeout(serverTimer); setServerStatus('ready'); });
+    return ()=>clearTimeout(serverTimer);
   },[]);
 
   // ── restore + refresh ─────────────────────────────────────────────────────
