@@ -1,547 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
-// Compact EN translations — русский текст → английский
-// Russian is the default language, EN is the override
-const EN_DICT = {
-  " (ты)": " (you)",
-  " дней подряд": " days in a row",
-  " матчей": " matches",
-  "10 мин": "10 min",
-  "10+ бомб обезврежено": "10+ bombs defused",
-  "10+ серия побед": "10+ win streak",
-  "100 MVP — настоящий лидер команды": "100 MVP — true team leader",
-  "100 часов": "100 hours",
-  "100 часов в CS2": "100 hours in CS2",
-  "100+ убийств снайпером": "100+ sniper kills",
-  "1000 убийств": "1000 kills",
-  "1000 убийств — хорошее начало. Aim_botz: 500 фрагов ежедневно для роста механики": "1000 kills is a good start. Aim_botz: 500 frags daily to grow",
-  "10к убийств": "10k kills",
-  "10к убийств — ты ветеран. Теперь считай ADR и impact, не просто kills": "10k kills — you're a veteran. Now track ADR and impact, not just kills",
-  "15 мин": "15 min",
-  "20 мин": "20 min",
-  "200 матчей — ты опытный игрок": "200 matches — you're an experienced player",
-  "25 мин": "25 min",
-  "3+ серия побед": "3+ win streak",
-  "30 дн": "30 d",
-  "30 дней": "30 days",
-  "40%+ хедшотов — отличная точность": "40%+ headshots — excellent accuracy",
-  "5 из 6 шагов": "5 of 6 steps",
-  "5+ серия побед": "5+ win streak",
-  "5+ убийств ножом": "5+ knife kills",
-  "50+ бомб заложено": "50+ bombs planted",
-  "50+ убийств ножом": "50+ knife kills",
-  "500 убийств в Aim Botz · 15 мин": "500 kills in Aim Botz · 15 min",
-  "500 часов": "500 hours",
-  "500 часов в CS2": "500 hours in CS2",
-  "5000 убийств": "5000 kills",
-  "7 дн": "7 d",
-  "AI ВЕРДИКТ": "AI VERDICT",
-  "AI ТРЕНЕР": "AI COACH",
-  "AI анализирует матч...": "AI analyzing match...",
-  "AI находит твои худшие карты и говорит что конкретно исправить": "AI finds your worst maps and tells you exactly what to fix",
-  "AI тренер для CS2 игроков. Анализ статистики и персональные советы.": "AI coach for CS2 players. Stats analysis and personal advice.",
-  "AI тренер знает твою игру и готов помочь": "AI coach knows your game and is ready to help",
-  "AI чат без ограничений": "AI chat without limits",
-  "Aim Botz: 1000 убийств · 20 мин": "Aim Botz: 1000 kills · 20 min",
-  "Aim Botz: только хедшоты · 15 мин": "Aim Botz: headshots only · 15 min",
-  "Aim_botz headshot only: минимум 300 убийств подряд с точностью выше 60%": "Aim_botz headshot only: at least 300 kills in a row with 60%+ accuracy",
-  "Aim_botz ежедневно: на этом уровне механика решает половину дуэлей": "Aim_botz daily: at this level mechanics decide half the duels",
-  "Aim_botz: 1000 убийств ежедневно — без этого K/D 1.5+ не даётся": "Aim_botz: 1000 kills daily — K/D 1.5+ doesn't come without it",
-  "Aim_botz: 500 убийств с места": "Aim_botz: 500 kills from stationary",
-  "Aim_botz: 500 убийств с места, фокус на голову": "Aim_botz: 500 kills from stationary, focus on headshots",
-  "Aim_botz: 500 убийств только в голову, без спрея — пока не выйдет уверенно": "Aim_botz: 500 headshot-only kills, no spray — until confidence comes",
-  "Aim_botz: ежедневная разминка 500 убийств": "Aim_botz: daily 500-kill warmup",
-  "Air-strafe, W-стрейфы, контроль точности при движении. Продвинутая механика.": "Air-strafe, W-strafes, accuracy control while moving. Advanced mechanics.",
-  "Bunny hop — прыжки с ускорением. Поможет в ротациях и некоторых позициях.": "Bunny hop — accelerated jumps. Helps with rotations and certain positions.",
-  "CS2 AI ТРЕНЕР": "CS2 AI COACH",
-  "CS2 COACH РЕЙТИНГ": "CS2 COACH RATING",
-  "CT, Mid, B-site смоки на Ancient. Мало кто знает — даёт большое преимущество.": "CT, Mid, B-site smokes on Ancient. Few know them — gives huge advantage.",
-  "Carp, Balcony, Orange, Fountain. Правильное расположение на B Inferno.": "Carp, Balcony, Orange, Fountain. Correct B Inferno positioning.",
-  "Coach Rating на основе твоей статистики": "Coach Rating based on your stats",
-  "Counter-strafe практика: двигаться → остановиться → стрелять": "Counter-strafe practice: move → stop → shoot",
-  "Counter-strafe практика: движение → стоп → выстрел. Цель — 0 пуль в движении": "Counter-strafe practice: move → stop → shoot. Goal — 0 bullets while moving",
-  "Counter-strafe тренировка · 15 мин": "Counter-strafe training · 15 min",
-  "Counter-strafe: стоп → выстрел": "Counter-strafe: stop → shoot",
-  "Deathmatch 15 минут: фокус только на первый выстрел, не спрей": "Deathmatch 15 min: focus only on first shot, no spray",
-  "Deathmatch перед игрой: только хедшоты, пистолетный раунд": "Deathmatch before game: headshots only, pistol round",
-  "Deathmatch: стреляй только пистолетом — заставляет прицеливаться точнее": "Deathmatch: pistol only — forces more precise aim",
-  "FACEIT ELO выше 2000": "FACEIT ELO above 2000",
-  "FACEIT Легенда": "FACEIT Legend",
-  "FACEIT Элита": "FACEIT Elite",
-  "FACEIT не подключается": "FACEIT won't connect",
-  "FACEIT уровень 10": "FACEIT level 10",
-  "FACEIT уровень 5": "FACEIT level 5",
-  "FACEIT уровень 8": "FACEIT level 8",
-  "HS Машина": "HS Machine",
-  "HS%": "HS%",
-  "HS% выше 30%": "HS% above 30%",
-  "HS% выше 40%": "HS% above 40%",
-  "HS% выше 45% в двух матчах": "HS% above 45% in two matches",
-  "HS% выше 55%": "HS% above 55%",
-  "K/D выше 1.0 в трёх матчах": "K/D above 1.0 in three matches",
-  "K/D превысил 1.0 — цель достигнута": "K/D exceeded 1.0 — goal reached",
-  "K/МАТЧ": "K/MATCH",
-  "MVP = первый в команде. Фокус: entry fragging, открывать раунды, не ждать": "MVP = first in the team. Focus: entry fragging, opening rounds, not waiting",
-  "Micro-adjustments: стреляй по маленьким движущимся мишеням в workshop": "Micro-adjustments: shoot small moving targets in workshop",
-  "PRO АКТИВЕН": "PRO ACTIVE",
-  "PRO значок в лидерборде": "PRO badge in leaderboard",
-  "PRO подписка": "PRO subscription",
-  "Prefire Workshop · 20 мин": "Prefire Workshop · 20 min",
-  "Prefire Workshop: 10 позиций на лучшей карте": "Prefire Workshop: 10 positions on best map",
-  "Prefire Workshop: лучшая карта · 20 мин": "Prefire Workshop: best map · 20 min",
-  "Prefire Workshop: отработать 10 ключевых позиций на своей лучшей карте": "Prefire Workshop: practice 10 key positions on your best map",
-  "Recoil Master workshop: отработай первые 5 пуль AK47 — они дают больше всего хедшотов": "Recoil Master workshop: master the first 5 AK47 bullets — they get most kills",
-  "Recoil Master: спрей AK · 20 мин": "Recoil Master: AK spray · 20 min",
-  "Recoil Master: спрей AK и M4": "Recoil Master: AK and M4 spray",
-  "STEAM СТАТИСТИКА": "STEAM STATISTICS",
-  "Smokes для контроля Outside, Lobby, Ramp. Nuke без смоков невозможен.": "Smokes for Outside, Lobby, Ramp control. Nuke without smokes is impossible.",
-  "Steam + FACEIT аналитика · AI-тренер": "Steam + FACEIT analytics · AI coach",
-  "Steam с": "Steam since",
-  "T-800. Анализирует данные. Цель — улучшить показатели.": "T-800. Analyzes data. Goal — improve stats.",
-  "Workshop: Recoil Master — отработать спрей AK и M4": "Workshop: Recoil Master — practice AK and M4 spray",
-  "Xbox smoke, Long A cross, CT rush — три обязательных смока на Dust2.": "Xbox smoke, Long A cross, CT rush — three essential Dust2 smokes.",
-  "~$22 · экономия 40%": "~$22 · save 40%",
-  "~$3.3 · отмена в любой момент": "~$3.3 · cancel anytime",
-  "© 2026 CS2 AI Тренер. Все права защищены.": "© 2026 CS2 AI Coach. All rights reserved.",
-  "АИМ": "AIM",
-  "АКТИВИРОВАН": "ACTIVATED",
-  "АКТИВИРОВАТЬ PRO": "ACTIVATE PRO",
-  "АКТИВИРУЮ...": "ACTIVATING...",
-  "АНАЛИЗИРУЮ...": "ANALYZING...",
-  "Аккаунт не подключён": "Account not connected",
-  "Анализ слабых карт": "Weak maps analysis",
-  "Анализируем K/D, WR, HS%...": "Analyzing K/D, WR, HS%...",
-  "Анализируем твою статистику...": "Analyzing your stats...",
-  "Анализируй что делаешь правильно сейчас — запомни это состояние игры": "Analyze what you're doing right now — remember this game state",
-  "БАНИТЬ": "BAN",
-  "БЕЗ ИЗМЕНЕНИЙ": "NO CHANGES",
-  "БОЕЦ": "FIGHTER",
-  "БОМБ ЗАЛОЖЕНО": "BOMBS PLANTED",
-  "БОМБ ОБЕЗВРЕЖЕНО": "BOMBS DEFUSED",
-  "База знаний CS2": "CS2 Knowledge Base",
-  "Базовые углы Dust2. Идеально для новичков — все стандартные позиции.": "Basic Dust2 angles. Ideal for beginners — all standard positions.",
-  "Без ранга": "No rank",
-  "Безлимитный AI разбор каждой игры": "Unlimited AI analysis of every game",
-  "Боец": "Fighter",
-  "Бомбардир": "Bomber",
-  "Боты на всех стандартных позициях Mirage. Тренировка префайра и углов.": "Bots on all standard Mirage positions. Prefire and angle training.",
-  "В СЛЕПУЮ": "BLIND",
-  "В слепую:": "Blind:",
-  "ВЕТЕРАН": "VETERAN",
-  "ВОЙДИ ЧЕРЕЗ STEAM": "LOGIN VIA STEAM",
-  "ВЫБЕРИ ТРЕНЕРА": "CHOOSE COACH",
-  "ВЫГОДНО": "BEST VALUE",
-  "Введи код аутентификации": "Enter authentication code",
-  "Введи код аутентификации Steam для доступа к MM матчам": "Enter your Steam authentication code for access to MM matches",
-  "Ввести ключ": "Enter key",
-  "Веди заметки: после каждого матча 1 строчка — что сделал хорошо, что исправить": "Keep notes: 1 line after each match — what went well and what to fix",
-  "Верховный Мастер": "Supreme Master",
-  "Ветеран": "Veteran",
-  "Визуальный тренажёр отдачи всего оружия в реальном времени. Самый быстрый способ выучить спрей.": "Visual recoil trainer for all weapons in real time. Fastest way to learn spray patterns.",
-  "Винстрик": "Win streak",
-  "Винтовки": "Rifles",
-  "Войти через Steam": "Login via Steam",
-  "Войти через Steam чтобы начать": "Login via Steam to start",
-  "Вопросы и поддержка": "Questions and support",
-  "Воркшоп, гранаты, движение, позиции и карты": "Workshop, grenades, movement, positions and maps",
-  "Все": "All",
-  "Все углы бананы, B и апа. Обязательно для Inferno.": "All banana, B and apo angles. Essential for Inferno.",
-  "Все функции доступны": "All features available",
-  "Всего убийств:": "Total kills:",
-  "Всё": "All",
-  "Всё готово!": "All set!",
-  "Выделяйся среди других игроков": "Stand out among other players",
-  "Выиграть 3 матча подряд": "Win 3 matches in a row",
-  "Выйти": "Logout",
-  "Выйти из аккаунта?": "Logout from account?",
-  "Выполнить первую тренировку": "Complete first training",
-  "Выучи 1 новую раскидку на лучшей карте": "Learn 1 new lineup on your best map",
-  "Выучи 1 новый смок или молотов": "Learn 1 new smoke or molotov",
-  "Выучи 1 новый смок или молотов на часто играемой карте": "Learn 1 new smoke or molotov on a frequently played map",
-  "ГЛАВНАЯ ПРОБЛЕМА": "MAIN PROBLEM",
-  "ГОД": "YEAR",
-  "ГРАНАТЫ": "GRENADES",
-  "Глобал Элита": "Global Elite",
-  "Голубой": "Light Blue",
-  "Горячая полоса": "Hot run",
-  "Гранатой:": "Grenade:",
-  "ДВИЖЕНИЕ": "MOVEMENT",
-  "ДИНАМИКА МАТЧЕЙ": "MATCH DYNAMICS",
-  "ДОМИНАЦИЙ": "DOMINIONS",
-  "ДОПОЛНИТЕЛЬНО": "ADDITIONAL",
-  "ДОСТИЖЕНИЯ": "ACHIEVEMENTS",
-  "ДРУЗЬЯ": "FRIENDS",
-  "Данные": "Data",
-  "Данные Steam и FACEIT": "Steam and FACEIT data",
-  "Данные не загружаются": "Data not loading",
-  "Делай перерыв каждые 2 часа — с таким количеством часов важна свежесть восприятия": "Take a break every 2 hours — freshness matters with this many hours",
-  "До": "To",
-  "Добро пожаловать!": "Welcome!",
-  "Доведи K/D до 1.0 — сыграй 2 матча на дуэлях": "Raise K/D to 1.0 — play 2 deathmatch matches",
-  "Доминирующий": "Dominating",
-  "Достижения и апдейты": "Achievements and updates",
-  "Ежедневный warmup стал твоим ритуалом — не пропускай его во время серии": "Daily warmup is your ritual — don't skip it during streaks",
-  "ЗАВТРА": "TOMORROW",
-  "За всё время": "All time",
-  "Загружаем...": "Loading...",
-  "Закрепить K/D выше 1.4": "Lock K/D above 1.4",
-  "Золотой": "Gold",
-  "Золотой Страж": "Gold Nova",
-  "ИГРОК": "PLAYER",
-  "ИЛИ ОСТАВЬ СООБЩЕНИЕ": "OR LEAVE A MESSAGE",
-  "ИСТОРИЯ": "HISTORY",
-  "ИСТОРИЯ ПРОГРЕССА": "PROGRESS HISTORY",
-  "ИСТОРИЯ ПУСТА": "HISTORY EMPTY",
-  "Играй IGL роль 1 матч: давай callouts, предлагай стратегии — понимание игры растёт": "Play IGL for 1 match: give callouts, suggest strats — deeper game understanding",
-  "Играй агрессивнее на входе — больше дуэлей = больше шансов поднять K/D": "Play more aggressive on entry — more duels = more chances to raise K/D",
-  "Играй на своей лучшей карте пока идёт серия — не экспериментируй": "Play your best map while the streak lasts — don't experiment",
-  "Игрок не найден": "Player not found",
-  "Изучаем статистику карт...": "Studying map stats...",
-  "Изучи 3 стандартные раскидки на лучшей карте — смок мидл, смок CT, молотов на кит": "Learn 3 standard lineups on your best map — mid smoke, CT smoke, entry molotov",
-  "Изучи все раскидки на 2 основных картах до автоматизма — без этого уровень 10 закрыт": "Learn all lineups on 2 main maps to automatism — level 10 needs it",
-  "Импакт": "Impact",
-  "История рейтинга, рост K/D, достижения разблокированы": "Rating history, K/D growth, achievements unlocked",
-  "Источник данных": "Data source",
-  "Источник данных:": "Data source:",
-  "КАК ЭТО РАБОТАЕТ": "HOW IT WORKS",
-  "КАРТЫ": "MAPS",
-  "КЛАТЧ": "CLUTCH",
-  "КОД АУТЕНТИФИКАЦИИ": "AUTHENTICATION CODE",
-  "КОНФИДЕНЦИАЛЬНОСТЬ": "PRIVACY",
-  "Каждый день — 1 новая раскидка на любой карте. За 200 матчей это 200 инструментов": "Every day — 1 new lineup on any map. Over 200 matches that's 200+ lineups",
-  "Как активировать PRO?": "How to activate PRO?",
-  "Как апнуть FACEIT?": "How to rank up on FACEIT?",
-  "Как работает Coach Rating?": "How does Coach Rating work?",
-  "Клатч": "Clutch",
-  "Конкретные проблемы, план тренировок и ответы на любые вопросы": "Specific problems, training plan and answers to any questions",
-  "Красный": "Red",
-  "ЛЕГЕНДА": "LEGEND",
-  "ЛЕГЕНДА 🏆": "LEGEND 🏆",
-  "ЛУЧШАЯ": "BEST",
-  "ЛУЧШИЙ РАНГ": "BEST RANK",
-  "Легенда": "Legend",
-  "Легендарный Орёл": "Legendary Eagle",
-  "Лимит анализов": "Analysis limit",
-  "Лучшая карта для меня?": "Best map for me?",
-  "Лучшая карта для тренировки прицела — стоячие, двигающиеся боты, настройка дистанции.": "Best map for aim training — standing, moving bots, distance settings.",
-  "Лучше чем": "Better than",
-  "Лучшие AWP углы на Mirage, Inferno, Dust2. Для снайперов всех уровней.": "Best AWP angles on Mirage, Inferno, Dust2. For snipers of all levels.",
-  "Любой": "Any",
-  "МАЛО ДАННЫХ": "INSUFFICIENT DATA",
-  "МАСТЕР": "MASTER",
-  "МАТЧИ": "MATCHES",
-  "МЕХАНИКА": "MECHANICS",
-  "Максимальный уровень": "Maximum level",
-  "Мастер": "Master",
-  "Мастер Страж": "Master Guardian",
-  "Машина смерти": "Death Machine",
-  "Меткий стрелок": "Marksman",
-  "Мой профиль": "My Profile",
-  "Молотов на A ramp, поп-флеш через угол на А. Эффективная атака А через гранаты.": "Molotov on A ramp, pop-flash through the corner. Effective A execute through nades.",
-  "НАЧАЛО 🌱": "BEGINNING 🌱",
-  "НОВОБРАНЕЦ": "RECRUIT",
-  "НОЖОМ": "KNIFE",
-  "На уровне 5+ противники знают базовые раскидки — учи нестандартные позиции": "At level 5+ opponents know basic lineups — learn unconventional positions",
-  "На уровне 8+ нужен разбор каждого матча: 3 ошибки и 1 что сделал хорошо": "At level 8+ you need to review every match: 3 mistakes and 1 thing done well",
-  "На этом опыте учи IGL: давай callouts, читай игру соперника, выигрывай тактически": "With this experience learn IGL: callouts, read the enemy, win with your head",
-  "Навсегда": "Forever",
-  "Нажми ещё раз для AI разбора": "Click again for AI analysis",
-  "Нажми кнопку входа — данные CS2 и FACEIT подтянутся автоматически": "Click the login button — CS2 and FACEIT data will load automatically",
-  "Нажми на игрока — откроется профиль": "Click player to open profile",
-  "Накопи 1000 фрагов": "Get 1000 frags",
-  "Накопи 10000 фрагов": "Get 10000 frags",
-  "Накопи 5000 фрагов": "Get 5000 frags",
-  "Напиши вопрос...": "Type your question...",
-  "Например: 7794": "E.g.: 7794",
-  "Настройки": "Settings",
-  "Начинающий": "Beginner",
-  "Не rush B каждый раунд — чередуй атаки, читай мини-карту, реагируй на ротации": "Don't rush B every round — vary attacks, read the minimap, react to info",
-  "Не смог ответить, попробуй ещё.": "Couldn't answer, please try again.",
-  "Не удалось восстановить подключение. Попробуй переподключить код.": "Failed to restore connection. Try reconnecting the code.",
-  "Не удалось загрузить матчи": "Failed to load matches",
-  "Неверный код. Проверь и попробуй снова.": "Wrong code. Check and try again.",
-  "Нейросеть изучает статистику и составляет персональный отчёт": "The neural network studies your stats and creates a personal report",
-  "Непобедимый": "Unbeatable",
-  "Нет данных": "No data",
-  "Нет матчей": "No matches",
-  "Нет ранга": "No rank",
-  "Нинзя": "Ninja",
-  "Нож": "Knife",
-  "Ножевой мастер": "Knife Master",
-  "Ножом:": "Knife:",
-  "О СЕРВИСЕ": "ABOUT THE SERVICE",
-  "О нас": "About us",
-  "ОБЗОР": "OVERVIEW",
-  "ОБЩИЙ РЕЙТИНГ": "OVERALL RATING",
-  "ОРУЖИЯ": "WEAPONS",
-  "ОТКРЫВАЮ ОПЛАТУ...": "OPENING PAYMENT...",
-  "ОТЛИЧНО": "EXCELLENT",
-  "Обновить": "Update",
-  "Обязательные смоки на Mirage: Jungle, CT, Stairs, Short, Connector. Знание этих 5 уже делает тебя полезным.": "Essential Mirage smokes: Jungle, CT, Stairs, Short, Connector. Knowing these 5 makes you useful.",
-  "Огненная серия": "Fire streak",
-  "Определяем роль и стиль игры...": "Determining role and playstyle...",
-  "Ответ в течение часа, прямая связь с тренером": "Reply within an hour, direct connection with coach",
-  "Ответим в течение 24 часов": "We'll reply within 24 hours",
-  "Открыть статистику CS2 в Steam": "Open CS2 stats in Steam",
-  "Ошибка подключения": "Connection error",
-  "Ошибка поиска": "Search error",
-  "Ошибка сети": "Network error",
-  "Ошибка сети — попробуй позже": "Network error — try again later",
-  "ПЛАН": "PLAN",
-  "ПОБЕДА": "WIN",
-  "ПОБЕДЫ": "WINS",
-  "ПОДДЕРЖКА": "SUPPORT",
-  "ПОКАЗАТЕЛИ": "STATS",
-  "ПОКАЗАТЕЛИ vs СРЕДНЕГО ИГРОКА": "STATS vs AVERAGE PLAYER",
-  "ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА": "GET COACH ANALYSIS",
-  "ПОПРОБОВАТЬ PRO →": "TRY PRO →",
-  "ПОРАЖЕНИЕ": "LOSS",
-  "ПРАКТИКА": "PRACTICE",
-  "ПРОГРЕСС": "PROGRESS",
-  "ПРОГРЕСС ▲": "PROGRESS ▲",
-  "ПРОФИЛЬ": "PROFILE",
-  "ПРОФИЛЬ ИГРОКА": "PLAYER PROFILE",
-  "ПРОФИЛЬ ИГРЫ": "GAME PROFILE",
-  "ПСИХОЛОГИЯ": "PSYCHOLOGY",
-  "ПУЛ КАРТ · FACEIT": "MAP POOL · FACEIT",
-  "Перед каждым матчем серии: 10 минут aim warmup — не прыгать в игру холодным": "Before each match in a streak: 10 min aim warmup — don't jump in cold",
-  "Переключись на AWP на 1 deathmatch-сессию — учит ставить прицел на уровень головы": "Switch to AWP for 1 deathmatch session — teaches head-level crosshair placement",
-  "Переключись на Aimlabs / KovaaK's — workshop aim_botz уже не даёт прогресса на этом уровне": "Switch to Aimlabs / KovaaK's — aim_botz no longer gives progress",
-  "Пересмотри 1 проигранный раунд": "Review 1 lost round",
-  "Пистолеты": "Pistols",
-  "Платежи временно недоступны. Используй активацию ключом.": "Payments temporarily unavailable. Use key activation.",
-  "Победитель": "Winner",
-  "Победитель WR>50%": "Winner WR>50%",
-  "Поговорить с AI тренером": "Talk to AI coach",
-  "Поддержка и FAQ": "Support and FAQ",
-  "Поделиться": "Share",
-  "Подключение к истории матчей": "Match history connection",
-  "Подключи FACEIT": "Connect FACEIT",
-  "Подключи историю матчей": "Connect match history",
-  "Подключить FACEIT аккаунт": "Connect FACEIT account",
-  "Подключён": "Connected",
-  "Подними HS% до 40% — 20 мин Aim Botz в голову": "Raise HS% to 40% — 20 min Aim Botz headshots",
-  "Поднять K/D": "Raise K/D",
-  "Поднять WR выше 52%": "Raise WR above 52%",
-  "Позвать оператора": "Call operator",
-  "Позиции для сбора информации без риска. Для саппорта и лёрка.": "Low-risk information gathering positions. For support and lurker roles.",
-  "Политика конфиденциальности": "Privacy Policy",
-  "Получай уведомления о матчах в Telegram": "Get match notifications in Telegram",
-  "Получи детальную статистику по каждому матчу": "Get detailed statistics for each match",
-  "Получить первый AI разбор": "Get first AI analysis",
-  "После каждого матча: был ли ты полезен команде или просто стрелял? MVP — это вклад": "After each match: were you useful or just shooting? MVP is impact",
-  "После каждого проигранного раунда: 1 вывод почему проиграли, 1 исправление": "After each lost round: 1 takeaway why you lost, 1 fix",
-  "Посмотри 1 проигранный матч: найди раунды где команда проигрывала из-за позиций": "Watch 1 lost match: find rounds where the team lost due to positioning",
-  "Посмотри 1 раунд из проигранного матча — найди момент где ошибся": "Watch 1 round from a lost match — find the mistake",
-  "Посмотри демо: найди 3 момента где стрелял в тело — понять почему прицел был низко": "Watch your demo: find 3 moments you shot the body — understand why your crosshair was low",
-  "Почему я умираю первым?": "Why do I die first?",
-  "Приблизиться к K/D 1.0": "Approach K/D 1.0",
-  "Привет! 👋 Чем могу помочь? Выбери вопрос или напиши своё.": "Hi! 👋 How can I help? Choose a question or type your own.",
-  "Приоритетная поддержка": "Priority support",
-  "Прицел": "Aim",
-  "Про": "Pro",
-  "Пробуй новые позиции и углы — 500 матчей на одних и тех же точках = потолок": "Try new positions and angles — 500 matches on the same spots = plateau",
-  "Продвинутый": "Advanced",
-  "Продвинутый тренажёр рефлексов и микро-коррекции прицела. Для опытных игроков.": "Advanced reflex and micro-adjustment trainer. For experienced players.",
-  "Продолжай выигрывать": "Keep winning",
-  "Промокод не найден": "Promo code not found",
-  "Прыжок на ящик Short, буст на рампу. Позиции недоступные без знания прыжков.": "Short box jump, ramp boost. Positions inaccessible without jump knowledge.",
-  "РАБОТАЙ": "IMPROVE",
-  "РЕВАНШИ": "REVENGES",
-  "РЕЙТИНГ": "RATING",
-  "РЕЙТИНГ НАВЫКОВ": "SKILL RATING",
-  "Работай над counter-strafe — точность в движении даёт +20% к фрагам": "Work on counter-strafe — accuracy in motion gives +20% frags",
-  "Разбери 5 смертей из последнего матча — найди паттерн где проигрываешь дуэли": "Analyze 5 deaths from your last match — find the pattern where you lose duels",
-  "Разбери последний проигранный матч — найди 1 паттерн ошибок": "Review your last lost match — find 1 error pattern",
-  "Разбери последний проигрыш · 15 мин": "Analyze last loss · 15 min",
-  "Разбери своё худшее соотношение K/D за последние 20 матчей — найди общий паттерн": "Review your worst K/D in the last 20 matches — find the common cause",
-  "Разбор твоей игры": "Your Game Analysis",
-  "Результаты": "Results",
-  "Розовый": "Pink",
-  "СЕГОДНЯ": "TODAY",
-  "СЕЙЧАС ОНЛАЙН": "ONLINE NOW",
-  "СЕРВИС": "SERVICE",
-  "СЛЕДУЮЩИЙ ШАГ": "NEXT STEP",
-  "СМЕРТЕЙ/МАТ": "D/MATCH",
-  "СМЕРТИ": "DEATHS",
-  "СНАЙПЕР": "SNIPER",
-  "СОЦСЕТИ": "SOCIALS",
-  "СПАД ▼": "DECLINE ▼",
-  "СПЕЦИАЛЬНЫЕ УБИЙСТВА": "SPECIAL KILLS",
-  "СРАВНЕНИЕ ПЕРИОДОВ": "PERIOD COMPARISON",
-  "СРЕДНЕ": "AVERAGE",
-  "СТАБИЛЬНО": "STABLE",
-  "СТАБИЛЬНОСТЬ": "CONSISTENCY",
-  "СТАТИСТИКА STEAM": "STEAM STATISTICS",
-  "Сапёр": "Sapper",
-  "Серебро": "Silver",
-  "Серебро Высшее": "Silver Elite",
-  "Серия 3+ побед: не меняй стиль игры, не force-buy — сохраняй темп": "3+ win streak: don't change playstyle, no force-buys — keep the tempo",
-  "Серия 5+ — ты в зоне. Главное правило: стоп если проиграл 2 подряд, отдохни": "5+ streak — you're in the zone. Rule: stop after 2 losses in a row, rest 30 min",
-  "Серый": "Gray",
-  "Синий": "Blue",
-  "Случайные дуэли 1v1. Лучший способ проверить прицел в боевых условиях.": "Random 1v1 duels. Best way to test aim in combat conditions.",
-  "Смоки на Banana, Car, CT. Флешки и молотовы для контроля B на Inferno.": "Banana, Car, CT smokes. Flashbangs and molotovs for B control on Inferno.",
-  "Смотри демо игроков уровня 7-8 на своей роли — копируй позиционирование": "Watch level 7-8 players' demos in your role — copy their positioning",
-  "Снайпер": "Sniper",
-  "Снайпер-новичок": "Rookie Sniper",
-  "Снапшоты K/D, WR, HS за 30 дней": "K/D, WR, HS snapshots for 30 days",
-  "Соединение потеряно. Попробуй ещё раз.": "Connection lost. Please try again.",
-  "Сообщение отправлено!": "Message sent!",
-  "Сохранено! Обнови страницу чтобы увидеть в профиле.": "Saved! Refresh the page to see in your profile.",
-  "Специальная карта с точками для изучения смоков — стоишь на маркере и бросаешь.": "Special map with smoke spots — stand on marker and throw.",
-  "Спокойный опытный наставник. Объясняет всё по делу.": "Calm experienced mentor. Explains everything to the point.",
-  "Спрашивай тренера сколько угодно, без дневных лимитов": "Ask the coach as much as you want, no daily limits",
-  "Спроси тренера...": "Ask the coach...",
-  "Средний": "Intermediate",
-  "Срок не ограничен": "No expiration",
-  "Ставь себе цель: минимум 3 матча в день. Главное — регулярность, не результат": "Set a goal: at least 3 matches a day. Consistency beats marathons",
-  "Ставь цель: 2000 убийств за следующие 3 месяца = ~22 матча в неделю": "Set a goal: 2000 kills in the next 3 months = ~22 matches a week",
-  "Стиль": "Style",
-  "Строгий военный тренер. Режет правду без сахара.": "Strict military coach. Cuts to the truth without sugar-coating.",
-  "Сыграть 5 матчей на этой неделе": "Play 5 matches this week",
-  "ТАБЛИЦА ПУСТА": "TABLE EMPTY",
-  "ТАКТИКА": "TACTICS",
-  "ТВОЯ РОЛЬ": "YOUR ROLE",
-  "ТЕКУЩИЙ РАНГ": "CURRENT RANK",
-  "ТЕХНОЛОГИИ": "TECHNOLOGY",
-  "ТОЧНОСТЬ": "ACCURACY",
-  "ТРЕНЕР": "COACH",
-  "Таблица лидеров": "Leaderboard",
-  "Тарифы Pro": "Pro plans",
-  "Твой друг-про игрок. Говорит как равный, по-братски.": "Your pro gamer friend. Talks as an equal, like a bro.",
-  "Тема": "Theme",
-  "Только тёмная тема": "Dark theme only",
-  "Топ": "Top",
-  "Точность": "Accuracy",
-  "Точность выше 25%": "Accuracy above 25%",
-  "Тренировка всех углов Ancient — карта которую мало кто учит, поэтому даёт преимущество.": "Training all Ancient angles — a map few people learn, giving you an edge.",
-  "Тренировка движения, прыжков, стрейфов. Улучшает механику и контроль.": "Movement, jump, strafe training. Improves mechanics and control.",
-  "Ты вошёл через Steam — это уже первый шаг": "You logged in via Steam — that's the first step",
-  "У меня активна Pro версия": "Is my Pro active?",
-  "УБИЙСТВ": "KILLS",
-  "УБИЙСТВА": "KILLS",
-  "УРОВЕНЬ": "LEVEL",
-  "УТИЛИТИ": "UTILITY",
-  "Убийства": "Kills",
-  "Уведомления": "Notifications",
-  "Уведомления о матчах активны": "Match notifications active",
-  "Удержать форму": "Hold form",
-  "Удержи уровень: 1 матч сегодня": "Hold the level: 1 match today",
-  "Уже 500 матчей — ты гриндер. Теперь фокус на качестве: играй медленнее, думай больше": "500 matches already — you're a grinder. Now focus on quality: play slower, think more",
-  "Улучшить прицел до 40% HS": "Improve aim to 40% HS",
-  "Уровень": "Level",
-  "Условия использования": "Terms of Use",
-  "Учи utility на 1 карте: 2 смока, 1 молотов, 1 флэш — и применяй каждый раунд": "Learn utility on 1 map: 2 smokes, 1 molotov, 1 flash — use them every round",
-  "Учи раскидки под entry: 1 смок + 1 флэш на каждую карту — даёт больше MVP": "Learn entry lineups: 1 smoke + 1 flash per map — more openings",
-  "ФОРМА": "FORM",
-  "Фиолетовый": "Purple",
-  "Формируем персональный вердикт...": "Building personal verdict...",
-  "Фраггер": "Fragger",
-  "Фраггер K/D>1.0": "Fragger K/D>1.0",
-  "ХОРОШО": "GOOD",
-  "ХОРОШО ⚡": "GREAT ⚡",
-  "ХУДШАЯ": "WORST",
-  "ЧТО ВКЛЮЧЕНО:": "WHAT'S INCLUDED:",
-  "Что сделал не так — конкретно, с картами и цифрами": "What you did wrong — specifically, with maps and numbers",
-  "Что тренировать?": "What to practice?",
-  "ЭЛИТА": "ELITE",
-  "Элита": "Elite",
-  "Язык / Language": "Language",
-  "Язык интерфейса": "Interface language",
-  "Японский мастер CS2. Говорит мудростями и метафорами.": "Japanese CS2 master. Speaks in wisdom and metaphors.",
-  "было": "was",
-  "выполнено": "done",
-  "главное действие для роста": "main action for growth",
-  "день": "day",
-  "дней": "days",
-  "дня": "days",
-  "до Elite": "to Elite",
-  "ещё": "only",
-  "игроков CS2": "CS2 players",
-  "игроков на сайте": "players online",
-  "из": "of",
-  "из 6 шагов": "of 6 steps",
-  "история разборов": "analysis history",
-  "как ты изменился": "how you improved",
-  "матчей": "matches",
-  "на основе": "based on",
-  "на основе ": "based on ",
-  "нажми в любом месте чтобы закрыть": "click anywhere to close",
-  "нажми → AI разбор": "click → AI analysis",
-  "не загружается": "not loading",
-  "небольшой рост": "small growth",
-  "нормы": "norm",
-  "осталось": "remaining",
-  "персональный разбор твоей игры": "personal game analysis",
-  "побед": "wins",
-  "поиск по FACEIT нику...": "search by FACEIT nick...",
-  "про активна": "pro active",
-  "разблокировано": "unlocked",
-  "рейтинг": "rating",
-  "сравнение с друзьями": "compare with friends",
-  "стало": "became",
-  "статистика по картам": "map statistics",
-  "статистика по оружию": "weapon statistics",
-  "упражнения и материалы": "exercises and materials",
-  "хорошая динамика": "good momentum",
-  "ч": "h",
-  "шагов": "steps",
-  "↻ Обновить": "↻ Update",
-  "↻ обновить": "↻ refresh",
-  "⚙️ НАСТРОЙКИ": "⚙️ SETTINGS",
-  "⚠️ ГЛАВНАЯ ПРОБЛЕМА:": "⚠️ MAIN PROBLEM:",
-  "⚠️ ХУДШАЯ КАРТА": "⚠️ WORST MAP",
-  "⚡ CS2 AI ТРЕНЕР PRO": "⚡ CS2 AI COACH PRO",
-  "⚡ ЦЕЛЬ": "⚡ GOAL",
-  "✅ ВЫПОЛНЕНО": "✅ DONE",
-  "✓ СИЛЬНЫЕ СТОРОНЫ": "✓ STRENGTHS",
-  "✗ ГЛАВНАЯ ПРОБЛЕМА": "✗ MAIN PROBLEM",
-  "✗ ПРОБЛЕМЫ": "✗ PROBLEMS",
-  "🎉 PRO активирован бесплатно по промокоду!": "🎉 PRO activated for free with promo code!",
-  "🎉 Pro активирован!": "🎉 Pro activated!",
-  "🎮 МАТЧИ": "🎮 MATCHES",
-  "🎮 ПОСЛЕДНИЕ МАТЧИ": "🎮 RECENT MATCHES",
-  "🎯 ПОЛНЫЙ РАЗБОР И ЧАТ С ТРЕНЕРОМ →": "🎯 FULL ANALYSIS & COACH CHAT →",
-  "🎯 ТРЕНЕР": "🎯 COACH",
-  "🏅 CS2 COACH РЕЙТИНГ": "🏅 CS2 COACH RATING",
-  "🏅 Premier Рейтинг": "🏅 Premier Rating",
-  "🏅 ДОСТИЖЕНИЯ": "🏅 ACHIEVEMENTS",
-  "🏆 ЛИДЕРЫ": "🏆 LEADERS",
-  "🏆 ЛУЧШАЯ КАРТА": "🏆 BEST MAP",
-  "👥 ДРУЗЬЯ": "👥 FRIENDS",
-  "📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата.": "📅 Open ⚡ PRO → «My subscription» — the exact date is shown there.",
-  "📅 ПЛАН НА НЕДЕЛЮ": "📅 WEEKLY PLAN",
-  "📊 ДОПОЛНИТЕЛЬНЫЕ МЕТРИКИ": "📊 ADDITIONAL METRICS",
-  "📊 ИСТОРИЯ ПРОГРЕССА": "📊 PROGRESS HISTORY",
-  "📊 СРАВНЕНИЕ ПЕРИОДОВ": "📊 PERIOD COMPARISON",
-  "📊 Статистика": "📊 Statistics",
-  "📋 ИСТОРИЯ": "📋 HISTORY",
-  "📚 ПРАКТИКА": "📚 PRACTICE",
-  "🔥 Огненная серия!": "🔥 Fire streak!",
-  "🔫 ОРУЖИЯ": "🔫 WEAPONS",
-  "🗺️ КАРТЫ": "🗺️ MAPS",
-  "🚀 Настройка профиля": "🚀 Profile setup",
-  "🤖 AI ТРЕНЕР · ПЕРСОНАЛЬНЫЙ РАЗБОР": "🤖 AI COACH · PERSONAL ANALYSIS",
-  "🤖 AI ТРЕНЕР · РАЗБОР": "🤖 AI COACH · ANALYSIS",
-  "🤖 AI ТРЕНЕР АНАЛИЗИРУЕТ": "🤖 AI COACH ANALYZING",
-  "🧠 ПСИХОЛОГИЧЕСКИЙ ПРОФИЛЬ": "🧠 MENTAL PROFILE",
-  "до цели": "to goal",
-  "текущего тренда": "current trend",
-  "до": "to",
-};
-
-let _currentLang = (()=>{ try{ return localStorage.getItem("cs2_lang")||"ru"; }catch{ return "ru"; } })();
-// Simple translation: returns EN if lang=en and translation exists, else Russian
-function _t(ru) { return _currentLang==="en" ? (EN_DICT[ru]||ru) : ru; }
-// Backward compat alias
-function t(key, ru) { return _t(ru||key); }
-const DIFF_EN = {"Начинающий":"Beginner","Средний":"Intermediate","Продвинутый":"Advanced","Любой":"Any","Про":"Pro"};
-function tDiff(d) { return _currentLang==="en" ? (DIFF_EN[d]||d) : d; }
-const CAT_EN = {"МЕХАНИКА":"MECHANICS","ПРАКТИКА":"PRACTICE","ПСИХОЛОГИЯ":"PSYCHOLOGY","ТАКТИКА":"TACTICS","КАРТЫ":"MAPS","АНАЛИЗ":"ANALYSIS","РЕЖИМ":"MODE","ДВИЖЕНИЕ":"MOVEMENT","ГРАНАТЫ":"GRENADES","ПОЗИЦИИ":"POSITIONS"};
-function tCat(c) { return _currentLang==="en" ? (CAT_EN[c]||c) : c; }
-
 
 const WEAPON_DATA = {
   // name → {img: Steam market hash, slot}
@@ -690,7 +149,7 @@ function WeaponsPanel({cs2}) {
     hspc: w.kills>0 ? Math.round(w.hs/w.kills*100) : 0,
   }));
 
-  const slots = [{id:"all",l:_t("Все")},{id:"rifle",l:_t("Винтовки")},{id:"sniper",l:t("sniper",_t("Снайпер"))},{id:"pistol",l:_t("Пистолеты")},{id:"knife",l:_t("Нож")}];
+  const slots = [{id:"all",l:"Все"},{id:"rifle",l:"Винтовки"},{id:"sniper",l:"Снайпер"},{id:"pistol",l:"Пистолеты"},{id:"knife",l:"Нож"}];
   const filtered = filter==="all" ? weapons : weapons.filter(w=>w.slot===filter);
   const sorted = [...filtered].sort((a,b)=>sortBy==="kills"?b.kills-a.kills:sortBy==="hs"?b.hspc-a.hspc:b.acc-a.acc);
   const total = weapons.reduce((s,w)=>s+w.kills,0)||1;
@@ -702,9 +161,9 @@ function WeaponsPanel({cs2}) {
       {/* Header */}
       <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
         display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
-        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{_t("🔫 ОРУЖИЯ")}</span>
+        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{"🔫 ОРУЖИЯ"}</span>
         <div style={{display:"flex",gap:"4px"}}>
-          {[["kills",_t("Убийства")],["hs",_t("HS%")],["acc",_t("Точность")]].map(([k,l])=>(
+          {[["kills","Убийства"],["hs","HS%"],["acc","Точность"]].map(([k,l])=>(
             <button key={k} onClick={()=>setSortBy(k)} style={{
               padding:"3px 10px",background:sortBy===k?C.yellow+"22":"transparent",
               border:`1px solid ${sortBy===k?C.yellow+"55":C.border}`,
@@ -765,7 +224,7 @@ function WeaponsPanel({cs2}) {
               {/* Убийства */}
               <div style={{textAlign:"center"}}>
                 <div style={{fontSize:"14px",color:col,fontWeight:800}}>{w.kills.toLocaleString()}</div>
-                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>{_t("УБИЙСТВ")}</div>
+                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>{"УБИЙСТВ"}</div>
               </div>
 
               {/* HS% */}
@@ -773,13 +232,13 @@ function WeaponsPanel({cs2}) {
                 <div style={{fontSize:"13px",color:w.hspc>=50?C.win:w.hspc>=30?C.yellow:C.muted,fontWeight:700}}>
                   {w.hspc}%
                 </div>
-                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>{_t("HS%")}</div>
+                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>{"HS%"}</div>
               </div>
 
               {/* Точность */}
               <div style={{textAlign:"center"}}>
                 <div style={{fontSize:"13px",color:C.label,fontWeight:600}}>{w.acc}%</div>
-                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>{_t("ТОЧНОСТЬ")}</div>
+                <div style={{fontSize:"8px",color:C.muted,letterSpacing:"1px"}}>{"ТОЧНОСТЬ"}</div>
               </div>
             </div>
           );
@@ -790,10 +249,10 @@ function WeaponsPanel({cs2}) {
       <div style={{padding:"10px 20px",borderTop:`1px solid ${C.border}`,
         display:"flex",gap:"20px",flexWrap:"wrap",fontSize:"11px",color:C.muted,justifyContent:"space-between",alignItems:"center"}}>
         <div style={{display:"flex",gap:"16px",flexWrap:"wrap"}}>
-          <span>{_t("Всего убийств:")} <strong style={{color:C.yellow}}>{kills.toLocaleString()}</strong></span>
-          <span>{_t("Ножом:")} <strong style={{color:"#ff8888"}}>{knife.toLocaleString()}</strong></span>
-          <span>{_t("Гранатой:")} <strong style={{color:C.orange}}>{grenade.toLocaleString()}</strong></span>
-          <span>{_t("В слепую:")} <strong style={{color:"#aa88ff"}}>{blind.toLocaleString()}</strong></span>
+          <span>{"Всего убийств:"} <strong style={{color:C.yellow}}>{kills.toLocaleString()}</strong></span>
+          <span>{"Ножом:"} <strong style={{color:"#ff8888"}}>{knife.toLocaleString()}</strong></span>
+          <span>{"Гранатой:"} <strong style={{color:C.orange}}>{grenade.toLocaleString()}</strong></span>
+          <span>{"В слепую:"} <strong style={{color:"#aa88ff"}}>{blind.toLocaleString()}</strong></span>
         </div>
         <span style={{fontSize:"10px",opacity:0.5,fontStyle:"italic"}}>
           * Steam не даёт данные по каждому оружию — цифры приблизительные
@@ -814,7 +273,7 @@ function ScoreCardsCollapsible({player, source}) {
         color:C.muted,cursor:"pointer",padding:"12px 20px",
         display:"flex",justifyContent:"space-between",alignItems:"center",
         fontFamily:"inherit",fontSize:"12px",letterSpacing:"2px"}}>
-        <span>{_t("📊 ДОПОЛНИТЕЛЬНЫЕ МЕТРИКИ")}</span>
+        <span>{"📊 ДОПОЛНИТЕЛЬНЫЕ МЕТРИКИ"}</span>
         <span style={{fontSize:"14px"}}>{open?"▲":"▼"}</span>
       </button>
       {open&&<ScoreCards player={player} source={source}/>}
@@ -832,26 +291,26 @@ function BestWorstMap({faceit}) {
     <div className="best-worst" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"10px",animation:"up .5s ease both"}}>
       <div style={{background:"#0a150a",border:`1px solid ${C.win}44`,padding:"18px 20px"}}>
         <div style={{fontSize:"10px",color:C.win,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>
-          {_t("🏆 ЛУЧШАЯ КАРТА")}
+          {"🏆 ЛУЧШАЯ КАРТА"}
         </div>
         <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"6px"}}>{best.map}</div>
         <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
           <span style={{fontSize:"28px",color:C.win,fontWeight:700}}>{best.winrate}%</span>
           <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7}}>
-            <div>{best.matches} {_t("матчей")}</div>
+            <div>{best.matches} {"матчей"}</div>
             <div>K/D {best.kd}</div>
           </div>
         </div>
       </div>
       <div style={{background:"#150a0a",border:`1px solid ${C.lose}44`,padding:"18px 20px"}}>
         <div style={{fontSize:"10px",color:C.lose,letterSpacing:"3px",fontWeight:700,marginBottom:"8px"}}>
-          {_t("⚠️ ХУДШАЯ КАРТА")}
+          {"⚠️ ХУДШАЯ КАРТА"}
         </div>
         <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"6px"}}>{worst.map}</div>
         <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
           <span style={{fontSize:"28px",color:C.lose,fontWeight:700}}>{worst.winrate}%</span>
           <div style={{fontSize:"12px",color:C.muted,lineHeight:1.7}}>
-            <div>{worst.matches} {_t("матчей")}</div>
+            <div>{worst.matches} {"матчей"}</div>
             <div>K/D {worst.kd}</div>
           </div>
         </div>
@@ -892,9 +351,9 @@ function RecentMatchesOverview({faceit}) {
       <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
         display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>
-          {_t("🎮 ПОСЛЕДНИЕ МАТЧИ")}
+          {"🎮 ПОСЛЕДНИЕ МАТЧИ"}
         </span>
-        <span style={{fontSize:"11px",color:C.muted}}>{_t("нажми → AI разбор")}</span>
+        <span style={{fontSize:"11px",color:C.muted}}>{"нажми → AI разбор"}</span>
       </div>
       {matches.map((m,i)=>{
         const win = m.result==="1";
@@ -914,7 +373,7 @@ function RecentMatchesOverview({faceit}) {
               <div>
                 <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
                 <div style={{fontSize:"11px",color:ac,marginTop:"2px",letterSpacing:"1px"}}>
-                  {win?_t("ПОБЕДА"):_t("ПОРАЖЕНИЕ")}{m.score?` · ${m.score}`:""}
+                  {win?"ПОБЕДА":"ПОРАЖЕНИЕ"}{m.score?` · ${m.score}`:""}
                 </div>
               </div>
               <div style={{textAlign:"center"}}>
@@ -922,11 +381,11 @@ function RecentMatchesOverview({faceit}) {
                 <div style={{fontSize:"15px",color:C.yellow,fontWeight:700}}>{m.kd||"—"}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"10px",color:C.muted,marginBottom:"2px"}}>{_t("УБИЙСТВ")}</div>
+                <div style={{fontSize:"10px",color:C.muted,marginBottom:"2px"}}>{"УБИЙСТВ"}</div>
                 <div style={{fontSize:"15px",color:C.label,fontWeight:600}}>{m.kills||"—"}</div>
               </div>
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:"10px",color:C.muted,marginBottom:"2px"}}>{_t("HS%")}</div>
+                <div style={{fontSize:"10px",color:C.muted,marginBottom:"2px"}}>{"HS%"}</div>
                 <div style={{fontSize:"15px",color:C.label,fontWeight:600}}>{m.hs||"—"}%</div>
               </div>
               <div style={{textAlign:"center"}}>
@@ -941,7 +400,7 @@ function RecentMatchesOverview({faceit}) {
                 <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                   <div style={{width:"6px",height:"6px",borderRadius:"50%",background:C.yellow,
                     animation:"pulse 1.2s infinite"}}/>
-                  <span style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px"}}>{_t("AI анализирует матч...")}</span>
+                  <span style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px"}}>{"AI анализирует матч..."}</span>
                 </div>
               ):ai?(
                 <div style={{fontSize:"13px",color:C.text,lineHeight:1.7,
@@ -949,7 +408,7 @@ function RecentMatchesOverview({faceit}) {
                   🤖 {ai}
                 </div>
               ):(
-                <div style={{fontSize:"12px",color:C.muted}}>{_t("Нажми ещё раз для AI разбора")}</div>
+                <div style={{fontSize:"12px",color:C.muted}}>{"Нажми ещё раз для AI разбора"}</div>
               )}
             </div>}
           </div>
@@ -981,10 +440,10 @@ function ProgressHistory({player, source}) {
   }
   const rFirst=calcRating(first), rLast=calcRating(last), diff=rLast-rFirst;
   const diffColor=diff>0?C.win:diff<0?C.lose:C.muted;
-  const diffLabel=diff>0?_t("РОСТ"):diff<0?_t("ПАДЕНИЕ"):_t("БЕЗ ИЗМЕНЕНИЙ");
+  const diffLabel=diff>0?"РОСТ":diff<0?"ПАДЕНИЕ":"БЕЗ ИЗМЕНЕНИЙ";
   const stats=[
     {name:"K/D",f:first.kd?.toFixed(2),l:last.kd?.toFixed(2),diff:((last.kd||0)-(first.kd||0)).toFixed(2),up:(last.kd||0)>=(first.kd||0)},
-    {name:_t("HS%"),f:Math.round(first.hs||0)+"%",l:Math.round(last.hs||0)+"%",diff:(Math.round(last.hs||0)-Math.round(first.hs||0))+"%",up:(last.hs||0)>=(first.hs||0)},
+    {name:"HS%",f:Math.round(first.hs||0)+"%",l:Math.round(last.hs||0)+"%",diff:(Math.round(last.hs||0)-Math.round(first.hs||0))+"%",up:(last.hs||0)>=(first.hs||0)},
     {name:"WR%",f:Math.round(first.wr||0)+"%",l:Math.round(last.wr||0)+"%",diff:(Math.round(last.wr||0)-Math.round(first.wr||0))+"%",up:(last.wr||0)>=(first.wr||0)},
   ];
   const ratings=history.map(s=>calcRating(s));
@@ -999,7 +458,7 @@ function ProgressHistory({player, source}) {
       <div style={{position:"absolute",top:"-30px",right:"-30px",width:"160px",height:"160px",
         background:`radial-gradient(circle,${diffColor}12,transparent 70%)`,pointerEvents:"none"}}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"8px"}}>
-        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{_t("📊 ИСТОРИЯ ПРОГРЕССА")}</span>
+        <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{"📊 ИСТОРИЯ ПРОГРЕССА"}</span>
         <span style={{fontSize:"11px",color:C.muted}}>{first.date} — {last.date}</span>
       </div>
       <div className="progress-row" style={{display:"flex",alignItems:"center",gap:"20px",marginBottom:"16px",flexWrap:"wrap"}}>
@@ -1067,22 +526,22 @@ function PlayerRating({player, source}) {
   const kdPct=pct(kd,avg.kd), hsPct=pct(hs,avg.hs), wrPct=pct(wr,avg.wr);
   const overall=Math.min(99,Math.round(kdPct*0.45+hsPct*0.25+wrPct*0.30));
   const overallColor=overall>=70?C.win:overall>=45?C.yellow:C.orange;
-  const label=overall>=80?_t("ТОП ИГРОК"):overall>=60?_t("ВЫШЕ СРЕДНЕГО"):overall>=40?_t("СРЕДНИЙ УРОВЕНЬ"):_t("ЕСТЬ КУДА РАСТИ");
+  const label=overall>=80?"ТОП ИГРОК":overall>=60?"ВЫШЕ СРЕДНЕГО":overall>=40?"СРЕДНИЙ УРОВЕНЬ":"ЕСТЬ КУДА РАСТИ";
   const stats=[
     {name:"K/D",val:kd.toFixed(2),avg:avg.kd.toFixed(2),pct:kdPct,color:C.blue},
-    {name:_t("HS%"),val:Math.round(hs)+"%",avg:avg.hs+"%",pct:hsPct,color:C.orange},
+    {name:"HS%",val:Math.round(hs)+"%",avg:avg.hs+"%",pct:hsPct,color:C.orange},
     {name:"WR%",val:Math.round(wr)+"%",avg:avg.wr+"%",pct:wrPct,color:"#aa88ff"},
   ];
 
   // Система уровней CS2 Coach
   const coachLevels=[
-    {min:0,  max:19,  name:_t("НОВОБРАНЕЦ"), icon:"🪖", color:"#8a8070", next:_t("Боец")},
-    {min:20, max:34,  name:_t("БОЕЦ"),       icon:"⚔️", color:"#c8a060", next:t("sniper",_t("Снайпер"))},
-    {min:35, max:49,  name:_t("СНАЙПЕР"),    icon:"🔭", color:"#74c6f5", next:_t("Ветеран")},
-    {min:50, max:64,  name:_t("ВЕТЕРАН"),    icon:"🎖️", color:"#f5c518", next:_t("Мастер")},
-    {min:65, max:79,  name:_t("МАСТЕР"),     icon:"🏆", color:"#ff8844", next:_t("Элита")},
-    {min:80, max:89,  name:_t("ЭЛИТА"),      icon:"💀", color:"#ff4466", next:_t("Легенда")},
-    {min:90, max:100, name:_t("ЛЕГЕНДА"),    icon:"👑", color:"#aa44ff", next:null},
+    {min:0,  max:19,  name:"НОВОБРАНЕЦ", icon:"🪖", color:"#8a8070", next:"Боец"},
+    {min:20, max:34,  name:"БОЕЦ",       icon:"⚔️", color:"#c8a060", next:"Снайпер"},
+    {min:35, max:49,  name:"СНАЙПЕР",    icon:"🔭", color:"#74c6f5", next:"Ветеран"},
+    {min:50, max:64,  name:"ВЕТЕРАН",    icon:"🎖️", color:"#f5c518", next:"Мастер"},
+    {min:65, max:79,  name:"МАСТЕР",     icon:"🏆", color:"#ff8844", next:"Элита"},
+    {min:80, max:89,  name:"ЭЛИТА",      icon:"💀", color:"#ff4466", next:"Легенда"},
+    {min:90, max:100, name:"ЛЕГЕНДА",    icon:"👑", color:"#aa44ff", next:null},
   ];
   const coachLvl = coachLevels.find(l=>overall>=l.min&&overall<=l.max)||coachLevels[0];
   const nextLvl  = coachLevels.find(l=>l.min===coachLvl.max+1);
@@ -1100,7 +559,7 @@ function PlayerRating({player, source}) {
       <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${coachLvl.color}88,${coachLvl.color},${coachLvl.color}88,transparent)`,position:"relative",zIndex:1}}/>
 
       <div style={{border:`1px solid ${coachLvl.color}22`,borderTop:"none",padding:"18px 20px",position:"relative",zIndex:1}}>
-        <div style={{fontSize:"10px",color:coachLvl.color,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>{_t("🏅 CS2 COACH РЕЙТИНГ")}</div>
+        <div style={{fontSize:"10px",color:coachLvl.color,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>{"🏅 CS2 COACH РЕЙТИНГ"}</div>
 
         <div className="rating-row" style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap",marginBottom:"18px"}}>
           {/* Уровень */}
@@ -1114,10 +573,10 @@ function PlayerRating({player, source}) {
 
           <div style={{flex:1}}>
             <div className="rating-big" style={{fontSize:"26px",color:C.value,fontWeight:900,lineHeight:1.1,marginBottom:"4px"}}>
-              {_t("Лучше чем")} <span style={{color:coachLvl.color,textShadow:`0 0 12px ${coachLvl.color}55`}}>{overall}%</span>
+              {"Лучше чем"} <span style={{color:coachLvl.color,textShadow:`0 0 12px ${coachLvl.color}55`}}>{overall}%</span>
             </div>
             <div style={{fontSize:"13px",color:C.muted,marginBottom:"12px"}}>
-              {_currentLang==="en"?`players${lvl>0?` FACEIT level ${lvl}`:""}`:`игроков${lvl>0?` уровня FACEIT ${lvl}`:" CS2"}`}
+              {false?`players${lvl>0?` FACEIT level ${lvl}`:""}`:`игроков${lvl>0?` уровня FACEIT ${lvl}`:" CS2"}`}
             </div>
             {nextLvl&&<>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:"10px",marginBottom:"5px"}}>
@@ -1135,11 +594,11 @@ function PlayerRating({player, source}) {
                   boxShadow:`0 0 8px ${coachLvl.color}66`}}/>
               </div>
               <div style={{fontSize:"11px",color:C.muted}}>
-                {_currentLang==="en"?<>{(coachLvl.max+1-overall)*10} XP more to {coachLvl.next}</>:<>{_t("ещё")}{" "}<span style={{color:coachLvl.color,fontWeight:700}}>{(coachLvl.max+1-overall)*10} XP</span>{" "}{_t("до")} {coachLvl.next}</>}
+                {false?<>{(coachLvl.max+1-overall)*10} XP more to {coachLvl.next}</>:<>{"ещё"}{" "}<span style={{color:coachLvl.color,fontWeight:700}}>{(coachLvl.max+1-overall)*10} XP</span>{" "}{"до"} {coachLvl.next}</>}
               </div>
             </>}
             {!nextLvl&&<div style={{fontSize:"13px",color:"#aa44ff",fontWeight:700}}>⭐ Максимальный уровень</div>}
-            {matches>0&&<div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>`${_t("на основе")} ${matches} ${_t("матчей")}`</div>}
+            {matches>0&&<div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>`${"на основе"} ${matches} ${"матчей"}`</div>}
           </div>
         </div>
 
@@ -1148,13 +607,13 @@ function PlayerRating({player, source}) {
           {[
             {name:"K/D", val:kd.toFixed(2), avg:avg.kd.toFixed(2), pct:kdPct, color:C.blue,
              icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="9" r="3"/><path d="M9 3a6 6 0 1 0 6 6"/><line x1="15" y1="15" x2="21" y2="21"/></svg>,
-             label:_t("Убийства / Смерти"), tip:_t("норма 0.75–1.0")},
-            {name:_t("HS%"), val:Math.round(hs)+"%", avg:avg.hs+"%", pct:hsPct, color:C.orange,
+             label:"Убийства / Смерти", tip:"норма 0.75–1.0"},
+            {name:"HS%", val:Math.round(hs)+"%", avg:avg.hs+"%", pct:hsPct, color:C.orange,
              icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="5"/><path d="M8 8h8M12 3v10"/><path d="M9 21h6M12 17v4"/></svg>,
-             label:_t("Попадания в голову"), tip:_t("норма 25–35%")},
+             label:"Попадания в голову", tip:"норма 25–35%"},
             {name:"WR%", val:Math.round(wr)+"%", avg:avg.wr+"%", pct:wrPct, color:"#aa88ff",
              icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>,
-             label:_t("Процент побед"), tip:_t("норма 43–50%")},
+             label:"Процент побед", tip:"норма 43–50%"},
           ].map((s,i)=>(
             <div key={i}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px"}}>
@@ -1189,86 +648,86 @@ function AchievementModal({a, onClose}) {
   // тренировки под каждое достижение
   const tips = {
     headshot: [
-      {cat:"AIM",      dur:_t("20 мин"), task:_t("Aim_botz: 500 убийств только в голову, без спрея — пока не выйдет уверенно")},
-      {cat:"МЕХАНИКА", dur:_t("15 мин"), task:_t("Recoil Master workshop: отработай первые 5 пуль AK47 — они дают больше всего хедшотов")},
-      {cat:_t("ПРАКТИКА"), dur:_t("10 мин"), task:_t("Deathmatch: стреляй только пистолетом — заставляет прицеливаться точнее")},
+      {cat:"AIM",      dur:"20 мин", task:"Aim_botz: 500 убийств только в голову, без спрея — пока не выйдет уверенно"},
+      {cat:"МЕХАНИКА", dur:"15 мин", task:"Recoil Master workshop: отработай первые 5 пуль AK47 — они дают больше всего хедшотов"},
+      {cat:"ПРАКТИКА", dur:"10 мин", task:"Deathmatch: стреляй только пистолетом — заставляет прицеливаться точнее"},
     ],
     sniper: [
-      {cat:"AIM",      dur:_t("20 мин"), task:_t("Aim_botz headshot only: минимум 300 убийств подряд с точностью выше 60%")},
-      {cat:"МЕХАНИКА", dur:_t("15 мин"), task:_t("Переключись на AWP на 1 deathmatch-сессию — учит ставить прицел на уровень головы")},
-      {cat:"АНАЛИЗ",   dur:_t("10 мин"), task:_t("Посмотри демо: найди 3 момента где стрелял в тело — понять почему прицел был низко")},
+      {cat:"AIM",      dur:"20 мин", task:"Aim_botz headshot only: минимум 300 убийств подряд с точностью выше 60%"},
+      {cat:"МЕХАНИКА", dur:"15 мин", task:"Переключись на AWP на 1 deathmatch-сессию — учит ставить прицел на уровень головы"},
+      {cat:"АНАЛИЗ",   dur:"10 мин", task:"Посмотри демо: найди 3 момента где стрелял в тело — понять почему прицел был низко"},
     ],
     fragger: [
-      {cat:"МЕХАНИКА", dur:_t("15 мин"), task:_t("Counter-strafe практика: движение → стоп → выстрел. Цель — 0 пуль в движении")},
-      {cat:"AIM",      dur:_t("20 мин"), task:_t("Deathmatch 15 минут: фокус только на первый выстрел, не спрей")},
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),  dur:_t("10 мин"), task:_t("Играй агрессивнее на входе — больше дуэлей = больше шансов поднять K/D")},
+      {cat:"МЕХАНИКА", dur:"15 мин", task:"Counter-strafe практика: движение → стоп → выстрел. Цель — 0 пуль в движении"},
+      {cat:"AIM",      dur:"20 мин", task:"Deathmatch 15 минут: фокус только на первый выстрел, не спрей"},
+      {cat:"ТАКТИКА",  dur:"10 мин", task:"Играй агрессивнее на входе — больше дуэлей = больше шансов поднять K/D"},
     ],
     elite: [
-      {cat:"AIM",      dur:_t("25 мин"), task:_t("Aim_botz: 1000 убийств ежедневно — без этого K/D 1.5+ не даётся")},
-      {cat:"МЕХАНИКА", dur:_t("20 мин"), task:_t("Micro-adjustments: стреляй по маленьким движущимся мишеням в workshop")},
-      {cat:"АНАЛИЗ",   dur:_t("15 мин"), task:_t("Разбери 5 смертей из последнего матча — найди паттерн где проигрываешь дуэли")},
+      {cat:"AIM",      dur:"25 мин", task:"Aim_botz: 1000 убийств ежедневно — без этого K/D 1.5+ не даётся"},
+      {cat:"МЕХАНИКА", dur:"20 мин", task:"Micro-adjustments: стреляй по маленьким движущимся мишеням в workshop"},
+      {cat:"АНАЛИЗ",   dur:"15 мин", task:"Разбери 5 смертей из последнего матча — найди паттерн где проигрываешь дуэли"},
     ],
     winner: [
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),  dur:_t("15 мин"), task:_t("Учи utility на 1 карте: 2 смока, 1 молотов, 1 флэш — и применяй каждый раунд")},
-      {cat:"АНАЛИЗ",   dur:_t("20 мин"), task:_t("Посмотри 1 проигранный матч: найди раунды где команда проигрывала из-за позиций")},
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),  dur:_t("10 мин"), task:_t("Не rush B каждый раунд — чередуй атаки, читай мини-карту, реагируй на ротации")},
+      {cat:"ТАКТИКА",  dur:"15 мин", task:"Учи utility на 1 карте: 2 смока, 1 молотов, 1 флэш — и применяй каждый раунд"},
+      {cat:"АНАЛИЗ",   dur:"20 мин", task:"Посмотри 1 проигранный матч: найди раунды где команда проигрывала из-за позиций"},
+      {cat:"ТАКТИКА",  dur:"10 мин", task:"Не rush B каждый раунд — чередуй атаки, читай мини-карту, реагируй на ротации"},
     ],
     dominator: [
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),  dur:_t("20 мин"), task:_t("Изучи 3 стандартные раскидки на лучшей карте — смок мидл, смок CT, молотов на кит")},
-      {cat:"АНАЛИЗ",   dur:_t("15 мин"), task:_t("После каждого проигранного раунда: 1 вывод почему проиграли, 1 исправление")},
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),  dur:_t("10 мин"), task:_t("Играй IGL роль 1 матч: давай callouts, предлагай стратегии — понимание игры растёт")},
+      {cat:"ТАКТИКА",  dur:"20 мин", task:"Изучи 3 стандартные раскидки на лучшей карте — смок мидл, смок CT, молотов на кит"},
+      {cat:"АНАЛИЗ",   dur:"15 мин", task:"После каждого проигранного раунда: 1 вывод почему проиграли, 1 исправление"},
+      {cat:"ТАКТИКА",  dur:"10 мин", task:"Играй IGL роль 1 матч: давай callouts, предлагай стратегии — понимание игры растёт"},
     ],
     veteran: [
-      {cat:"РЕЖИМ",    dur:"—",      task:_t("Ставь себе цель: минимум 3 матча в день. Главное — регулярность, не результат")},
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),  dur:_t("15 мин"), task:_t("Каждый день — 1 новая раскидка на любой карте. За 200 матчей это 200 инструментов")},
-      {cat:"АНАЛИЗ",   dur:_t("10 мин"), task:_t("Веди заметки: после каждого матча 1 строчка — что сделал хорошо, что исправить")},
+      {cat:"РЕЖИМ",    dur:"—",      task:"Ставь себе цель: минимум 3 матча в день. Главное — регулярность, не результат"},
+      {cat:"ТАКТИКА",  dur:"15 мин", task:"Каждый день — 1 новая раскидка на любой карте. За 200 матчей это 200 инструментов"},
+      {cat:"АНАЛИЗ",   dur:"10 мин", task:"Веди заметки: после каждого матча 1 строчка — что сделал хорошо, что исправить"},
     ],
     grinder: [
-      {cat:"РЕЖИМ",    dur:"—",      task:_t("Уже 500 матчей — ты гриндер. Теперь фокус на качестве: играй медленнее, думай больше")},
-      {cat:"АНАЛИЗ",   dur:_t("20 мин"), task:_t("Разбери своё худшее соотношение K/D за последние 20 матчей — найди общий паттерн")},
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),  dur:_t("15 мин"), task:_t("Пробуй новые позиции и углы — 500 матчей на одних и тех же точках = потолок")},
+      {cat:"РЕЖИМ",    dur:"—",      task:"Уже 500 матчей — ты гриндер. Теперь фокус на качестве: играй медленнее, думай больше"},
+      {cat:"АНАЛИЗ",   dur:"20 мин", task:"Разбери своё худшее соотношение K/D за последние 20 матчей — найди общий паттерн"},
+      {cat:"ТАКТИКА",  dur:"15 мин", task:"Пробуй новые позиции и углы — 500 матчей на одних и тех же точках = потолок"},
     ],
     streak3: [
-      {cat:"ПСИХОЛОГИЯ",dur:"—",     task:_t("Серия 3+ побед: не меняй стиль игры, не force-buy — сохраняй темп")},
-      {cat:"AIM",       dur:_t("15 мин"), task:_t("Перед каждым матчем серии: 10 минут aim warmup — не прыгать в игру холодным")},
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),   dur:_t("10 мин"), task:_t("Играй на своей лучшей карте пока идёт серия — не экспериментируй")},
+      {cat:"ПСИХОЛОГИЯ",dur:"—",     task:"Серия 3+ побед: не меняй стиль игры, не force-buy — сохраняй темп"},
+      {cat:"AIM",       dur:"15 мин", task:"Перед каждым матчем серии: 10 минут aim warmup — не прыгать в игру холодным"},
+      {cat:"ТАКТИКА",   dur:"10 мин", task:"Играй на своей лучшей карте пока идёт серия — не экспериментируй"},
     ],
     streak5: [
-      {cat:"ПСИХОЛОГИЯ",dur:"—",     task:_t("Серия 5+ — ты в зоне. Главное правило: стоп если проиграл 2 подряд, отдохни")},
-      {cat:"AIM",       dur:_t("20 мин"), task:_t("Ежедневный warmup стал твоим ритуалом — не пропускай его во время серии")},
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),   dur:_t("10 мин"), task:_t("Анализируй что делаешь правильно сейчас — запомни это состояние игры")},
+      {cat:"ПСИХОЛОГИЯ",dur:"—",     task:"Серия 5+ — ты в зоне. Главное правило: стоп если проиграл 2 подряд, отдохни"},
+      {cat:"AIM",       dur:"20 мин", task:"Ежедневный warmup стал твоим ритуалом — не пропускай его во время серии"},
+      {cat:"ТАКТИКА",   dur:"10 мин", task:"Анализируй что делаешь правильно сейчас — запомни это состояние игры"},
     ],
     faceit5: [
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),   dur:_t("15 мин"), task:_t("На уровне 5+ противники знают базовые раскидки — учи нестандартные позиции")},
-      {cat:"AIM",       dur:_t("20 мин"), task:_t("Aim_botz ежедневно: на этом уровне механика решает половину дуэлей")},
-      {cat:"АНАЛИЗ",    dur:_t("15 мин"), task:_t("Смотри демо игроков уровня 7-8 на своей роли — копируй позиционирование")},
+      {cat:"ТАКТИКА",   dur:"15 мин", task:"На уровне 5+ противники знают базовые раскидки — учи нестандартные позиции"},
+      {cat:"AIM",       dur:"20 мин", task:"Aim_botz ежедневно: на этом уровне механика решает половину дуэлей"},
+      {cat:"АНАЛИЗ",    dur:"15 мин", task:"Смотри демо игроков уровня 7-8 на своей роли — копируй позиционирование"},
     ],
     faceit8: [
-      {cat:"АНАЛИЗ",    dur:_t("20 мин"), task:_t("На уровне 8+ нужен разбор каждого матча: 3 ошибки и 1 что сделал хорошо")},
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),   dur:_t("20 мин"), task:_t("Изучи все раскидки на 2 основных картах до автоматизма — без этого уровень 10 закрыт")},
-      {cat:"AIM",       dur:_t("15 мин"), task:_t("Переключись на Aimlabs / KovaaK's — workshop aim_botz уже не даёт прогресса на этом уровне")},
+      {cat:"АНАЛИЗ",    dur:"20 мин", task:"На уровне 8+ нужен разбор каждого матча: 3 ошибки и 1 что сделал хорошо"},
+      {cat:"ТАКТИКА",   dur:"20 мин", task:"Изучи все раскидки на 2 основных картах до автоматизма — без этого уровень 10 закрыт"},
+      {cat:"AIM",       dur:"15 мин", task:"Переключись на Aimlabs / KovaaK's — workshop aim_botz уже не даёт прогресса на этом уровне"},
     ],
     mvp100: [
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),   dur:_t("15 мин"), task:_t("MVP = первый в команде. Фокус: entry fragging, открывать раунды, не ждать")},
-      {cat:"АНАЛИЗ",    dur:_t("10 мин"), task:_t("После каждого матча: был ли ты полезен команде или просто стрелял? MVP — это вклад")},
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),   dur:_t("10 мин"), task:_t("Учи раскидки под entry: 1 смок + 1 флэш на каждую карту — даёт больше MVP")},
+      {cat:"ТАКТИКА",   dur:"15 мин", task:"MVP = первый в команде. Фокус: entry fragging, открывать раунды, не ждать"},
+      {cat:"АНАЛИЗ",    dur:"10 мин", task:"После каждого матча: был ли ты полезен команде или просто стрелял? MVP — это вклад"},
+      {cat:"ТАКТИКА",   dur:"10 мин", task:"Учи раскидки под entry: 1 смок + 1 флэш на каждую карту — даёт больше MVP"},
     ],
     kills1k: [
-      {cat:"AIM",       dur:_t("20 мин"), task:_t("1000 убийств — хорошее начало. Aim_botz: 500 фрагов ежедневно для роста механики")},
-      {cat:"МЕХАНИКА",  dur:_t("15 мин"), task:_t("Работай над counter-strafe — точность в движении даёт +20% к фрагам")},
-      {cat:"РЕЖИМ",     dur:"—",      task:_t("Ставь цель: 2000 убийств за следующие 3 месяца = ~22 матча в неделю")},
+      {cat:"AIM",       dur:"20 мин", task:"1000 убийств — хорошее начало. Aim_botz: 500 фрагов ежедневно для роста механики"},
+      {cat:"МЕХАНИКА",  dur:"15 мин", task:"Работай над counter-strafe — точность в движении даёт +20% к фрагам"},
+      {cat:"РЕЖИМ",     dur:"—",      task:"Ставь цель: 2000 убийств за следующие 3 месяца = ~22 матча в неделю"},
     ],
     kills10k: [
-      {cat:"АНАЛИЗ",    dur:_t("20 мин"), task:_t("10к убийств — ты ветеран. Теперь считай ADR и impact, не просто kills")},
-      {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),   dur:_t("15 мин"), task:_t("На этом опыте учи IGL: давай callouts, читай игру соперника, выигрывай тактически")},
-      {cat:"РЕЖИМ",     dur:"—",      task:_t("Делай перерыв каждые 2 часа — с таким количеством часов важна свежесть восприятия")},
+      {cat:"АНАЛИЗ",    dur:"20 мин", task:"10к убийств — ты ветеран. Теперь считай ADR и impact, не просто kills"},
+      {cat:"ТАКТИКА",   dur:"15 мин", task:"На этом опыте учи IGL: давай callouts, читай игру соперника, выигрывай тактически"},
+      {cat:"РЕЖИМ",     dur:"—",      task:"Делай перерыв каждые 2 часа — с таким количеством часов важна свежесть восприятия"},
     ],
   };
 
   const trainings = tips[a.id] || [
-    {cat:"AIM",     dur:_t("20 мин"), task:_t("Aim_botz: ежедневная разминка 500 убийств")},
-    {cat:"АНАЛИЗ",  dur:_t("15 мин"), task:_t("Разбери последний проигранный матч — найди 1 паттерн ошибок")},
-    {cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))), dur:_t("10 мин"), task:_t("Выучи 1 новую раскидку на лучшей карте")},
+    {cat:"AIM",     dur:"20 мин", task:"Aim_botz: ежедневная разминка 500 убийств"},
+    {cat:"АНАЛИЗ",  dur:"15 мин", task:"Разбери последний проигранный матч — найди 1 паттерн ошибок"},
+    {cat:"ТАКТИКА", dur:"10 мин", task:"Выучи 1 новую раскидку на лучшей карте"},
   ];
   const prog = Math.min(99, Math.round((a.val / a.target) * 100));
   const remaining = a.target > a.val ? Math.ceil(a.target - a.val) : 0;
@@ -1289,7 +748,7 @@ function AchievementModal({a, onClose}) {
               <div>
                 <div style={{fontSize:"16px",color:a.done?C.yellow:C.value,fontWeight:700,marginBottom:"3px"}}>{a.name}</div>
                 <div style={{fontSize:"11px",color:a.done?a.color:C.muted,letterSpacing:"1px"}}>
-                  {a.done ? _t("✅ ВЫПОЛНЕНО") : `${a.val}${a.unit} из ${a.target}${a.unit}`}
+                  {a.done ? "✅ ВЫПОЛНЕНО" : `${a.val}${a.unit} из ${a.target}${a.unit}`}
                 </div>
               </div>
             </div>
@@ -1308,7 +767,7 @@ function AchievementModal({a, onClose}) {
                 <div style={{height:"100%",width:`${prog}%`,background:a.color,borderRadius:"3px",transition:"width .6s ease"}}/>
               </div>
               <div style={{fontSize:"12px",color:C.muted,marginTop:"6px"}}>
-                {_t("ещё")} <span style={{color:C.value,fontWeight:700}}>{remaining}{a.unit}</span> {_t("до цели")}
+                {"ещё"} <span style={{color:C.value,fontWeight:700}}>{remaining}{a.unit}</span> {"до цели"}
               </div>
             </div>
           )}
@@ -1390,9 +849,9 @@ function AchievementsCollapsible({player, source}) {
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
           <span style={{fontSize:"16px"}}>🏅</span>
           <div style={{textAlign:"left"}}>
-            <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{_t("ДОСТИЖЕНИЯ")}</div>
+            <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{"ДОСТИЖЕНИЯ"}</div>
             <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>
-              <span style={{color:C.yellow,fontWeight:700}}>{unlocked}</span>/{total} {_t("разблокировано")}
+              <span style={{color:C.yellow,fontWeight:700}}>{unlocked}</span>/{total} {"разблокировано"}
             </div>
           </div>
         </div>
@@ -1439,55 +898,55 @@ function Achievements({player, source}) {
 
   const ALL_ACH = [
     // Aim
-    {id:"hs30",   cat:"aim",     icon:"🎯",name:_t("Снайпер-новичок"),   desc:_t("HS% выше 30%"),           done:hs>=30,  val:Math.round(hs),   target:30,  unit:"%",  color:C.orange},
-    {id:"hs40",   cat:"aim",     icon:"🔴",name:_t("HS Машина"),          desc:_t("HS% выше 40%"),           done:hs>=40,  val:Math.round(hs),   target:40,  unit:"%",  color:C.orange},
-    {id:"hs55",   cat:"aim",     icon:"💥",name:"Headshot Hunter",    desc:_t("HS% выше 55%"),           done:hs>=55,  val:Math.round(hs),   target:55,  unit:"%",  color:C.orange},
-    {id:"acc25",  cat:"aim",     icon:"🎯",name:_t("Меткий стрелок"),     desc:_t("Точность выше 25%"),      done:accuracy>=25,val:accuracy,       target:25,  unit:"%",  color:C.yellow},
+    {id:"hs30",   cat:"aim",     icon:"🎯",name:"Снайпер-новичок",   desc:"HS% выше 30%",           done:hs>=30,  val:Math.round(hs),   target:30,  unit:"%",  color:C.orange},
+    {id:"hs40",   cat:"aim",     icon:"🔴",name:"HS Машина",          desc:"HS% выше 40%",           done:hs>=40,  val:Math.round(hs),   target:40,  unit:"%",  color:C.orange},
+    {id:"hs55",   cat:"aim",     icon:"💥",name:"Headshot Hunter",    desc:"HS% выше 55%",           done:hs>=55,  val:Math.round(hs),   target:55,  unit:"%",  color:C.orange},
+    {id:"acc25",  cat:"aim",     icon:"🎯",name:"Меткий стрелок",     desc:"Точность выше 25%",      done:accuracy>=25,val:accuracy,       target:25,  unit:"%",  color:C.yellow},
     // Clutching
-    {id:"clutch1",cat:"clutch",  icon:"😤",name:"Clutch King",        desc:_t("3+ серия побед"),         done:streak>=3,val:streak,           target:3,   unit:"",   color:C.blue},
-    {id:"clutch2",cat:"clutch",  icon:"🔥",name:_t("Огненная серия"),     desc:_t("5+ серия побед"),         done:streak>=5,val:streak,           target:5,   unit:"",   color:C.lose},
-    {id:"clutch3",cat:"clutch",  icon:"⚡",name:_t("Непобедимый"),        desc:_t("10+ серия побед"),        done:streak>=10,val:streak,          target:10,  unit:"",   color:C.yellow},
+    {id:"clutch1",cat:"clutch",  icon:"😤",name:"Clutch King",        desc:"3+ серия побед",         done:streak>=3,val:streak,           target:3,   unit:"",   color:C.blue},
+    {id:"clutch2",cat:"clutch",  icon:"🔥",name:"Огненная серия",     desc:"5+ серия побед",         done:streak>=5,val:streak,           target:5,   unit:"",   color:C.lose},
+    {id:"clutch3",cat:"clutch",  icon:"⚡",name:"Непобедимый",        desc:"10+ серия побед",        done:streak>=10,val:streak,          target:10,  unit:"",   color:C.yellow},
     // Impact
-    {id:"kd1",    cat:"impact",  icon:"⚔️",name:_t("Фраггер"),            desc:"K/D выше 1.0",           done:kd>=1.0, val:kd.toFixed(2),   target:1.0, unit:"",   color:C.blue},
-    {id:"kd15",   cat:"impact",  icon:"💀",name:_t("Элита"),               desc:"K/D выше 1.5",           done:kd>=1.5, val:kd.toFixed(2),   target:1.5, unit:"",   color:C.blue},
-    {id:"kd2",    cat:"impact",  icon:"👾",name:_t("Машина смерти"),       desc:"K/D выше 2.0",           done:kd>=2.0, val:kd.toFixed(2),   target:2.0, unit:"",   color:C.blue},
+    {id:"kd1",    cat:"impact",  icon:"⚔️",name:"Фраггер",            desc:"K/D выше 1.0",           done:kd>=1.0, val:kd.toFixed(2),   target:1.0, unit:"",   color:C.blue},
+    {id:"kd15",   cat:"impact",  icon:"💀",name:"Элита",               desc:"K/D выше 1.5",           done:kd>=1.5, val:kd.toFixed(2),   target:1.5, unit:"",   color:C.blue},
+    {id:"kd2",    cat:"impact",  icon:"👾",name:"Машина смерти",       desc:"K/D выше 2.0",           done:kd>=2.0, val:kd.toFixed(2),   target:2.0, unit:"",   color:C.blue},
     {id:"dom50",  cat:"impact",  icon:"👑",name:"Доминатор",           desc:"50+ доминаций",          done:dominated>=50,val:dominated,    target:50,  unit:"",   color:C.win},
     {id:"mvp",    cat:"impact",  icon:"🥇",name:"MVP x100",            desc:"100 MVP наград",         done:mvps>=100,val:mvps,            target:100, unit:"",   color:C.yellow},
     {id:"mvp500", cat:"impact",  icon:"🏅",name:"MVP Легенда",         desc:"500 MVP наград",         done:mvps>=500,val:mvps,            target:500, unit:"",   color:C.yellow},
     // Results
-    {id:"win50",  cat:"results", icon:"🏆",name:_t("Победитель"),          desc:"50%+ WinRate",           done:wr>=50,  val:Math.round(wr),   target:50,  unit:"%",  color:C.win},
-    {id:"win60",  cat:"results", icon:"🎖️",name:_t("Доминирующий"),       desc:"60%+ WinRate",           done:wr>=60,  val:Math.round(wr),   target:60,  unit:"%",  color:C.win},
-    {id:"m100",   cat:"results", icon:"🎮",name:_t("Ветеран"),             desc:"100 матчей",             done:matches>=100,val:matches,       target:100, unit:"",   color:C.label},
+    {id:"win50",  cat:"results", icon:"🏆",name:"Победитель",          desc:"50%+ WinRate",           done:wr>=50,  val:Math.round(wr),   target:50,  unit:"%",  color:C.win},
+    {id:"win60",  cat:"results", icon:"🎖️",name:"Доминирующий",       desc:"60%+ WinRate",           done:wr>=60,  val:Math.round(wr),   target:60,  unit:"%",  color:C.win},
+    {id:"m100",   cat:"results", icon:"🎮",name:"Ветеран",             desc:"100 матчей",             done:matches>=100,val:matches,       target:100, unit:"",   color:C.label},
     {id:"m500",   cat:"results", icon:"⚙️",name:"Гриндер",             desc:"500 матчей",             done:matches>=500,val:matches,       target:500, unit:"",   color:C.label},
-    {id:"m1000",  cat:"results", icon:"🌟",name:_t("Легенда"),             desc:"1000 матчей",            done:matches>=1000,val:matches,      target:1000,unit:"",   color:C.yellow},
+    {id:"m1000",  cat:"results", icon:"🌟",name:"Легенда",             desc:"1000 матчей",            done:matches>=1000,val:matches,      target:1000,unit:"",   color:C.yellow},
     // Weapons / Style
-    {id:"knife5", cat:"style",   icon:"🔪",name:_t("Ножевой мастер"),      desc:_t("5+ убийств ножом"),       done:knifeKills>=5,  val:knifeKills, target:5,   unit:"",   color:"#ff8888"},
-    {id:"knife50",cat:"style",   icon:"🗡️",name:_t("Нинзя"),              desc:_t("50+ убийств ножом"),      done:knifeKills>=50, val:knifeKills, target:50,  unit:"",   color:"#ff8888"},
-    {id:"sniper", cat:"style",   icon:"🔭",name:t("sniper",_t("Снайпер")),             desc:_t("100+ убийств снайпером"), done:sniperKills>=100,val:sniperKills,target:100,unit:"",   color:C.blue},
+    {id:"knife5", cat:"style",   icon:"🔪",name:"Ножевой мастер",      desc:"5+ убийств ножом",       done:knifeKills>=5,  val:knifeKills, target:5,   unit:"",   color:"#ff8888"},
+    {id:"knife50",cat:"style",   icon:"🗡️",name:"Нинзя",              desc:"50+ убийств ножом",      done:knifeKills>=50, val:knifeKills, target:50,  unit:"",   color:"#ff8888"},
+    {id:"sniper", cat:"style",   icon:"🔭",name:"Снайпер",             desc:"100+ убийств снайпером", done:sniperKills>=100,val:sniperKills,target:100,unit:"",   color:C.blue},
     // Kills milestones
-    {id:"k1k",    cat:"impact",  icon:"⚔️",name:_t("1000 убийств"),        desc:_t("Накопи 1000 фрагов"),     done:kills>=1000, val:kills,        target:1000, unit:"",  color:"#aa88ff"},
-    {id:"k5k",    cat:"impact",  icon:"🗡️",name:_t("5000 убийств"),       desc:_t("Накопи 5000 фрагов"),     done:kills>=5000, val:kills,        target:5000, unit:"",  color:"#aa88ff"},
-    {id:"k10k",   cat:"impact",  icon:"💣",name:_t("10к убийств"),         desc:_t("Накопи 10000 фрагов"),    done:kills>=10000,val:kills,        target:10000,unit:"",  color:"#aa88ff"},
+    {id:"k1k",    cat:"impact",  icon:"⚔️",name:"1000 убийств",        desc:"Накопи 1000 фрагов",     done:kills>=1000, val:kills,        target:1000, unit:"",  color:"#aa88ff"},
+    {id:"k5k",    cat:"impact",  icon:"🗡️",name:"5000 убийств",       desc:"Накопи 5000 фрагов",     done:kills>=5000, val:kills,        target:5000, unit:"",  color:"#aa88ff"},
+    {id:"k10k",   cat:"impact",  icon:"💣",name:"10к убийств",         desc:"Накопи 10000 фрагов",    done:kills>=10000,val:kills,        target:10000,unit:"",  color:"#aa88ff"},
     // Bomb
-    {id:"bomb10", cat:"tactics", icon:"💥",name:_t("Сапёр"),               desc:_t("10+ бомб обезврежено"),   done:bombsDefused>=10,val:bombsDefused,target:10,unit:"",  color:C.win},
-    {id:"plant50",cat:"tactics", icon:"🕹️",name:_t("Бомбардир"),           desc:_t("50+ бомб заложено"),      done:bombsPlanted>=50,val:bombsPlanted,target:50,unit:"",  color:C.lose},
+    {id:"bomb10", cat:"tactics", icon:"💥",name:"Сапёр",               desc:"10+ бомб обезврежено",   done:bombsDefused>=10,val:bombsDefused,target:10,unit:"",  color:C.win},
+    {id:"plant50",cat:"tactics", icon:"🕹️",name:"Бомбардир",           desc:"50+ бомб заложено",      done:bombsPlanted>=50,val:bombsPlanted,target:50,unit:"",  color:C.lose},
     // FACEIT
-    {id:"fl5",    cat:"results", icon:"⚡",name:"FACEIT Pro",          desc:_t("FACEIT уровень 5"),        done:lvl>=5,  val:lvl,              target:5,   unit:"",   color:C.orange},
-    {id:"fl8",    cat:"results", icon:"🌠",name:_t("FACEIT Элита"),        desc:_t("FACEIT уровень 8"),        done:lvl>=8,  val:lvl,              target:8,   unit:"",   color:C.orange},
-    {id:"fl10",   cat:"results", icon:"🔱",name:_t("FACEIT Легенда"),      desc:_t("FACEIT уровень 10"),       done:lvl>=10, val:lvl,              target:10,  unit:"",   color:C.orange},
-    {id:"elo2k",  cat:"results", icon:"💎",name:"2000 ELO",            desc:_t("FACEIT ELO выше 2000"),    done:elo>=2000,val:elo,             target:2000,unit:"",   color:C.yellow},
+    {id:"fl5",    cat:"results", icon:"⚡",name:"FACEIT Pro",          desc:"FACEIT уровень 5",        done:lvl>=5,  val:lvl,              target:5,   unit:"",   color:C.orange},
+    {id:"fl8",    cat:"results", icon:"🌠",name:"FACEIT Элита",        desc:"FACEIT уровень 8",        done:lvl>=8,  val:lvl,              target:8,   unit:"",   color:C.orange},
+    {id:"fl10",   cat:"results", icon:"🔱",name:"FACEIT Легенда",      desc:"FACEIT уровень 10",       done:lvl>=10, val:lvl,              target:10,  unit:"",   color:C.orange},
+    {id:"elo2k",  cat:"results", icon:"💎",name:"2000 ELO",            desc:"FACEIT ELO выше 2000",    done:elo>=2000,val:elo,             target:2000,unit:"",   color:C.yellow},
     // Time
-    {id:"h100",   cat:"results", icon:"⏱",name:_t("100 часов"),           desc:_t("100 часов в CS2"),        done:hours>=100,val:hours,           target:100, unit:"ч", color:C.muted},
-    {id:"h500",   cat:"results", icon:"🕐",name:_t("500 часов"),           desc:_t("500 часов в CS2"),        done:hours>=500,val:hours,           target:500, unit:"ч", color:C.label},
+    {id:"h100",   cat:"results", icon:"⏱",name:"100 часов",           desc:"100 часов в CS2",        done:hours>=100,val:hours,           target:100, unit:"ч", color:C.muted},
+    {id:"h500",   cat:"results", icon:"🕐",name:"500 часов",           desc:"500 часов в CS2",        done:hours>=500,val:hours,           target:500, unit:"ч", color:C.label},
   ];
 
   const CATS = [
-    {id:"all",     label:_t("Все"),        count:ALL_ACH.length},
-    {id:"aim",     label:_t("Прицел"),     count:ALL_ACH.filter(a=>a.cat==="aim").length},
-    {id:"impact",  label:_t("Импакт"),     count:ALL_ACH.filter(a=>a.cat==="impact").length},
-    {id:"clutch",  label:_t("Клатч"),      count:ALL_ACH.filter(a=>a.cat==="clutch").length},
-    {id:"results", label:_t("Результаты"), count:ALL_ACH.filter(a=>a.cat==="results").length},
-    {id:"style",   label:_t("Стиль"),      count:ALL_ACH.filter(a=>a.cat==="style").length},
+    {id:"all",     label:"Все",        count:ALL_ACH.length},
+    {id:"aim",     label:"Прицел",     count:ALL_ACH.filter(a=>a.cat==="aim").length},
+    {id:"impact",  label:"Импакт",     count:ALL_ACH.filter(a=>a.cat==="impact").length},
+    {id:"clutch",  label:"Клатч",      count:ALL_ACH.filter(a=>a.cat==="clutch").length},
+    {id:"results", label:"Результаты", count:ALL_ACH.filter(a=>a.cat==="results").length},
+    {id:"style",   label:"Стиль",      count:ALL_ACH.filter(a=>a.cat==="style").length},
     {id:"tactics", label:"Тактика",    count:ALL_ACH.filter(a=>a.cat==="tactics").length},
   ];
 
@@ -1501,7 +960,7 @@ function Achievements({player, source}) {
         {/* Header */}
         <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
           display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
-          <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{_t("🏅 ДОСТИЖЕНИЯ")}</span>
+          <span style={{fontSize:"11px",color:C.yellow,letterSpacing:"3px",fontWeight:700}}>{"🏅 ДОСТИЖЕНИЯ"}</span>
           <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
             <div style={{height:"5px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden",width:"80px"}}>
               <div style={{height:"100%",width:`${Math.round(unlocked/ALL_ACH.length*100)}%`,
@@ -1629,7 +1088,7 @@ function WeeklyReport({player, source, isPro, onUpgrade}) {
     setLoading(false);
   }
 
-  const verdictColor = report?.verdict===_t("РОСТ")?C.win:report?.verdict===_t("ПАДЕНИЕ")?C.lose:C.yellow;
+  const verdictColor = report?.verdict==="РОСТ"?C.win:report?.verdict==="ПАДЕНИЕ"?C.lose:C.yellow;
 
   return (
     <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px",animation:"up .5s ease both"}}>
@@ -1668,7 +1127,7 @@ function WeeklyReport({player, source, isPro, onUpgrade}) {
             <div style={{padding:"4px 16px",background:verdictColor+"22",
               border:`1px solid ${verdictColor}55`,
               fontSize:"13px",color:verdictColor,fontWeight:700,letterSpacing:"2px"}}>
-              {report.verdict===_t("РОСТ")?"📈":report.verdict===_t("ПАДЕНИЕ")?"📉":"➡️"} {report.verdict}
+              {report.verdict==="РОСТ"?"📈":report.verdict==="ПАДЕНИЕ"?"📉":"➡️"} {report.verdict}
             </div>
           </div>
 
@@ -1688,7 +1147,7 @@ function WeeklyReport({player, source, isPro, onUpgrade}) {
             </div>
             <div style={{background:"#160a0a",border:`1px solid ${C.lose}33`,padding:"12px 14px"}}>
               <div style={{fontSize:"10px",color:C.lose,letterSpacing:"2px",fontWeight:700,marginBottom:"6px"}}>
-                {_t("✗ ГЛАВНАЯ ПРОБЛЕМА")}
+                {"✗ ГЛАВНАЯ ПРОБЛЕМА"}
               </div>
               <div style={{fontSize:"13px",color:C.text,lineHeight:1.5}}>{report.concern}</div>
             </div>
@@ -1824,7 +1283,7 @@ function EloChart({faceit}) {
               </div>
             </div>
             <div style={{marginLeft:"auto",fontSize:"11px",color:C.muted,textAlign:"right"}}>
-              {_t("на основе")}<br/>{_t("текущего тренда")}
+              {"на основе"}<br/>{"текущего тренда"}
             </div>
           </div>
         );
@@ -1854,37 +1313,37 @@ function WeekGoal({player, source}) {
       const kdGap = target - kd;
       const killsNeeded = Math.round(kdGap * Math.max(deaths, 100));
       return {
-        label: kd<0.85 ? _t("Поднять K/D") : _t("Приблизиться к K/D 1.0"),
+        label: kd<0.85 ? "Поднять K/D" : "Приблизиться к K/D 1.0",
         from:kd.toFixed(2), to:target.toFixed(2), progress:Math.max(5,prog),
         details:[
           `${(kdGap).toFixed(2)} K/D до цели`,
           `≈ ${killsNeeded} убийств без лишних смертей`,
         ],
-        unlock:{icon:"⚔️", name:_t("Фраггер"), done:kd>=1.0},
+        unlock:{icon:"⚔️", name:"Фраггер", done:kd>=1.0},
       };
     }
     if (hs < 40) {
       const prog = Math.min(95, Math.round((hs - 20) / (40 - 20) * 100));
       return {
-        label:_t("Улучшить прицел до 40% HS"), from:Math.round(hs)+"%", to:"40%", progress:Math.max(5,prog),
+        label:"Улучшить прицел до 40% HS", from:Math.round(hs)+"%", to:"40%", progress:Math.max(5,prog),
         details:[`${40-Math.round(hs)}% HS до цели`, `Тренируй Recoil Master каждый день`],
-        unlock:{icon:"🎯", name:_t("HS Машина"), done:hs>=40},
+        unlock:{icon:"🎯", name:"HS Машина", done:hs>=40},
       };
     }
     if (wr < 52) {
       const prog = Math.min(95, Math.round((wr - 40) / (52 - 40) * 100));
       return {
-        label:_t("Поднять WR выше 52%"), from:Math.round(wr)+"%", to:"52%", progress:Math.max(5,prog),
+        label:"Поднять WR выше 52%", from:Math.round(wr)+"%", to:"52%", progress:Math.max(5,prog),
         details:[`${52-Math.round(wr)}% WR до цели`, `Разбирай проигранные раунды`],
-        unlock:{icon:"🏆", name:_t("Победитель"), done:wr>=52},
+        unlock:{icon:"🏆", name:"Победитель", done:wr>=52},
       };
     }
     if (kd < 1.4) {
       const prog = Math.min(95, Math.round((kd - 1.0) / (1.4 - 1.0) * 100));
       return {
-        label:_t("Закрепить K/D выше 1.4"), from:kd.toFixed(2), to:"1.40", progress:Math.max(5,prog),
+        label:"Закрепить K/D выше 1.4", from:kd.toFixed(2), to:"1.40", progress:Math.max(5,prog),
         details:[`${(1.4-kd).toFixed(2)} K/D до цели`, `Фокус на trade kills`],
-        unlock:{icon:"💀", name:_t("Элита"), done:kd>=1.4},
+        unlock:{icon:"💀", name:"Элита", done:kd>=1.4},
       };
     }
     if (lvl > 0 && lvl < 10) {
@@ -1896,7 +1355,7 @@ function WeekGoal({player, source}) {
         unlock:{icon:"⚡", name:`FACEIT LVL ${lvl+1}`, done:false},
       };
     }
-    return {label:_t("Удержать форму"), from:kd.toFixed(2), to:kd.toFixed(2), progress:85, details:[], unlock:null};
+    return {label:"Удержать форму", from:kd.toFixed(2), to:kd.toFixed(2), progress:85, details:[], unlock:null};
   })();
 
   const barColor = goal.progress >= 70 ? C.win : goal.progress >= 40 ? C.yellow : C.orange;
@@ -1978,8 +1437,8 @@ function Streaks({player, source}) {
   }
 
   const streaks = [
-    winStreak > 0 && {icon:"🔥", label:_t("Винстрик"), val:winStreak, max:5, color:C.lose,
-      desc:winStreak>=5?_t("🔥 Огненная серия!"):winStreak>=3?_t("Горячая полоса"):_t("Продолжай выигрывать")},
+    winStreak > 0 && {icon:"🔥", label:"Винстрик", val:winStreak, max:5, color:C.lose,
+      desc:winStreak>=5?"🔥 Огненная серия!":winStreak>=3?"Горячая полоса":"Продолжай выигрывать"},
     hsStreak > 0 && {icon:"🎯", label:"HS > 40%", val:hsStreak, max:5, color:C.orange,
       desc:`${hsStreak} матч${hsStreak===1?"":"а"} с хорошим прицелом`},
     kdStreak > 0 && {icon:"⚔️", label:"K/D > 1.0", val:kdStreak, max:5, color:C.blue,
@@ -2066,10 +1525,10 @@ function WeeklyMissions({player, source}) {
   };
 
   const missions = [
-    {id:"m1", text:_t("Сыграть 5 матчей на этой неделе"),     xp:10, done:matches.length>=5||recentWins>=3},
-    {id:"m2", text:_t("Выиграть 3 матча подряд"),              xp:15, done:recentWins>=3},
-    {id:"m3", text:_t("HS% выше 45% в двух матчах"),           xp:10, done:recentGoodHS>=2},
-    {id:"m4", text:_t("K/D выше 1.0 в трёх матчах"),          xp:15, done:recentGoodKD>=3},
+    {id:"m1", text:"Сыграть 5 матчей на этой неделе",     xp:10, done:matches.length>=5||recentWins>=3},
+    {id:"m2", text:"Выиграть 3 матча подряд",              xp:15, done:recentWins>=3},
+    {id:"m3", text:"HS% выше 45% в двух матчах",           xp:10, done:recentGoodHS>=2},
+    {id:"m4", text:"K/D выше 1.0 в трёх матчах",          xp:15, done:recentGoodKD>=3},
   ];
 
   const completedXP = missions.filter(m=>m.done||done.includes(m.id)).reduce((s,m)=>s+m.xp,0);
@@ -2149,46 +1608,46 @@ function TodayRecs({player, source}) {
 
   // AIM — всегда
   recs.push({
-    icon:"🎯", time:_t("15 мин"), cat:"AIM", color:C.lose,
-    text:_t("Aim_botz: 500 убийств с места"),
+    icon:"🎯", time:"15 мин", cat:"AIM", color:C.lose,
+    text:"Aim_botz: 500 убийств с места",
     why: hs<40 ? `HS% ${Math.round(hs)}% — ниже цели 40%` : `Поддерживай точность стрельбы`,
-    unlock: hs < 40 ? {icon:"🎯", name:_t("HS Машина"), pct:Math.round(hs/40*100)} : null,
+    unlock: hs < 40 ? {icon:"🎯", name:"HS Машина", pct:Math.round(hs/40*100)} : null,
   });
 
   // Recoil если HS низкий
   if (hs < 40) recs.push({
-    icon:"💥", time:_t("20 мин"), cat:"МЕХАНИКА", color:C.orange,
-    text:_t("Recoil Master: спрей AK и M4"),
+    icon:"💥", time:"20 мин", cat:"МЕХАНИКА", color:C.orange,
+    text:"Recoil Master: спрей AK и M4",
     why: `HS% ${Math.round(hs)}% — не хватает ${40-Math.round(hs)}% до достижения`,
-    unlock: {icon:"🎯", name:_t("HS Машина"), pct:Math.round(hs/40*100)},
+    unlock: {icon:"🎯", name:"HS Машина", pct:Math.round(hs/40*100)},
   });
 
   // Counter-strafe если K/D плохой
   if (kd < 1.0) recs.push({
-    icon:"🏃", time:_t("15 мин"), cat:_t("ДВИЖЕНИЕ"), color:C.blue,
-    text:_t("Counter-strafe: стоп → выстрел"),
+    icon:"🏃", time:"15 мин", cat:"ДВИЖЕНИЕ", color:C.blue,
+    text:"Counter-strafe: стоп → выстрел",
     why: `K/D ${kd.toFixed(2)} — до Фраггера не хватает ${(1.0-kd).toFixed(2)}`,
-    unlock: {icon:"⚔️", name:_t("Фраггер K/D>1.0"), pct:Math.round(Math.min(99,kd/1.0*100))},
+    unlock: {icon:"⚔️", name:"Фраггер K/D>1.0", pct:Math.round(Math.min(99,kd/1.0*100))},
   });
 
   // Prefire — всегда
   recs.push({
-    icon:"🗺️", time:_t("20 мин"), cat:"КАРТЫ", color:"#44ddaa",
-    text:_t("Prefire Workshop: 10 позиций на лучшей карте"),
+    icon:"🗺️", time:"20 мин", cat:"КАРТЫ", color:"#44ddaa",
+    text:"Prefire Workshop: 10 позиций на лучшей карте",
     why: `Знание позиций = меньше смертей на карте`,
     unlock: null,
   });
 
   // Анализ или гранаты
   if (wr < 50) recs.push({
-    icon:"📹", time:_t("15 мин"), cat:"АНАЛИЗ", color:"#aa88ff",
-    text:_t("Пересмотри 1 проигранный раунд"),
+    icon:"📹", time:"15 мин", cat:"АНАЛИЗ", color:"#aa88ff",
+    text:"Пересмотри 1 проигранный раунд",
     why: `WR ${Math.round(wr)}% — разбор раундов поднимет понимание игры`,
-    unlock: {icon:"🏆", name:_t("Победитель WR>50%"), pct:Math.round(wr/50*100)},
+    unlock: {icon:"🏆", name:"Победитель WR>50%", pct:Math.round(wr/50*100)},
   });
   else recs.push({
-    icon:"💣", time:_t("10 мин"), cat:_t("ГРАНАТЫ"), color:C.yellow,
-    text:_t("Выучи 1 новый смок или молотов"),
+    icon:"💣", time:"10 мин", cat:"ГРАНАТЫ", color:C.yellow,
+    text:"Выучи 1 новый смок или молотов",
     why: `Utility = больше влияния на раунд без риска`,
     unlock: null,
   });
@@ -2288,11 +1747,11 @@ function WeekComparison({player}) {
 
   const stats = [
     { label:"K/D",  prev:parseFloat(prev.kd||0), now:parseFloat(now.kd||0), fmt:(v)=>v.toFixed(2), color:C.blue },
-    { label:_t("HS%"),  prev:parseFloat(prev.hs||0), now:parseFloat(now.hs||0), fmt:(v)=>Math.round(v)+"%", color:C.orange },
+    { label:"HS%",  prev:parseFloat(prev.hs||0), now:parseFloat(now.hs||0), fmt:(v)=>Math.round(v)+"%", color:C.orange },
     { label:"WR%",  prev:parseFloat(prev.wr||0), now:parseFloat(now.wr||0), fmt:(v)=>Math.round(v)+"%", color:"#aa88ff" },
   ];
 
-  const periodLabel = period==="week"?_t("7 дней"):period==="month"?_t("30 дней"):_t("За всё время");
+  const periodLabel = period==="week"?"7 дней":period==="month"?"30 дней":"За всё время";
   const diffDays = Math.round((new Date(now.date)-new Date(prev.date))/(24*60*60*1000));
 
   // Рейтинг тогда и сейчас
@@ -2320,11 +1779,11 @@ function WeekComparison({player}) {
         {/* Заголовок + переключатель */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"16px",flexWrap:"wrap",gap:"8px"}}>
           <div>
-            <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"2px"}}>{_t("📊 СРАВНЕНИЕ ПЕРИОДОВ")}</div>
-            <div style={{fontSize:"11px",color:C.muted}}>{prev.date} → {now.date} ({diffDays} {_t("дней")})</div>
+            <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"2px"}}>{"📊 СРАВНЕНИЕ ПЕРИОДОВ"}</div>
+            <div style={{fontSize:"11px",color:C.muted}}>{prev.date} → {now.date} ({diffDays} {"дней"})</div>
           </div>
           <div style={{display:"flex",gap:"3px"}}>
-            {[["week",_t("7 дн")],["month",_t("30 дн")],["all",_t("Всё")]].map(([p,l])=>(
+            {[["week","7 дн"],["month","30 дн"],["all","Всё"]].map(([p,l])=>(
               <button key={p} onClick={()=>setPeriod(p)} style={{
                 padding:"4px 10px",background:period===p?C.yellow+"22":"transparent",
                 border:`1px solid ${period===p?C.yellow+"55":C.border}`,
@@ -2343,7 +1802,7 @@ function WeekComparison({player}) {
           <div style={{textAlign:"center"}}>
             <div style={{fontSize:"11px",color:C.muted,marginBottom:"4px",letterSpacing:"1px"}}>{prev.date}</div>
             <div style={{fontSize:"40px",color:C.muted,fontWeight:900,lineHeight:1}}>{rPrev}</div>
-            <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>{_t("рейтинг")}</div>
+            <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>{"рейтинг"}</div>
           </div>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"4px",minWidth:"80px"}}>
             <div style={{fontSize:"32px",color:rColor,fontWeight:900,lineHeight:1,
@@ -2352,14 +1811,14 @@ function WeekComparison({player}) {
             </div>
             <div style={{fontSize:"10px",color:rColor,fontWeight:700,letterSpacing:"1px",
               padding:"2px 8px",background:rColor+"18",border:`1px solid ${rColor}33`}}>
-              {rDiff > 0 ? _t("ПРОГРЕСС ▲") : rDiff < 0 ? _t("СПАД ▼") : _t("СТАБИЛЬНО")}
+              {rDiff > 0 ? "ПРОГРЕСС ▲" : rDiff < 0 ? "СПАД ▼" : "СТАБИЛЬНО"}
             </div>
           </div>
           <div style={{textAlign:"center"}}>
             <div style={{fontSize:"11px",color:C.muted,marginBottom:"4px",letterSpacing:"1px"}}>{now.date}</div>
             <div style={{fontSize:"40px",color:rColor,fontWeight:900,lineHeight:1,
               textShadow:`0 0 12px ${rColor}44`}}>{rNow}</div>
-            <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>{_t("рейтинг")}</div>
+            <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>{"рейтинг"}</div>
           </div>
         </div>
 
@@ -2376,14 +1835,14 @@ function WeekComparison({player}) {
                 <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"8px",fontWeight:700}}>{s.label}</div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:"8px"}}>
                   <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>{_t("было")}</div>
+                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>{"было"}</div>
                     <div style={{fontSize:"18px",color:C.muted,fontWeight:700}}>{s.fmt(s.prev)}</div>
                   </div>
                   <div style={{fontSize:"18px",color:dc,fontWeight:900}}>
                     {diff > 0 ? "↑" : diff < 0 ? "↓" : "→"}
                   </div>
                   <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>{_t("стало")}</div>
+                    <div style={{fontSize:"11px",color:C.muted,marginBottom:"2px"}}>{"стало"}</div>
                     <div style={{fontSize:"18px",color:dc,fontWeight:700}}>{s.fmt(s.now)}</div>
                   </div>
                 </div>
@@ -2408,7 +1867,7 @@ function WeekComparison({player}) {
             display:"flex",gap:"8px",alignItems:"flex-start"}}>
             <span>{rDiff>0?"✓":"→"}</span>
             <span>{rDiff > 0
-              ? `За ${diffDays} дней рейтинг вырос на ${rDiff} пунктов — ${rDiff>=10?t("great_progress",_t("отличный прогресс!")):rDiff>=5?_t("хорошая динамика"):_t("небольшой рост")}`
+              ? `За ${diffDays} дней рейтинг вырос на ${rDiff} пунктов — ${rDiff>=10?"отличный прогресс!":rDiff>=5?"хорошая динамика":"небольшой рост"}`
               : `За ${diffDays} дней рейтинг упал на ${Math.abs(rDiff)} пунктов. ${stats.find(s=>s.now<s.prev)?.label||"K/D"} просел — сфокусируйся на нём`
             }</span>
           </div>
@@ -2441,7 +1900,7 @@ function WhatChanged({player, source}) {
 
   const changes = [
     {label:"K/D", diff:kdDiff, fmt:(d)=>(d>0?"+":"")+d},
-    {label:_t("HS%"), diff:hsDiff, fmt:(d)=>(d>0?"+":"")+d+"%"},
+    {label:"HS%", diff:hsDiff, fmt:(d)=>(d>0?"+":"")+d+"%"},
     {label:"WR%", diff:wrDiff, fmt:(d)=>(d>0?"+":"")+d+"%"},
   ].filter(c=>c.diff!==0);
 
@@ -2492,8 +1951,8 @@ function FriendsTab({myPlayer, source}) {
       const r = await fetch(`${BACKEND}/faceit/by-nickname/${encodeURIComponent(search.trim())}`);
       const d = await r.json();
       if (d?.nickname) setSearchResult(d);
-      else setSearchErr(_t("Игрок не найден"));
-    } catch { setSearchErr(_t("Ошибка поиска")); }
+      else setSearchErr("Игрок не найден");
+    } catch { setSearchErr("Ошибка поиска"); }
     setSearching(false);
   }
 
@@ -2520,7 +1979,7 @@ function FriendsTab({myPlayer, source}) {
   const myWr = parseFloat(source==="faceit"?myPlayer?.faceit?.lifetime?.winrate:myPlayer?.cs2?.winrate)||0;
   const myLvl = parseInt(myPlayer?.faceit?.level)||0;
   const myRating = calcRating(myKd, myHs, myWr, myLvl);
-  const coachLevels=[{max:19,name:_t("НОВОБРАНЕЦ")},{max:34,name:_t("БОЕЦ")},{max:49,name:_t("СНАЙПЕР")},{max:64,name:_t("ВЕТЕРАН")},{max:79,name:_t("МАСТЕР")},{max:89,name:_t("ЭЛИТА")},{max:100,name:_t("ЛЕГЕНДА")}];
+  const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
 
   return (
     <div style={{animation:"up .4s ease both"}}>
@@ -2538,7 +1997,7 @@ function FriendsTab({myPlayer, source}) {
           <button onClick={doSearch} disabled={searching}
             style={{padding:"10px 20px",background:C.yellow,color:"#080807",border:"none",
               cursor:searching?"not-allowed":"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
-            {searching?"...":_t("Найти")}
+            {searching?"...":"Найти"}
           </button>
         </div>
         {searchErr&&<div style={{fontSize:"13px",color:C.lose,marginBottom:"8px"}}>{searchErr}</div>}
@@ -2577,7 +2036,7 @@ function FriendsTab({myPlayer, source}) {
       ):(
         <div>
           <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"10px"}}>
-            {friends.length} {friends.length===1?_t("ДРУГ"):"ДРУГА/ДРУЗЕЙ"} · СРАВНЕНИЕ
+            {friends.length} {friends.length===1?"ДРУГ":"ДРУГА/ДРУЗЕЙ"} · СРАВНЕНИЕ
           </div>
 
           {/* Моя карточка */}
@@ -2602,11 +2061,11 @@ function FriendsTab({myPlayer, source}) {
                 </div>
                 <div style={{textAlign:"center",minWidth:"80px"}}>
                   <div style={{fontSize:"28px",color:C.yellow,fontWeight:900,lineHeight:1}}>{myRating}</div>
-                  <div style={{fontSize:"10px",color:C.yellow}}>{coachLevels.find(l=>myRating<=l.max)?.name||_t("ЛЕГЕНДА")}</div>
+                  <div style={{fontSize:"10px",color:C.yellow}}>{coachLevels.find(l=>myRating<=l.max)?.name||"ЛЕГЕНДА"}</div>
                 </div>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"6px",marginTop:"10px"}}>
-                {[{l:"K/D",v:myKd.toFixed(2),c:C.blue},{l:_t("HS%"),v:Math.round(myHs)+"%",c:C.orange},{l:"WR%",v:Math.round(myWr)+"%",c:"#aa88ff"}].map((s,i)=>(
+                {[{l:"K/D",v:myKd.toFixed(2),c:C.blue},{l:"HS%",v:Math.round(myHs)+"%",c:C.orange},{l:"WR%",v:Math.round(myWr)+"%",c:"#aa88ff"}].map((s,i)=>(
                   <div key={i} style={{textAlign:"center",background:"#111109",padding:"6px"}}>
                     <div style={{fontSize:"9px",color:C.muted,marginBottom:"2px"}}>{s.l}</div>
                     <div style={{fontSize:"15px",color:s.c,fontWeight:700}}>{s.v}</div>
@@ -2624,7 +2083,7 @@ function FriendsTab({myPlayer, source}) {
             const diffLabel = ratingDiff > 0 ? `▲ +${ratingDiff}` : ratingDiff < 0 ? `▼ ${ratingDiff}` : "=";
             const stats = [
               {l:"K/D",  my:myKd.toFixed(2), fr:parseFloat(f.kd||0).toFixed(2), better:parseFloat(f.kd||0)<myKd, c:C.blue},
-              {l:_t("HS%"),  my:Math.round(myHs)+"%", fr:Math.round(parseFloat(f.hs||0))+"%", better:parseFloat(f.hs||0)<myHs, c:C.orange},
+              {l:"HS%",  my:Math.round(myHs)+"%", fr:Math.round(parseFloat(f.hs||0))+"%", better:parseFloat(f.hs||0)<myHs, c:C.orange},
               {l:"WR%",  my:Math.round(myWr)+"%", fr:Math.round(parseFloat(f.wr||0))+"%", better:parseFloat(f.wr||0)<myWr, c:"#aa88ff"},
             ];
             return (
@@ -2644,7 +2103,7 @@ function FriendsTab({myPlayer, source}) {
                   <div style={{textAlign:"center",minWidth:"80px"}}>
                     <div style={{fontSize:"28px",color:diffColor,fontWeight:900,lineHeight:1}}>{fRating}</div>
                     <div style={{fontSize:"11px",color:diffColor,fontWeight:700}}>{diffLabel}</div>
-                    <div style={{fontSize:"9px",color:C.muted,marginTop:"1px"}}>{coachLevels.find(l=>fRating<=l.max)?.name||_t("ЛЕГЕНДА")}</div>
+                    <div style={{fontSize:"9px",color:C.muted,marginTop:"1px"}}>{coachLevels.find(l=>fRating<=l.max)?.name||"ЛЕГЕНДА"}</div>
                   </div>
                   <button onClick={()=>removeFriend(f.id)}
                     style={{background:"transparent",border:`1px solid ${C.border}`,color:C.muted,
@@ -2698,7 +2157,7 @@ function SearchBar({onSelect}) {
   return (
     <div style={{position:"relative",width:"220px"}}>
       <input value={q} onChange={e=>setQ(e.target.value)} onFocus={()=>setOpen(true)}
-        placeholder={_t("поиск по FACEIT нику...")}
+        placeholder={"поиск по FACEIT нику..."}
         style={{width:"100%",background:"#111109",border:`1px solid ${C.border}`,
           color:C.yellow,fontSize:"13px",padding:"9px 13px",fontFamily:"'Segoe UI',system-ui,sans-serif"}}/>
       {open&&q.trim().length>=2&&(
@@ -2744,7 +2203,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
 
   // Считаем рейтинг
   const calcRating = (p) => {
-    if (!p) return {overall:0, label:"—", color:C.muted, lvlName:_t("НОВОБРАНЕЦ")};
+    if (!p) return {overall:0, label:"—", color:C.muted, lvlName:"НОВОБРАНЕЦ"};
     const f = p.faceit; const c = p.cs2||{};
     const kd = parseFloat(f?.lifetime?.kd||c.kd)||0;
     const hs = parseFloat(f?.lifetime?.hs||c.hs)||0;
@@ -2755,8 +2214,8 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
     function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(v/a-1))))));}
     const overall = Math.min(99,Math.round(sig(kd,avg.kd)*0.45+sig(hs,avg.hs)*0.25+sig(wr,avg.wr)*0.30));
     const color = overall>=70?C.win:overall>=45?C.yellow:C.orange;
-    const coachLevels=[{max:19,name:_t("НОВОБРАНЕЦ")},{max:34,name:_t("БОЕЦ")},{max:49,name:_t("СНАЙПЕР")},{max:64,name:_t("ВЕТЕРАН")},{max:79,name:_t("МАСТЕР")},{max:89,name:_t("ЭЛИТА")},{max:100,name:_t("ЛЕГЕНДА")}];
-    const lvlName = coachLevels.find(l=>overall<=l.max)?.name||_t("ЛЕГЕНДА");
+    const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
+    const lvlName = coachLevels.find(l=>overall<=l.max)?.name||"ЛЕГЕНДА";
     return {overall, color, lvlName, kd:kd.toFixed(2), hs:Math.round(hs), wr:Math.round(wr)};
   };
   const rating = calcRating(pl);
@@ -2788,13 +2247,13 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
   };
   const premierLabel = (r) => {
     const n = parseInt(r)||0;
-    if (n >= 30000) return _t("Глобал Элита");
-    if (n >= 25000) return _t("Верховный Мастер");
-    if (n >= 20000) return _t("Легендарный Орёл");
-    if (n >= 15000) return _t("Мастер Страж");
-    if (n >= 10000) return _t("Золотой Страж");
-    if (n >= 5000)  return _t("Серебро Высшее");
-    if (n > 0)      return _t("Серебро");
+    if (n >= 30000) return "Глобал Элита";
+    if (n >= 25000) return "Верховный Мастер";
+    if (n >= 20000) return "Легендарный Орёл";
+    if (n >= 15000) return "Мастер Страж";
+    if (n >= 10000) return "Золотой Страж";
+    if (n >= 5000)  return "Серебро Высшее";
+    if (n > 0)      return "Серебро";
     return null;
   };
 
@@ -2808,7 +2267,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
           borderBottom:`1px solid ${C.border}`,padding:"12px 28px",
           display:"flex",justifyContent:"space-between",alignItems:"center",backdropFilter:"blur(12px)"}}>
           <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-            <span style={{fontSize:"11px",letterSpacing:"4px",color:C.muted,fontWeight:700}}>{_t("ПРОФИЛЬ ИГРОКА")}</span>
+            <span style={{fontSize:"11px",letterSpacing:"4px",color:C.muted,fontWeight:700}}>{"ПРОФИЛЬ ИГРОКА"}</span>
           </div>
           <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
             color:C.label,cursor:"pointer",padding:"6px 18px",fontSize:"12px",fontFamily:"inherit",
@@ -2932,7 +2391,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                         <span style={{fontSize:"18px"}}>🔥</span>
                         <div>
                           <div style={{fontSize:"10px",color:C.muted}}>СЕРИЯ</div>
-                          <div style={{fontSize:"16px",color:C.lose,fontWeight:800}}>{s} {_t("побед")}</div>
+                          <div style={{fontSize:"16px",color:C.lose,fontWeight:800}}>{s} {"побед"}</div>
                         </div>
                       </div>:null;
                     })()}
@@ -2981,11 +2440,11 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                 {[
                   {l:"K/D",   v:rating.kd,     c:parseFloat(rating.kd)>=1.2?C.win:parseFloat(rating.kd)>=0.9?C.yellow:C.lose},
                   {l:"WIN%",  v:rating.wr+"%",  c:parseInt(rating.wr)>=55?C.win:parseInt(rating.wr)>=45?C.yellow:C.lose},
-                  {l:_t("HS%"),   v:rating.hs+"%",  c:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange},
-                  {l:_t("МАТЧИ"), v:matchCount||"—", c:C.label},
+                  {l:"HS%",   v:rating.hs+"%",  c:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange},
+                  {l:"МАТЧИ", v:matchCount||"—", c:C.label},
                   {l:"ELO",   v:fc?.elo||"—",   c:LVL_COLOR[fc?.level]||C.yellow},
                   {l:"ADR",   v:fc?.lifetime?.adr||(cs2.kills?Math.round(parseInt(cs2.kills)*75/Math.max(1,parseInt(cs2.deaths||1)*0.9)):"—"), c:C.orange},
-                  {l:_t("УБИЙСТВ"), v:cs2.kills?parseInt(cs2.kills).toLocaleString():"—", c:C.label},
+                  {l:"УБИЙСТВ", v:cs2.kills?parseInt(cs2.kills).toLocaleString():"—", c:C.label},
                   {l:"1v1",   v:fc?.lifetime?.clutch1v1?fc.lifetime.clutch1v1+"%":"—", c:C.blue},
                 ].map((s,i)=>(
                   <div key={i} style={{padding:"14px 8px",textAlign:"center",
@@ -3012,9 +2471,9 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                 <div style={{display:"flex",justifyContent:"space-around",gap:"16px"}}>
                   {[
                     {label:"K/D",   val:parseFloat(rating.kd)||0,  max:2.5, color:parseFloat(rating.kd)>=1.2?C.win:parseFloat(rating.kd)>=0.9?C.yellow:C.lose, display:rating.kd},
-                    {label:_t("HS%"),   val:parseInt(rating.hs)||0,     max:70,  color:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange,     display:rating.hs+"%"},
+                    {label:"HS%",   val:parseInt(rating.hs)||0,     max:70,  color:parseInt(rating.hs)>=40?C.win:parseInt(rating.hs)>=25?C.yellow:C.orange,     display:rating.hs+"%"},
                     {label:"WR%",   val:parseInt(rating.wr)||0,     max:70,  color:parseInt(rating.wr)>=55?C.win:parseInt(rating.wr)>=45?C.yellow:C.lose,       display:rating.wr+"%"},
-                    {label:_t("РЕЙТ."), val:rating.overall,              max:99,  color:rating.color, display:rating.overall},
+                    {label:"РЕЙТ.", val:rating.overall,              max:99,  color:rating.color, display:rating.overall},
                   ].map((s,i)=>{
                     const r=40, circ=2*Math.PI*r;
                     const pct=Math.min(1,s.val/s.max);
@@ -3102,15 +2561,15 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                   </div>}
                 </>) : (
                   <div>
-                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"20px",fontWeight:700}}>{_t("STEAM СТАТИСТИКА")}</div>
+                    <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"20px",fontWeight:700}}>{"STEAM СТАТИСТИКА"}</div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
                       {[
-                        {l:_t("УБИЙСТВ"),  v:cs2.kills?parseInt(cs2.kills).toLocaleString():"—",  c:C.yellow, icon:"⚔️"},
-                        {l:_t("СМЕРТЕЙ"),  v:cs2.deaths?parseInt(cs2.deaths).toLocaleString():"—", c:C.lose,   icon:"💀"},
-                        {l:_t("ПОБЕДЫ"),   v:cs2.wins?parseInt(cs2.wins).toLocaleString():"—",    c:C.win,    icon:"🏆"},
-                        {l:_t("MVP"),      v:cs2.mvps?parseInt(cs2.mvps).toLocaleString():"—",    c:C.yellow, icon:"⭐"},
-                        {l:_t("НОЖОМ"),    v:cs2.knife_kills||"—",    c:"#ff8888",  icon:"🔪"},
-                        {l:_t("БОМБ 💣"),  v:cs2.bombs_planted||"—",  c:C.orange,   icon:"💥"},
+                        {l:"УБИЙСТВ",  v:cs2.kills?parseInt(cs2.kills).toLocaleString():"—",  c:C.yellow, icon:"⚔️"},
+                        {l:"СМЕРТЕЙ",  v:cs2.deaths?parseInt(cs2.deaths).toLocaleString():"—", c:C.lose,   icon:"💀"},
+                        {l:"ПОБЕДЫ",   v:cs2.wins?parseInt(cs2.wins).toLocaleString():"—",    c:C.win,    icon:"🏆"},
+                        {l:"MVP",      v:cs2.mvps?parseInt(cs2.mvps).toLocaleString():"—",    c:C.yellow, icon:"⭐"},
+                        {l:"НОЖОМ",    v:cs2.knife_kills||"—",    c:"#ff8888",  icon:"🔪"},
+                        {l:"БОМБ 💣",  v:cs2.bombs_planted||"—",  c:C.orange,   icon:"💥"},
                       ].map((s,i)=>(
                         <div key={i} style={{
                           background:`linear-gradient(135deg,${s.c}08,transparent)`,
@@ -3177,7 +2636,7 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
               {/* Оружия */}
               {cs2.kills&&(
                 <div style={{background:C.bg,padding:"24px 28px"}}>
-                  <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"18px",fontWeight:700}}>{_t("ОРУЖИЯ")}</div>
+                  <div style={{fontSize:"10px",color:C.muted,letterSpacing:"3px",marginBottom:"18px",fontWeight:700}}>{"ОРУЖИЯ"}</div>
                   {(()=>{
                     const kills=parseInt(cs2.kills)||0;
                     const sniper=parseInt(cs2.sniper_kills)||0;
@@ -3189,8 +2648,8 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                       {name:"AK-47 / M4A1-S",k:Math.round(kills*0.30),hs:42,color:"#e8a44a"},
                       {name:"AWP",            k:sniper,                 hs:5, color:C.yellow},
                       {name:"Desert Eagle",   k:Math.round(pistol*0.35),hs:65,color:"#ff9944"},
-                      {name:_t("Пистолеты"),      k:pistol,                 hs:50,color:C.blue},
-                      {name:_t("Нож 🔪"),          k:knife,                  hs:0, color:"#ff8888"},
+                      {name:"Пистолеты",      k:pistol,                 hs:50,color:C.blue},
+                      {name:"Нож 🔪",          k:knife,                  hs:0, color:"#ff8888"},
                       {name:"Граната 💥",       k:grenade,                hs:0, color:C.orange},
                     ].filter(w=>w.k>0).map((w,i)=>(
                       <div key={i} style={{marginBottom:"12px"}}>
@@ -3237,10 +2696,10 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
                         <div>
                           <div style={{fontSize:"14px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
                           <div style={{fontSize:"11px",color:ac,fontWeight:600}}>
-                            {win?_t("ПОБЕДА"):_t("ПОРАЖЕНИЕ")}{m.score?` · ${m.score}`:""}
+                            {win?"ПОБЕДА":"ПОРАЖЕНИЕ"}{m.score?` · ${m.score}`:""}
                           </div>
                         </div>
-                        {[{l:"K/D",v:m.kd},{l:"KILLS",v:m.kills},{l:_t("HS%"),v:m.hs?m.hs+"%":"-"},{l:"ADR",v:m.adr}].map((s,j)=>(
+                        {[{l:"K/D",v:m.kd},{l:"KILLS",v:m.kills},{l:"HS%",v:m.hs?m.hs+"%":"-"},{l:"ADR",v:m.adr}].map((s,j)=>(
                           <div key={j} style={{textAlign:"center"}}>
                             <div style={{fontSize:"9px",color:C.muted,marginBottom:"3px",letterSpacing:"1px"}}>{s.l}</div>
                             <div style={{fontSize:"14px",color:C.label,fontWeight:600}}>{s.v||"—"}</div>
@@ -3290,9 +2749,9 @@ function ProfileModal({steamid, nickname, onClose, myId, isPro}) {
 const COACH_CHARS = [
   {
     id:"drill",
-    name:_t("Сержант"),
+    name:"Сержант",
     emoji:"🪖",
-    desc:t("char_drill_desc",_t("Строгий военный тренер. Режет правду без сахара.")),
+    desc:"Строгий военный тренер. Режет правду без сахара.",
     color:"#ff6644",
     pro:false,
     system:`Ты Сержант — жёсткий военный тренер по CS2. Говоришь коротко, по-военному, без лишних слов. 
@@ -3302,9 +2761,9 @@ const COACH_CHARS = [
   },
   {
     id:"mentor",
-    name:_t("Ментор"),
+    name:"Ментор",
     emoji:"🎯",
-    desc:t("char_mentor_desc",_t("Спокойный опытный наставник. Объясняет всё по делу.")),
+    desc:"Спокойный опытный наставник. Объясняет всё по делу.",
     color:"#74c6f5",
     pro:false,
     system:`Ты опытный CS2 ментор. Говоришь спокойно, по делу, как старший товарищ который всё видел.
@@ -3316,7 +2775,7 @@ const COACH_CHARS = [
     id:"friend",
     name:"Бро",
     emoji:"😎",
-    desc:t("char_bro_desc",_t("Твой друг-про игрок. Говорит как равный, по-братски.")),
+    desc:"Твой друг-про игрок. Говорит как равный, по-братски.",
     color:"#88ff44",
     pro:true,
     system:`Ты лучший друг который играет в CS2 на высоком уровне. Разговариваешь как равный, без пафоса.
@@ -3328,7 +2787,7 @@ const COACH_CHARS = [
     id:"terminator",
     name:"Терминатор",
     emoji:"🤖",
-    desc:t("char_term_desc",_t("T-800. Анализирует данные. Цель — улучшить показатели.")),
+    desc:"T-800. Анализирует данные. Цель — улучшить показатели.",
     color:"#ff3333",
     pro:true,
     system:`Ты Терминатор T-800, перепрограммированный как тренер CS2. Говоришь как робот — точно, без эмоций, с техническими терминами.
@@ -3338,9 +2797,9 @@ const COACH_CHARS = [
   },
   {
     id:"samurai",
-    name:_t("Сенсей"),
+    name:"Сенсей",
     emoji:"⚔️",
-    desc:t("char_sensei_desc",_t("Японский мастер CS2. Говорит мудростями и метафорами.")),
+    desc:"Японский мастер CS2. Говорит мудростями и метафорами.",
     color:"#f5c518",
     pro:true,
     system:`Ты Сенсей — мудрый японский мастер боевых искусств, применяющий философию к CS2. Говоришь кратко, как дзен-буддист.
@@ -3409,7 +2868,7 @@ function CoachChat({player, source, analysis, charId, isPro}) {
       const d = await r.json();
       setMsgs(m=>[...m, {from:"coach", text:d.reply||"..."}]);
     } catch {
-      setMsgs(m=>[...m, {from:"coach", text:t("conn_lost",_t("Соединение потеряно. Попробуй ещё раз."))}]);
+      setMsgs(m=>[...m, {from:"coach", text:"Соединение потеряно. Попробуй ещё раз."}]);
     }
     setLoading(false);
   }
@@ -3462,7 +2921,7 @@ function CoachChat({player, source, analysis, charId, isPro}) {
       {/* Быстрые вопросы */}
       {msgs.length<=1&&<div style={{display:"flex",gap:"4px",flexWrap:"wrap",
         padding:"8px 14px",borderTop:`1px solid ${C.border}22`}}>
-        {[_t("Как улучшить K/D?"),_t("Что делать с WR?"),_t("Какую карту учить?"),_t("Как тренироваться?")].map(q=>(
+        {["Как улучшить K/D?","Что делать с WR?","Какую карту учить?","Как тренироваться?"].map(q=>(
           <button key={q} onClick={()=>setInput(q)} style={{
             padding:"4px 10px",background:"transparent",
             border:`1px solid ${char.color}33`,color:char.color,
@@ -3513,7 +2972,7 @@ function Leaderboard({myId, myIsPro, onProfile}) {
   if (!data.length) return (
     <div style={{textAlign:"center",padding:"70px",color:C.muted}}>
       <div style={{fontSize:"36px",marginBottom:"14px"}}>🏆</div>
-      <div style={{fontSize:"13px",letterSpacing:"3px"}}>{_t("ТАБЛИЦА ПУСТА")}</div>
+      <div style={{fontSize:"13px",letterSpacing:"3px"}}>{"ТАБЛИЦА ПУСТА"}</div>
       <div style={{fontSize:"13px",color:C.muted,marginTop:"8px",marginBottom:"20px"}}>
         Данные появятся автоматически при следующем входе
       </div>
@@ -3527,10 +2986,10 @@ function Leaderboard({myId, myIsPro, onProfile}) {
   const STAT_SORTS = [
     {id:"kd",      label:"K/D",          icon:"🎯", fn:(a,b)=>(parseFloat(b.stats?.kd||0)-parseFloat(a.stats?.kd||0))},
     {id:"winrate", label:"Побед %",       icon:"🏆", fn:(a,b)=>(parseFloat(b.stats?.winrate||0)-parseFloat(a.stats?.winrate||0))},
-    {id:"hs",      label:_t("HS%"),           icon:"💥", fn:(a,b)=>(parseFloat(b.stats?.hs||0)-parseFloat(a.stats?.hs||0))},
-    {id:"kills",   label:_t("Убийства"),     icon:"⚔️", fn:(a,b)=>(parseInt(b.stats?.kills||0)-parseInt(a.stats?.kills||0))},
-    {id:"matches", label:_t("Матчи"),        icon:"🎮", fn:(a,b)=>(parseInt(b.stats?.matches||0)-parseInt(a.stats?.matches||0))},
-    {id:"mvp",     label:_t("MVP"),          icon:"⭐", fn:(a,b)=>(parseInt(b.stats?.mvp||0)-parseInt(a.stats?.mvp||0))},
+    {id:"hs",      label:"HS%",           icon:"💥", fn:(a,b)=>(parseFloat(b.stats?.hs||0)-parseFloat(a.stats?.hs||0))},
+    {id:"kills",   label:"Убийства",     icon:"⚔️", fn:(a,b)=>(parseInt(b.stats?.kills||0)-parseInt(a.stats?.kills||0))},
+    {id:"matches", label:"Матчи",        icon:"🎮", fn:(a,b)=>(parseInt(b.stats?.matches||0)-parseInt(a.stats?.matches||0))},
+    {id:"mvp",     label:"MVP",          icon:"⭐", fn:(a,b)=>(parseInt(b.stats?.mvp||0)-parseInt(a.stats?.mvp||0))},
   ];
 
   // Для Premier вкладки — сортировка по рейтингу
@@ -3597,10 +3056,10 @@ function Leaderboard({myId, myIsPro, onProfile}) {
           padding:"8px 14px",fontSize:"10px",letterSpacing:"2px",color:C.muted,
           borderBottom:`1px solid ${C.border}`,borderTop:`1px solid ${C.border}`}}>
           <div>#</div>
-          <div>{_t("ИГРОК")}</div>
+          <div>{"ИГРОК"}</div>
           <div>ТЕКУЩИЙ РАНГ</div>
           <div>ЛУЧШИЙ РАНГ</div>
-          <div style={{textAlign:"right"}}>{_t("ПОБЕДЫ")}</div>
+          <div style={{textAlign:"right"}}>{"ПОБЕДЫ"}</div>
         </div>
       )}
 
@@ -3609,7 +3068,7 @@ function Leaderboard({myId, myIsPro, onProfile}) {
         <div style={{display:"grid",gridTemplateColumns:"40px 1fr 110px 100px",gap:"2px",
           padding:"8px 14px",fontSize:"10px",letterSpacing:"2px",color:C.muted,
           borderBottom:`1px solid ${C.border}`,borderTop:`1px solid ${C.border}`}}>
-          <div>#</div><div>{_t("ИГРОК")}</div><div>УРОВЕНЬ</div>
+          <div>#</div><div>{"ИГРОК"}</div><div>УРОВЕНЬ</div>
           <div style={{textAlign:"right"}}>{STAT_SORTS.find(s=>s.id===sortKey)?.label?.toUpperCase()}</div>
         </div>
       )}
@@ -3643,7 +3102,7 @@ function Leaderboard({myId, myIsPro, onProfile}) {
                 <div style={{minWidth:0}}>
                   <div style={{fontSize:"14px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:500,
                     overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                    {p.username}{isMe?_t(" (ты)"):""}
+                    {p.username}{isMe?" (ты)":""}
                   </div>
                   <div style={{fontSize:"10px",color:C.muted,marginTop:"1px"}}>
                     {p.stats?.kd?`K/D ${p.stats.kd}`:""}
@@ -3698,7 +3157,7 @@ function Leaderboard({myId, myIsPro, onProfile}) {
               {p.avatar?<img src={p.avatar} alt="" style={{width:"28px",height:"28px",borderRadius:"2px",flexShrink:0}}/>
                 :<div style={{width:"28px",height:"28px",background:"#1a1a10",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",flexShrink:0}}>👤</div>}
               <span style={{fontSize:"14px",color:isMe?C.yellow:C.value,fontWeight:isMe?700:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                {p.username}{isMe?_t(" (ты)"):""}
+                {p.username}{isMe?" (ты)":""}
               </span>
               {(p.is_pro||(isMe&&myIsPro))&&<span style={{fontSize:"9px",color:C.yellow,background:C.yellow+"22",
                 border:`1px solid ${C.yellow}44`,padding:"1px 5px",letterSpacing:"1px",flexShrink:0}}>PRO</span>}
@@ -3727,7 +3186,7 @@ function HistoryTab({steamid}) {
   if (!data.length) return (
     <div style={{textAlign:"center",padding:"60px",color:C.muted}}>
       <div style={{fontSize:"28px",marginBottom:"12px"}}>📋</div>
-      <div style={{fontSize:"13px",letterSpacing:"3px"}}>{_t("ИСТОРИЯ ПУСТА")}</div>
+      <div style={{fontSize:"13px",letterSpacing:"3px"}}>{"ИСТОРИЯ ПУСТА"}</div>
     </div>
   );
   return (
@@ -3812,7 +3271,7 @@ function ScoreCards({player, source}) {
         </div>
         <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px"}}>{label}</div>
         <div style={{fontSize:"13px",color:scoreColor,fontWeight:700,marginTop:"2px"}}>
-          {score>=80?t("excellent",_t("ОТЛИЧНО")):score>=60?_t("ХОРОШО"):score>=40?_t("СРЕДНЕ"):_t("РАБОТАЙ")}
+          {score>=80?"ОТЛИЧНО":score>=60?"ХОРОШО":score>=40?"СРЕДНЕ":"РАБОТАЙ"}
         </div>
         <div style={{fontSize:"11px",color:scoreColor,marginTop:"2px",marginBottom:"6px",opacity:0.8}}>
           Топ {topPct}%
@@ -3834,19 +3293,19 @@ function ScoreCards({player, source}) {
   return (
     <div style={{className:"score-rings",background:C.card,border:`1px solid ${C.border}`,
       display:"flex",justifyContent:"space-around",flexWrap:"wrap",marginBottom:"10px",animation:"up .5s ease both"}}>
-      <ScoreRing score={overallScore} label=_t("ОБЩИЙ РЕЙТИНГ") color={C.yellow} breakdown={[
+      <ScoreRing score={overallScore} label="ОБЩИЙ РЕЙТИНГ" color={C.yellow} breakdown={[
         {label:"AIM × 60%",  val:aimScore},
         {label:"CONST × 40%",val:consistScore},
       ]}/>
       <ScoreRing score={aimScore} label="AIM SCORE" breakdown={[
         {label:"K/D",   val:kd.toFixed(2)},
-        {label:_t("HS%"),   val:hs+"%"},
+        {label:"HS%",   val:hs+"%"},
         {label:"WR%",   val:wr+"%"},
       ]}/>
       <ScoreRing score={consistScore} label="CONSISTENCY" breakdown={[
         {label:"WR%",    val:wr+"%"},
-        {label:_t("Матчи"),  val:matches},
-        {label:_t("FACEIT"), val:lvl>0?"lvl "+lvl:"—"},
+        {label:"Матчи",  val:matches},
+        {label:"FACEIT", val:lvl>0?"lvl "+lvl:"—"},
       ]}/>
     </div>
   );
@@ -3873,19 +3332,19 @@ function TrainingPlan({player, source}) {
   useEffect(() => {
     const tasks = [];
     // Aim warmup — всегда
-    tasks.push({id:"aim",cat:"AIM",dur:_t("15 мин"),task:_t("Aim_botz: 500 убийств с места, фокус на голову"),priority:true});
+    tasks.push({id:"aim",cat:"AIM",dur:"15 мин",task:"Aim_botz: 500 убийств с места, фокус на голову",priority:true});
     // Recoil если HS низкий
-    if (hs < 45) tasks.push({id:"recoil",cat:"МЕХАНИКА",dur:_t("20 мин"),task:_t("Workshop: Recoil Master — отработать спрей AK и M4"),priority:true});
+    if (hs < 45) tasks.push({id:"recoil",cat:"МЕХАНИКА",dur:"20 мин",task:"Workshop: Recoil Master — отработать спрей AK и M4",priority:true});
     // Movement если KD низкий
-    if (kd < 1.0) tasks.push({id:"move",cat:"МЕХАНИКА",dur:_t("15 мин"),task:_t("Counter-strafe практика: двигаться → остановиться → стрелять")});
+    if (kd < 1.0) tasks.push({id:"move",cat:"МЕХАНИКА",dur:"15 мин",task:"Counter-strafe практика: двигаться → остановиться → стрелять"});
     // Prefire на картах
-    tasks.push({id:"prefire",cat:"КАРТЫ",dur:_t("20 мин"),task:_t("Prefire Workshop: отработать 10 ключевых позиций на своей лучшей карте")});
+    tasks.push({id:"prefire",cat:"КАРТЫ",dur:"20 мин",task:"Prefire Workshop: отработать 10 ключевых позиций на своей лучшей карте"});
     // Deathmatch
-    tasks.push({id:"dm",cat:"РАЗМИНКА",dur:_t("10 мин"),task:_t("Deathmatch перед игрой: только хедшоты, пистолетный раунд")});
+    tasks.push({id:"dm",cat:"РАЗМИНКА",dur:"10 мин",task:"Deathmatch перед игрой: только хедшоты, пистолетный раунд"});
     // Demo если WR низкий
-    if (wr < 50) tasks.push({id:"demo",cat:"АНАЛИЗ",dur:_t("15 мин"),task:_t("Посмотри 1 раунд из проигранного матча — найди момент где ошибся")});
+    if (wr < 50) tasks.push({id:"demo",cat:"АНАЛИЗ",dur:"15 мин",task:"Посмотри 1 раунд из проигранного матча — найди момент где ошибся"});
     // Utility
-    tasks.push({id:"util",cat:t("tactics",t("cat_tact",_t("ТАКТИКА"))),dur:_t("10 мин"),task:_t("Выучи 1 новый смок или молотов на часто играемой карте")});
+    tasks.push({id:"util",cat:"ТАКТИКА",dur:"10 мин",task:"Выучи 1 новый смок или молотов на часто играемой карте"});
     setPlan(tasks.slice(0,5));
   }, [player?.steamid, source]);
 
@@ -3902,7 +3361,7 @@ function TrainingPlan({player, source}) {
           <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,marginBottom:"4px"}}>
             📋 ПЛАН НА СЕГОДНЯ
           </div>
-          <div style={{fontSize:"13px",color:C.muted}}>{doneCount}/{total} {_t("выполнено")}</div>
+          <div style={{fontSize:"13px",color:C.muted}}>{doneCount}/{total} {"выполнено"}</div>
         </div>
         {/* Progress bar */}
         <div style={{minWidth:"200px"}}>
@@ -3968,9 +3427,9 @@ function MobileNav({tab, setTab}) {
   const items = [
     {id:"overview", icon:"👤", label:"Обзор"},
     {id:"coach",    icon:"🎯", label:"Тренер"},
-    {id:"matches",  icon:"🎮", label:_t("Матчи")},
+    {id:"matches",  icon:"🎮", label:"Матчи"},
     {id:"history",  icon:"📋", label:"История"},
-    {id:"leaderboard", icon:"🏆", label:_t("Топ")},
+    {id:"leaderboard", icon:"🏆", label:"Топ"},
   ];
   return (
     <nav className="mobile-nav" style={{position:"fixed",bottom:0,left:0,right:0,
@@ -4003,27 +3462,27 @@ function DayAction({player, source, streak}) {
   // Находим ближайшую незакрытую ачивку
   const target = (() => {
     if (kd < 1.0) return {
-      icon:"⚔️", name:_t("Фраггер"), progress:Math.round(Math.min(99,kd/1.0*100)),
+      icon:"⚔️", name:"Фраггер", progress:Math.round(Math.min(99,kd/1.0*100)),
       left:(1.0-kd).toFixed(2)+" K/D",
-      actions:[_t("500 убийств в Aim Botz · 15 мин"),_t("Counter-strafe тренировка · 15 мин")],
+      actions:["500 убийств в Aim Botz · 15 мин","Counter-strafe тренировка · 15 мин"],
       xp:25, color:"#74c6f5",
     };
     if (hs < 40) return {
-      icon:"🎯", name:_t("HS Машина"), progress:Math.round(Math.min(99,hs/40*100)),
+      icon:"🎯", name:"HS Машина", progress:Math.round(Math.min(99,hs/40*100)),
       left:(40-Math.round(hs))+"% HS",
-      actions:[_t("Recoil Master: спрей AK · 20 мин"),_t("Aim Botz: только хедшоты · 15 мин")],
+      actions:["Recoil Master: спрей AK · 20 мин","Aim Botz: только хедшоты · 15 мин"],
       xp:20, color:"#ff8844",
     };
     if (wr < 50) return {
-      icon:"🏆", name:_t("Победитель"), progress:Math.round(Math.min(99,wr/50*100)),
+      icon:"🏆", name:"Победитель", progress:Math.round(Math.min(99,wr/50*100)),
       left:(50-Math.round(wr))+"% WR",
-      actions:[_t("Разбери последний проигрыш · 15 мин"),_t("Prefire Workshop: лучшая карта · 20 мин")],
+      actions:["Разбери последний проигрыш · 15 мин","Prefire Workshop: лучшая карта · 20 мин"],
       xp:20, color:"#55ee55",
     };
     return {
-      icon:"💀", name:_t("Элита"), progress:Math.round(Math.min(99,kd/1.5*100)),
+      icon:"💀", name:"Элита", progress:Math.round(Math.min(99,kd/1.5*100)),
       left:(1.5-kd).toFixed(2)+" K/D",
-      actions:[_t("Aim Botz: 1000 убийств · 20 мин"),_t("Prefire Workshop · 20 мин")],
+      actions:["Aim Botz: 1000 убийств · 20 мин","Prefire Workshop · 20 мин"],
       xp:30, color:"#ff4466",
     };
   })();
@@ -4037,7 +3496,7 @@ function DayAction({player, source, streak}) {
 
       {/* Заголовок */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}>
-        <span style={{fontSize:"10px",color:target.color,letterSpacing:"3px",fontWeight:700}}>{_t("⚡ ЦЕЛЬ")}</span>
+        <span style={{fontSize:"10px",color:target.color,letterSpacing:"3px",fontWeight:700}}>{"⚡ ЦЕЛЬ"}</span>
         <span style={{fontSize:"11px",color:target.color,background:target.color+"18",
           border:`1px solid ${target.color}33`,padding:"2px 10px",fontWeight:700}}>+{target.xp} XP</span>
       </div>
@@ -4047,7 +3506,7 @@ function DayAction({player, source, streak}) {
         <div style={{fontSize:"15px",color:C.value,fontWeight:700,marginBottom:"3px"}}>
           До <span style={{color:target.color}}>{target.name}</span>
           <span style={{fontSize:"12px",color:C.muted,marginLeft:"8px",fontWeight:400}}>
-            — {_t("осталось")} {target.left}
+            — {"осталось"} {target.left}
           </span>
         </div>
         <div style={{height:"4px",background:"#111108",borderRadius:"2px",overflow:"hidden",marginBottom:"4px"}}>
@@ -4055,7 +3514,7 @@ function DayAction({player, source, streak}) {
             background:`linear-gradient(90deg,${target.color}66,${target.color})`,
             borderRadius:"2px",boxShadow:`0 0 6px ${target.color}55`,transition:"width 1s ease"}}/>
         </div>
-        <div style={{fontSize:"10px",color:C.muted}}>{target.progress}% {_t("выполнено")}</div>
+        <div style={{fontSize:"10px",color:C.muted}}>{target.progress}% {"выполнено"}</div>
       </div>
 
       {/* Действия */}
@@ -4093,15 +3552,15 @@ function DayAction({player, source, streak}) {
       {/* Завтра */}
       <div style={{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px",
         fontSize:"11px",color:C.muted}}>
-        <span style={{color:C.yellow,fontWeight:700,flexShrink:0}}>{_t("ЗАВТРА")}</span>
+        <span style={{color:C.yellow,fontWeight:700,flexShrink:0}}>{"ЗАВТРА"}</span>
         <span style={{color:C.label}}>
           {kd<1.0
-            ? <>{_currentLang==="en"?<>Raise K/D to <span style={{color:C.blue}}>1.0</span> — play {Math.max(1,Math.ceil((1.0-kd)*10))} deathmatch games</>:<>Доведи K/D до <span style={{color:C.blue}}>1.0</span> — сыграй {Math.max(1,Math.ceil((1.0-kd)*10))} матча на дуэлях</>}</>
+            ? <>{false?<>Raise K/D to <span style={{color:C.blue}}>1.0</span> — play {Math.max(1,Math.ceil((1.0-kd)*10))} deathmatch games</>:<>Доведи K/D до <span style={{color:C.blue}}>1.0</span> — сыграй {Math.max(1,Math.ceil((1.0-kd)*10))} матча на дуэлях</>}</>
             : hs<40
-            ? <>{_currentLang==="en"?<>Raise HS% to <span style={{color:C.orange}}>40%</span> — 20 min Aim Botz headshots</>:<>Подними HS% до <span style={{color:C.orange}}>40%</span> — 20 мин Aim Botz в голову</>}</>
+            ? <>{false?<>Raise HS% to <span style={{color:C.orange}}>40%</span> — 20 min Aim Botz headshots</>:<>Подними HS% до <span style={{color:C.orange}}>40%</span> — 20 мин Aim Botz в голову</>}</>
             : wr<50
-            ? <>{_currentLang==="en"?<>Win <span style={{color:C.win}}>{Math.max(1,Math.ceil((50-wr)/5))} matches</span> on your best map</>:<>Выиграй <span style={{color:C.win}}>{Math.max(1,Math.ceil((50-wr)/5))} матча</span> на лучшей карте</>}</>
-            : <>{_currentLang==="en"?"Hold form: 1 match today":"Удержи уровень: 1 матч сегодня"}</>
+            ? <>{false?<>Win <span style={{color:C.win}}>{Math.max(1,Math.ceil((50-wr)/5))} matches</span> on your best map</>:<>Выиграй <span style={{color:C.win}}>{Math.max(1,Math.ceil((50-wr)/5))} матча</span> на лучшей карте</>}</>
+            : <>"Удержи уровень: 1 матч сегодня"</>
           }
         </span>
         <span style={{marginLeft:"auto",color:C.yellow,fontWeight:700,flexShrink:0}}>+{target.xp} XP</span>
@@ -4118,7 +3577,7 @@ function DailyStreak({streak}) {
   const milestones = [1,3,5,7];
   const nextMilestone = milestones.find(m=>m>streak) || 7;
   const streakColor = streak>=7?"#aa44ff":streak>=5?C.win:streak>=3?C.yellow:C.orange;
-  const label = streak>=7?_t("ЛЕГЕНДА 🏆"):streak>=5?_t("ОГОНЬ 🔥"):streak>=3?_t("ХОРОШО ⚡"):_t("НАЧАЛО 🌱");
+  const label = streak>=7?"ЛЕГЕНДА 🏆":streak>=5?"ОГОНЬ 🔥":streak>=3?"ХОРОШО ⚡":"НАЧАЛО 🌱";
 
   return (
     <div style={{background:C.card,border:`1px solid ${streakColor}44`,
@@ -4174,7 +3633,7 @@ function OnboardingModal({player, onClose, onGoTab}) {
 
   async function connectCode() {
     if (!authCode.trim()) {
-      setCodeErr(t("enter_auth_code",_t("Введи код аутентификации")));
+      setCodeErr("Введи код аутентификации");
       return;
     }
     setCodeLoading(true); setCodeErr("");
@@ -4189,28 +3648,28 @@ function OnboardingModal({player, onClose, onGoTab}) {
         setCodeDone(true);
         setStep(3);
       } else {
-        setCodeErr(d.detail || t("wrong_code",_t("Неверный код. Проверь и попробуй снова.")));
+        setCodeErr(d.detail || "Неверный код. Проверь и попробуй снова.");
       }
-    } catch { setCodeErr(t("net_err_later",_t("Ошибка сети — попробуй позже"))); }
+    } catch { setCodeErr("Ошибка сети — попробуй позже"); }
     setCodeLoading(false);
   }
 
   const STEPS = [
     {
-      num:1, icon:"🎮", title:_t("Добро пожаловать!"),
-      sub:_t("Ты вошёл через Steam — это уже первый шаг"),
+      num:1, icon:"🎮", title:"Добро пожаловать!",
+      sub:"Ты вошёл через Steam — это уже первый шаг",
     },
     {
-      num:2, icon:"⚡", title:_t("Подключи FACEIT"),
-      sub:_t("Получи детальную статистику по каждому матчу"),
+      num:2, icon:"⚡", title:"Подключи FACEIT",
+      sub:"Получи детальную статистику по каждому матчу",
     },
     {
-      num:3, icon:"🔑", title:_t("Подключи историю матчей"),
-      sub:_t("Введи код аутентификации Steam для доступа к MM матчам"),
+      num:3, icon:"🔑", title:"Подключи историю матчей",
+      sub:"Введи код аутентификации Steam для доступа к MM матчам",
     },
     {
-      num:4, icon:"🏆", title:_t("Всё готово!"),
-      sub:_t("AI тренер знает твою игру и готов помочь"),
+      num:4, icon:"🏆", title:"Всё готово!",
+      sub:"AI тренер знает твою игру и готов помочь",
     },
   ];
 
@@ -4251,8 +3710,8 @@ function OnboardingModal({player, onClose, onGoTab}) {
                 {[
                   ["K/D", player?.cs2?.kd||player?.faceit?.lifetime?.kd||"—"],
                   ["WR%", (player?.cs2?.winrate||player?.faceit?.lifetime?.winrate||"—")+(player?.cs2?.winrate||player?.faceit?.lifetime?.winrate?"%":"")],
-                  [_t("HS%"), (player?.cs2?.hs||player?.faceit?.lifetime?.hs||"—")+(player?.cs2?.hs||player?.faceit?.lifetime?.hs?"%":"")],
-                  [_t("МАТЧИ"), player?.cs2?.matches||player?.faceit?.lifetime?.matches||"—"],
+                  ["HS%", (player?.cs2?.hs||player?.faceit?.lifetime?.hs||"—")+(player?.cs2?.hs||player?.faceit?.lifetime?.hs?"%":"")],
+                  ["МАТЧИ", player?.cs2?.matches||player?.faceit?.lifetime?.matches||"—"],
                 ].map(([l,v],i)=>(
                   <div key={i} style={{background:"#0d0d09",border:`1px solid ${C.border}`,padding:"12px",textAlign:"center"}}>
                     <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>{l}</div>
@@ -4380,7 +3839,7 @@ function OnboardingModal({player, onClose, onGoTab}) {
                     color:"#080807",border:"none",
                     cursor:codeLoading||!authCode.trim()?"not-allowed":"pointer",
                     fontSize:"13px",fontWeight:700,fontFamily:"inherit"}}>
-                  {codeLoading?_t("ПРОВЕРЯЮ КОД..."):_t("ПОДКЛЮЧИТЬ →")}
+                  {codeLoading?"ПРОВЕРЯЮ КОД...":"ПОДКЛЮЧИТЬ →"}
                 </button>
                 <button onClick={()=>setStep(3)} style={{padding:"12px 16px",background:"transparent",
                   border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:"12px",fontFamily:"inherit"}}>
@@ -4498,7 +3957,7 @@ function Logo({size=32, withText=true}) {
       </svg>
       {withText&&<div>
         <div style={{fontSize:"15px",color:"#f5c518",fontWeight:700,letterSpacing:"2px",lineHeight:1.1}}>CS2</div>
-        <div style={{fontSize:"9px",color:"#9a9270",letterSpacing:"3px",lineHeight:1}}>{_t("ТРЕНЕР")}</div>
+        <div style={{fontSize:"9px",color:"#9a9270",letterSpacing:"3px",lineHeight:1}}>{"ТРЕНЕР"}</div>
       </div>}
     </div>
   );
@@ -4545,7 +4004,7 @@ function AboutModal({onClose}) {
           <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
             <Logo size={40}/>
             <div>
-              <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"10px"}}>{_t("О СЕРВИСЕ")}</div>
+              <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"10px"}}>{"О СЕРВИСЕ"}</div>
               <div style={{fontSize:"18px",color:C.value,fontWeight:700}}>CS2 AI Тренер</div>
             </div>
           </div>
@@ -4571,7 +4030,7 @@ function AboutModal({onClose}) {
           </div>
 
           <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"18px 20px",marginBottom:"20px"}}>
-            <div style={{fontSize:"12px",letterSpacing:"2px",color:C.yellow,marginBottom:"10px"}}>{_t("КАК ЭТО РАБОТАЕТ")}</div>
+            <div style={{fontSize:"12px",letterSpacing:"2px",color:C.yellow,marginBottom:"10px"}}>{"КАК ЭТО РАБОТАЕТ"}</div>
             {[
               "1. Войди через Steam — данные подтянутся автоматически",
               "2. AI Report загрузится сразу — увидишь свои сильные и слабые стороны",
@@ -4584,13 +4043,13 @@ function AboutModal({onClose}) {
 
           <div className="about-tech-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"3px",marginBottom:"20px"}}>
             <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
-              <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{_t("ТЕХНОЛОГИИ")}</div>
+              <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{"ТЕХНОЛОГИИ"}</div>
               {["Steam Web API","FACEIT Open API","Groq AI (LLaMA 3.3)","React + FastAPI"].map((t,i)=>(
                 <div key={i} style={{fontSize:"13px",color:C.label,marginBottom:"4px"}}>· {t}</div>
               ))}
             </div>
             <div style={{background:"#111109",border:`1px solid ${C.border}`,padding:"16px"}}>
-              <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{_t("КОНФИДЕНЦИАЛЬНОСТЬ")}</div>
+              <div style={{fontSize:"12px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{"КОНФИДЕНЦИАЛЬНОСТЬ"}</div>
               <div style={{fontSize:"13px",color:C.label,lineHeight:1.6}}>
                 Мы не храним пароли и личные данные. Используется только публичная статистика Steam и FACEIT.
               </div>
@@ -4598,7 +4057,7 @@ function AboutModal({onClose}) {
           </div>
 
           <div style={{textAlign:"center",padding:"16px",background:"#111109",border:`1px solid ${C.border}`}}>
-            <div style={{fontSize:"13px",color:C.muted,marginBottom:"6px"}}>{_t("Вопросы и поддержка")}</div>
+            <div style={{fontSize:"13px",color:C.muted,marginBottom:"6px"}}>{"Вопросы и поддержка"}</div>
             <div style={{fontSize:"14px",color:C.yellow}}>Telegram: @cs2coach_support</div>
           </div>
         </div>
@@ -4638,18 +4097,18 @@ function Footer({onAbout, onPro, onLeaderboard}) {
           <div style={{minWidth:"200px"}}>
             <Logo size={36} withText={true}/>
             <div style={{fontSize:"13px",color:C.muted,marginTop:"10px",lineHeight:1.6,maxWidth:"220px"}}>
-              {_t("AI тренер для CS2 игроков. Анализ статистики и персональные советы.")}
+              {"AI тренер для CS2 игроков. Анализ статистики и персональные советы."}
             </div>
           </div>
 
           {/* Links */}
           <div style={{display:"flex",gap:"64px",flexWrap:"wrap"}}>
             <div>
-              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>{_t("СЕРВИС")}</div>
+              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>{"СЕРВИС"}</div>
               {[
-                {label:t("about_us",_t("О нас")), action:onAbout},
-                {label:_t("Тарифы Pro"), action:onPro},
-                {label:_t(_t("Таблица лидеров")), action:onLeaderboard},
+                {label:"О нас", action:onAbout},
+                {label:"Тарифы Pro", action:onPro},
+                {label:"Таблица лидеров", action:onLeaderboard},
               ].map((l,i)=>(
                 <div key={i} style={{marginBottom:"8px"}}>
                   <button onClick={l.action||undefined} style={{background:"transparent",border:"none",
@@ -4663,7 +4122,7 @@ function Footer({onAbout, onPro, onLeaderboard}) {
               ))}
             </div>
             <div>
-              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>{_t("СОЦСЕТИ")}</div>
+              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"12px",fontWeight:700}}>{"СОЦСЕТИ"}</div>
               {SOCIALS.map((s,i)=>(
                 <a key={i} href={s.url} target="_blank" rel="noreferrer"
                   style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px",
@@ -4679,7 +4138,7 @@ function Footer({onAbout, onPro, onLeaderboard}) {
 
           {/* Online */}
           <div style={{textAlign:"right"}}>
-            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"6px"}}>{_t("СЕЙЧАС ОНЛАЙН")}</div>
+            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"6px"}}>{"СЕЙЧАС ОНЛАЙН"}</div>
             <div style={{display:"flex",alignItems:"center",gap:"8px",justifyContent:"flex-end"}}>
               <div style={{width:"8px",height:"8px",background:C.win,borderRadius:"50%",
                 animation:"pulse 2s infinite",boxShadow:`0 0 6px ${C.win}`}}/>
@@ -4691,19 +4150,19 @@ function Footer({onAbout, onPro, onLeaderboard}) {
                 {online}
               </span>
             </div>
-            <div style={{fontSize:"12px",color:C.muted,marginTop:"4px"}}>{_t("игроков на сайте")}</div>
+            <div style={{fontSize:"12px",color:C.muted,marginTop:"4px"}}>{"игроков на сайте"}</div>
           </div>
         </div>
 
         <div style={{borderTop:`1px solid ${C.border}`,paddingTop:"18px",
           display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"12px"}}>
           <div style={{fontSize:"13px",color:C.muted}}>
-            {_t("© 2026 CS2 AI Тренер. Все права защищены.").replace("2026", new Date().getFullYear())}
+            {"© 2026 CS2 AI Тренер. Все права защищены.".replace("2026", new Date().getFullYear())}
           </div>
           <div style={{display:"flex",gap:"20px"}}>
             {[
-              {t:_t("Политика конфиденциальности"),txt:"Мы собираем только публичные данные Steam и FACEIT — никаких паролей, личных данных и платёжной информации. Аналитика обрабатывается AI и не передаётся третьим лицам. Данные хранятся только в рамках текущей сессии."},
-              {t:_t("Условия использования"),txt:"Сервис предназначен для личного использования игроками CS2. Запрещено автоматическое использование API. Сервис не аффилирован с Valve Corporation или FACEIT Ltd. и не несёт ответственности за точность AI-анализа."},
+              {t:"Политика конфиденциальности",txt:"Мы собираем только публичные данные Steam и FACEIT — никаких паролей, личных данных и платёжной информации. Аналитика обрабатывается AI и не передаётся третьим лицам. Данные хранятся только в рамках текущей сессии."},
+              {t:"Условия использования",txt:"Сервис предназначен для личного использования игроками CS2. Запрещено автоматическое использование API. Сервис не аффилирован с Valve Corporation или FACEIT Ltd. и не несёт ответственности за точность AI-анализа."},
             ].map((item,i)=>(
               <span key={i} onClick={()=>window.alert(item.txt)}
                 style={{fontSize:"12px",color:C.muted,cursor:"pointer",textDecoration:"underline",textDecorationStyle:"dotted"}}
@@ -4792,7 +4251,7 @@ function ShareModal({steamid, player, source, onClose}) {
               ? <img src={player.avatar} alt="" style={{width:"52px",height:"52px",borderRadius:"3px",border:`2px solid ${C.yellow}66`}}/>
               : <div style={{width:"52px",height:"52px",background:"#1a1a10",borderRadius:"3px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px"}}>👤</div>}
             <div>
-              <div style={{fontSize:"16px",color:C.value,fontWeight:700}}>{player?.username||_t("Игрок")}</div>
+              <div style={{fontSize:"16px",color:C.value,fontWeight:700}}>{player?.username||"Игрок"}</div>
               <div style={{fontSize:"12px",color:C.muted,marginTop:"2px"}}>
                 {lvl>0?`FACEIT LVL ${lvl} · ${elo} ELO`:"Steam игрок"}
               </div>
@@ -4805,7 +4264,7 @@ function ShareModal({steamid, player, source, onClose}) {
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px"}}>
             {[
               {l:"K/D",   v:kd.toFixed(2),       c:C.blue},
-              {l:_t("HS%"),   v:Math.round(hs)+"%",   c:C.orange},
+              {l:"HS%",   v:Math.round(hs)+"%",   c:C.orange},
               {l:"WR%",   v:Math.round(wr)+"%",   c:"#aa88ff"},
             ].map((s,i)=>(
               <div key={i} style={{textAlign:"center",background:"#141409",
@@ -4852,12 +4311,12 @@ function ShareModal({steamid, player, source, onClose}) {
 function SetupChecklist({player, hasFaceit, analysisCount, onDismiss}) {
   const cs2 = player?.cs2 || {};
   const steps = [
-    {id:"steam",    done:true,             label:t("login_steam",_t("Войти через Steam")),              action:null},
-    {id:"stats",    done:!cs2.private,     label:_t("Открыть статистику CS2 в Steam"), action:"privacy"},
-    {id:"faceit",   done:hasFaceit,        label:_t("Подключить FACEIT аккаунт"),      action:"faceit"},
-    {id:"analysis", done:analysisCount>0,  label:_t("Получить первый AI разбор"),      action:null},
-    {id:"chat",     done:!!localStorage.getItem("cs2_chat_done"),    label:_t("Поговорить с AI тренером"),    action:null},
-    {id:"training", done:!!localStorage.getItem("cs2_training_done"),label:_t("Выполнить первую тренировку"), action:null},
+    {id:"steam",    done:true,             label:"Войти через Steam",              action:null},
+    {id:"stats",    done:!cs2.private,     label:"Открыть статистику CS2 в Steam", action:"privacy"},
+    {id:"faceit",   done:hasFaceit,        label:"Подключить FACEIT аккаунт",      action:"faceit"},
+    {id:"analysis", done:analysisCount>0,  label:"Получить первый AI разбор",      action:null},
+    {id:"chat",     done:!!localStorage.getItem("cs2_chat_done"),    label:"Поговорить с AI тренером",    action:null},
+    {id:"training", done:!!localStorage.getItem("cs2_training_done"),label:"Выполнить первую тренировку", action:null},
   ];
   const done = steps.filter(s=>s.done).length;
   const pct  = Math.round(done/steps.length*100);
@@ -4871,8 +4330,8 @@ function SetupChecklist({player, hasFaceit, analysisCount, onDismiss}) {
       <button onClick={onDismiss} style={{position:"absolute",top:"12px",right:"14px",background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"16px"}}>✕</button>
       <div style={{display:"flex",alignItems:"center",gap:"14px",marginBottom:"16px",flexWrap:"wrap"}}>
         <div>
-          <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,marginBottom:"2px"}}>{_t("🚀 Настройка профиля")}</div>
-          <div style={{fontSize:"13px",color:C.muted}}>{done} {_t("из")} {steps.length} {_t("шагов")}</div>
+          <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,marginBottom:"2px"}}>{"🚀 Настройка профиля"}</div>
+          <div style={{fontSize:"13px",color:C.muted}}>{done} {"из"} {steps.length} {"шагов"}</div>
         </div>
         <div style={{flex:1,minWidth:"120px"}}>
           <div style={{height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
@@ -4933,8 +4392,8 @@ function ProModal({player, isPro, onClose, onActivated}) {
       const r = await fetch(`${BACKEND}/promo/check?code=${promo.trim()}&plan=${selPlan}`);
       const d = await r.json();
       if (d.ok) setPromoInfo(d);
-      else setPromoErr(d.detail||t("promo_not_found",_t("Промокод не найден")));
-    } catch { setPromoErr(_t("Ошибка сети")); }
+      else setPromoErr(d.detail||"Промокод не найден");
+    } catch { setPromoErr("Ошибка сети"); }
     setPromoLoading(false);
   }
 
@@ -4944,9 +4403,9 @@ function ProModal({player, isPro, onClose, onActivated}) {
     try {
       const r = await fetch(`${BACKEND}/activate-key`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({steamid:player.steamid,key:key.trim().toUpperCase()})});
       const d = await r.json();
-      if(d.ok){setMsg({ok:true,text:t("pro_activated",_t("🎉 Pro активирован!"))});onActivated();}
-      else setMsg({ok:false,text:d.detail||_t("Ошибка")});
-    }catch{setMsg({ok:false,text:_t("Ошибка сети")});}
+      if(d.ok){setMsg({ok:true,text:"🎉 Pro активирован!"});onActivated();}
+      else setMsg({ok:false,text:d.detail||"Ошибка"});
+    }catch{setMsg({ok:false,text:"Ошибка сети"});}
     setLoading(false);
   }
 
@@ -4958,25 +4417,25 @@ function ProModal({player, isPro, onClose, onActivated}) {
       if (promoInfo && promo.trim()) body.promo = promo.trim();
       const r=await fetch(`${BACKEND}/payment/create`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
       const d=await r.json();
-      if (d.free) { setMsg({ok:true,text:t("pro_activated_promo",_t("🎉 PRO активирован бесплатно по промокоду!"))}); onActivated(); }
+      if (d.free) { setMsg({ok:true,text:"🎉 PRO активирован бесплатно по промокоду!"}); onActivated(); }
       else if(d.url) window.open(d.url,"_blank");
-      else alert(_t("Платежи временно недоступны. Используй активацию ключом."));
-    }catch{alert(_t("Ошибка сети"));}
+      else alert("Платежи временно недоступны. Используй активацию ключом.");
+    }catch{alert("Ошибка сети");}
     setPayLoading(null);
   }
 
   const PRO_F = [
-    {icon:"🤖", title:"AI разбор после каждой игры",   desc:_t("Что сделал не так — конкретно, с картами и цифрами")},
-    {icon:"💬", title:"Безлимитный AI чат",             desc:_t("Спрашивай тренера сколько угодно, без дневных лимитов")},
-    {icon:"📈", title:"Персональный прогресс",          desc:_t("История рейтинга, рост K/D, достижения разблокированы")},
-    {icon:"🎯", title:_t("Анализ слабых карт"),             desc:_t("AI находит твои худшие карты и говорит что конкретно исправить")},
-    {icon:"⚡", title:_t("PRO значок в лидерборде"),        desc:_t("Выделяйся среди других игроков")},
-    {icon:"🎧", title:_t("Приоритетная поддержка"),         desc:_t("Ответ в течение часа, прямая связь с тренером")},
+    {icon:"🤖", title:"AI разбор после каждой игры",   desc:"Что сделал не так — конкретно, с картами и цифрами"},
+    {icon:"💬", title:"Безлимитный AI чат",             desc:"Спрашивай тренера сколько угодно, без дневных лимитов"},
+    {icon:"📈", title:"Персональный прогресс",          desc:"История рейтинга, рост K/D, достижения разблокированы"},
+    {icon:"🎯", title:"Анализ слабых карт",             desc:"AI находит твои худшие карты и говорит что конкретно исправить"},
+    {icon:"⚡", title:"PRO значок в лидерборде",        desc:"Выделяйся среди других игроков"},
+    {icon:"🎧", title:"Приоритетная поддержка",         desc:"Ответ в течение часа, прямая связь с тренером"},
   ];
 
   const plans = {
-    month: {period:_t("МЕСЯЦ"), price:"299 ₽", sub:_t("~$3.3 · отмена в любой момент"), plan:"month"},
-    year:  {period:_t("ГОД"),   price:"1990 ₽", sub:_t("~$22 · экономия 40%"), plan:"year", badge:_t("ВЫГОДНО")},
+    month: {period:"МЕСЯЦ", price:"299 ₽", sub:"~$3.3 · отмена в любой момент", plan:"month"},
+    year:  {period:"ГОД",   price:"1990 ₽", sub:"~$22 · экономия 40%", plan:"year", badge:"ВЫГОДНО"},
   };
   const p = plans[selPlan];
 
@@ -4989,7 +4448,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
         {/* Header */}
         <div style={{padding:"24px 24px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
-            <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"6px"}}>{_t("⚡ CS2 AI ТРЕНЕР PRO")}</div>
+            <div style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,marginBottom:"6px"}}>{"⚡ CS2 AI ТРЕНЕР PRO"}</div>
             <div style={{fontSize:"22px",color:C.value,fontWeight:700,marginBottom:"4px"}}>Стань лучше быстрее</div>
             <div style={{fontSize:"13px",color:C.muted}}>AI тренер который знает твою игру лично</div>
           </div>
@@ -4999,8 +4458,8 @@ function ProModal({player, isPro, onClose, onActivated}) {
         {/* Tabs */}
         <div style={{display:"flex",margin:"18px 24px 0",gap:"4px"}}>
           {(isPro
-            ? [["info","⚡ Моя подписка"],["plans","Продлить"],["activate",_t("Ввести ключ")]]
-            : [["plans","Тарифы"],["activate",_t("Ввести ключ")]]
+            ? [["info","⚡ Моя подписка"],["plans","Продлить"],["activate","Ввести ключ"]]
+            : [["plans","Тарифы"],["activate","Ввести ключ"]]
           ).map(([t,l])=>(
             <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"9px",
               background:tab===t?C.yellow+"22":"transparent",
@@ -5016,8 +4475,8 @@ function ProModal({player, isPro, onClose, onActivated}) {
               {/* PRO активен */}
               <div style={{textAlign:"center",padding:"20px 0 16px"}}>
                 <div style={{fontSize:"48px",marginBottom:"8px"}}>⚡</div>
-                <div style={{fontSize:"20px",color:C.yellow,fontWeight:800,marginBottom:"4px"}}>{_t("PRO АКТИВЕН")}</div>
-                <div style={{fontSize:"13px",color:C.muted}}>{_t("Все функции доступны")}</div>
+                <div style={{fontSize:"20px",color:C.yellow,fontWeight:800,marginBottom:"4px"}}>{"PRO АКТИВЕН"}</div>
+                <div style={{fontSize:"13px",color:C.muted}}>{"Все функции доступны"}</div>
               </div>
 
               {/* Детали подписки — с fallback из localStorage */}
@@ -5033,7 +4492,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
                   try { localStorage.setItem(lsKey, JSON.stringify(proData)); } catch {}
                 }
 
-                const planLabel = pd?.plan==="month"?_t("Месяц"):pd?.plan==="year"?"Год":pd?.plan==="lifetime"?"Навсегда":pd?.plan||"PRO";
+                const planLabel = pd?.plan==="month"?"Месяц":pd?.plan==="year"?"Год":pd?.plan==="lifetime"?"Навсегда":pd?.plan||"PRO";
                 const activatedStr = pd?.activated_at
                   ? new Date(pd.activated_at*1000).toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit",year:"numeric"})
                   : "—";
@@ -5052,11 +4511,11 @@ function ProModal({player, isPro, onClose, onActivated}) {
                   <div style={{background:"#0d0d09",border:`1px solid ${C.yellow}33`,padding:"16px 20px",marginBottom:"12px"}}>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
                       <div>
-                        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>{_t("ПЛАН")}</div>
+                        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>{"ПЛАН"}</div>
                         <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>{planLabel}</div>
                       </div>
                       <div>
-                        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>{_t("АКТИВИРОВАН")}</div>
+                        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>{"АКТИВИРОВАН"}</div>
                         <div style={{fontSize:"13px",color:C.label}}>{activatedStr}</div>
                       </div>
                     </div>
@@ -5078,7 +4537,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
                               {expired?"0":daysLeft}
                             </div>
                             <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>
-                              {expired?"истекла":daysLeft===1?_t("день"):daysLeft<5?_t("дня"):_t("дней")}
+                              {expired?"истекла":daysLeft===1?"день":daysLeft<5?"дня":"дней"}
                             </div>
                           </div>
                         </div>
@@ -5090,7 +4549,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
                         {isExpiringSoon&&<div style={{marginTop:"8px",fontSize:"11px",
                           color:C.orange,padding:"6px 10px",background:C.orange+"11",
                           border:`1px solid ${C.orange}33`}}>
-                          ⚠️ Истекает через {daysLeft} {daysLeft===1?_t("день"):daysLeft<5?_t("дня"):_t("дней")} — продли сейчас
+                          ⚠️ Истекает через {daysLeft} {daysLeft===1?"день":daysLeft<5?"дня":"дней"} — продли сейчас
                         </div>}
                         {expired&&<div style={{marginTop:"8px",fontSize:"11px",
                           color:C.lose,padding:"6px 10px",background:C.lose+"11",
@@ -5106,8 +4565,8 @@ function ProModal({player, isPro, onClose, onActivated}) {
                         display:"flex",alignItems:"center",gap:"8px"}}>
                         <span style={{fontSize:"20px",color:C.win}}>∞</span>
                         <div>
-                          <div style={{fontSize:"13px",color:C.win,fontWeight:700}}>{_t("Навсегда")}</div>
-                          <div style={{fontSize:"11px",color:C.muted}}>{_t("Срок не ограничен")}</div>
+                          <div style={{fontSize:"13px",color:C.win,fontWeight:700}}>{"Навсегда"}</div>
+                          <div style={{fontSize:"11px",color:C.muted}}>{"Срок не ограничен"}</div>
                         </div>
                       </div>
                     )}
@@ -5124,8 +4583,8 @@ function ProModal({player, isPro, onClose, onActivated}) {
               })()}
 
               {/* Что включено */}
-              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{_t("ЧТО ВКЛЮЧЕНО:")}</div>
-              {[["🤖",_t("Безлимитный AI разбор каждой игры")],["💬",_t("AI чат без ограничений")],["⚡",_t("PRO значок в лидерборде")],["🎯",_t("Анализ слабых карт")],["🎧",_t("Приоритетная поддержка")]].map(([icon,text],i)=>(
+              <div style={{fontSize:"10px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{"ЧТО ВКЛЮЧЕНО:"}</div>
+              {[["🤖","Безлимитный AI разбор каждой игры"],["💬","AI чат без ограничений"],["⚡","PRO значок в лидерборде"],["🎯","Анализ слабых карт"],["🎧","Приоритетная поддержка"]].map(([icon,text],i)=>(
                 <div key={i} style={{display:"flex",gap:"10px",alignItems:"center",padding:"8px 0",
                   borderBottom:`1px solid ${C.border}44`}}>
                   <span style={{fontSize:"16px"}}>{icon}</span>
@@ -5208,7 +4667,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
                 color:"#080807",border:"none",cursor:payLoading?"not-allowed":"pointer",
                 fontSize:"15px",fontWeight:800,fontFamily:"inherit",letterSpacing:"1px",
                 marginBottom:"12px",transition:"opacity .2s"}}>
-              {payLoading?t("opening_payment",_t("ОТКРЫВАЮ ОПЛАТУ...")):
+              {payLoading?"ОТКРЫВАЮ ОПЛАТУ...":
                 promoInfo ? `ПОЛУЧИТЬ PRO — ${promoInfo.final_price} ₽` :
                 `ПОЛУЧИТЬ PRO — ${plans[selPlan].price}`}
             </button>
@@ -5230,7 +4689,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
             </div>
 
             <div style={{fontSize:"11px",color:C.muted,textAlign:"center",lineHeight:1.6}}>
-              После оплаты получишь ключ активации во вкладке _t("Ввести ключ")
+              После оплаты получишь ключ активации во вкладке "Ввести ключ"
             </div>
           </>}
 
@@ -5256,7 +4715,7 @@ function ProModal({player, isPro, onClose, onActivated}) {
               style={{width:"100%",padding:"14px",background:loading?C.yellow+"88":C.yellow,
                 color:"#080807",border:"none",cursor:loading?"not-allowed":"pointer",
                 fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>
-              {loading?t("activating",_t("АКТИВИРУЮ...")):t("activate_pro",_t("АКТИВИРОВАТЬ PRO"))}
+              {loading?"АКТИВИРУЮ...":"АКТИВИРОВАТЬ PRO"}
             </button>
           </>}
         </div>
@@ -5307,7 +4766,7 @@ function ProCelebration({onClose}) {
           fontFamily:"inherit",letterSpacing:"2px"}}>
           НАЧАТЬ ТРЕНИРОВКУ →
         </button>
-        <div style={{fontSize:"11px",color:C.muted,marginTop:"10px"}}>{_t("нажми в любом месте чтобы закрыть")}</div>
+        <div style={{fontSize:"11px",color:C.muted,marginTop:"10px"}}>{"нажми в любом месте чтобы закрыть"}</div>
       </div>
     </div>,
     document.body
@@ -5349,7 +4808,7 @@ function PaywallOverlay({feature,onUpgrade}) {
       <div style={{fontSize:"28px",marginBottom:"12px"}}>⚡</div>
       <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"8px"}}>{feature} — Pro функция</div>
       <div style={{fontSize:"14px",color:C.label,lineHeight:1.7,marginBottom:"20px"}}>Дневной лимит исчерпан.<br/>Получи Pro — безлимитный AI.</div>
-      <button onClick={onUpgrade} style={{padding:"12px 32px",background:C.yellow,color:"#080807",border:"none",cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>{_t("ПОПРОБОВАТЬ PRO →")}</button>
+      <button onClick={onUpgrade} style={{padding:"12px 32px",background:C.yellow,color:"#080807",border:"none",cursor:"pointer",fontSize:"14px",fontWeight:700,fontFamily:"inherit"}}>{"ПОПРОБОВАТЬ PRO →"}</button>
     </div>
   );
 }
@@ -5372,9 +4831,9 @@ function LandingPage({onLogin}) {
   },[]);
 
   const INSIGHTS = [
-    {text:"Ты теряешь дуэли из-за стрельбы в движении", tag:_t("МЕХАНИКА")},
-    {text:"Win Rate падает на КТ стороне Mirage", tag:_t("КАРТЫ")},
-    {text:"Слишком ранний выход без прикрытия", tag:t("tactics",t("cat_tact",_t("ТАКТИКА")))},
+    {text:"Ты теряешь дуэли из-за стрельбы в движении", tag:"МЕХАНИКА"},
+    {text:"Win Rate падает на КТ стороне Mirage", tag:"КАРТЫ"},
+    {text:"Слишком ранний выход без прикрытия", tag:"ТАКТИКА"},
     {text:"Низкий процент добиваний после первого убийства", tag:"АНАЛИТИКА"},
     {text:"Лучший результат в матчах с AWP", tag:"ОРУЖИЕ"},
   ];
@@ -5582,9 +5041,9 @@ function LandingPage({onLogin}) {
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:"24px"}}>
             {[
-              {n:"01",title:"Войди через Steam",desc:t("step1_desc",_t("Нажми кнопку входа — данные CS2 и FACEIT подтянутся автоматически"))},
-              {n:"02",title:"AI анализирует",desc:t("step2_desc",_t("Нейросеть изучает статистику и составляет персональный отчёт"))},
-              {n:"03",title:"Получи разбор",desc:t("step3_desc",_t("Конкретные проблемы, план тренировок и ответы на любые вопросы"))},
+              {n:"01",title:"Войди через Steam",desc:"Нажми кнопку входа — данные CS2 и FACEIT подтянутся автоматически"},
+              {n:"02",title:"AI анализирует",desc:"Нейросеть изучает статистику и составляет персональный отчёт"},
+              {n:"03",title:"Получи разбор",desc:"Конкретные проблемы, план тренировок и ответы на любые вопросы"},
             ].map((s,i)=>(
               <div key={i} data-id={`step${i}`} style={{textAlign:"center",...anim(`step${i}`,i*0.15)}}>
                 <div style={{
@@ -5677,14 +5136,13 @@ function LandingPage({onLogin}) {
 
 // ── AI Report (автосводка) ────────────────────────────────────────────────────
 // ── AI Verdict — большой блок наверху обзора ─────────────────────────────────
-function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
-  const T = TRANSLATIONS[lang] || TRANSLATIONS.ru;
+function AIVerdict({report, loading, onRefresh, cacheDate,}) {
   const [step, setStep] = useState(0);
   const steps = [
-    _t("Анализируем K/D, WR, HS%..."),
-    _t("Изучаем статистику карт..."),
-    _t("Определяем роль и стиль игры..."),
-    _t("Формируем персональный вердикт..."),
+    "Анализируем K/D, WR, HS%...",
+    "Изучаем статистику карт...",
+    "Определяем роль и стиль игры...",
+    "Формируем персональный вердикт...",
   ];
 
   useEffect(()=>{
@@ -5701,7 +5159,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
       <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"28px"}}>
         <div style={{width:"10px",height:"10px",background:C.yellow,borderRadius:"50%",
           animation:"pulse 1.2s infinite",boxShadow:`0 0 10px ${C.yellow}`}}/>
-        <span style={{fontSize:"12px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>{_t("🤖 AI ТРЕНЕР АНАЛИЗИРУЕТ")}</span>
+        <span style={{fontSize:"12px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>{"🤖 AI ТРЕНЕР АНАЛИЗИРУЕТ"}</span>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"28px"}}>
         {steps.map((s,i)=>(
@@ -5738,10 +5196,10 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
   const rb = report.rating_breakdown || {};
   const skillBars = [
     {l:"AIM",         v:rb.aim||60,       c:"#ff6655"},
-    {l:t("tactics",t("cat_tact",_t("ТАКТИКА"))),     v:rb.game_sense||55, c:C.blue},
-    {l:t("stability",_t("СТАБИЛЬНОСТЬ")),v:rb.consistency||50,c:C.yellow},
-    {l:t("utility",_t("УТИЛИТИ")),     v:rb.utility||40,   c:"#88ff88"},
-    {l:t("clutch",_t("КЛАТЧ")),       v:rb.clutch||45,    c:"#aa88ff"},
+    {l:"ТАКТИКА",     v:rb.game_sense||55, c:C.blue},
+    {l:"СТАБИЛЬНОСТЬ",v:rb.consistency||50,c:C.yellow},
+    {l:"УТИЛИТИ",     v:rb.utility||40,   c:"#88ff88"},
+    {l:"КЛАТЧ",       v:rb.clutch||45,    c:"#aa88ff"},
   ];
 
   return (
@@ -5762,7 +5220,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
           <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",
             boxShadow:`0 0 8px ${C.yellow}`,flexShrink:0}}/>
           <span style={{fontSize:"11px",letterSpacing:"4px",color:C.yellow,fontWeight:700}}>
-            {_t("🤖 AI ТРЕНЕР · ПЕРСОНАЛЬНЫЙ РАЗБОР")}
+            {"🤖 AI ТРЕНЕР · ПЕРСОНАЛЬНЫЙ РАЗБОР"}
           </span>
           {report.role&&(
             <div style={{display:"flex",alignItems:"center",gap:"6px",
@@ -5896,7 +5354,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1px",
             background:C.border,borderBottom:`1px solid ${C.border}`}}>
             {report.best_map&&<div style={{background:"#0a160a",padding:"16px 20px"}}>
-              <div style={{fontSize:"10px",color:C.win,letterSpacing:"2px",fontWeight:700,marginBottom:"8px"}}>{_t("🏆 ЛУЧШАЯ КАРТА")}</div>
+              <div style={{fontSize:"10px",color:C.win,letterSpacing:"2px",fontWeight:700,marginBottom:"8px"}}>{"🏆 ЛУЧШАЯ КАРТА"}</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}>
                 <span style={{fontSize:"16px",color:C.value,fontWeight:700}}>
                   {report.best_map.name||report.best_map}
@@ -5909,7 +5367,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
               {report.best_map.tip&&<div style={{fontSize:"12px",color:C.muted,lineHeight:1.5}}>→ {report.best_map.tip}</div>}
             </div>}
             {report.worst_map&&<div style={{background:"#160a0a",padding:"16px 20px"}}>
-              <div style={{fontSize:"10px",color:C.lose,letterSpacing:"2px",fontWeight:700,marginBottom:"8px"}}>{_t("⚠️ ХУДШАЯ КАРТА")}</div>
+              <div style={{fontSize:"10px",color:C.lose,letterSpacing:"2px",fontWeight:700,marginBottom:"8px"}}>{"⚠️ ХУДШАЯ КАРТА"}</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}>
                 <span style={{fontSize:"16px",color:C.value,fontWeight:700}}>
                   {report.worst_map.name||report.worst_map}
@@ -5993,7 +5451,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate, lang="ru"}) {
 }
 
 
-function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
+function AIReport({player, source, verdictVersion=0,, onGoToCoach}) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -6001,7 +5459,6 @@ function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
   const fc = player?.faceit;
   const cs2 = player?.cs2 || {};
   const cacheKey = `cs2_verdict_${player?.steamid}_${source}`;
-  const T = TRANSLATIONS[lang] || TRANSLATIONS.ru;
 
   useEffect(()=>{
     if (!player?.steamid) return;
@@ -6089,7 +5546,7 @@ function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
           <div style={{width:"7px",height:"7px",background:C.yellow,borderRadius:"50%",
             boxShadow:`0 0 6px ${C.yellow}`,flexShrink:0}}/>
           <span style={{fontSize:"10px",letterSpacing:"4px",color:C.yellow,fontWeight:700,flex:1}}>
-            {_t("🤖 AI ТРЕНЕР · РАЗБОР")}
+            {"🤖 AI ТРЕНЕР · РАЗБОР"}
           </span>
           {cacheDate&&<span style={{fontSize:"10px",color:C.muted}}>{cacheDate}</span>}
           <button onClick={()=>{try{const keys=[cacheKey,`cs2_verdict_${player?.steamid}_faceit`,`cs2_verdict_${player?.steamid}_steam`];keys.forEach(k=>localStorage.removeItem(k));}catch{}load();}}
@@ -6101,7 +5558,7 @@ function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
         {loading&&(
           <div style={{padding:"24px",display:"flex",alignItems:"center",gap:"12px"}}>
             <div style={{width:"8px",height:"8px",background:C.yellow,borderRadius:"50%",animation:"pulse 1.2s infinite"}}/>
-            <span style={{fontSize:"13px",color:C.muted}}>{_t("Анализируем твою статистику...")}</span>
+            <span style={{fontSize:"13px",color:C.muted}}>{"Анализируем твою статистику..."}</span>
           </div>
         )}
 
@@ -6138,7 +5595,7 @@ function AIReport({player, source, verdictVersion=0, lang="ru", onGoToCoach}) {
                 borderLeft:`3px solid ${C.lose}`,padding:"10px 14px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
                   <span style={{fontSize:"10px",color:C.lose,fontWeight:700,letterSpacing:"1px"}}>
-                    {_t("⚠️ ГЛАВНАЯ ПРОБЛЕМА:")} {pr.stat||""}
+                    {"⚠️ ГЛАВНАЯ ПРОБЛЕМА:"} {pr.stat||""}
                   </span>
                 </div>
                 <div style={{fontSize:"12px",color:C.text,lineHeight:1.5}}>
@@ -6185,7 +5642,7 @@ function SupportPanel({onClose}) {
         display:"flex",justifyContent:"space-between",alignItems:"center",background:"#0e0e0e"}}>
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
           <div style={{width:"7px",height:"7px",background:C.blue,borderRadius:"50%"}}/>
-          <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>{_t("ПОДДЕРЖКА")}</span>
+          <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>{"ПОДДЕРЖКА"}</span>
         </div>
         <button onClick={onClose} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"18px"}}>✕</button>
       </div>
@@ -6209,7 +5666,7 @@ function SupportPanel({onClose}) {
               </a>
             ))}
           </div>
-          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{_t("ИЛИ ОСТАВЬ СООБЩЕНИЕ")}</div>
+          <div style={{fontSize:"11px",color:C.muted,letterSpacing:"2px",marginBottom:"8px"}}>{"ИЛИ ОСТАВЬ СООБЩЕНИЕ"}</div>
           <textarea value={msg} onChange={e=>setMsg(e.target.value)}
             placeholder="Опиши проблему..."
             style={{width:"100%",height:"80px",background:"#111109",border:`1px solid ${C.border}`,
@@ -6224,8 +5681,8 @@ function SupportPanel({onClose}) {
         </> : (
           <div style={{textAlign:"center",padding:"20px 0"}}>
             <div style={{fontSize:"28px",marginBottom:"10px"}}>✅</div>
-            <div style={{fontSize:"14px",color:C.win,fontWeight:700}}>{_t("Сообщение отправлено!")}</div>
-            <div style={{fontSize:"13px",color:C.label,marginTop:"6px"}}>{_t("Ответим в течение 24 часов")}</div>
+            <div style={{fontSize:"14px",color:C.win,fontWeight:700}}>{"Сообщение отправлено!"}</div>
+            <div style={{fontSize:"13px",color:C.label,marginTop:"6px"}}>{"Ответим в течение 24 часов"}</div>
           </div>
         )}
       </div>
@@ -6242,7 +5699,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
   const SMART_FAQ = [
     {
       id:"pro_date",
-      label:_t("До какого PRO?"),
+      label:"До какого PRO?",
       icon:"📅",
       // ПЕРВЫМ — чтобы "до какого у меня про" шло сюда, а не в pro_check
       keywords:[
@@ -6256,7 +5713,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
         if(!isPro) return "❌ У тебя сейчас нет активной PRO подписки.\n\nОформить можно нажав ⚡ PRO в шапке.";
         try {
           const pd = JSON.parse(localStorage.getItem(`cs2_pro_data_${player?.steamid}`)||"null");
-          if(!pd?.activated_at) return _t("📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата.");
+          if(!pd?.activated_at) return "📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата.";
           if(pd.plan==="lifetime") return "✅ Подписка НАВСЕГДА — срок не ограничен! 🎉";
           const days = pd.plan==="year"?365:pd.plan==="month"?30:0;
           if(!days) return "📅 Открой ⚡ PRO → «Моя подписка» для деталей.";
@@ -6264,17 +5721,17 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
           const daysLeft = Math.max(0,Math.ceil((expiresMs-Date.now())/86400000));
           const date = new Date(expiresMs).toLocaleDateString("ru-RU",{day:"2-digit",month:"long",year:"numeric"});
           if(daysLeft===0) return `❌ Подписка истекла ${date}.\n\nОформи снова — кнопка ⚡ PRO в шапке.`;
-          return `📅 PRO действует до ${date}\n\nОсталось: ${daysLeft} ${daysLeft===1?_t("день"):daysLeft<5?_t("дня"):_t("дней")}`;
-        } catch { return _t("📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата."); }
+          return `📅 PRO действует до ${date}\n\nОсталось: ${daysLeft} ${daysLeft===1?"день":daysLeft<5?"дня":"дней"}`;
+        } catch { return "📅 Открой ⚡ PRO → «Моя подписка» — там видна точная дата."; }
       }
     },
     {
       id:"pro_check",
-      label:_t("У меня есть PRO?"),
+      label:"У меня есть PRO?",
       icon:"⚡",
       keywords:[
         "у меня про","есть про","есть подписка","активна про","активен про",
-        _t("про активна"),"про активен","pro активна","pro активен","pro у меня",
+        "про активна","про активен","pro активна","pro активен","pro у меня",
         "у меня pro","активирована подписка","есть ли у меня","моя подписка",
         "у меня подписка","куплена подписка","куплен про","оплатил про",
         "оплатил подписку","есть ли про","активна ли подписка","куплена ли"
@@ -6285,28 +5742,28 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
     },
     {
       id:"no_data",
-      label:_t("Данные не грузятся"),
+      label:"Данные не грузятся",
       icon:"📊",
-      keywords:[_t("не загружается"),"не грузит","пустой профиль","нет данных","не показывает","не отображается","не работает статистика","данные пропали","нет статистики","пусто на сайте"],
+      keywords:["не загружается","не грузит","пустой профиль","нет данных","не показывает","не отображается","не работает статистика","данные пропали","нет статистики","пусто на сайте"],
       answer:()=>"Если данные не загружаются:\n1. Профиль Steam должен быть открыт (Конфиденциальность → Публичный)\n2. Статистика CS2 тоже должна быть открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — нажми «Позвать оператора»!"
     },
     {
       id:"faceit",
-      label:_t("FACEIT не работает"),
+      label:"FACEIT не работает",
       icon:"🎮",
       keywords:["faceit не","не подключается faceit","нет faceit","не видит faceit","faceit не работает","не вижу faceit","faceit пустой","faceit ошибка"],
       answer:()=>"Если FACEIT не подключается:\n1. В FACEIT должен быть привязан тот же Steam аккаунт\n2. Подожди 30 сек — данные грузятся параллельно\n3. Новый аккаунт (менее 10 матчей) — статистика пока недоступна"
     },
     {
       id:"analyses",
-      label:_t("Сколько анализов?"),
+      label:"Сколько анализов?",
       icon:"📋",
       keywords:["сколько анализов","остаток анализов","закончились анализы","нет разборов","сколько разборов","израсходовал","анализов осталось","сколько разборов осталось","лимит анализов"],
       answer:()=>`Бесплатно: 1 AI разбор в неделю.\nС PRO: безлимитно.\n\nТвой статус: ${isPro?"✅ PRO — безлимит":aiRemaining+" разбор(ов) на этой неделе"}`
     },
     {
       id:"operator",
-      label:_t("Позвать оператора"),
+      label:"Позвать оператора",
       icon:"🆘",
       // ПОСЛЕДНИМ — только явный запрос оператора, не "помогите" в общем
       keywords:["позови оператора","позовите оператора","нужен оператор","живой человек","хочу оператора","нужен человек","соедините с оператором"],
@@ -6322,7 +5779,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
 
   const SKEY = `cs2_support_msgs_${steamid||"anon"}`;
   const INITIAL = [
-    {from:"support", text:_t("Привет! 👋 Чем могу помочь? Выбери вопрос или напиши своё."), ts:0},
+    {from:"support", text:"Привет! 👋 Чем могу помочь? Выбери вопрос или напиши своё.", ts:0},
     {from:"support", text:"__CHIPS__", ts:1}, // специальный маркер для чипов
   ];
 
@@ -6420,7 +5877,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
     if(faq.escalate) {
       try {
         await fetch(`${BACKEND}/support`,{method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({message:`[Кнопка] ${faq.label}`,steamid:player?.steamid||"",username:player?.username||_t("Аноним")})
+          body:JSON.stringify({message:`[Кнопка] ${faq.label}`,steamid:player?.steamid||"",username:player?.username||"Аноним"})
         });
       } catch {}
       setMsgs(m=>[...m,{from:"support",text:"📨 Передаю оператору! Обычно отвечаем за несколько часов.\n\nОтвет придёт прямо сюда 👇",ts:Date.now()+1}]);
@@ -6443,7 +5900,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
       if(match.escalate) {
         try {
           await fetch(`${BACKEND}/support`,{method:"POST",headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||_t("Аноним")})
+            body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||"Аноним"})
           });
         } catch {}
         setMsgs(m=>[...m,{from:"support",text:"📨 Передаю оператору! Обычно отвечаем за несколько часов.\n\nОтвет придёт прямо сюда 👇",ts:Date.now()+1}]);
@@ -6461,7 +5918,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
       const tid = setTimeout(()=>ctrl.abort(),12000);
       await fetch(`${BACKEND}/support`,{method:"POST",headers:{"Content-Type":"application/json"},
         signal:ctrl.signal,
-        body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||_t("Аноним")})
+        body:JSON.stringify({message:text,steamid:player?.steamid||"",username:player?.username||"Аноним"})
       });
       clearTimeout(tid);
       if(!sentAck.current) {
@@ -6486,7 +5943,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
         <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
           <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",
             animation:"pulse 2s infinite",boxShadow:`0 0 6px ${C.win}`}}/>
-          <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>{_t("ПОДДЕРЖКА")}</span>
+          <span style={{fontSize:"13px",color:C.blue,fontWeight:700,letterSpacing:"2px"}}>{"ПОДДЕРЖКА"}</span>
         </div>
         <button onClick={onClose} style={{background:"transparent",border:"none",
           color:C.muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
@@ -6555,7 +6012,7 @@ function SupportModal({player, onClose, isPro, aiRemaining}) {
       <div style={{padding:"10px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"6px"}}>
         <input value={input} onChange={e=>setInput(e.target.value)}
           onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&send()}
-          placeholder={_t("Напиши вопрос...")}
+          placeholder={"Напиши вопрос..."}
           style={{flex:1,background:"#111109",border:`1px solid ${C.border}`,
             color:C.value,fontSize:"13px",padding:"8px 10px",fontFamily:"inherit"}}/>
         <button onClick={send} disabled={loading||!input.trim()} style={{
@@ -6598,35 +6055,35 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
   // FAQ — автоответы на частые вопросы
   const FAQ_AUTO = [
     {
-      q: _t("У меня активна Pro версия"),
-      keywords: [_t("про активна"),"pro активна","pro версия","активирован про","про активирован","показывает про"],
+      q: "У меня активна Pro версия",
+      keywords: ["про активна","pro активна","pro версия","активирован про","про активирован","показывает про"],
       answer: isPro
         ? "✅ Да, у тебя активна PRO версия! Все функции доступны: безлимитный AI разбор, приоритетная поддержка и PRO значок в лидерборде."
         : "Не вижу активной PRO подписки на твоём аккаунте. Попробуй:\n1. Выйди и войди снова через Steam\n2. Если оплатил — подожди 1-2 минуты и обнови страницу\n3. Если проблема осталась — я передам в поддержку"
     },
     {
-      q: _t("Как активировать PRO?"),
+      q: "Как активировать PRO?",
       keywords: ["как активировать","активировать про","ввести ключ","у меня есть ключ"],
       answer: "Для активации PRO:\n1. Нажми кнопку **⚡ PRO** в шапке сайта\n2. Выбери вкладку **\"Ввести ключ\"**\n3. Введи ключ в формате CS2PRO-XXXX-XXXX-XXXX\n\nЕсли ключа нет — выбери тариф и оплати картой через ЮКассу."
     },
     {
-      q: _t("Данные не загружаются"),
-      keywords: [_t("не загружается"),"не грузит","пустой профиль","нет данных","ошибка загрузки"],
+      q: "Данные не загружаются",
+      keywords: ["не загружается","не грузит","пустой профиль","нет данных","ошибка загрузки"],
       answer: "Если данные не загружаются:\n1. Убедись что профиль Steam **открыт** (Настройки → Конфиденциальность → Публичный)\n2. Статистика CS2 должна быть открыта\n3. Попробуй выйти и войти снова\n\nЕсли не помогло — опиши проблему, передам в поддержку."
     },
     {
-      q: _t("FACEIT не подключается"),
+      q: "FACEIT не подключается",
       keywords: ["faceit не","не подключается faceit","нет faceit","не видит faceit"],
       answer: "Если FACEIT не подключается:\n1. Убедись что в FACEIT привязан тот же Steam аккаунт\n2. Подожди 30 секунд — данные грузятся параллельно\n3. Если аккаунт новый (менее 10 матчей) — статистика может быть недоступна"
     },
     {
-      q: _t("Как работает Coach Rating?"),
+      q: "Как работает Coach Rating?",
       keywords: ["coach rating","рейтинг тренера","как считается рейтинг","что значит рейтинг"],
       answer: "Coach Rating считается по формуле:\n• K/D — 45% веса\n• HS% — 25% веса\n• WR% — 30% веса\n\nКаждый показатель сравнивается со средним для твоего уровня FACEIT. Результат — от 1 до 99, показывает % игроков которых ты обгоняешь."
     },
     {
-      q: _t("Лимит анализов"),
-      keywords: [_t("лимит"),"закончился","израсходовал","нет разборов","сколько разборов"],
+      q: "Лимит анализов",
+      keywords: ["лимит","закончился","израсходовал","нет разборов","сколько разборов"],
       answer: `Бесплатно: 1 AI разбор в неделю.\n\nС PRO: безлимитно.\n\nТвой текущий остаток: ${isPro?"безлимит (PRO)":aiRemaining+" разбора(ов) на этой неделе"}`
     },
   ];
@@ -6639,7 +6096,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
   async function escalateToSupport(userMsg) {
     setSupportMode(true);
     const steamid = player?.steamid||"";
-    const username = player?.username||_t("Аноним");
+    const username = player?.username||"Аноним";
     const proStatus = isPro?"PRO активен":"Бесплатный";
     const detail = `Пользователь: ${username}\nSteam ID: ${steamid}\nСтатус: ${proStatus}\nFACEIT: ${fc?.level?"Уровень "+fc?.level+" · "+fc?.elo+" ELO":"нет"}\nK/D: ${stats.kd||"?"} · WR: ${stats.winrate||"?"}% · HS: ${stats.hs||"?"}%\nМатчей: ${stats.matches||"?"}\n\nВопрос: ${userMsg}`;
     try {
@@ -6680,7 +6137,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
     }
 
     // Иначе — AI тренер
-    const analysisKeywords = [_t("разбор"),"проанализируй","анализ моей игры","разбери мою","analyze"];
+    const analysisKeywords = ["разбор","проанализируй","анализ моей игры","разбери мою","analyze"];
     const wantsAnalysis = analysisKeywords.some(k=>q.toLowerCase().includes(k));
     if (wantsAnalysis && !isPro && aiRemaining<=0) {
       setMsgs(m=>[...m,{role:"user",content:q},{role:"assistant",content:"⚡ Еженедельный лимит бесплатных разборов исчерпан. Вернись на следующей неделе или активируй Pro для безлимитного доступа."}]);
@@ -6693,21 +6150,21 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
         body: JSON.stringify({messages:newMsgs.filter(m=>m.role!=="system"), stats})
       });
       const d = await r.json();
-      setMsgs(m=>[...m, {role:"assistant",content:d.reply||t("no_answer",_t("Не смог ответить, попробуй ещё."))}]);
+      setMsgs(m=>[...m, {role:"assistant",content:d.reply||"Не смог ответить, попробуй ещё."}]);
     } catch { setMsgs(m=>[...m, {role:"assistant",content:"Ошибка сервера."}]); }
     setLoading(false);
   }
 
   const FAQ_LIST = [
-    {q:_t("Как активировать PRO?"), icon:"⚡"},
-    {q:_t("У меня активна Pro версия"), icon:"🔍"},
-    {q:_t("Данные не загружаются"), icon:"📊"},
-    {q:_t("FACEIT не подключается"), icon:"🎮"},
-    {q:_t("Как работает Coach Rating?"), icon:"🏆"},
-    {q:_t("Лимит анализов"), icon:"📋"},
+    {q:"Как активировать PRO?", icon:"⚡"},
+    {q:"У меня активна Pro версия", icon:"🔍"},
+    {q:"Данные не загружаются", icon:"📊"},
+    {q:"FACEIT не подключается", icon:"🎮"},
+    {q:"Как работает Coach Rating?", icon:"🏆"},
+    {q:"Лимит анализов", icon:"📋"},
   ];
 
-  const QUICK = [t("q1",_t("Почему я умираю первым?")),t("q2",_t("Как апнуть FACEIT?")),t("q3",_t("Что тренировать?")),t("q4",_t("Лучшая карта для меня?"))];
+  const QUICK = ["Почему я умираю первым?","Как апнуть FACEIT?","Что тренировать?","Лучшая карта для меня?"];
 
   return (
     <div className="chat-panel" style={{position:"fixed",bottom:"80px",right:"24px",width:"380px",maxHeight:"580px",
@@ -6719,7 +6176,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
             <div style={{width:"7px",height:"7px",background:C.win,borderRadius:"50%",animation:"pulse 2s infinite"}}/>
-            <span style={{fontSize:"13px",color:C.yellow,fontWeight:700,letterSpacing:"2px"}}>{_t("AI ТРЕНЕР")}</span>
+            <span style={{fontSize:"13px",color:C.yellow,fontWeight:700,letterSpacing:"2px"}}>{"AI ТРЕНЕР"}</span>
           </div>
           <div style={{display:"flex",gap:"6px",alignItems:"center"}}>
             <button onClick={()=>setMsgs(CHAT_INIT)} title="Очистить" style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"13px",opacity:.6}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=.6}>🗑</button>
@@ -6777,7 +6234,7 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
         <div style={{padding:"12px 14px",borderTop:`1px solid ${C.border}`,display:"flex",gap:"8px",flexShrink:0}}>
           <input value={input} onChange={e=>setInput(e.target.value)}
             onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&(e.preventDefault(),send())}
-            placeholder={_t("Спроси тренера...")}
+            placeholder={"Спроси тренера..."}
             style={{flex:1,background:"#0d0d09",border:`1px solid ${C.border}`,color:C.text,
               padding:"9px 12px",fontFamily:"inherit",fontSize:"13px",outline:"none"}}/>
           <button onClick={send} disabled={loading||!input.trim()}
@@ -6796,54 +6253,54 @@ function ChatPanel({player, source, onClose, isPro, aiRemaining}) {
 const PRACTICE_ITEMS = [
   // ВОРКШОП
   {id:1,cat:"workshop",diff:"Любой",icon:"🎯",title:"aim_botz",map:null,
-   desc:_t("Лучшая карта для тренировки прицела — стоячие, двигающиеся боты, настройка дистанции."),
+   desc:"Лучшая карта для тренировки прицела — стоячие, двигающиеся боты, настройка дистанции.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=243702660",type:"steam"},
   {id:2,cat:"workshop",diff:"Средний",icon:"🔫",title:"Recoil Master",map:null,
-   desc:_t("Визуальный тренажёр отдачи всего оружия в реальном времени. Самый быстрый способ выучить спрей."),
+   desc:"Визуальный тренажёр отдачи всего оружия в реальном времени. Самый быстрый способ выучить спрей.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=419404847",type:"steam"},
   {id:3,cat:"workshop",diff:"Начинающий",icon:"🏃",title:"KZ Climb Beginner",map:null,
-   desc:_t("Тренировка движения, прыжков, стрейфов. Улучшает механику и контроль."),
+   desc:"Тренировка движения, прыжков, стрейфов. Улучшает механику и контроль.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2756420180",type:"steam"},
   {id:4,cat:"workshop",diff:"Средний",icon:"⚡",title:"Yprac Prefire Mirage",map:"Mirage",
-   desc:_t("Боты на всех стандартных позициях Mirage. Тренировка префайра и углов."),
+   desc:"Боты на всех стандартных позициях Mirage. Тренировка префайра и углов.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2070817221",type:"steam"},
   {id:5,cat:"workshop",diff:"Средний",icon:"⚡",title:"Yprac Prefire Inferno",map:"Inferno",
-   desc:_t("Все углы бананы, B и апа. Обязательно для Inferno."),
+   desc:"Все углы бананы, B и апа. Обязательно для Inferno.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2072029536",type:"steam"},
   {id:6,cat:"workshop",diff:"Начинающий",icon:"⚡",title:"Yprac Prefire Dust2",map:"Dust2",
-   desc:_t("Базовые углы Dust2. Идеально для новичков — все стандартные позиции."),
+   desc:"Базовые углы Dust2. Идеально для новичков — все стандартные позиции.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2070818064",type:"steam"},
   {id:7,cat:"workshop",diff:"Средний",icon:"⚡",title:"Yprac Prefire Ancient",map:"Ancient",
-   desc:_t("Тренировка всех углов Ancient — карта которую мало кто учит, поэтому даёт преимущество."),
+   desc:"Тренировка всех углов Ancient — карта которую мало кто учит, поэтому даёт преимущество.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2134123524",type:"steam"},
   {id:8,cat:"workshop",diff:"Любой",icon:"🎮",title:"1v1 Arena",map:null,
-   desc:_t("Случайные дуэли 1v1. Лучший способ проверить прицел в боевых условиях."),
+   desc:"Случайные дуэли 1v1. Лучший способ проверить прицел в боевых условиях.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=149093839",type:"steam"},
   {id:9,cat:"workshop",diff:"Средний",icon:"💨",title:"Smoke Training Mirage",map:"Mirage",
-   desc:_t("Специальная карта с точками для изучения смоков — стоишь на маркере и бросаешь."),
+   desc:"Специальная карта с точками для изучения смоков — стоишь на маркере и бросаешь.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=2693216004",type:"steam"},
   {id:10,cat:"workshop",diff:"Продвинутый",icon:"🏆",title:"Fast Aim Reflex Training",map:null,
-   desc:_t("Продвинутый тренажёр рефлексов и микро-коррекции прицела. Для опытных игроков."),
+   desc:"Продвинутый тренажёр рефлексов и микро-коррекции прицела. Для опытных игроков.",
    url:"https://steamcommunity.com/sharedfiles/filedetails/?id=368026786",type:"steam"},
 
   // ГРАНАТЫ — реальные видео
   {id:11,cat:"grenades",diff:"Начинающий",icon:"💨",title:"Mirage — 5 базовых смоков CT",map:"Mirage",
-   desc:_t("Обязательные смоки на Mirage: Jungle, CT, Stairs, Short, Connector. Знание этих 5 уже делает тебя полезным."),
+   desc:"Обязательные смоки на Mirage: Jungle, CT, Stairs, Short, Connector. Знание этих 5 уже делает тебя полезным.",
    url:"https://www.youtube.com/watch?v=UBxpvAFkBSE",type:"youtube"},
   {id:12,cat:"grenades",diff:"Начинающий",icon:"💨",title:"Dust2 — стандартные смоки",map:"Dust2",
-   desc:_t("Xbox smoke, Long A cross, CT rush — три обязательных смока на Dust2."),
+   desc:"Xbox smoke, Long A cross, CT rush — три обязательных смока на Dust2.",
    url:"https://www.youtube.com/watch?v=FhLVxUzghYg",type:"youtube"},
   {id:13,cat:"grenades",diff:"Начинающий",icon:"💨",title:"Inferno — Banana и B контроль",map:"Inferno",
-   desc:_t("Смоки на Banana, Car, CT. Флешки и молотовы для контроля B на Inferno."),
+   desc:"Смоки на Banana, Car, CT. Флешки и молотовы для контроля B на Inferno.",
    url:"https://www.youtube.com/watch?v=x5t0eoMeRak",type:"youtube"},
   {id:14,cat:"grenades",diff:"Средний",icon:"🔥",title:"Mirage — молотовы и флешки А",map:"Mirage",
-   desc:_t("Молотов на A ramp, поп-флеш через угол на А. Эффективная атака А через гранаты."),
+   desc:"Молотов на A ramp, поп-флеш через угол на А. Эффективная атака А через гранаты.",
    url:"https://www.youtube.com/watch?v=2Wh2TmpYn0k",type:"youtube"},
   {id:15,cat:"grenades",diff:"Средний",icon:"💨",title:"Nuke — важные смоки",map:"Nuke",
-   desc:_t("Smokes для контроля Outside, Lobby, Ramp. Nuke без смоков невозможен."),
+   desc:"Smokes для контроля Outside, Lobby, Ramp. Nuke без смоков невозможен.",
    url:"https://www.youtube.com/watch?v=lOvhBXFAH1A",type:"youtube"},
   {id:16,cat:"grenades",diff:"Средний",icon:"💨",title:"Ancient — базовые смоки",map:"Ancient",
-   desc:_t("CT, Mid, B-site смоки на Ancient. Мало кто знает — даёт большое преимущество."),
+   desc:"CT, Mid, B-site смоки на Ancient. Мало кто знает — даёт большое преимущество.",
    url:"https://www.youtube.com/watch?v=g2kMcJeH2jQ",type:"youtube"},
 
   // ДВИЖЕНИЕ
@@ -6851,13 +6308,13 @@ const PRACTICE_ITEMS = [
    desc:"Counter-strafe — как правильно останавливаться перед выстрелом. Самый важный механический навык.",
    url:"https://www.youtube.com/watch?v=8GpLR5YQPQM",type:"youtube"},
   {id:18,cat:"movement",diff:"Средний",icon:"🐇",title:"Бхоп — основы и практика",map:null,
-   desc:_t("Bunny hop — прыжки с ускорением. Поможет в ротациях и некоторых позициях."),
+   desc:"Bunny hop — прыжки с ускорением. Поможет в ротациях и некоторых позициях.",
    url:"https://www.youtube.com/watch?v=q3vPWC4Ek5w",type:"youtube"},
   {id:19,cat:"movement",diff:"Средний",icon:"📐",title:"Прыжки на позиции — Mirage",map:"Mirage",
-   desc:_t("Прыжок на ящик Short, буст на рампу. Позиции недоступные без знания прыжков."),
+   desc:"Прыжок на ящик Short, буст на рампу. Позиции недоступные без знания прыжков.",
    url:"https://www.youtube.com/watch?v=RzD8FpGp5pA",type:"youtube"},
   {id:20,cat:"movement",diff:"Продвинутый",icon:"🌀",title:"Стрейфы и движение в CS2",map:null,
-   desc:_t("Air-strafe, W-стрейфы, контроль точности при движении. Продвинутая механика."),
+   desc:"Air-strafe, W-стрейфы, контроль точности при движении. Продвинутая механика.",
    url:"https://www.youtube.com/watch?v=4yK4pU5KjQU",type:"youtube"},
 
   // ПОЗИЦИИ
@@ -6865,21 +6322,21 @@ const PRACTICE_ITEMS = [
    desc:"Window, Jungle, B passive, standard CT. Позиции с максимальным контролем информации.",
    url:"https://www.youtube.com/watch?v=N8WPW5hLMiU",type:"youtube"},
   {id:22,cat:"positions",diff:"Начинающий",icon:"🗺️",title:"Inferno — позиции B сайта",map:"Inferno",
-   desc:_t("Carp, Balcony, Orange, Fountain. Правильное расположение на B Inferno."),
+   desc:"Carp, Balcony, Orange, Fountain. Правильное расположение на B Inferno.",
    url:"https://www.youtube.com/watch?v=bTJBuIbjWqc",type:"youtube"},
   {id:23,cat:"positions",diff:"Средний",icon:"🎯",title:"Off-angles и нестандартные позиции",map:null,
    desc:"Позиции которых не ожидают. Один из самых эффективных способов получить лёгкие килы.",
    url:"https://www.youtube.com/watch?v=YLPZ2mH5sTI",type:"youtube"},
   {id:24,cat:"positions",diff:"Средний",icon:"🔭",title:"AWP позиции — топ карты",map:null,
-   desc:_t("Лучшие AWP углы на Mirage, Inferno, Dust2. Для снайперов всех уровней."),
+   desc:"Лучшие AWP углы на Mirage, Inferno, Dust2. Для снайперов всех уровней.",
    url:"https://www.youtube.com/watch?v=EUy9y3wkbRs",type:"youtube"},
   {id:25,cat:"positions",diff:"Продвинутый",icon:"🔍",title:"Lurk и информационные позиции",map:null,
-   desc:_t("Позиции для сбора информации без риска. Для саппорта и лёрка."),
+   desc:"Позиции для сбора информации без риска. Для саппорта и лёрка.",
    url:"https://www.youtube.com/watch?v=pf5w_7EJKqE",type:"youtube"},
 ];
 
 const CATS = [
-  {id:"all",     label:_t("Всё"),       icon:"🎮"},
+  {id:"all",     label:"Всё",       icon:"🎮"},
   {id:"workshop",label:"Воркшоп",  icon:"🔧"},
   {id:"grenades",label:"Гранаты",  icon:"💨"},
   {id:"movement",label:"Движение", icon:"🏃"},
@@ -6930,7 +6387,7 @@ function PracticeTab({player}) {
   const fc = player?.faceit;
   const cs2 = player?.cs2 || {};
 
-  // _t("Для вас") — подбираем по слабым сторонам
+  // "Для вас" — подбираем по слабым сторонам
   const forYouIds = (() => {
     if(!player) return [];
     const ids = [];
@@ -6958,8 +6415,8 @@ function PracticeTab({player}) {
   return(
     <div style={{animation:"up .4s ease both"}}>
       <div style={{marginBottom:"16px"}}>
-        <h2 style={{fontSize:"22px",color:C.value,fontWeight:700,margin:"0 0 4px"}}>{_t("База знаний CS2")}</h2>
-        <p style={{fontSize:"13px",color:C.muted,margin:0}}>{_t("Воркшоп, гранаты, движение, позиции и карты")}</p>
+        <h2 style={{fontSize:"22px",color:C.value,fontWeight:700,margin:"0 0 4px"}}>{"База знаний CS2"}</h2>
+        <p style={{fontSize:"13px",color:C.muted,margin:0}}>{"Воркшоп, гранаты, движение, позиции и карты"}</p>
       </div>
 
       {/* Поиск */}
@@ -6993,15 +6450,15 @@ function PracticeTab({player}) {
         <div style={{display:"flex",alignItems:"center",gap:"6px",flexWrap:"wrap",
           padding:"10px 14px",background:"#0d0d09",border:`1px solid ${C.border}`,marginBottom:"16px"}}>
           <span style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginRight:"4px",whiteSpace:"nowrap"}}>
-            {_t("УРОВЕНЬ:")}
+            {"УРОВЕНЬ:"}
           </span>
           {[
-            {id:"all",          label:_t("Все"),               color:C.label},
-            {id:"Начинающий",   label:_t("Новичок"),    color:C.win},
-            {id:"Средний",      label:_t("Средний"),      color:C.yellow},
-            {id:"Продвинутый",  label:_t("Про"),          color:C.lose},
-            {id:"Любой",        label:_t("Любой"),        color:C.blue},
-            {id:"for_you",      label:player?_t("⭐ Для тебя"):_t("Для вас"), color:"#cc88ff"},
+            {id:"all",          label:"Все",               color:C.label},
+            {id:"Начинающий",   label:"Новичок",    color:C.win},
+            {id:"Средний",      label:"Средний",      color:C.yellow},
+            {id:"Продвинутый",  label:"Про",          color:C.lose},
+            {id:"Любой",        label:"Любой",        color:C.blue},
+            {id:"for_you",      label:player?"⭐ Для тебя":"Для вас", color:"#cc88ff"},
           ].map(d=>{
             const active = diff===d.id;
             return(
@@ -7071,7 +6528,7 @@ function PracticeTab({player}) {
                   </div>
                   <span style={{padding:"2px 9px",background:dc+"18",color:dc,
                     border:`1px solid ${dc}33`,fontSize:"10px",fontWeight:700,flexShrink:0}}>
-                    {tDiff(item.diff)}
+                    {item.diff}
                   </span>
                 </div>
                 <p style={{fontSize:"13px",color:C.label,lineHeight:1.65,margin:0,flex:1}}>{item.desc}</p>
@@ -7108,7 +6565,7 @@ function PracticeTab({player}) {
 }
 
 // ── Settings Modal ────────────────────────────────────────────────────────────
-function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProModal}) {
+function SettingsModal({player, isPro, onClose, onLogout, onProModal}) {
   const [notifOn, setNotifOn] = useState(()=>{ try{ return localStorage.getItem("cs2_notif")!=="0"; }catch{ return true; } });
   const [activeSection, setActiveSection] = useState("account");
 
@@ -7140,7 +6597,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             <div style={{width:"8px",height:"8px",borderRadius:"50%",
               background:connected?C.win:"#ff4444",flexShrink:0}}/>
             <span style={{fontSize:"12px",color:connected?C.win:C.lose,fontWeight:600}}>
-              {connected?_t("Подключён"):_t("Аккаунт не подключён")}
+              {connected?"Подключён":"Аккаунт не подключён"}
             </span>
           </div>
           {info&&<div style={{fontSize:"11px",color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{info}</div>}
@@ -7165,8 +6622,8 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
   const SECTIONS = [
     {id:"account", label:"Аккаунт"},
     {id:"connections", label:"Подключения"},
-    {id:"preferences", label:_t("Настройки")},
-    {id:"data", label:_t("Данные")},
+    {id:"preferences", label:"Настройки"},
+    {id:"data", label:"Данные"},
   ];
 
   return (
@@ -7181,7 +6638,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
         {/* Header */}
         <div style={{padding:"18px 24px",borderBottom:`1px solid ${C.border}`,
           display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>{_t("⚙️ НАСТРОЙКИ")}</div>
+          <div style={{fontSize:"13px",letterSpacing:"3px",color:C.yellow,fontWeight:700}}>{"⚙️ НАСТРОЙКИ"}</div>
           <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,
             color:C.muted,cursor:"pointer",width:"28px",height:"28px",fontSize:"14px"}}>✕</button>
         </div>
@@ -7236,7 +6693,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
               <div style={{fontFamily:"monospace",color:C.blue,fontSize:"12px"}}>{player?.steamid||"—"}</div>
             </div>
 
-            <button onClick={()=>{if(window.confirm(t("logout_confirm",_t("Выйти из аккаунта?")))){ onLogout(); onClose(); }}}
+            <button onClick={()=>{if(window.confirm("Выйти из аккаунта?")){ onLogout(); onClose(); }}}
               style={{width:"100%",padding:"9px",background:"transparent",border:`1px solid ${C.lose}44`,
                 color:C.lose,cursor:"pointer",fontSize:"12px",fontFamily:"inherit",fontWeight:700}}>
               🚪 Выйти из аккаунта
@@ -7250,14 +6707,14 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             </div>
 
             <ConnBlock
-              title={_t("STEAM")}
+              title={"STEAM"}
               icon="🎮"
               connected={!!player?.steamid}
               info={player?.username ? `${player.username} · Steam Lvl ${player.steam_level||"—"}` : ""}
             />
 
             <ConnBlock
-              title={_t("FACEIT")}
+              title={"FACEIT"}
               icon="⚡"
               connected={hasFaceit}
               info={hasFaceit ? `LVL ${player.faceit?.level} · ${player.faceit?.elo} ELO · ${player.faceit?.nickname}` : ""}
@@ -7268,7 +6725,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
               title="TELEGRAM"
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill={tgLinked?"#66ee66":"#9a9270"}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.03 9.566c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.48 14.4l-2.96-.924c-.643-.2-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.836.186z"/></svg>}
               connected={tgLinked}
-              info={tgLinked?t("notif_active",_t("Уведомления о матчах активны")):t("notif_tg",_t("Получай уведомления о матчах в Telegram"))}
+              info={tgLinked?"Уведомления о матчах активны":"Получай уведомления о матчах в Telegram"}
               onLink={(e)=>{
                 e.preventDefault();
                 window.open("https://t.me/cs2coach_support","_blank");
@@ -7283,32 +6740,12 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
 
           {/* ── НАСТРОЙКИ ── */}
           {activeSection==="preferences"&&<>
-            {/* Язык */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-              padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
-              <div>
-                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>{_t("Язык / Language")}</div>
-                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{_t("Язык интерфейса")}</div>
-              </div>
-              <div style={{display:"flex",gap:"4px"}}>
-                {[["ru","🇷🇺 RU"],["en","🇬🇧 EN"]].map(([l,label])=>(
-                  <button key={l} onClick={()=>setLang(l)} style={{
-                    padding:"5px 12px",background:lang===l?C.yellow+"22":"transparent",
-                    border:`1px solid ${lang===l?C.yellow+"66":C.border}`,
-                    color:lang===l?C.yellow:C.muted,cursor:"pointer",
-                    fontSize:"12px",fontFamily:"inherit",fontWeight:lang===l?700:400}}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Уведомления */}
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
               padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
               <div>
-                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>{_t("Уведомления")}</div>
-                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{_t("Достижения и апдейты")}</div>
+                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>{"Уведомления"}</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{"Достижения и апдейты"}</div>
               </div>
               <Toggle on={notifOn} onToggle={()=>toggle("cs2_notif",!notifOn,setNotifOn)}/>
             </div>
@@ -7317,8 +6754,8 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
               padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
               <div>
-                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>{_t("Тема")}</div>
-                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{_t("Только тёмная тема")}</div>
+                <div style={{fontSize:"13px",color:C.value,fontWeight:600}}>{"Тема"}</div>
+                <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>{"Только тёмная тема"}</div>
               </div>
               <div style={{fontSize:"12px",color:C.muted,padding:"5px 10px",
                 border:`1px solid ${C.border}`,background:"#0d0d09"}}>
@@ -7345,7 +6782,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
               <div style={{display:"flex",gap:"8px"}}>
                 <input
                   id="premier_input"
-                  placeholder={_t("Например: 7794")}
+                  placeholder={"Например: 7794"}
                   defaultValue={(()=>{try{return JSON.parse(localStorage.getItem("cs2_player_v3")||"null")?.cs2?.premier_rating||"";}catch{return "";}})()}
                   style={{flex:1,background:"#111109",border:`1px solid ${C.yellow}44`,
                     color:C.yellow,padding:"8px 12px",fontFamily:"monospace",fontSize:"14px"}}/>
@@ -7363,7 +6800,7 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
                     const pd = JSON.parse(localStorage.getItem(pdKey)||"{}");
                     pd.premier_rating = val;
                     localStorage.setItem(pdKey, JSON.stringify(pd));
-                    alert(t("saved_reload",_t("Сохранено! Обнови страницу чтобы увидеть в профиле.")));
+                    alert("Сохранено! Обнови страницу чтобы увидеть в профиле.");
                   }catch{}
                 }} style={{padding:"8px 16px",background:C.yellow,color:"#080807",
                   border:"none",cursor:"pointer",fontSize:"12px",fontWeight:700,fontFamily:"inherit"}}>
@@ -7373,9 +6810,9 @@ function SettingsModal({player, lang, setLang, isPro, onClose, onLogout, onProMo
             </div>}
 
             {[
-              {label:"История рейтинга", desc:t("data_snap",_t("Снапшоты K/D, WR, HS за 30 дней")), key_prefix:"cs2_rating_history_"},
-              {label:"Кеш профиля", desc:t("data_steamfaceit",_t("Данные Steam и FACEIT")), key_prefix:"cs2_player_v3"},
-              {label:"Steam auth код", desc:t("data_matchhist",_t("Подключение к истории матчей")), key_prefix:"cs2_steam_auth_"},
+              {label:"История рейтинга", desc:"Снапшоты K/D, WR, HS за 30 дней", key_prefix:"cs2_rating_history_"},
+              {label:"Кеш профиля", desc:"Данные Steam и FACEIT", key_prefix:"cs2_player_v3"},
+              {label:"Steam auth код", desc:"Подключение к истории матчей", key_prefix:"cs2_steam_auth_"},
             ].map((item,i)=>(
               <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
                 padding:"11px 14px",background:"#0d0d09",border:`1px solid ${C.border}`,
@@ -7440,8 +6877,6 @@ export default function App() {
   const [showProCelebration,setShowProCelebration] = useState(false);
   const [showChecklist,setShowChecklist] = useState(true);
   const [profileDropdown,setProfileDropdown] = useState(false);
-  const [lang,setLang] = useState(()=>{ try{ const l=localStorage.getItem("cs2_lang")||"ru"; _currentLang=l; return l; }catch{ return "ru"; } });
-  const T = TRANSLATIONS[lang] || TRANSLATIONS.ru;
   const [showSettings,setShowSettings] = useState(false);
   const [showOnboarding,setShowOnboarding] = useState(false);
   const [analysisCount,setAnalysisCount] = useState(
@@ -7520,10 +6955,10 @@ export default function App() {
         const mvps = parseInt(cs22.mvps)||0;
         // Проверяем какие ачивки только что разблокировались
         const prevData = JSON.parse(localStorage.getItem(`cs2_prev_stats_${player.steamid}`)||"{}");
-        if (prevData.kd && kd >= 1.0 && prevData.kd < 1.0) notifs.push({icon:"⚔️",title:"Достижение: Фраггер!",text:_t("K/D превысил 1.0 — цель достигнута"),color:C.blue});
-        if (prevData.hs && hs >= 40 && prevData.hs < 40) notifs.push({icon:"🎯",title:"Достижение: HS Машина!",text:_t("40%+ хедшотов — отличная точность"),color:C.orange});
-        if (prevData.matches && matches >= 200 && prevData.matches < 200) notifs.push({icon:"🎖️",title:"Достижение: Ветеран!",text:_t("200 матчей — ты опытный игрок"),color:C.yellow});
-        if (prevData.mvps && mvps >= 100 && prevData.mvps < 100) notifs.push({icon:"🥇",title:"Достижение: MVP x100!",text:_t("100 MVP — настоящий лидер команды"),color:C.yellow});
+        if (prevData.kd && kd >= 1.0 && prevData.kd < 1.0) notifs.push({icon:"⚔️",title:"Достижение: Фраггер!",text:"K/D превысил 1.0 — цель достигнута",color:C.blue});
+        if (prevData.hs && hs >= 40 && prevData.hs < 40) notifs.push({icon:"🎯",title:"Достижение: HS Машина!",text:"40%+ хедшотов — отличная точность",color:C.orange});
+        if (prevData.matches && matches >= 200 && prevData.matches < 200) notifs.push({icon:"🎖️",title:"Достижение: Ветеран!",text:"200 матчей — ты опытный игрок",color:C.yellow});
+        if (prevData.mvps && mvps >= 100 && prevData.mvps < 100) notifs.push({icon:"🥇",title:"Достижение: MVP x100!",text:"100 MVP — настоящий лидер команды",color:C.yellow});
         // Стрик при повторном входе
         const cur = parseInt(localStorage.getItem("cs2_streak")||"0");
         // Стрик показывается отдельным StreakToast — не дублируем в notifications
@@ -7560,8 +6995,8 @@ export default function App() {
     const avg = avgByLevel[Math.min(lbLvl,10)];
     function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(parseFloat(v)/a-1))))));}
     const lbOverall = Math.min(99,Math.round(sig(lbKd,avg.kd)*0.45+sig(lbHs,avg.hs)*0.25+sig(lbWr,avg.wr)*0.30));
-    const coachLevels=[{max:19,name:_t("НОВОБРАНЕЦ")},{max:34,name:_t("БОЕЦ")},{max:49,name:_t("СНАЙПЕР")},{max:64,name:_t("ВЕТЕРАН")},{max:79,name:_t("МАСТЕР")},{max:89,name:_t("ЭЛИТА")},{max:100,name:_t("ЛЕГЕНДА")}];
-    const levelLabel = coachLevels.find(l=>lbOverall<=l.max)?.name || _t("ВЕТЕРАН");
+    const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
+    const levelLabel = coachLevels.find(l=>lbOverall<=l.max)?.name || "ВЕТЕРАН";
 
     fetch(`${BACKEND}/leaderboard/add`,{
       method:"POST", headers:{"Content-Type":"application/json"},
@@ -7592,8 +7027,8 @@ export default function App() {
         setNotifications(n => [...n, {
           icon: improved ? "📈" : "📉",
           title: improved
-            ? `Ты поднялся на ${diff} ${diff===1?_t("место"):_t("мест")} в лидерборде!`
-            : `Ты опустился на ${diff} ${diff===1?_t("место"):_t("мест")} в лидерборде`,
+            ? `Ты поднялся на ${diff} ${diff===1?"место":"мест"} в лидерборде!`
+            : `Ты опустился на ${diff} ${diff===1?"место":"мест"} в лидерборде`,
           text: `${prevRank} → ${d.rank} место из ${d.total}`,
           color: improved ? C.win : C.lose,
         }]);
@@ -7729,8 +7164,8 @@ export default function App() {
                   function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(parseFloat(v)/a-1))))));}
                   return Math.min(99,Math.round(sig(lbKd,avg.kd)*0.45+sig(lbHs,avg.hs)*0.25+sig(lbWr,avg.wr)*0.30));
                 })();
-                const coachLevels=[{max:19,name:_t("НОВОБРАНЕЦ")},{max:34,name:_t("БОЕЦ")},{max:49,name:_t("СНАЙПЕР")},{max:64,name:_t("ВЕТЕРАН")},{max:79,name:_t("МАСТЕР")},{max:89,name:_t("ЭЛИТА")},{max:100,name:_t("ЛЕГЕНДА")}];
-                const levelLabel = coachLevels.find(l=>lbOverall<=l.max)?.name || _t("ВЕТЕРАН");
+                const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
+                const levelLabel = coachLevels.find(l=>lbOverall<=l.max)?.name || "ВЕТЕРАН";
                 if (parseFloat(lbKd) > 0 && parseInt(lbM) > 0 && fresh.steamid) {
                   fetch(`${BACKEND}/leaderboard/add`, {
                     method:"POST", headers:{"Content-Type":"application/json"},
@@ -7814,8 +7249,8 @@ export default function App() {
         const avg = avgByLevel[Math.min(lbLvl,10)];
         function sig(v,a){return Math.min(99,Math.max(1,Math.round(100/(1+Math.exp(-4*(parseFloat(v)/a-1))))));}
         const lbOverall = Math.min(99,Math.round(sig(lbKd,avg.kd)*0.45+sig(lbHs,avg.hs)*0.25+sig(lbWr,avg.wr)*0.30));
-        const coachLevels=[{max:19,name:_t("НОВОБРАНЕЦ")},{max:34,name:_t("БОЕЦ")},{max:49,name:_t("СНАЙПЕР")},{max:64,name:_t("ВЕТЕРАН")},{max:79,name:_t("МАСТЕР")},{max:89,name:_t("ЭЛИТА")},{max:100,name:_t("ЛЕГЕНДА")}];
-        const levelLabel = coachLevels.find(l=>lbOverall<=l.max)?.name || _t("ВЕТЕРАН");
+        const coachLevels=[{max:19,name:"НОВОБРАНЕЦ"},{max:34,name:"БОЕЦ"},{max:49,name:"СНАЙПЕР"},{max:64,name:"ВЕТЕРАН"},{max:79,name:"МАСТЕР"},{max:89,name:"ЭЛИТА"},{max:100,name:"ЛЕГЕНДА"}];
+        const levelLabel = coachLevels.find(l=>lbOverall<=l.max)?.name || "ВЕТЕРАН";
         if (parseFloat(lbKd) > 0 && parseInt(lbM) > 0) {
           fetch(`${BACKEND}/leaderboard/add`,{method:"POST",headers:{"Content-Type":"application/json"},
             body:JSON.stringify({steamid:p.steamid, username:p.username, avatar:p.avatar||"",
@@ -7948,13 +7383,6 @@ export default function App() {
 
   const lc = ANALYSIS_COLOR[analysis?.level] || C.yellow;
 
-  const setLangPersist = (v) => {
-    const newLang = typeof v === 'function' ? v(lang) : v;
-    setLang(newLang);
-    _currentLang = newLang;
-    try{ localStorage.setItem("cs2_lang", newLang); }catch{}
-  };
-
   // ── Layout ────────────────────────────────────────────────────────────────
   return (
     <div className="scanlines" style={{minHeight:"100vh",background:C.bg,fontFamily:"'Segoe UI',system-ui,-apple-system,sans-serif",color:C.text}}>
@@ -7965,7 +7393,7 @@ export default function App() {
         animation:"scan 10s linear infinite",pointerEvents:"none",zIndex:1}}/>
 
       {showPopup&&<SteamPopup onLogin={openSteam} onSkip={()=>setShowPopup(false)}/>}
-      {showSettings&&<SettingsModal player={player} lang={lang} setLang={setLangPersist} isPro={isPro} onClose={()=>setShowSettings(false)} onLogout={logout} onProModal={()=>{setShowSettings(false);setShowProModal(true);}}/>}
+      {showSettings&&<SettingsModal player={player} isPro={isPro} onClose={()=>setShowSettings(false)} onLogout={logout} onProModal={()=>{setShowSettings(false);setShowProModal(true);}}/>}
       {profileView&&<ProfileModal steamid={profileView.steamid} nickname={profileView.nickname} myId={player?.steamid} isPro={isPro} onClose={()=>setProfileView(null)}/>}
       {shareOpen&&player&&<ShareModal steamid={player.steamid} player={player} source={source} onClose={()=>setShareOpen(false)}/>}
       {showProModal&&<ProModal player={player} isPro={isPro} onClose={()=>setShowProModal(false)}
@@ -8015,17 +7443,6 @@ export default function App() {
         <div className="topbar-right" style={{display:"flex",alignItems:"center",gap:"6px",minWidth:0,overflow:"hidden"}}>
           <div className="search-bar"><SearchBar onSelect={r=>setProfileView({nickname:r.nickname})}/></div>
           {/* Язык */}
-          <button onClick={()=>setLangPersist(l=>l==="ru"?"en":"ru")}
-            style={{background:"transparent",border:`1px solid ${C.border}`,color:C.muted,
-              cursor:"pointer",padding:"4px 6px",fontFamily:"inherit",
-              display:"flex",alignItems:"center",gap:"3px",flexShrink:0,transition:"all .2s"}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor=C.yellow+"88"}
-            onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
-            {lang==="ru"
-              ? <svg width="16" height="11" viewBox="0 0 18 13"><rect width="18" height="13" fill="#fff"/><rect width="18" height="4.33" y="4.33" fill="#0039A6"/><rect width="18" height="4.34" y="8.66" fill="#D52B1E"/></svg>
-              : <svg width="16" height="11" viewBox="0 0 60 40"><rect width="60" height="40" fill="#012169"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" strokeWidth="8"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" strokeWidth="5"/><path d="M30,0 L30,40 M0,20 L60,20" stroke="#fff" strokeWidth="13"/><path d="M30,0 L30,40 M0,20 L60,20" stroke="#C8102E" strokeWidth="8"/></svg>}
-            <span className="topbar-username" style={{fontSize:"10px",color:C.muted,letterSpacing:"1px"}}>{lang==="ru"?"RU":"EN"}</span>
-          </button>
           {player?(
             <>
               {isPro
@@ -8080,10 +7497,10 @@ export default function App() {
                       </div>
                     </div>
                     {[
-                      {icon:"👤",label:_t("Мой профиль"),action:()=>{setProfileView({steamid:player?.steamid});setProfileDropdown(false);}},
-                      {icon:"⚙️",label:_t("Настройки"),action:()=>{setShowSettings(true);setProfileDropdown(false);}},
-                      {icon:"⚡",label:_t("PRO подписка"),action:()=>{setShowProModal(true);setProfileDropdown(false);}},
-                      {icon:"📤",label:_t("Поделиться"),action:()=>{setShareOpen(true);setProfileDropdown(false);}},
+                      {icon:"👤",label:"Мой профиль",action:()=>{setProfileView({steamid:player?.steamid});setProfileDropdown(false);}},
+                      {icon:"⚙️",label:"Настройки",action:()=>{setShowSettings(true);setProfileDropdown(false);}},
+                      {icon:"⚡",label:"PRO подписка",action:()=>{setShowProModal(true);setProfileDropdown(false);}},
+                      {icon:"📤",label:"Поделиться",action:()=>{setShareOpen(true);setProfileDropdown(false);}},
                     ].map((item,i)=>(
                       <button key={i} onClick={item.action}
                         style={{display:"flex",alignItems:"center",gap:"10px",width:"100%",padding:"10px 14px",
@@ -8117,14 +7534,14 @@ export default function App() {
         {/* Page title */}
         <div style={{marginBottom:"24px"}}>
           <h1 style={{fontSize:"clamp(26px,5vw,42px)",fontWeight:400,margin:"0 0 4px",color:C.value,letterSpacing:"2px"}}>
-            {_t("Разбор твоей игры")}
+            {"Разбор твоей игры"}
           </h1>
-          <p style={{color:C.muted,fontSize:"13px",margin:0}}>{_t("Steam + FACEIT аналитика · AI-тренер")}</p>
+          <p style={{color:C.muted,fontSize:"13px",margin:0}}>{"Steam + FACEIT аналитика · AI-тренер"}</p>
         </div>
 
         {/* Main tabs */}
         <div style={{className:"desktop-nav",display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:"22px",flexWrap:"wrap"}}>
-          {[["overview",_t("ОБЗОР")],["coach",T.tab_coach||"🎯 ТРЕНЕР"],["practice",T.tab_practice||"📚 ПРАКТИКА"],["matches",T.tab_matches||_t("🎮 МАТЧИ")],["maps",T.tab_maps||"🗺️ КАРТЫ"],["history",T.tab_history||"📋 ИСТОРИЯ"],["leaderboard",T.tab_leaders||"🏆 ЛИДЕРЫ"],["friends",T.tab_friends||"👥 ДРУЗЬЯ"]].map(([t,l])=>(
+          {[["overview","ОБЗОР"],["coach","🎯 ТРЕНЕР"||"🎯 ТРЕНЕР"],["practice","📚 ПРАКТИКА"||"📚 ПРАКТИКА"],["matches","🎮 МАТЧИ"||"🎮 МАТЧИ"],["maps","🗺️ КАРТЫ"||"🗺️ КАРТЫ"],["history","📋 ИСТОРИЯ"||"📋 ИСТОРИЯ"],["leaderboard","🏆 ЛИДЕРЫ"||"🏆 ЛИДЕРЫ"],["friends","👥 ДРУЗЬЯ"||"👥 ДРУЗЬЯ"]].map(([t,l])=>(
             <button key={t} onClick={()=>{ setMainTab(t); track("tab_opened",{tab:t}); }} style={{
               padding:"11px 18px",background:"transparent",
               color:mainTab===t?C.yellow:C.muted,border:"none",
@@ -8148,11 +7565,11 @@ export default function App() {
             {source==="steam"&&player.cs2?.private&&<PrivateWarning/>}
 
             {/* ── СЕКЦИЯ 1: Профиль ── */}
-            <SectionTitle icon="👤" label={_t("ПРОФИЛЬ")}/>
+            <SectionTitle icon="👤" label={"ПРОФИЛЬ"}/>
             <HeroCard player={player} source={source}/>
 
             {/* ── СЕКЦИЯ 2: AI Вердикт ── */}
-            <SectionTitle icon="🤖" label={T.ai_verdict||"AI ВЕРДИКТ"} sub={T.ai_verdict_sub||"персональный разбор твоей игры"}/>
+            <SectionTitle icon="🤖" label={"AI ВЕРДИКТ"||"AI ВЕРДИКТ"} sub={"AI ВЕРДИКТ"_sub||"персональный разбор твоей игры"}/>
             {!player.cs2?.private&&(()=>{
               // Показываем AIReport если: PRO, или лимит есть, или УЖЕ ЕСТЬ КЕШ
               const hasCachedResult = (()=>{
@@ -8169,21 +7586,21 @@ export default function App() {
                 } catch { return false; }
               })();
               return (isPro || aiRemaining > 0 || hasCachedResult)
-                ? <AIReport player={player} source={source} verdictVersion={verdictVersion} lang={lang}
+                ? <AIReport player={player} source={source} verdictVersion={verdictVersion}
                     onGoToCoach={()=>setMainTab("coach")}/>
                 : <PaywallOverlay feature="AI Вердикт" onUpgrade={()=>setShowProModal(true)}/>;
             })()}
 
             {/* ── СЕКЦИЯ 3: Рейтинг ── */}
-            <SectionTitle icon="🏅" label={T.rating_title||_t("РЕЙТИНГ")} sub={T.rating_sub||"Coach Rating на основе твоей статистики"}/>
+            <SectionTitle icon="🏅" label={"РЕЙТИНГ"||"РЕЙТИНГ"} sub={"Coach Rating на основе твоей статистики"||"Coach Rating на основе твоей статистики"}/>
             <PlayerRating player={player} source={source}/>
 
             {/* ── СЕКЦИЯ 4: Цель и тренировка ── */}
-            <SectionTitle icon="⚡" label={T.today_title||"СЕГОДНЯ"} sub={T.today_sub||"главное действие для роста"}/>
+            <SectionTitle icon="⚡" label={"СЕГОДНЯ"||"СЕГОДНЯ"} sub={"главное действие для роста"||"главное действие для роста"}/>
             <DayAction player={player} source={source} streak={streak}/>
 
             {/* ── СЕКЦИЯ 5: Прогресс ── */}
-            <SectionTitle icon="📈" label={T.progress_title||"ПРОГРЕСС"} sub={T.progress_sub||"как ты изменился"}/>
+            <SectionTitle icon="📈" label={"ПРОГРЕСС"||"ПРОГРЕСС"} sub={"как ты изменился"||"как ты изменился"}/>
             <WeekComparison player={player}/>
             <ProgressHistory player={player} source={source}/>
 
@@ -8198,9 +7615,9 @@ export default function App() {
 
             {/* ── Steam статы (только Steam режим) ── */}
             {source==="steam"&&!player.cs2?.private&&<>
-              <SectionTitle icon="🎮" label=t("steam_stats_sec",_t(_t(_t("СТАТИСТИКА STEAM"))))/>
+              <SectionTitle icon="🎮" label="СТАТИСТИКА STEAM"/>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:"3px",marginBottom:"10px"}}>
-                {[{l:_t("УБИЙСТВА"),v:player.cs2?.kills},{l:_t("СМЕРТИ"),v:player.cs2?.deaths},{l:_t("ПОБЕДЫ"),v:player.cs2?.wins},{l:_t("MVP"),v:player.cs2?.mvps}].map((s,i)=>(
+                {[{l:"УБИЙСТВА",v:player.cs2?.kills},{l:"СМЕРТИ",v:player.cs2?.deaths},{l:"ПОБЕДЫ",v:player.cs2?.wins},{l:"MVP",v:player.cs2?.mvps}].map((s,i)=>(
                   <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,padding:"16px",textAlign:"center"}}>
                     <div style={{fontSize:"13px",color:C.label,letterSpacing:"1px",marginBottom:"7px"}}>{s.l}</div>
                     <div style={{fontSize:"24px",color:C.yellow,fontWeight:700}}>{s.v||"—"}</div>
@@ -8208,13 +7625,13 @@ export default function App() {
                 ))}
               </div>
               {/* Оружия */}
-              <SectionTitle icon="🔫" label={T.weapons_title||_t("ОРУЖИЯ")} sub={T.weapons_sub||"статистика по оружию"}/>
+              <SectionTitle icon="🔫" label={"ОРУЖИЯ"||"ОРУЖИЯ"} sub={"статистика по оружию"||"статистика по оружию"}/>
               <WeaponsPanel cs2={player.cs2}/>
             </>}
 
             {/* Оружия FACEIT режим */}
             {source==="faceit"&&hasFaceit&&player.cs2&&!player.cs2.private&&<>
-              <SectionTitle icon="🔫" label={_t("ОРУЖИЯ")} sub="статистика из Steam"/>
+              <SectionTitle icon="🔫" label={"ОРУЖИЯ"} sub="статистика из Steam"/>
               <WeaponsPanel cs2={player.cs2}/>
             </>}
 
@@ -8248,15 +7665,15 @@ export default function App() {
                     {l:"WIN %",v:player.faceit?.lifetime?.winrate?(player.faceit?.lifetime?.winrate+"%"):"—",c:parseInt(player.faceit?.lifetime?.winrate)>=50?C.win:C.yellow},
                     {l:"HS %",v:player.faceit?.lifetime?.hs?(player.faceit?.lifetime?.hs+"%"):"—",c:parseInt(player.faceit?.lifetime?.hs)>=40?C.win:C.orange},
                     {l:"FACEIT ELO",v:player.faceit?.elo||"—",c:LVL_COLOR[player.faceit?.level]||C.yellow},
-                    {l:_t("МАТЧИ"),v:player.faceit?.lifetime?.matches||"—",c:C.label},
+                    {l:"МАТЧИ",v:player.faceit?.lifetime?.matches||"—",c:C.label},
                     {l:"ADR",v:arr(player.faceit?.matches)[0]?.adr||"—",c:C.orange},
                   ]:[
                     {l:"K/D",v:player.cs2?.kd||"—",c:parseFloat(player.cs2?.kd)>=1?C.win:C.lose},
                     {l:"WIN %",v:player.cs2?.winrate?(player.cs2.winrate+"%"):"—",c:parseInt(player.cs2?.winrate)>=50?C.win:C.yellow},
                     {l:"HS %",v:player.cs2?.hs?(player.cs2.hs+"%"):"—",c:parseInt(player.cs2?.hs)>=40?C.win:C.orange},
                     {l:"FACEIT ELO",v:player.faceit?.elo||"—",c:LVL_COLOR[player.faceit?.level]||C.muted},
-                    {l:_t("МАТЧИ"),v:player.cs2?.matches||"—",c:C.label},
-                    {l:_t("УБИЙСТВА"),v:player.cs2?.kills?parseInt(player.cs2.kills).toLocaleString():"—",c:C.label},
+                    {l:"МАТЧИ",v:player.cs2?.matches||"—",c:C.label},
+                    {l:"УБИЙСТВА",v:player.cs2?.kills?parseInt(player.cs2.kills).toLocaleString():"—",c:C.label},
                   ]).map((f,i)=>(
                     <div key={i} style={{
                       background:`linear-gradient(135deg,${f.c}0c,${C.card})`,
@@ -8273,7 +7690,7 @@ export default function App() {
               </div>
               <UsageBar remaining={aiRemaining} total={FREE_WEEKLY} isPro={isPro} onUpgrade={()=>setShowProModal(true)}/>
               <div style={{fontSize:"12px",color:C.muted,marginBottom:"16px"}}>
-                Источник данных: <span style={{color:source==="faceit"?C.orange:C.blue,fontWeight:700}}>{source==="faceit"?_t("FACEIT"):_t("STEAM")}</span>
+                Источник данных: <span style={{color:source==="faceit"?C.orange:C.blue,fontWeight:700}}>{source==="faceit"?"FACEIT":"STEAM"}</span>
                 {source==="steam"&&player.faceit&&" (переключись на FACEIT для более детального анализа)"}
               </div>
             </>}
@@ -8323,7 +7740,7 @@ export default function App() {
               cursor:(!player||loading)?"not-allowed":"pointer",
               fontSize:"13px",fontWeight:700,letterSpacing:"4px",
               fontFamily:"'Courier New',monospace",transition:"all .15s"}}>
-              {loading?(T.analyzing||"АНАЛИЗИРУЮ..."):!player?(T.login_first||"ВОЙДИ ЧЕРЕЗ STEAM"):(T.get_analysis||"ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА")}
+              {loading?("АНАЛИЗИРУЮ..."||"АНАЛИЗИРУЮ..."):!player?("ВОЙДИ ЧЕРЕЗ STEAM"||"ВОЙДИ ЧЕРЕЗ STEAM"):("ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА"||"ПОЛУЧИТЬ РАЗБОР ОТ ТРЕНЕРА")}
             </button>
 
             {loading&&(
@@ -8341,7 +7758,7 @@ export default function App() {
               <div style={{animation:"up .4s ease both"}}>
                 <AIVerdict report={{
                   verdict: analysis?.overall||"",
-                  role: analysis?.level===_t("Про")?"RIFLER":analysis?.level===_t("Хороший")?"ENTRY FRAGGER":"RIFLER",
+                  role: analysis?.level==="Про"?"RIFLER":analysis?.level==="Хороший"?"ENTRY FRAGGER":"RIFLER",
                   roast: analysis?.mainProblem||"",
                   strengths: arr(analysis?.strengths).map((s,i)=>typeof s==="object"?{stat:s?.stat||"",value:"",verdict:s?.comment||"",tip:""}:{stat:"",value:"",verdict:String(s),tip:""}),
                   problems: arr(analysis?.weaknesses).map((w,i)=>typeof w==="object"?{stat:w?.stat||"",value:"",reason:w?.problem||"",fix:w?.fix||"",priority:i+1}:{stat:"",value:"",reason:String(w),fix:"",priority:i+1}),
@@ -8460,7 +7877,7 @@ export default function App() {
           border:`2px solid ${C.blue}`,borderRadius:"50%",cursor:"pointer",
           fontSize:"20px",boxShadow:`0 4px 16px ${C.blue}33`,zIndex:199,
           transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center"}}
-        title={_t("Поддержка и FAQ")}>
+        title={"Поддержка и FAQ"}>
         💬
       </button>
     </div>
