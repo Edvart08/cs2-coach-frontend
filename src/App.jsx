@@ -2953,6 +2953,276 @@ function CoachChat({player, source, analysis, charId, isPro}) {
   );
 }
 
+// ── Round Analysis ─────────────────────────────────────────────────────────────
+const ROUND_EXAMPLES = [
+  "Мы атаковали B на Mirage. Я зашёл первым через B апартаменты, меня убили через окно. Потом двое пошли через double и их смоукнули. Мы проиграли раунд 0:3.",
+  "Я AWP на позиции Long A на Dust2. Пикнул, промахнулся, побежал к CT, по дороге умер от пистолета. Команда проиграла раунд из-за моего слива.",
+  "5v2, мы выигрываем. Я иду ротировать, двое из команды пушат в одно место. Нас флешанули и обоих убили. Я добежал — уже 3v2 и мы слили.",
+];
+
+function RoundAnalysis({player, isPro}) {
+  const [text, setText] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [charCount, setCharCount] = useState(0);
+  const [exampleIdx, setExampleIdx] = useState(0);
+  const MAX = 800;
+
+  async function analyze() {
+    if (!text.trim() || loading) return;
+    setLoading(true); setResult(null);
+    try {
+      const r = await fetch(`${BACKEND}/round-analysis`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          description: text.trim(),
+          steamid: player?.steamid || "",
+          kd: player?.cs2?.kd || player?.faceit?.lifetime?.kd || "?",
+          rank: player?.faceit?.level || "?",
+        })
+      });
+      const d = await r.json();
+      setResult(d);
+    } catch { setResult({error:"Ошибка подключения. Попробуй ещё раз."}); }
+    setLoading(false);
+  }
+
+  function useExample() {
+    const ex = ROUND_EXAMPLES[exampleIdx % ROUND_EXAMPLES.length];
+    setText(ex);
+    setCharCount(ex.length);
+    setExampleIdx(i=>i+1);
+  }
+
+  return (
+    <div style={{marginTop:"12px",animation:"up .3s ease both"}}>
+      <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${C.blue}88,${C.blue},${C.blue}88,transparent)`}}/>
+      <div style={{background:"linear-gradient(160deg,#0d1016,#0a0f09)",border:`1px solid ${C.blue}22`,borderTop:"none"}}>
+
+        {/* Header */}
+        <div style={{padding:"14px 20px 12px",borderBottom:`1px solid ${C.border}`,
+          display:"flex",alignItems:"center",gap:"10px",flexWrap:"wrap"}}>
+          <span style={{fontSize:"18px"}}>🔍</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:"10px",color:C.blue,fontWeight:700,letterSpacing:"3px"}}>РАЗБОР РАУНДА</div>
+            <div style={{fontSize:"11px",color:C.muted}}>Опиши что произошло — AI найдёт ошибки и объяснит как надо</div>
+          </div>
+          <button onClick={useExample} style={{
+            padding:"5px 12px",background:"transparent",border:`1px solid ${C.border}`,
+            color:C.muted,cursor:"pointer",fontSize:"11px",fontFamily:"inherit",
+            transition:"all .15s"}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=C.blue+"66"}
+            onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+            пример ↗
+          </button>
+        </div>
+
+        {/* Input */}
+        <div style={{padding:"16px 20px 0"}}>
+          <div style={{position:"relative"}}>
+            <textarea
+              value={text}
+              onChange={e=>{setText(e.target.value);setCharCount(e.target.value.length);}}
+              placeholder={"Опиши раунд подробно:\n• Карта и позиция\n• Что делал ты и команда\n• Где и как умерли\n• Счёт раунда\n\nМожно вставить описание из match history или написать своими словами."}
+              maxLength={MAX}
+              style={{
+                width:"100%",minHeight:"140px",background:"#080a06",
+                border:`1px solid ${charCount>0?C.blue+"44":C.border}`,
+                color:C.value,fontSize:"13px",padding:"12px",fontFamily:"inherit",
+                resize:"vertical",lineHeight:1.7,boxSizing:"border-box",
+                transition:"border-color .2s",outline:"none"}}
+              onFocus={e=>e.target.style.borderColor=C.blue+"88"}
+              onBlur={e=>e.target.style.borderColor=charCount>0?C.blue+"44":C.border}
+            />
+            <div style={{position:"absolute",bottom:"8px",right:"10px",
+              fontSize:"10px",color:charCount>MAX*0.9?C.lose:C.muted}}>
+              {charCount}/{MAX}
+            </div>
+          </div>
+
+          {/* Hints */}
+          <div style={{display:"flex",gap:"6px",flexWrap:"wrap",margin:"10px 0 14px"}}>
+            {["B апарты Mirage","Long A Dust2","Пушили B Inferno","Клатч 1v2","Пистолетный раунд"].map(h=>(
+              <button key={h} onClick={()=>{
+                const add = (text?text+"\n":"")+h+": ";
+                setText(add); setCharCount(add.length);
+              }} style={{
+                padding:"4px 10px",background:"transparent",
+                border:`1px solid ${C.border}`,color:C.muted,
+                cursor:"pointer",fontSize:"11px",fontFamily:"inherit",
+                borderRadius:"10px",transition:"all .15s"}}
+                onMouseEnter={e=>{e.currentTarget.style.background=C.blue+"18";e.currentTarget.style.borderColor=C.blue+"44";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.borderColor=C.border;}}>
+                {h}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Button */}
+        <div style={{padding:"0 20px 16px"}}>
+          <button onClick={analyze} disabled={loading||!text.trim()||!player} style={{
+            width:"100%",padding:"13px",
+            background:(!text.trim()||loading||!player)?"#0d0d09":C.blue,
+            color:(!text.trim()||loading||!player)?C.muted:"#fff",
+            border:`1px solid ${(!text.trim()||loading||!player)?C.border:C.blue}`,
+            cursor:(!text.trim()||loading||!player)?"not-allowed":"pointer",
+            fontSize:"12px",fontWeight:700,letterSpacing:"3px",fontFamily:"inherit",
+            transition:"all .2s"}}>
+            {loading?"🔍 АНАЛИЗИРУЮ РАУНД...":!player?"ВОЙДИ ЧЕРЕЗ STEAM":"🔍 РАЗОБРАТЬ РАУНД"}
+          </button>
+        </div>
+
+        {/* Loading animation */}
+        {loading&&(
+          <div style={{padding:"20px",borderTop:`1px solid ${C.border}`,
+            display:"flex",flexDirection:"column",gap:"12px"}}>
+            {["Читаю описание раунда...","Анализирую позиционирование...","Ищу тактические ошибки...","Формирую разбор..."].map((s,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:"10px",
+                opacity:0,animation:`fadeIn .4s ${i*0.5}s ease forwards`}}>
+                <div style={{width:"6px",height:"6px",background:C.blue,borderRadius:"50%",
+                  animation:"pulse 1s infinite"}}/>
+                <span style={{fontSize:"12px",color:C.muted}}>{s}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Result */}
+        {result&&!loading&&(
+          <div style={{borderTop:`1px solid ${C.border}`,animation:"up .4s ease both"}}>
+            {result.error?(
+              <div style={{padding:"20px",color:C.lose,fontSize:"13px"}}>{result.error}</div>
+            ):(
+              <>
+                {/* Verdict header */}
+                <div style={{padding:"16px 20px",background:`linear-gradient(90deg,${C.blue}12,transparent)`,
+                  borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{fontSize:"10px",color:C.blue,fontWeight:700,letterSpacing:"2px",marginBottom:"8px"}}>
+                    🔍 РАЗБОР РАУНДА
+                  </div>
+                  <div style={{fontSize:"14px",color:C.value,lineHeight:1.75,fontWeight:500}}>
+                    {result.verdict}
+                  </div>
+                </div>
+
+                {/* Score */}
+                {result.score!=null&&(
+                  <div style={{padding:"12px 20px",borderBottom:`1px solid ${C.border}`,
+                    display:"flex",alignItems:"center",gap:"16px"}}>
+                    <div>
+                      <div style={{fontSize:"9px",color:C.muted,letterSpacing:"2px",marginBottom:"4px"}}>ОЦЕНКА РАУНДА</div>
+                      <div style={{display:"flex",alignItems:"baseline",gap:"4px"}}>
+                        <span style={{fontSize:"32px",fontWeight:900,lineHeight:1,
+                          color:result.score>=70?C.win:result.score>=45?C.yellow:C.lose,
+                          textShadow:`0 0 16px ${result.score>=70?C.win:result.score>=45?C.yellow:C.lose}66`}}>
+                          {result.score}
+                        </span>
+                        <span style={{fontSize:"13px",color:C.muted}}>/100</span>
+                      </div>
+                    </div>
+                    <div style={{flex:1,height:"6px",background:C.bg,borderRadius:"3px",overflow:"hidden"}}>
+                      <div style={{
+                        width:`${result.score}%`,height:"100%",borderRadius:"3px",
+                        background:`linear-gradient(90deg,${result.score>=70?C.win:result.score>=45?C.yellow:C.lose},${result.score>=70?C.win+"88":result.score>=45?C.yellow+"88":C.lose+"88"})`,
+                        transition:"width 1s ease"}}/>
+                    </div>
+                    <div style={{fontSize:"12px",fontWeight:700,
+                      color:result.score>=70?C.win:result.score>=45?C.yellow:C.lose}}>
+                      {result.score>=80?"Отлично":result.score>=65?"Хорошо":result.score>=45?"Нормально":result.score>=25?"Плохо":"Критично"}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mistakes */}
+                {result.mistakes?.length>0&&(
+                  <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`}}>
+                    <div style={{fontSize:"10px",color:C.lose,letterSpacing:"2px",fontWeight:700,marginBottom:"10px"}}>
+                      ❌ ОШИБКИ ({result.mistakes.length})
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+                      {result.mistakes.map((m,i)=>(
+                        <div key={i} style={{
+                          background:"#140808",border:`1px solid ${C.lose}22`,
+                          borderLeft:`3px solid ${C.lose}`,padding:"10px 14px"}}>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"4px"}}>
+                            <span style={{fontSize:"12px",color:C.lose,fontWeight:700}}>{m.title||`Ошибка ${i+1}`}</span>
+                            {m.severity&&<span style={{fontSize:"10px",padding:"2px 8px",
+                              background:m.severity==="critical"?C.lose+"22":m.severity==="major"?C.orange+"22":C.yellow+"22",
+                              color:m.severity==="critical"?C.lose:m.severity==="major"?C.orange:C.yellow,
+                              border:`1px solid ${m.severity==="critical"?C.lose+"44":m.severity==="major"?C.orange+"44":C.yellow+"44"}`}}>
+                              {m.severity==="critical"?"КРИТИЧНО":m.severity==="major"?"ВАЖНО":"МЕЛКО"}
+                            </span>}
+                          </div>
+                          <div style={{fontSize:"12px",color:C.text,lineHeight:1.6}}>{m.description}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Good things */}
+                {result.good?.length>0&&(
+                  <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`}}>
+                    <div style={{fontSize:"10px",color:C.win,letterSpacing:"2px",fontWeight:700,marginBottom:"10px"}}>
+                      ✓ ЧТО СДЕЛАЛ ПРАВИЛЬНО
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+                      {result.good.map((g,i)=>(
+                        <div key={i} style={{display:"flex",gap:"8px",alignItems:"flex-start"}}>
+                          <span style={{color:C.win,fontSize:"13px",flexShrink:0}}>✓</span>
+                          <span style={{fontSize:"12px",color:C.text,lineHeight:1.6}}>{g}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* How it should have been */}
+                {result.howto&&(
+                  <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,
+                    background:`linear-gradient(90deg,${C.yellow}08,transparent)`}}>
+                    <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"2px",fontWeight:700,marginBottom:"8px"}}>
+                      💡 КАК НАДО БЫЛО
+                    </div>
+                    <div style={{fontSize:"13px",color:C.value,lineHeight:1.75}}>{result.howto}</div>
+                  </div>
+                )}
+
+                {/* Key lesson */}
+                {result.lesson&&(
+                  <div style={{padding:"14px 20px",
+                    display:"flex",gap:"12px",alignItems:"flex-start"}}>
+                    <span style={{fontSize:"20px",flexShrink:0}}>🎯</span>
+                    <div>
+                      <div style={{fontSize:"10px",color:C.blue,letterSpacing:"2px",fontWeight:700,marginBottom:"4px"}}>
+                        ГЛАВНЫЙ ВЫВОД
+                      </div>
+                      <div style={{fontSize:"13px",color:C.value,lineHeight:1.65,fontWeight:500}}>{result.lesson}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Reset */}
+                <div style={{padding:"0 20px 14px"}}>
+                  <button onClick={()=>{setResult(null);setText("");setCharCount(0);}} style={{
+                    padding:"7px 16px",background:"transparent",border:`1px solid ${C.border}`,
+                    color:C.muted,cursor:"pointer",fontSize:"11px",fontFamily:"inherit",
+                    transition:"all .15s"}}
+                    onMouseEnter={e=>e.currentTarget.style.borderColor=C.blue+"55"}
+                    onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+                    ↩ разобрать другой раунд
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 function Leaderboard({myId, myIsPro, onProfile}) {
   const [data,setData]=useState(null);
@@ -7778,6 +8048,12 @@ export default function App() {
                   analysis={analysis}
                   charId={coachChar}
                   isPro={isPro}/>
+
+                {/* Разбор раунда */}
+                <div style={{marginTop:"24px"}}>
+                  <SectionTitle icon="🔍" label="РАЗБОР РАУНДА" sub="опиши ситуацию — AI найдёт ошибки"/>
+                  <RoundAnalysis player={player} isPro={isPro}/>
+                </div>
               </div>
             )}
           </>
