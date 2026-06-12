@@ -5721,7 +5721,7 @@ function AIVerdict({report, loading, onRefresh, cacheDate,}) {
 }
 
 
-function AIReport({player, source, verdictVersion=0,, onGoToCoach}) {
+function AIReport({player, source, verdictVersion=0, onGoToCoach}) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
