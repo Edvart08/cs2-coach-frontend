@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
+
+// Backward compat stub (no-op, translations removed)
+function t(key, fallback) { return fallback || key; }
 const C = {
   bg:"#0a0a07", card:"#141409", border:"#2e2e1e",
   yellow:"#f5c518", orange:"#ff8844", blue:"#74c6f5",
@@ -23,14 +26,14 @@ const ANALYSIS_COLOR = {Новичок:"#ff5544",Средний:"#ffaa33",Хор
 // ── colour tokens ────────────────────────────────────────────────────────────
 
 const PREMIER_RANKS = [
-  {min:0,     max:4999,  label:t("rank_none","Без ранга"),   color:"#8a8a8a", gradient:"#555,#888"},
-  {min:5000,  max:9999,  label:t("rank_gray","Серый"),        color:"#9aacb8", gradient:"#6a7a86,#9aacb8"},
-  {min:10000, max:14999, label:t("rank_lblue","Голубой"),      color:"#6abadf", gradient:"#3a8abf,#6abadf"},
-  {min:15000, max:19999, label:t("rank_blue","Синий"),        color:"#3d72d7", gradient:"#2255b0,#3d72d7"},
-  {min:20000, max:24999, label:t("rank_purple","Фиолетовый"),   color:"#8855cc", gradient:"#6633aa,#8855cc"},
-  {min:25000, max:29999, label:t("rank_pink","Розовый"),      color:"#dd4499", gradient:"#bb2277,#dd4499"},
-  {min:30000, max:34999, label:t("rank_red","Красный"),      color:"#dd3333", gradient:"#bb1111,#dd3333"},
-  {min:35000, max:99999, label:t("rank_gold","Золотой"),      color:"#f5c518", gradient:"#d4a017,#f5c518"},
+  {min:0,     max:4999,  label:"Без ранга",   color:"#8a8a8a", gradient:"#555,#888"},
+  {min:5000,  max:9999,  label:"Серый",        color:"#9aacb8", gradient:"#6a7a86,#9aacb8"},
+  {min:10000, max:14999, label:"Голубой",      color:"#6abadf", gradient:"#3a8abf,#6abadf"},
+  {min:15000, max:19999, label:"Синий",        color:"#3d72d7", gradient:"#2255b0,#3d72d7"},
+  {min:20000, max:24999, label:"Фиолетовый",   color:"#8855cc", gradient:"#6633aa,#8855cc"},
+  {min:25000, max:29999, label:"Розовый",      color:"#dd4499", gradient:"#bb2277,#dd4499"},
+  {min:30000, max:34999, label:"Красный",      color:"#dd3333", gradient:"#bb1111,#dd3333"},
+  {min:35000, max:99999, label:"Золотой",      color:"#f5c518", gradient:"#d4a017,#f5c518"},
 ];
 
 const css = `
