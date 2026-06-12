@@ -1,6 +1,114 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
+const C = {
+  bg:"#0a0a07", card:"#141409", border:"#2e2e1e",
+  yellow:"#f5c518", orange:"#ff8844", blue:"#74c6f5",
+  label:"#c8c0a0", value:"#f5eed8", muted:"#9a9270",
+  win:"#66ee66", lose:"#ff6655", text:"#ddd6bc",
+};
+
+const BACKEND = "https://cs2-coach-backend.onrender.com"
+
+const FACEIT_ELO_RANGES = [
+  [1,100,500],[2,501,750],[3,751,900],[4,901,1050],[5,1051,1200],
+  [6,1201,1350],[7,1351,1530],[8,1531,1750],[9,1751,2000],[10,2001,9999],
+]
+
+const LVL_COLOR = {1:"#ccc",2:"#ccc",3:"#1CE400",4:"#1CE400",5:"#FFC800",
+  6:"#FFC800",7:"#FF6309",8:"#FF6309",9:"#FE1F00",10:"#FE1F00"}
+
+const ANALYSIS_COLOR = {Новичок:"#ff5544",Средний:"#ffaa33",Хороший:"#f5c518",Про:"#44ddaa"};
+
+// ── colour tokens ────────────────────────────────────────────────────────────
+
+const PREMIER_RANKS = [
+  {min:0,     max:4999,  label:t("rank_none","Без ранга"),   color:"#8a8a8a", gradient:"#555,#888"},
+  {min:5000,  max:9999,  label:t("rank_gray","Серый"),        color:"#9aacb8", gradient:"#6a7a86,#9aacb8"},
+  {min:10000, max:14999, label:t("rank_lblue","Голубой"),      color:"#6abadf", gradient:"#3a8abf,#6abadf"},
+  {min:15000, max:19999, label:t("rank_blue","Синий"),        color:"#3d72d7", gradient:"#2255b0,#3d72d7"},
+  {min:20000, max:24999, label:t("rank_purple","Фиолетовый"),   color:"#8855cc", gradient:"#6633aa,#8855cc"},
+  {min:25000, max:29999, label:t("rank_pink","Розовый"),      color:"#dd4499", gradient:"#bb2277,#dd4499"},
+  {min:30000, max:34999, label:t("rank_red","Красный"),      color:"#dd3333", gradient:"#bb1111,#dd3333"},
+  {min:35000, max:99999, label:t("rank_gold","Золотой"),      color:"#f5c518", gradient:"#d4a017,#f5c518"},
+];
+
+const css = `
+  html,body,#root{margin:0;padding:0;background:${C.bg};overflow-x:hidden;}
+  *{box-sizing:border-box;} input:focus,button:focus{outline:none;}
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-thumb{background:#3a3418;}
+  @keyframes blink{0%,100%{opacity:.15}50%{opacity:1}}
+  @keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+  @keyframes scan{from{top:-2px}to{top:100vh}}
+  @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+  @keyframes popIn{0%{opacity:0;transform:scale(.92)}100%{opacity:1;transform:scale(1)}}
+  @keyframes glow{0%,100%{opacity:.35}50%{opacity:.7}}
+  @keyframes dash{to{stroke-dashoffset:0}}
+  .hov:hover{filter:brightness(1.08);}
+  .hov-row:hover{background:#191910 !important;}
+  .skel{background:linear-gradient(90deg,#141409 25%,#1e1e10 50%,#141409 75%);
+    background-size:600px 100%;animation:shimmer 1.5s infinite linear;border-radius:2px;}
+  .glow-btn:hover:not(:disabled){box-shadow:0 0 28px #f5c51855;}
+  .match-row:hover{background:#181810 !important;}
+  /* ── Mobile ── */
+  @media(max-width:768px){
+    :root{--mob-offset:60px;}
+    .desktop-nav{display:none !important;}
+    .mobile-nav{display:flex !important;}
+    .topbar-search{display:none !important;}
+    .topbar-right{gap:6px !important;}
+    .topbar-username{display:none !important;}
+    .topbar-faceit{display:none !important;}
+    .content-pad{padding:16px 14px 80px !important;}
+    .stat-grid{grid-template-columns:repeat(2,1fr) !important;}
+    .two-col{grid-template-columns:1fr !important;}
+    .match-grid{grid-template-columns:3px 1fr 80px 60px !important;}
+    .match-extra{display:none !important;}
+    .lb-grid{grid-template-columns:36px 1fr 70px 56px !important;}
+    .lb-extra{display:none !important;}
+    .hero-right{display:none !important;}
+    .score-rings{flex-direction:row !important;justify-content:space-around !important;}
+    .chat-panel{width:100% !important;right:0 !important;bottom:64px !important;}
+    .search-bar{display:none !important;}
+    .verdict-grid{grid-template-columns:1fr !important;}
+    .rating-row{flex-direction:column !important;align-items:flex-start !important;gap:10px !important;}
+    .rating-big{font-size:42px !important;}
+    .rating-pct{font-size:18px !important;}
+    .ach-grid{grid-template-columns:1fr 1fr !important;}
+    .rec-grid{grid-template-columns:1fr !important;}
+    .progress-row{flex-direction:column !important;}
+    .elo-chart{height:60px !important;}
+    .best-worst{grid-template-columns:1fr !important;}
+    .recent-match-grid{grid-template-columns:4px 1fr 60px 50px 50px !important;}
+    .recent-match-adr{display:none !important;}
+    .about-tech-grid{grid-template-columns:1fr !important;}
+    .lb-val{max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    /* FAB кнопки — поднять над MobileNav (высота ~60px) */
+    .fab-chat{bottom:80px !important;}
+    .fab-support{bottom:152px !important;}
+    /* Чат панель — не вылезать за левый край */
+    .chat-panel{width:calc(100vw - 16px) !important;right:8px !important;left:8px !important;bottom:148px !important;}
+  }
+  @media(min-width:769px){
+    .mobile-nav{display:none !important;}
+    .desktop-nav{display:flex !important;}
+  }
+`;
+
+
+const AVG = {kd:0.90, hs:28, wr:47};
+
+function getPremierRank(rating) {
+  const n = parseInt(rating) || 0;
+  if (n === 0) return PREMIER_RANKS[0];
+  return PREMIER_RANKS.find(r => n >= r.min && n <= r.max) || PREMIER_RANKS[PREMIER_RANKS.length-1];
+}
+
+
 
 const WEAPON_DATA = {
   // name → {img: Steam market hash, slot}
