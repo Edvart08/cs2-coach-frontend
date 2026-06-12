@@ -2921,6 +2921,1123 @@ const COACH_CHARS = [
   },
 ];
 
+
+
+function ChartsSection({faceit}) {
+  const matches = arr(faceit?.matches).slice().reverse();
+  const kdData  = matches.map(m=>parseFloat(m.kd)||0);
+  const hsData  = matches.map(m=>parseFloat(m.hs)||0);
+  const adrData = matches.map(m=>parseFloat(m.adr)||0).filter(v=>v>0);
+  const lt = faceit?.lifetime||{};
+  const radarAxes = [
+    {label:"K/D",  value:Math.min(100,(parseFloat(lt.kd)||0)*55),   raw:lt.kd||"0"},
+    {label:t("hs_btn","HS%"),  value:parseFloat(lt.hs)||0,                       raw:(lt.hs||"0")+"%"},
+    {label:"WIN%", value:parseFloat(lt.winrate)||0,                   raw:(lt.winrate||"0")+"%"},
+    {label:"K/R",  value:Math.min(100,(parseFloat(lt.kr)||0)*120),   raw:lt.kr||"0"},
+    {label:t("streak","СТРИК"),value:Math.min(100,(parseInt(lt.longest_streak)||0)*10),raw:lt.longest_streak||"0"},
+  ];
+
+  const Chart = ({title,data,color,unit=""}) => (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"18px 20px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+        <span style={{fontSize:"12px",letterSpacing:"2px",color:C.label}}>{title}</span>
+        {data.length>0&&<span style={{fontSize:"13px",color,fontWeight:700}}>
+          {data[data.length-1]?.toFixed(unit==="%"?0:2)}{unit}
+        </span>}
+      </div>
+      <Sparkline data={data} color={color} h={72} label={title.replace(/\W/g,"")}/>
+    </div>
+  );
+
+  return (
+    <div style={{animation:"up .4s ease both"}}>
+      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>{t("match_dynamics","ДИНАМИКА МАТЧЕЙ")}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:"3px",marginBottom:"10px"}}>
+        <Chart title="K/D RATIO" data={kdData} color={C.yellow}/>
+        <Chart title="HEADSHOT %" data={hsData} color={C.orange} unit="%"/>
+        {adrData.length>1&&<Chart title="ADR" data={adrData} color="#44ddaa"/>}
+      </div>
+      {/* Radar */}
+      <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"20px",display:"flex",gap:"28px",alignItems:"center",flexWrap:"wrap"}}>
+        <div style={{flex:"0 0 auto"}}>
+          <div style={{fontSize:"12px",letterSpacing:"2px",color:C.label,marginBottom:"10px"}}>{t("game_profile","ПРОФИЛЬ ИГРЫ")}</div>
+          <Radar axes={radarAxes}/>
+        </div>
+        <div style={{flex:1,minWidth:"180px"}}>
+          <div style={{fontSize:"12px",letterSpacing:"2px",color:C.label,marginBottom:"14px"}}>{t("indicators","ПОКАЗАТЕЛИ")}</div>
+          {radarAxes.map((a,i)=>(
+            <div key={i} style={{marginBottom:"12px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:"13px",marginBottom:"4px"}}>
+                <span style={{color:C.label}}>{a.label}</span>
+                <span style={{color:C.yellow,fontWeight:700}}>{a.raw}</span>
+              </div>
+              <div style={{height:"5px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${Math.min(100,a.value)}%`,background:C.yellow,transition:"width 1s ease"}}/>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroCard({player, source}) {
+  const fc = player.faceit;
+  const cs2 = player.cs2 || {};
+  const elo = fc?.elo || 0;
+  const li = levelInfo(elo);
+  const lvlColor = LVL_COLOR[li.lvl] || C.yellow;
+  const form = arr(fc?.matches).slice(0,7).map(m=>m.result==="1");
+  const eloCount = useCountUp(elo);
+  const isFaceit = source === "faceit";
+  const accentColor = isFaceit ? C.orange : C.blue;
+  const heroMatches = parseInt(isFaceit ? fc?.lifetime?.matches : cs2?.matches) || 0;
+  const heroWRRaw = parseFloat(isFaceit ? fc?.lifetime?.winrate : cs2?.winrate) || 0;
+  const heroWRVal = !isFaceit && heroMatches >= 100 && heroWRRaw > 80 ? 80 : Math.min(heroWRRaw, 99);
+  const heroWRStr = heroWRVal ? `${heroWRVal}%` : "—";
+
+  const stats = isFaceit
+    ? [{l:"K/D",v:fc?.lifetime?.kd||"—",c:parseFloat(fc?.lifetime?.kd)>=1?C.win:parseFloat(fc?.lifetime?.kd)>=0.9?C.yellow:C.lose},
+       {l:"WIN%",v:fc?.lifetime?.winrate?(fc.lifetime.winrate+"%"):"—",c:parseInt(fc?.lifetime?.winrate)>=55?C.win:C.yellow},
+       {l:t("hs_btn","HS%"),v:fc?.lifetime?.hs?(fc.lifetime.hs+"%"):"—",c:parseInt(fc?.lifetime?.hs)>=40?C.win:C.orange},
+       {l:t("col_matches","МАТЧИ"),v:fc?.lifetime?.matches||"—",c:C.label}]
+    : [{l:"K/D",v:cs2.kd||"—",c:parseFloat(cs2.kd)>=1?C.win:parseFloat(cs2.kd)>=0.9?C.yellow:C.lose},
+       {l:"WIN%",v:heroWRStr,c:parseInt(heroWRVal)>=55?C.win:C.yellow},
+       {l:t("hs_btn","HS%"),v:cs2.hs?(cs2.hs+"%"):"—",c:parseInt(cs2.hs)>=40?C.win:C.orange},
+       {l:t("col_matches","МАТЧИ"),v:cs2.matches||"—",c:C.label}];
+
+  return (
+    <div style={{marginBottom:"10px",position:"relative",overflow:"hidden"}}>
+      {/* Фоновый градиент */}
+      <div style={{position:"absolute",inset:0,
+        background:`linear-gradient(135deg, #0d0d09 0%, ${accentColor}10 50%, #0a0a07 100%)`,
+        zIndex:0}}/>
+      {/* Декоративные пятна света */}
+      <div style={{position:"absolute",top:"-60px",right:"-40px",width:"280px",height:"280px",
+        background:`radial-gradient(circle,${accentColor}18,transparent 65%)`,
+        pointerEvents:"none",zIndex:0}}/>
+      <div style={{position:"absolute",bottom:"-40px",left:"100px",width:"200px",height:"200px",
+        background:`radial-gradient(circle,${lvlColor}0e,transparent 65%)`,
+        pointerEvents:"none",zIndex:0}}/>
+      {/* Сетка-паттерн */}
+      <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.025,
+        backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 32px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 32px)"}}/>
+      {/* Верхняя цветная полоска */}
+      <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${accentColor}88,${accentColor},${accentColor}88,transparent)`,zIndex:1,position:"relative"}}/>
+
+      <div style={{border:`1px solid ${accentColor}22`,borderTop:"none",position:"relative",zIndex:1}}>
+        {/* Основная строка */}
+        <div style={{display:"flex",gap:"20px",padding:"22px 24px 18px",flexWrap:"wrap",alignItems:"center"}}>
+          {/* Аватар */}
+          <div style={{position:"relative",flexShrink:0}}>
+            {(player.avatar||fc?.avatar)
+              ?<img src={player.avatar||fc?.avatar} alt="" style={{width:"88px",height:"88px",borderRadius:"6px",
+                  border:`2px solid ${lvlColor}`,boxShadow:`0 0 24px ${lvlColor}44, 0 4px 16px rgba(0,0,0,0.6)`}}/>
+              :<div style={{width:"88px",height:"88px",background:"#1a1a10",borderRadius:"6px",
+                  border:`2px solid ${lvlColor}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px"}}>👤</div>}
+            {fc&&<div style={{position:"absolute",bottom:"-9px",left:"50%",transform:"translateX(-50%)",
+              background:lvlColor,color:"#080807",fontSize:"10px",fontWeight:900,padding:"2px 8px",
+              letterSpacing:"1px",whiteSpace:"nowrap",boxShadow:`0 2px 8px ${lvlColor}66`}}>
+              LVL {li.lvl}
+            </div>}
+          </div>
+
+          {/* Имя / мета */}
+          <div style={{flex:1,minWidth:"160px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"6px",flexWrap:"wrap"}}>
+              <span style={{fontSize:"28px",color:"#fff",fontWeight:800,textShadow:"0 2px 12px rgba(0,0,0,0.8)"}}>{player.username}</span>
+              {flag(player.country||fc?.country)&&<span style={{fontSize:"18px"}}>{flag(player.country||fc?.country)}</span>}
+            </div>
+            <div style={{display:"flex",gap:"10px",flexWrap:"wrap",marginBottom:"10px",alignItems:"center"}}>
+              {player.created&&<span style={{fontSize:"13px",color:C.muted}}>⭐ Steam {new Date(player.created*1000).getFullYear()}</span>}
+              {player.steam_level!=null&&<span style={{fontSize:"14px",color:C.label,fontWeight:600,
+                padding:"2px 8px",background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`}}>
+                Lvl {player.steam_level}
+              </span>}
+              {cs2.playtime&&parseInt(cs2.playtime)>0&&<span style={{fontSize:"14px",color:C.blue,fontWeight:600,
+                display:"flex",alignItems:"center",gap:"4px"}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {Math.round(parseInt(cs2.playtime)/60)}ч
+              </span>}
+              {cs2.wins&&parseInt(cs2.wins)>0&&<span style={{fontSize:"15px",color:C.win,fontWeight:700}}>
+                🏆 {parseInt(cs2.wins).toLocaleString()} {t("wins_h","побед")}
+              </span>}
+              {fc?.elo&&<span style={{fontSize:"14px",color:LVL_COLOR[fc?.level]||C.orange,fontWeight:700,
+                padding:"2px 8px",background:(LVL_COLOR[fc?.level]||C.orange)+"18",
+                border:`1px solid ${(LVL_COLOR[fc?.level]||C.orange)}44`}}>
+                ⚡ {fc.elo} ELO
+              </span>}
+              {fc?.nickname&&fc.nickname!==player.username&&<span style={{fontSize:"13px",color:C.orange}}>/ {fc?.nickname}</span>}
+            </div>
+            {/* Форма */}
+            {form.length>0&&(
+              <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
+                <span style={{fontSize:"10px",color:C.muted,marginRight:"4px",letterSpacing:"1px"}}>ФОРМА</span>
+                {form.map((w,i)=>(
+                  <div key={i} style={{width:"22px",height:"22px",display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:"10px",fontWeight:700,borderRadius:"3px",
+                    background:w?"#1a361a":"#361a1a",color:w?C.win:C.lose,
+                    border:`1px solid ${w?"#2d5a2d":"#5a2d2d"}`,
+                    boxShadow:w?`0 0 6px ${C.win}33`:`0 0 6px ${C.lose}22`}}>
+                    {w?"W":"L"}
+                  </div>
+                ))}
+                {(()=>{let s=0;for(const w of form){if(w)s++;else break;}
+                  return s>=2?<span style={{marginLeft:"6px",fontSize:"12px",color:C.lose,fontWeight:700}}>🔥{s}</span>:null;})()}
+              </div>
+            )}
+          </div>
+
+          {/* ELO блок */}
+          {isFaceit&&fc&&!!elo&&(
+            <div className="hero-right" style={{textAlign:"right",minWidth:"130px",flexShrink:0}}>
+              <div style={{fontSize:"9px",letterSpacing:"3px",color:C.orange,marginBottom:"2px",fontWeight:700}}>FACEIT ELO</div>
+              <div style={{fontSize:"40px",fontWeight:800,color:lvlColor,lineHeight:1,
+                textShadow:`0 0 20px ${lvlColor}66`}}>{eloCount}</div>
+              <div style={{fontSize:"11px",color:C.muted,marginTop:"4px"}}>
+                до LVL {Math.min(10,li.lvl+1)}: {li.toNext>0?li.toNext:"MAX"}
+              </div>
+              <div style={{marginTop:"6px",height:"4px",background:"#1a1a10",borderRadius:"2px",overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${li.progress}%`,
+                  background:`linear-gradient(90deg,${lvlColor}66,${lvlColor})`,
+                  boxShadow:`0 0 6px ${lvlColor}`,transition:"width 1s ease"}}/>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Stat strip — с цветами и hover */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderTop:`1px solid ${accentColor}22`}}>
+          {stats.map((s,i)=>(
+            <div key={i} style={{padding:"14px 10px",textAlign:"center",
+              borderLeft:i>0?`1px solid ${accentColor}18`:"none",
+              background:"rgba(0,0,0,0.2)",transition:"background .15s",cursor:"default"}}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(0,0,0,0.4)"}
+              onMouseLeave={e=>e.currentTarget.style.background="rgba(0,0,0,0.2)"}>
+              <div style={{fontSize:"9px",color:C.muted,letterSpacing:"2px",marginBottom:"6px",fontWeight:700}}>{s.l}</div>
+              <div style={{fontSize:"22px",color:s.c,fontWeight:800,
+                textShadow:`0 0 8px ${s.c}44`}}>{s.v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MapPool({faceit}) {
+  const maps = arr(faceit?.maps).filter(m=>parseInt(m.matches)>0)
+    .sort((a,b)=>parseFloat(b.winrate)-parseFloat(a.winrate));
+  if (!maps.length) return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"36px 28px",textAlign:"center"}}>
+      <div style={{fontSize:"36px",marginBottom:"14px"}}>🗺️</div>
+      <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"8px"}}>Нет статистики по картам</div>
+      <div style={{fontSize:"14px",color:C.label,lineHeight:1.75}}>
+        Сыграй хотя бы 5 матчей на FACEIT — статистика по картам появится автоматически.
+      </div>
+    </div>
+  );
+  const best=maps[0], worst=maps[maps.length-1];
+  const bans=maps.filter(m=>parseFloat(m.winrate)<45).slice(-2);
+  return (
+    <div style={{animation:"up .4s ease both"}}>
+      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>{t("map_pool","ПУЛ КАРТ · FACEIT")}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:"3px",marginBottom:"12px"}}>
+        <div style={{background:"#0d1a0d",border:`1px solid #1e3a1e`,padding:"16px 18px"}}>
+          <div style={{fontSize:"11px",color:"#55aa55",letterSpacing:"2px",marginBottom:"5px"}}>{t("best_label","ЛУЧШАЯ")}</div>
+          <div style={{fontSize:"18px",color:"#66dd66",fontWeight:700}}>{best.map} · {best.winrate}%</div>
+        </div>
+        <div style={{background:"#1a0d0d",border:`1px solid #3a1e1e`,padding:"16px 18px"}}>
+          <div style={{fontSize:"11px",color:"#cc5555",letterSpacing:"2px",marginBottom:"5px"}}>{t("worst_label","ХУДШАЯ")}</div>
+          <div style={{fontSize:"18px",color:C.lose,fontWeight:700}}>{worst.map} · {worst.winrate}%</div>
+        </div>
+        {bans.length>0&&(
+          <div style={{background:"#1a1408",border:`1px solid #3a2e14`,padding:"16px 18px"}}>
+            <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",marginBottom:"5px"}}>{t("ban_label","БАНИТЬ")}</div>
+            <div style={{fontSize:"16px",color:C.yellow,fontWeight:700}}>{bans.map(b=>b.map).join(", ")}</div>
+          </div>
+        )}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 110px 80px 70px",gap:"2px",padding:"8px 14px",
+        fontSize:"11px",letterSpacing:"2px",color:C.muted,borderBottom:`1px solid ${C.border}`}}>
+        <div>КАРТА</div><div>WINRATE</div><div>МАТЧИ</div><div>K/D</div>
+      </div>
+      {maps.map((m,i)=>{
+        const wr=parseFloat(m.winrate)||0;
+        const wc=wr>=55?"#55cc66":wr>=45?C.yellow:C.lose;
+        return (
+          <div key={i} className="hov-row" style={{display:"grid",gridTemplateColumns:"1fr 110px 80px 70px",
+            gap:"2px",padding:"13px 14px",alignItems:"center",borderBottom:`1px solid ${C.border}`,
+            background:C.card,transition:"background .15s"}}>
+            <div style={{fontSize:"16px",color:C.value,fontWeight:700}}>{m.map}</div>
+            <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+              <div style={{flex:1,height:"5px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
+                <div style={{height:"100%",width:`${wr}%`,background:wc,transition:"width .8s ease"}}/>
+              </div>
+              <span style={{fontSize:"13px",color:wc,fontWeight:700,minWidth:"34px"}}>{m.winrate}%</span>
+            </div>
+            <div style={{fontSize:"13px",color:C.label}}>{m.matches}</div>
+            <div style={{fontSize:"13px",color:C.label}}>{m.kd}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function MatchHistory({faceit}) {
+  const [exp,setExp]           = useState(null);
+  const [analyses,setAnalyses] = useState({});
+  const [aiLoading,setAiLoading] = useState({});
+  const matches = arr(faceit?.matches);
+
+  async function fetchAnalysis(m, i) {
+    if (analyses[i] || aiLoading[i]) return;
+    setAiLoading(l=>({...l,[i]:true}));
+    try {
+      const r = await fetch(`${BACKEND}/analyze-match`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          map:m.map||"Unknown", result:m.result||"0",
+          kills:m.kills||"0", deaths:m.deaths||"0",
+          assists:m.assists||"0", kd:m.kd||"0",
+          hs:m.hs||"0", adr:m.adr||"0",
+          mvps:m.mvps||"0", score:m.score||""
+        })
+      });
+      const d = await r.json();
+      if (d.result) setAnalyses(a=>({...a,[i]:d.result}));
+    } catch {}
+    setAiLoading(l=>({...l,[i]:false}));
+  }
+
+  if (!matches.length) return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,padding:"36px 28px",textAlign:"center"}}>
+      <div style={{fontSize:"36px",marginBottom:"14px"}}>🎮</div>
+      <div style={{fontSize:"16px",color:C.value,fontWeight:700,marginBottom:"8px"}}>Нет матчей FACEIT</div>
+      <div style={{fontSize:"14px",color:C.label,lineHeight:1.75,marginBottom:"20px",maxWidth:"400px",margin:"0 auto 20px"}}>
+        История матчей и AI разбор доступны для игроков FACEIT.<br/>
+        Регистрация бесплатная — просто привяжи Steam аккаунт.
+      </div>
+      <a href="https://www.faceit.com" target="_blank" rel="noreferrer"
+        style={{display:"inline-block",padding:"11px 28px",background:C.orange,
+          color:"#fff",textDecoration:"none",fontSize:"13px",fontWeight:700,letterSpacing:"2px"}}>
+        РЕГИСТРАЦИЯ НА FACEIT →
+      </a>
+    </div>
+  );
+
+  return (
+    <div style={{animation:"up .4s ease both"}}>
+      <div style={{fontSize:"15px",letterSpacing:"2px",color:C.yellow,fontWeight:700,padding:"8px 0 16px"}}>
+        ИСТОРИЯ МАТЧЕЙ · FACEIT
+        <span style={{fontSize:"12px",color:C.muted,fontWeight:400,marginLeft:"12px",letterSpacing:"1px"}}>
+          нажми на матч → AI разбор
+        </span>
+      </div>
+
+      {matches.map((m,i)=>{
+        const win=m.result==="1", ac=win?C.win:C.lose;
+        const isExp=exp===i, ai=analyses[i], isAiLoading=aiLoading[i];
+
+        return (
+          <div key={i} style={{marginBottom:"10px"}}>
+            <div className="match-row" onClick={()=>{
+              const opening=!isExp;
+              setExp(isExp?null:i);
+              if(opening) fetchAnalysis(m,i);
+            }} style={{
+              display:"grid",gridTemplateColumns:"3px 1fr 90px 78px 66px 48px",
+              gap:"12px",padding:"14px 16px",cursor:"pointer",alignItems:"center",
+              background:isExp?"#181810":C.card,border:`1px solid ${C.border}`,
+              borderLeft:`3px solid ${ac}`,transition:"background .15s"}}>
+              <div/>
+              <div>
+                <div style={{fontSize:"15px",color:C.value,fontWeight:700}}>{m.map||"—"}</div>
+                <div style={{fontSize:"12px",color:ac,marginTop:"2px"}}>{win?t("lbl_win","ПОБЕДА"):t("lbl_loss","ПОРАЖЕНИЕ")} · {m.score}</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"11px",color:C.label,marginBottom:"10px"}}>K/D</div>
+                <div style={{fontSize:"16px",color:C.yellow,fontWeight:700}}>{m.kd}</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"11px",color:C.label,marginBottom:"10px"}}>K–D</div>
+                <div style={{fontSize:"14px",color:C.text}}>{m.kills}–{m.deaths}</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:"11px",color:C.label,marginBottom:"10px"}}>HS%</div>
+                <div style={{fontSize:"14px",color:C.text}}>{m.hs}%</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                {parseInt(m.mvps)>0&&<div style={{fontSize:"14px"}}>⭐</div>}
+                <div style={{fontSize:"11px",color:isExp?C.yellow:C.muted,marginTop:"2px"}}>{isExp?"▲":"▼"}</div>
+              </div>
+            </div>
+
+            {isExp&&(
+              <div style={{background:"#0f0f09",border:`1px solid ${C.border}`,borderTop:"none",
+                padding:"16px 20px",animation:"up .2s ease both"}}>
+
+                {/* Stats */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(80px,1fr))",
+                  gap:"4px",marginBottom:"16px"}}>
+                  {[{l:t("lbl_kills","УБИЙСТВА"),v:m.kills},{l:t("lbl_deaths","СМЕРТИ"),v:m.deaths},{l:t("assists","АССИСТЫ"),v:m.assists||"—"},
+                    {l:"ADR",v:m.adr||"—"},{l:"K/R",v:m.kr||"—"},{l:t("lbl_mvp","MVP"),v:m.mvps||"0"}].map((st,j)=>(
+                    <div key={j} style={{background:C.card,border:`1px solid ${C.border}`,
+                      padding:"9px 10px",textAlign:"center"}}>
+                      <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px",marginBottom:"10px"}}>{st.l}</div>
+                      <div style={{fontSize:"16px",color:C.yellow,fontWeight:700}}>{st.v}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* AI loading */}
+                {isAiLoading&&(
+                  <div style={{background:"#15150a",border:`1px solid ${C.yellow}33`,
+                    borderLeft:`3px solid ${C.yellow}`,padding:"16px 18px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"12px"}}>
+                      <div style={{display:"flex",gap:"4px"}}>
+                        {[0,1,2].map(k=><div key={k} style={{width:"6px",height:"6px",background:C.yellow,
+                          borderRadius:"50%",animation:`blink 1s ${k*.3}s infinite`}}/>)}
+                      </div>
+                      <span style={{fontSize:"12px",color:C.yellow,letterSpacing:"2px",fontWeight:700}}>
+                        AI РАЗБИРАЕТ МАТЧ
+                      </span>
+                    </div>
+                    <Skel w="90%" h="14"/><Skel w="75%" h="14" mb={4}/><Skel w="60%" h="14"/>
+                  </div>
+                )}
+
+                {/* AI result */}
+                {ai&&!isAiLoading&&(
+                  <div style={{background:"#15150a",border:`1px solid ${C.yellow}33`,
+                    borderLeft:`3px solid ${C.yellow}`,padding:"18px 20px",
+                    animation:"up .3s ease both"}}>
+                    <div style={{fontSize:"11px",letterSpacing:"3px",color:C.yellow,
+                      marginBottom:"14px",fontWeight:700}}>🤖 AI РАЗБОР МАТЧА</div>
+
+                    <div style={{fontSize:"15px",color:C.value,lineHeight:1.75,marginBottom:"16px"}}>
+                      {ai.verdict}
+                    </div>
+
+                    <div style={{marginBottom:"14px"}}>
+                      {arr(ai.mistakes).map((err,k)=>(
+                        <div key={k} style={{display:"flex",gap:"10px",
+                          alignItems:"flex-start",marginBottom:"8px"}}>
+                          <span style={{color:C.lose,fontSize:"15px",flexShrink:0,marginTop:"1px"}}>✗</span>
+                          <span style={{fontSize:"14px",color:C.label,lineHeight:1.65}}>{err}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {ai.bright&&(
+                      <div style={{display:"flex",gap:"10px",padding:"11px 14px",
+                        background:"#0f1a0f",border:`1px solid ${C.win}33`,marginBottom:"10px"}}>
+                        <span style={{color:C.win,fontSize:"15px",flexShrink:0}}>✓</span>
+                        <span style={{fontSize:"14px",color:C.win,lineHeight:1.65}}>{ai.bright}</span>
+                      </div>
+                    )}
+
+                    {ai.tip&&(
+                      <div style={{display:"flex",gap:"10px",padding:"11px 14px",
+                        background:C.yellow+"0a",border:`1px solid ${C.yellow}22`}}>
+                        <span style={{fontSize:"15px",flexShrink:0}}>💡</span>
+                        <span style={{fontSize:"14px",color:C.yellow,lineHeight:1.65}}>{ai.tip}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function PremierBadge({rating, showLabel=true, size=28}) {
+  const n = parseInt(rating) || 0;
+  const rank = getPremierRank(n);
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+      <PremierRankIcon rating={n} size={size}/>
+      {showLabel && n > 0 && (
+        <div>
+          <div style={{fontSize:"13px",color:rank.color,fontWeight:700,lineHeight:1.1}}>
+            {n.toLocaleString()}
+          </div>
+          <div style={{fontSize:"10px",color:rank.color,opacity:0.7,letterSpacing:"0.5px"}}>
+            {rank.label}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PremierRankIcon({rating, size=32}) {
+  const n = parseInt(rating) || 0;
+  const rank = getPremierRank(n);
+  const [c1, c2] = rank.gradient.split(",");
+  const id = `grad_${n}_${size}`;
+  if (n === 0) return (
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      <defs>
+        <linearGradient id={id} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#555"/>
+          <stop offset="100%" stopColor="#333"/>
+        </linearGradient>
+      </defs>
+      <polygon points="16,3 29,10 29,22 16,29 3,22 3,10" fill={`url(#${id})`} opacity="0.5"/>
+      <text x="16" y="21" textAnchor="middle" fill="#666" fontSize="10" fontWeight="bold">?</text>
+    </svg>
+  );
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      <defs>
+        <linearGradient id={id} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={c1}/>
+          <stop offset="100%" stopColor={c2}/>
+        </linearGradient>
+        <filter id={`glow_${n}`}>
+          <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+          <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      {/* Шестиугольник */}
+      <polygon points="16,2 28,9 28,23 16,30 4,23 4,9"
+        fill={`url(#${id})`} filter={`url(#glow_${n})`}/>
+      <polygon points="16,2 28,9 28,23 16,30 4,23 4,9"
+        fill="none" stroke={rank.color} strokeWidth="1" opacity="0.8"/>
+      {/* Число внутри */}
+      <text x="16" y="20" textAnchor="middle" fill="white"
+        fontSize={n >= 10000 ? "7" : "8"} fontWeight="bold" fontFamily="sans-serif">
+        {n >= 1000 ? `${Math.floor(n/1000)}k` : n}
+      </text>
+    </svg>
+  );
+}
+
+// Бейдж с рангом и числом
+
+function PrivateWarning() {
+  return (
+    <div style={{background:"#1a1408",border:"1px solid #4a3a18",borderLeft:"3px solid "+C.yellow,padding:"20px 24px",marginBottom:"16px",animation:"up .3s ease"}}>
+      <div style={{fontSize:"14px",color:C.yellow,fontWeight:700,marginBottom:"8px"}}>🔒 Статистика CS2 скрыта в Steam</div>
+      <div style={{fontSize:"14px",color:C.text,lineHeight:1.75,marginBottom:"14px"}}>
+        Valve не даёт доступ к статистике, если профиль закрыт. Чтобы открыть:
+      </div>
+      <div style={{fontSize:"14px",color:C.label,lineHeight:2}}>
+        1. Зайди в <span style={{color:C.blue}}>Steam → твой профиль</span><br/>
+        2. <span style={{color:C.blue}}>Редактировать профиль → Настройки приватности</span><br/>
+        3. <span style={{color:C.blue}}>«Детали игр»</span> → поставь <span style={{color:C.yellow,fontWeight:700}}>«Открыто для всех»</span><br/>
+        4. Выйди и войди через Steam снова
+      </div>
+      {<div style={{marginTop:"12px",fontSize:"12px",color:C.muted}}>
+        Пока статистика закрыта — используй вкладку ⚡ FACEIT для анализа
+      </div>}
+    </div>
+  );
+}
+
+function Radar({axes}){
+  const sz=180,cx=90,cy=90,r=64;
+  const n=axes.length;
+  const pt=(i,f)=>{const a=(Math.PI*2*i)/n-Math.PI/2;return[cx+Math.cos(a)*r*f,cy+Math.sin(a)*r*f];};
+  const poly=axes.map((a,i)=>pt(i,Math.max(.05,Math.min(1,a.value/100))).join(",")).join(" ");
+  return(
+    <svg viewBox={`0 0 ${sz} ${sz}`} style={{width:"100%",maxWidth:sz,height:"auto"}}>
+      {[.25,.5,.75,1].map((f,i)=>(
+        <polygon key={i} points={axes.map((_,j)=>pt(j,f).join(",")).join(" ")} fill="none" stroke={C.border} strokeWidth="1"/>
+      ))}
+      {axes.map((_,i)=>{const e=pt(i,1);return<line key={i} x1={cx} y1={cy} x2={e[0]} y2={e[1]} stroke={C.border} strokeWidth="1"/>;})}
+      <polygon points={poly} fill={C.yellow+"2a"} stroke={C.yellow} strokeWidth="2" style={{animation:"fadeIn .8s ease"}}/>
+      {axes.map((a,i)=>{const e=pt(i,1.26);return(
+        <text key={i} x={e[0]} y={e[1]} fontSize="9" fill={C.label} textAnchor="middle" dominantBaseline="middle" fontFamily="'Courier New',monospace">{a.label}</text>
+      );})}
+    </svg>
+  );
+}
+
+function Skel({w="100%",h=14,mb=8}){return <div className="skel" style={{width:w,height:h,marginBottom:mb}}/>;}
+
+function SourceToggle({source, setSource, hasFaceit}) {
+  if (!hasFaceit) return null;
+  return (
+    <div style={{display:"flex",gap:"3px",marginBottom:"20px"}}>
+      {[["steam","🎮 STEAM",C.blue],["faceit","⚡ FACEIT",C.orange]].map(([s,l,col])=>(
+        <button key={s} onClick={()=>setSource(s)} style={{
+          padding:"10px 24px",border:`1px solid ${source===s?col:C.border}`,
+          background:source===s?col+"22":"transparent",
+          color:source===s?col:C.muted,
+          cursor:"pointer",fontSize:"12px",fontWeight:700,letterSpacing:"3px",
+          fontFamily:"'Courier New',monospace",transition:"all .2s"
+        }}>{l}</button>
+      ))}
+    </div>
+  );
+}
+
+function Sparkline({data,color=C.yellow,h=72,label=""}){
+  if(!data||data.length<2) return(
+    <div style={{height:h,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontSize:"12px",letterSpacing:"2px"}}>{t("few_data","МАЛО ДАННЫХ")}</div>
+  );
+  const w=300,pad=8,nums=data.map(d=>parseFloat(d)||0);
+  const mn=Math.min(...nums),mx=Math.max(...nums),rng=mx-mn||1;
+  const pts=nums.map((v,i)=>[pad+(i/(nums.length-1))*(w-2*pad),h-pad-((v-mn)/rng)*(h-2*pad)]);
+  const line=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const area=line+` L${pts[pts.length-1][0].toFixed(1)} ${h-pad} L${pts[0][0].toFixed(1)} ${h-pad} Z`;
+  const last=pts[pts.length-1];
+  return(
+    <svg viewBox={`0 0 ${w} ${h}`} style={{width:"100%",height:h,display:"block"}}>
+      <defs><linearGradient id={"g"+label} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={color} stopOpacity="0.3"/>
+        <stop offset="100%" stopColor={color} stopOpacity="0"/>
+      </linearGradient></defs>
+      <path d={area} fill={`url(#g${label})`}/>
+      <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"
+        style={{strokeDasharray:1200,strokeDashoffset:1200,animation:"dash 1.4s ease forwards"}}/>
+      <circle cx={last[0]} cy={last[1]} r="3.5" fill={color}/>
+      <circle cx={last[0]} cy={last[1]} r="3.5" fill={color} opacity="0.35">
+        <animate attributeName="r" values="3.5;7;3.5" dur="2s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+  );
+}
+
+function SteamMMMatches({steamid}) {
+  const KEY = `cs2_steam_auth_${steamid}`;
+  const hasAuth = !!localStorage.getItem(KEY);
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(()=>{
+    if (!hasAuth) return;
+    load();
+  },[steamid, hasAuth]);
+
+  async function restoreAuthOnBackend() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY)||"null");
+      if (!saved?.auth_code || !saved?.match_code) return false;
+      const r = await fetch(`${BACKEND}/steam/auth-code`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({steamid, auth_code: saved.auth_code, match_code: saved.match_code})
+      });
+      const d = await r.json();
+      return d.ok;
+    } catch { return false; }
+  }
+
+  async function load() {
+    setLoading(true); setErr("");
+    try {
+      // Сначала пробуем загрузить матчи
+      let r = await fetch(`${BACKEND}/steam/matches/${steamid}?limit=10`);
+      let d = await r.json();
+
+      // Если бэкенд не знает auth код — восстанавливаем и пробуем снова
+      if (r.status === 404 || d.detail?.includes(t("auth_not_found","Auth код не найден"))) {
+        const restored = await restoreAuthOnBackend();
+        if (restored) {
+          r = await fetch(`${BACKEND}/steam/matches/${steamid}?limit=10`);
+          d = await r.json();
+        } else {
+          setErr(t("reconnect_fail","Не удалось восстановить подключение. Попробуй переподключить код."));
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (d.matches) setMatches(d.matches);
+      else setErr(d.detail || t("matches_err","Не удалось загрузить матчи"));
+    } catch { setErr(t("net_err","Ошибка сети")); }
+    setLoading(false);
+  }
+
+  if (!hasAuth) return null;
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.border}`,marginBottom:"10px"}}>
+      <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.border}`,
+        display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <span style={{fontSize:"11px",color:C.blue,letterSpacing:"3px",fontWeight:700}}>
+            🎮 MATCHMAKING ИСТОРИЯ
+          </span>
+          <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>
+            Коды матчей · 📋 — скопировать код
+          </div>
+        </div>
+        <button onClick={load} style={{background:"transparent",border:`1px solid ${C.border}`,
+          color:C.muted,cursor:"pointer",fontSize:"11px",padding:"4px 10px",fontFamily:"inherit"}}>
+          ↻ Обновить
+        </button>
+      </div>
+      {loading&&<div style={{padding:"24px",textAlign:"center",color:C.muted,fontSize:"13px"}}>
+        Загружаю матчи...
+      </div>}
+      {err&&<div style={{padding:"16px",color:C.lose,fontSize:"13px"}}>{err}</div>}
+      {!loading&&matches.length===0&&!err&&<div style={{padding:"24px",textAlign:"center",
+        color:C.muted,fontSize:"13px"}}>
+        Матчи не найдены. Сыграй хотя бы 1 матч в MM после подключения кодов.
+      </div>}
+      {matches.map((m,i)=>{
+        const mapColors = {Dust2:C.yellow,Mirage:"#74c6f5",Inferno:"#ff8844",Nuke:"#66ee66",
+          Overpass:"#aa88ff",Ancient:"#ff6655",Anubis:"#44ddaa",Vertigo:"#ffaa33"};
+        const mapColor = m.map ? (mapColors[m.map]||C.label) : "#3a3a2a";
+        return (
+          <div key={i} style={{padding:"12px 18px",borderBottom:i<matches.length-1?`1px solid ${C.border}`:"none",
+            display:"flex",alignItems:"center",gap:"12px",
+            borderLeft:`3px solid ${mapColor}`}}>
+            <div style={{width:"26px",height:"26px",background:mapColor+"22",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:"12px",color:mapColor+"cc",fontWeight:700,flexShrink:0}}>
+              {i+1}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:"14px",color:m.map?mapColor:C.muted,fontWeight:700}}>
+                {m.map || `Матч #${i+1}`}
+              </div>
+              <div style={{fontSize:"10px",color:C.muted,fontFamily:"monospace",
+                marginTop:"2px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                {m.code}
+              </div>
+            </div>
+            <button onClick={()=>{
+              try{navigator.clipboard.writeText(m.code);}catch{}
+            }} title={t("copy_match_code","Скопировать код матча")}
+              style={{background:"transparent",border:`1px solid ${C.border}`,
+                color:C.muted,cursor:"pointer",fontSize:"11px",padding:"4px 8px",
+                fontFamily:"inherit",flexShrink:0}}>
+              📋
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SteamMatchConnect({steamid, onConnected}) {
+  const KEY = `cs2_steam_auth_${steamid}`;
+  const [hasAuth, setHasAuth] = useState(()=>{ try{ return !!localStorage.getItem(KEY); }catch{ return false; } });
+  const [open, setOpen] = useState(false);
+  const [authCode, setAuthCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function connect() {
+    if (!authCode.trim()) return;
+    setLoading(true); setErr("");
+    try {
+      const r = await fetch(`${BACKEND}/steam/auth-code`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({steamid, auth_code:authCode.trim(), match_code:""})
+      });
+      const d = await r.json();
+      if (d.ok) {
+        localStorage.setItem(KEY, JSON.stringify({auth_code:authCode.trim(), match_code:"", ts:Date.now()}));
+        setHasAuth(true); setOpen(false); onConnected?.();
+      } else {
+        setErr(d.detail || t("conn_err","Ошибка подключения"));
+      }
+    } catch { setErr(t("net_err","Ошибка сети")); }
+    setLoading(false);
+  }
+
+  if (hasAuth) return (
+    <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"10px 16px",
+      background:"#0a140a",border:`1px solid ${C.win}44`,marginBottom:"10px"}}>
+      <span style={{color:C.win,fontSize:"16px"}}>✓</span>
+      <span style={{fontSize:"13px",color:C.win,fontWeight:700}}>История матчей Matchmaking подключена</span>
+    </div>
+  );
+
+  return (
+    <div style={{background:C.card,border:`1px solid ${C.yellow}33`,marginBottom:"10px"}}>
+      <div onClick={()=>setOpen(o=>!o)} style={{padding:"14px 18px",cursor:"pointer",
+        display:"flex",alignItems:"center",gap:"12px"}}>
+        <span style={{fontSize:"18px"}}>🔑</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:"13px",color:C.yellow,fontWeight:700}}>Подключить историю Matchmaking</div>
+          <div style={{fontSize:"11px",color:C.muted,marginTop:"2px"}}>Введи код аутентификации Steam — увидишь все свои MM матчи</div>
+        </div>
+        <span style={{color:C.muted,fontSize:"12px"}}>{open?"▲":"▼"}</span>
+      </div>
+
+      {open&&(
+        <div style={{padding:"0 18px 18px",borderTop:`1px solid ${C.border}`}}>
+          <div style={{fontSize:"12px",color:C.label,lineHeight:1.7,margin:"12px 0 16px",
+            padding:"10px 14px",background:"#0d0d09",border:`1px solid ${C.border}`}}>
+            <strong style={{color:C.yellow}}>Как получить код:</strong><br/>
+            1. Перейди на{" "}
+            <a href="https://help.steampowered.com/en/wizard/HelpWithGameIssue/?appid=730&issueid=128"
+              target="_blank" rel="noreferrer" style={{color:C.blue}}>
+              страницу Steam Support
+            </a><br/>
+            2. Скопируй <span style={{color:C.yellow}}>Код аутентификации</span> (вида XXXX-XXXXX-XXXX)
+          </div>
+
+          <div style={{marginBottom:"12px"}}>
+            <div style={{fontSize:"11px",color:C.muted,letterSpacing:"1px",marginBottom:"4px"}}>{t("auth_code_h","КОД АУТЕНТИФИКАЦИИ")}</div>
+            <input value={authCode} onChange={e=>setAuthCode(e.target.value)}
+              placeholder="XXXX-XXXXX-XXXX"
+              style={{width:"100%",background:"#0d0d09",border:`1px solid ${C.border}`,
+                color:C.yellow,padding:"10px 14px",fontFamily:"monospace",fontSize:"13px",
+                letterSpacing:"1px"}}/>
+          </div>
+
+          {err&&<div style={{fontSize:"12px",color:C.lose,marginBottom:"8px",
+            padding:"8px 12px",background:C.lose+"11",border:`1px solid ${C.lose}33`}}>
+            ✗ {err}
+          </div>}
+
+          <button onClick={connect} disabled={loading||!authCode.trim()}
+            style={{width:"100%",padding:"11px",background:C.yellow,color:"#080807",
+              border:"none",cursor:"pointer",fontSize:"13px",fontWeight:700,fontFamily:"inherit",
+              opacity:(loading||!authCode.trim())?0.5:1}}>
+            {loading?t("checking_code","ПРОВЕРЯЮ КОД..."):t("connect_btn","ПОДКЛЮЧИТЬ →")}
+          </button>
+          <div style={{fontSize:"11px",color:C.muted,marginTop:"8px",textAlign:"center"}}>
+            Код даёт доступ только к истории матчей — пароль и инвентарь недоступны
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SteamPopup({onLogin,onSkip}) {
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",animation:"fadeIn .3s ease"}}>
+      <div style={{background:C.card,border:`1px solid ${C.border}`,borderTop:`2px solid ${C.yellow}`,padding:"52px 48px",maxWidth:"420px",width:"90%",textAlign:"center",animation:"slideUp .35s ease",boxShadow:`0 0 60px ${C.yellow}12`}}>
+        <div style={{fontSize:"46px",marginBottom:"18px"}}>🎯</div>
+        <div style={{fontSize:"11px",letterSpacing:"5px",color:C.yellow,marginBottom:"10px"}}>{t("cs2_ai_coach","CS2 AI ТРЕНЕР")}</div>
+        <h2 style={{color:C.value,fontWeight:400,margin:"0 0 12px",fontSize:"22px"}}>Войди через Steam</h2>
+        <p style={{color:C.label,fontSize:"13px",lineHeight:1.8,margin:"0 0 30px"}}>
+          Аватар, ник и статистика CS2 — напрямую из твоего профиля.<br/>
+          FACEIT данные подтянутся автоматически, если аккаунты привязаны.
+        </p>
+        <button onClick={onLogin} className="glow-btn" style={{
+          width:"100%",padding:"15px",marginBottom:"14px",background:"#1b6090",
+          color:"#fff",border:"none",cursor:"pointer",fontSize:"13px",fontWeight:700,
+          letterSpacing:"2px",fontFamily:"'Courier New',monospace",transition:"box-shadow .2s",
+          display:"flex",alignItems:"center",justifyContent:"center",gap:"10px"}}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+            <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.606 0 11.979 0z"/>
+          </svg>
+          ВОЙТИ ЧЕРЕЗ STEAM
+        </button>
+        <button onClick={onSkip} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:"11px",letterSpacing:"2px",fontFamily:"'Courier New',monospace",padding:"6px"}}>
+          ПРОСТО ПОСМОТРЕТЬ →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SteamStatsPanel({player}) {
+  const cs2 = player?.cs2 || {};
+  const kd = parseFloat(cs2.kd) || 0;
+  const hs = parseFloat(cs2.hs) || 0;
+  const wr = parseFloat(cs2.winrate) || 0;
+  const matches = parseInt(cs2.matches) || 0;
+  const kills = parseInt(cs2.kills) || 0;
+  const deaths = parseInt(cs2.deaths) || 0;
+  const wins = parseInt(cs2.wins) || 0;
+  const mvps = parseInt(cs2.mvps) || 0;
+  const playtime = parseInt(cs2.playtime) || 0;
+  const hours = Math.round(playtime / 60);
+  const kdPerMatch = matches > 0 ? (kills / matches).toFixed(1) : "—";
+  const deathsPerMatch = matches > 0 ? (deaths / matches).toFixed(1) : "—";
+  // Новые данные
+  const accuracy = parseInt(cs2.accuracy) || 0;
+  const knifeKills = parseInt(cs2.knife_kills) || 0;
+  const pistolKills = parseInt(cs2.pistol_kills) || 0;
+  const sniperKills = parseInt(cs2.sniper_kills) || 0;
+  const grenadeKills = parseInt(cs2.grenade_kills) || 0;
+  const blindKills = parseInt(cs2.blind_kills) || 0;
+  const dominated = parseInt(cs2.dominated) || 0;
+  const revenges = parseInt(cs2.revenges) || 0;
+  const bombsPlanted = parseInt(cs2.bombs_planted) || 0;
+  const bombsDefused = parseInt(cs2.bombs_defused) || 0;
+  const pistolRounds = parseInt(cs2.rounds_pistol_won) || 0;
+  // Профиль
+  const friendCount = player?.friend_count || 0;
+  const badgeCount = player?.badge_count || 0;
+  const playerXp = player?.player_xp || 0;
+
+  // Средние по базе для сравнения
+  const AVG = { kd:0.90, hs:28, wr:47 };
+  const kdColor = kd >= AVG.kd*1.1 ? C.win : kd >= AVG.kd*0.9 ? C.yellow : C.lose;
+  const hsColor = hs >= AVG.hs*1.1 ? C.win : hs >= AVG.hs*0.9 ? C.yellow : C.lose;
+  const wrColor = wr >= AVG.wr*1.05 ? C.win : wr >= AVG.wr*0.95 ? C.yellow : C.lose;
+
+  // Skill score (0-100)
+  function sig(v,a){return Math.min(100,Math.max(0,Math.round(100/(1+Math.exp(-4*(v/a-1))))));}
+  const kdScore = sig(kd, AVG.kd);
+  const hsScore = sig(hs, AVG.hs);
+  const wrScore = sig(wr, AVG.wr);
+  const aimScore = Math.round(kdScore*0.6 + hsScore*0.4);
+  const formScore = Math.round(kdScore*0.5 + wrScore*0.5);
+
+  const Ring = ({score, label, color}) => {
+    const r=30, circ=2*Math.PI*r, dash=circ*score/100;
+    const c = score>=70?C.win:score>=45?C.yellow:C.lose;
+    return (
+      <div style={{textAlign:"center"}}>
+        <div style={{position:"relative",width:"80px",height:"80px",margin:"0 auto 8px"}}>
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r={r} fill="none" stroke={C.border} strokeWidth="5"/>
+            <circle cx="40" cy="40" r={r} fill="none" stroke={c} strokeWidth="5"
+              strokeDasharray={`${dash} ${circ-dash}`} strokeLinecap="round"
+              strokeDashoffset={circ/4} style={{transition:"stroke-dasharray 1s ease"}}/>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:"18px",color:c,fontWeight:800}}>{score}</div>
+        </div>
+        <div style={{fontSize:"10px",color:C.muted,letterSpacing:"1px"}}>{label}</div>
+        <div style={{fontSize:"12px",color:c,fontWeight:700,marginTop:"2px"}}>
+          {score>=70?t("lbl_good","ХОРОШО"):score>=45?t("lbl_avg","СРЕДНЕ"):t("lbl_improve","РАБОТАЙ")}
+        </div>
+      </div>
+    );
+  };
+
+  const StatBar = ({label, val, avg, color, fmt=(v)=>v}) => {
+    const pct = Math.min(100, Math.round((val/avg)*50));
+    const c = val >= avg ? C.win : val >= avg*0.85 ? C.yellow : C.lose;
+    return (
+      <div style={{marginBottom:"14px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px",fontSize:"12px"}}>
+          <span style={{color:C.muted,letterSpacing:"1px"}}>{label}</span>
+          <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+            <span style={{color:c,fontWeight:700,fontSize:"14px"}}>{fmt(val)}</span>
+            <span style={{color:C.muted,fontSize:"11px"}}>avg {fmt(avg)}</span>
+          </div>
+        </div>
+        <div style={{position:"relative",height:"6px",background:"#1a1a10",borderRadius:"3px",overflow:"hidden"}}>
+          <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:"1px",background:C.border+"88",zIndex:1}}/>
+          <div style={{height:"100%",width:`${Math.min(100,val/avg*50)}%`,background:c,
+            borderRadius:"3px",transition:"width 1s ease"}}/>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:"9px",color:C.muted,marginTop:"2px"}}>
+          <span>0</span><span>avg</span><span>топ</span>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{animation:"up .4s ease both"}}>
+
+      {/* ── ШАПКА ── */}
+      <div style={{position:"relative",overflow:"hidden",marginBottom:"3px"}}>
+        <div style={{position:"absolute",inset:0,
+          background:`linear-gradient(135deg,#0d0d09 0%,${C.yellow}10 50%,#0a0a07 100%)`,zIndex:0}}/>
+        <div style={{position:"absolute",top:"-60px",right:"-40px",width:"280px",height:"280px",
+          background:`radial-gradient(circle,${C.yellow}14,transparent 65%)`,pointerEvents:"none",zIndex:0}}/>
+        <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.025,
+          backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 32px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 32px)"}}/>
+        <div style={{height:"2px",background:`linear-gradient(90deg,transparent,${C.yellow}88,${C.yellow},${C.yellow}88,transparent)`,position:"relative",zIndex:1}}/>
+
+        <div style={{position:"relative",zIndex:1,border:`1px solid ${C.yellow}22`,borderTop:"none",padding:"22px 24px 18px"}}>
+          <div style={{display:"flex",gap:"20px",alignItems:"center",flexWrap:"wrap"}}>
+            {player.avatar&&<img src={player.avatar} alt="" style={{width:"68px",height:"68px",
+              borderRadius:"6px",border:`2px solid ${C.yellow}66`,
+              boxShadow:`0 0 24px ${C.yellow}33`}}/>}
+            <div style={{flex:1}}>
+              <div style={{fontSize:"24px",color:"#fff",fontWeight:800,marginBottom:"6px",
+                textShadow:"0 2px 12px rgba(0,0,0,0.8)"}}>
+                {player.username}
+              </div>
+              <div style={{display:"flex",gap:"14px",flexWrap:"wrap",fontSize:"13px"}}>
+                {matches>0&&<span style={{color:C.label}}>🎮 {matches.toLocaleString()} матчей</span>}
+                {hours>0&&<span style={{color:C.blue,display:"flex",alignItems:"center",gap:"3px"}}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {hours.toLocaleString()}ч
+                </span>}
+                {player.steam_level&&<span style={{color:C.yellow}}>⭐ Steam {player.steam_level} уровень</span>}
+              </div>
+            </div>
+            <div style={{textAlign:"center",padding:"14px 22px",
+              background:`linear-gradient(135deg,${C.yellow}22,${C.yellow}0a)`,
+              border:`1px solid ${C.yellow}44`,
+              boxShadow:`0 0 20px ${C.yellow}22`}}>
+              <div style={{fontSize:"38px",color:C.yellow,fontWeight:900,lineHeight:1,
+                textShadow:`0 0 20px ${C.yellow}88`}}>
+                {Math.round((kdScore*0.45+hsScore*0.25+wrScore*0.30))}
+              </div>
+              <div style={{fontSize:"9px",color:C.muted,marginTop:"4px",letterSpacing:"2px"}}>РЕЙТИНГ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── КОЛЬЦА СКИЛЛА ── */}
+      <div style={{position:"relative",overflow:"hidden",marginBottom:"3px"}}>
+        <div style={{position:"absolute",inset:0,background:"#0d0d09",zIndex:0}}/>
+        <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.025,
+          backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 32px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 32px)"}}/>
+        <div style={{position:"relative",zIndex:1,border:`1px solid ${C.border}`,
+          padding:"20px 24px",display:"flex",justifyContent:"space-around",flexWrap:"wrap",gap:"20px"}}>
+          <Ring score={aimScore} label={t("lbl_aim","АИМ")} color={C.orange}/>
+          <Ring score={formScore} label={t("lbl_form","ФОРМА")} color={C.blue}/>
+          <Ring score={wrScore} label={t("lbl_wr","WR")} color={C.win}/>
+        </div>
+      </div>
+
+      {/* ── ПОКАЗАТЕЛИ vs СРЕДНЕГО ── */}
+      <div style={{position:"relative",overflow:"hidden",marginBottom:"3px"}}>
+        <div style={{position:"absolute",inset:0,background:C.card,zIndex:0}}/>
+        <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.02,
+          backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 28px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 28px)"}}/>
+        <div style={{position:"relative",zIndex:1,border:`1px solid ${C.border}`,padding:"18px 24px"}}>
+          <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,marginBottom:"16px"}}>
+            ПОКАЗАТЕЛИ vs СРЕДНЕГО ИГРОКА
+          </div>
+          <StatBar label="K/D" val={kd} avg={AVG.kd} fmt={(v)=>v.toFixed(2)}/>
+          <StatBar label={t("hs_btn","HS%")} val={hs} avg={AVG.hs} fmt={(v)=>Math.round(v)+"%"}/>
+          <StatBar label="WR%" val={wr} avg={AVG.wr} fmt={(v)=>Math.round(v)+"%"}/>
+        </div>
+      </div>
+
+      {/* ── ЦИФРЫ ОСНОВНЫЕ ── */}
+      <div style={{position:"relative",overflow:"hidden",marginBottom:"3px"}}>
+        <div style={{position:"absolute",inset:0,zIndex:0,opacity:0.02,
+          backgroundImage:"repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 28px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 28px)"}}/>
+        <div style={{position:"relative",zIndex:1,display:"grid",
+          gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px"}}>
+          {[
+            {l:t("kills_label","УБИЙСТВА"),   v:kills.toLocaleString(),   c:C.yellow, icon:"⚔️"},
+            {l:t("deaths_label","СМЕРТИ"),     v:deaths.toLocaleString(),  c:C.lose,   icon:"💀"},
+            {l:t("wins_label","ПОБЕДЫ"),     v:wins.toLocaleString(),    c:C.win,    icon:"🏆"},
+            {l:t("lbl_mvp","MVP"),        v:mvps.toLocaleString(),    c:C.yellow, icon:"⭐"},
+            {l:t("k_match","K/МАТЧ"),     v:kdPerMatch,               c:C.blue,   icon:"🎯"},
+            {l:t("d_match","СМЕРТЕЙ/МАТ"),v:deathsPerMatch,           c:C.muted,  icon:"📊"},
+          ].filter(s=>s.v!=="0"&&s.v!=="—").map((s,i)=>(
+            <div key={i} style={{
+              background:`linear-gradient(135deg,${s.c}0c,${C.card})`,
+              border:`1px solid ${s.c}22`,padding:"16px 12px",textAlign:"center",
+              position:"relative",overflow:"hidden",transition:"border-color .15s"}}
+              onMouseEnter={e=>e.currentTarget.style.borderColor=s.c+"55"}
+              onMouseLeave={e=>e.currentTarget.style.borderColor=s.c+"22"}>
+              <div style={{position:"absolute",top:"-20px",right:"-10px",width:"60px",height:"60px",
+                background:`radial-gradient(circle,${s.c}0a,transparent 70%)`,pointerEvents:"none"}}/>
+              <div style={{fontSize:"18px",marginBottom:"6px"}}>{s.icon}</div>
+              <div style={{fontSize:"20px",color:s.c,fontWeight:800,marginBottom:"4px",
+                textShadow:`0 0 10px ${s.c}66`}}>{s.v}</div>
+              <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── СПЕЦИАЛЬНЫЕ УБИЙСТВА ── */}
+      {(knifeKills>0||sniperKills>0||grenadeKills>0||blindKills>0)&&<>
+        <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,
+          padding:"14px 0 8px"}}>{t("spec_kills","СПЕЦИАЛЬНЫЕ УБИЙСТВА")}</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:"3px",marginBottom:"3px"}}>
+          {[
+            {l:t("lbl_knife","НОЖОМ"),    v:knifeKills,   icon:"🔪", c:"#ff8888"},
+            {l:t("lbl_blind","В СЛЕПУЮ"), v:blindKills,   icon:"🎭", c:"#aa88ff"},
+            {l:t("lbl_doms","ДОМИНАЦИЙ"),v:dominated,    icon:"👑", c:C.win},
+          ].filter(s=>s.v>0).map((s,i)=>(
+            <div key={i} style={{
+              background:`linear-gradient(135deg,${s.c}0e,${C.card})`,
+              border:`1px solid ${s.c}33`,padding:"14px 10px",textAlign:"center",
+              position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:"-15px",right:"-5px",width:"50px",height:"50px",
+                background:`radial-gradient(circle,${s.c}12,transparent 70%)`,pointerEvents:"none"}}/>
+              <div style={{fontSize:"20px",marginBottom:"5px"}}>{s.icon}</div>
+              <div style={{fontSize:"18px",color:s.c,fontWeight:800,marginBottom:"3px",
+                textShadow:`0 0 8px ${s.c}66`}}>{s.v.toLocaleString()}</div>
+              <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </>}
+
+      {/* ── ДОПОЛНИТЕЛЬНО ── */}
+      {(accuracy>0||bombsPlanted>0||bombsDefused>0)&&<>
+        <div style={{fontSize:"10px",color:C.yellow,letterSpacing:"3px",fontWeight:700,
+          padding:"14px 0 8px"}}>{t("additional","ДОПОЛНИТЕЛЬНО")}</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"3px",marginBottom:"3px"}}>
+          {[
+            accuracy>0    &&{l:t("lbl_acc","ТОЧНОСТЬ"),      v:accuracy+"%",              icon:"🎯", c:C.orange},
+            bombsPlanted>0&&{l:t("lbl_planted","БОМБ ЗАЛОЖЕНО"), v:bombsPlanted.toLocaleString(), icon:"💥", c:C.lose},
+            bombsDefused>0&&{l:t("lbl_defused","БОМБ ОБЕЗВРЕЖЕНО"),v:bombsDefused.toLocaleString(),icon:"🛡️", c:C.win},
+            revenges>0    &&{l:t("lbl_rev","РЕВАНШИ"),        v:revenges.toLocaleString(),  icon:"⚡", c:C.yellow},
+          ].filter(Boolean).map((s,i)=>(
+            <div key={i} style={{
+              background:`linear-gradient(135deg,${s.c}0c,${C.card})`,
+              border:`1px solid ${s.c}22`,padding:"14px 12px",textAlign:"center"}}>
+              <div style={{fontSize:"18px",marginBottom:"5px"}}>{s.icon}</div>
+              <div style={{fontSize:"18px",color:s.c,fontWeight:800,marginBottom:"4px",
+                textShadow:`0 0 8px ${s.c}55`}}>{s.v}</div>
+              <div style={{fontSize:"9px",color:C.muted,letterSpacing:"1px"}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </>}
+
+      {/* FACEIT промо */}
+      {!player.faceit&&<div style={{background:"#0d1016",border:`1px solid ${C.orange}22`,
+        padding:"14px 18px",display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap",marginTop:"3px"}}>
+        <span style={{fontSize:"20px"}}>⚡</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:"13px",color:C.orange,fontWeight:700,marginBottom:"2px"}}>
+            Хочешь историю каждого матча?
+          </div>
+          <div style={{fontSize:"12px",color:C.muted}}>
+            Зарегистрируйся на FACEIT — получишь K/D, ADR, карту и AI разбор каждой игры
+          </div>
+        </div>
+        <a href="https://www.faceit.com" target="_blank" rel="noreferrer"
+          style={{padding:"8px 16px",background:C.orange,color:"#fff",textDecoration:"none",
+            fontSize:"12px",fontWeight:700,letterSpacing:"1px",flexShrink:0}}>
+          FACEIT →
+        </a>
+      </div>}
+    </div>
+  );
+}
+
+function levelInfo(elo) {
+  const e = parseInt(elo)||0;
+  const row = FACEIT_ELO_RANGES.find(r=>e>=r[1]&&e<=r[2]) || FACEIT_ELO_RANGES[0];
+  return {lvl:row[0], progress:Math.min(100,Math.max(0,(e-row[1])/(row[2]-row[1])*100)), toNext:row[2]-e};
+}
+
+function tCat(c) { return _currentLang==="en" ? (CAT_EN[c]||c) : c; }
+
+function tDiff(d) { return _currentLang==="en" ? (DIFF_EN[d]||d) : d; }
+
+function track(event, props = {}) {
+  try { window.posthog?.capture(event, props); } catch {}
+}
+
+function useCountUp(target, dur=900) {
+  const [v,setV] = useState(0);
+  const from = useRef(0);
+  useEffect(()=>{
+    const tgt=parseFloat(target)||0; let raf,start;
+    const tick=(now)=>{
+      if(!start)start=now;
+      const p=Math.min((now-start)/dur,1),e=1-Math.pow(1-p,3);
+      const cur=from.current+(t-from.current)*e;
+      setV(cur); if(p<1)raf=requestAnimationFrame(tick); else from.current=t;
+    };
+    raf=requestAnimationFrame(tick);
+    return()=>cancelAnimationFrame(raf);
+  },[target]);
+  return Math.round(v);
+}
+
 // ── Coach Chat ─────────────────────────────────────────────────────────────────
 function CoachChat({player, source, analysis, charId, isPro}) {
   const [msgs, setMsgs] = useState([]);
