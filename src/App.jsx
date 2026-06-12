@@ -7839,7 +7839,7 @@ export default function App() {
             <HeroCard player={player} source={source}/>
 
             {/* ── СЕКЦИЯ 2: AI Вердикт ── */}
-            <SectionTitle icon="🤖" label={"AI ВЕРДИКТ"||"AI ВЕРДИКТ"} sub={"AI ВЕРДИКТ"_sub||"персональный разбор твоей игры"}/>
+            <SectionTitle icon="🤖" label="AI ВЕРДИКТ" sub="персональный разбор твоей игры"/>
             {!player.cs2?.private&&(()=>{
               // Показываем AIReport если: PRO, или лимит есть, или УЖЕ ЕСТЬ КЕШ
               const hasCachedResult = (()=>{
