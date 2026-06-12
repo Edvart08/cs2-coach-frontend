@@ -4,6 +4,14 @@ import { createPortal } from "react-dom";
 
 // Backward compat stub (no-op, translations removed)
 function t(key, fallback) { return fallback || key; }
+const arr = x => Array.isArray(x) ? x : [];
+const fmt = ts => ts ? new Date(ts*1000).toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit",year:"numeric"}) : "";
+const flag = cc => { if(!cc||cc.length!==2) return ""; try{return cc.toUpperCase().replace(/./g,c=>String.fromCodePoint(127397+c.charCodeAt()));}catch{return "";} };
+let _currentLang = "ru";
+const DIFF_EN = {"Начинающий":"Beginner","Средний":"Intermediate","Продвинутый":"Advanced","Любой":"Any","Про":"Pro"};
+function tDiff(d) { return DIFF_EN[d]||d; }
+const CAT_EN = {"МЕХАНИКА":"MECHANICS","ПРАКТИКА":"PRACTICE","ПСИХОЛОГИЯ":"PSYCHOLOGY","ТАКТИКА":"TACTICS","КАРТЫ":"MAPS","АНАЛИЗ":"ANALYSIS"};
+function tCat(c) { return CAT_EN[c]||c; }
 const C = {
   bg:"#0a0a07", card:"#141409", border:"#2e2e1e",
   yellow:"#f5c518", orange:"#ff8844", blue:"#74c6f5",
@@ -4012,10 +4020,6 @@ function levelInfo(elo) {
   const row = FACEIT_ELO_RANGES.find(r=>e>=r[1]&&e<=r[2]) || FACEIT_ELO_RANGES[0];
   return {lvl:row[0], progress:Math.min(100,Math.max(0,(e-row[1])/(row[2]-row[1])*100)), toNext:row[2]-e};
 }
-
-function tCat(c) { return _currentLang==="en" ? (CAT_EN[c]||c) : c; }
-
-function tDiff(d) { return _currentLang==="en" ? (DIFF_EN[d]||d) : d; }
 
 function track(event, props = {}) {
   try { window.posthog?.capture(event, props); } catch {}
