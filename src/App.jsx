@@ -11,7 +11,8 @@ const C = {
   win:"#66ee66", lose:"#ff6655", text:"#ddd6bc",
 };
 
-const BACKEND = "https://cs2-coach-backend.onrender.com"
+const BACKEND = "https://cs2-coach-backend.onrender.com";
+const FREE_WEEKLY = 1
 
 const FACEIT_ELO_RANGES = [
   [1,100,500],[2,501,750],[3,751,900],[4,901,1050],[5,1051,1200],
