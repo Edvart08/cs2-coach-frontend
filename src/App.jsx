@@ -4065,13 +4065,39 @@ function CoachChat({player, source, analysis, charId, isPro}) {
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [memoryLoaded, setMemoryLoaded] = useState(false);
+  const [memorySummary, setMemorySummary] = useState("");
   const endRef = useRef(null);
   const char = COACH_CHARS.find(c=>c.id===charId) || COACH_CHARS[0];
 
-  // Приветственное сообщение при смене персонажа
+  // Загружаем память при монтировании
   useEffect(()=>{
-    if (!analysis) return;
-    const kd = analysis.weaknesses?.[0]?.stat || "K/D";
+    const steamid = player?.steamid;
+    if (!steamid) { setMemoryLoaded(true); return; }
+    fetch(`${BACKEND}/coach-memory/get`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({steamid})
+    })
+      .then(r=>r.json())
+      .then(d=>{
+        if (d.memory?.summary) setMemorySummary(d.memory.summary);
+        if (d.memory?.messages?.length) {
+          // Восстанавливаем последние сообщения из памяти
+          setMsgs(d.memory.messages.map(m=>({
+            from: m.role==="user"?"user":"coach",
+            text: m.content,
+            fromMemory: true,
+          })));
+        }
+        setMemoryLoaded(true);
+      })
+      .catch(()=>setMemoryLoaded(true));
+  }, [player?.steamid]);
+
+  // Приветственное сообщение — только если памяти нет
+  useEffect(()=>{
+    if (!memoryLoaded || !analysis) return;
+    if (msgs.length > 0) return; // память уже загружена — не перезаписываем
     const greetings = {
       drill: `Боец! Я просмотрел твои данные. ${analysis.overall||"Есть что улучшать"}. Без нытья — только работа. Что неясно?`,
       mentor: `Привет. Изучил твою статистику. ${analysis.overall||"Есть направления для роста"}. Готов разобрать любой момент — спрашивай.`,
@@ -4080,9 +4106,31 @@ function CoachChat({player, source, analysis, charId, isPro}) {
       legend: `Посмотрел твою статистику. Я видел похожие профили на тренировках — ${analysis.overall||"всё поправимо"}. С чего начнём?`,
     };
     setMsgs([{from:"coach", text:greetings[charId]||greetings.mentor}]);
-  }, [charId, analysis?.overall]);
+  }, [charId, analysis?.overall, memoryLoaded]);
 
   useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[msgs]);
+
+  // Сохраняем память после каждого ответа тренера
+  async function saveMemory(allMsgs) {
+    const steamid = player?.steamid;
+    if (!steamid) return;
+    const fc = player?.faceit; const cs2 = player?.cs2||{};
+    const statsCtx = source==="faceit"&&fc
+      ? `K/D=${fc?.lifetime?.kd} WR=${fc?.lifetime?.winrate}% HS=${fc?.lifetime?.hs}% ELO=${fc?.elo}`
+      : `K/D=${cs2.kd} WR=${cs2.winrate}% HS=${cs2.hs}%`;
+    const apiMsgs = allMsgs.filter(m=>!m.fromMemory).map(m=>({
+      role: m.from==="user"?"user":"assistant",
+      content: m.text,
+    }));
+    if (apiMsgs.length < 2) return;
+    try {
+      const d = await fetch(`${BACKEND}/coach-memory/save`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({steamid, messages: apiMsgs, stats_ctx: statsCtx})
+      }).then(r=>r.json());
+      if (d.summary) setMemorySummary(d.summary);
+    } catch {}
+  }
 
   async function send() {
     const text = input.trim();
@@ -4099,8 +4147,11 @@ function CoachChat({player, source, analysis, charId, isPro}) {
     const analysisCtx = analysis
       ? `\nРезультат анализа: ${analysis.overall||""}\nГлавная проблема: ${analysis.mainProblem||""}`
       : "";
+    const memoryCtx = memorySummary
+      ? `\nПамять прошлых сессий: ${memorySummary}`
+      : "";
 
-    const history = newMsgs.slice(-8).map(m=>({
+    const history = newMsgs.filter(m=>!m.fromMemory).slice(-8).map(m=>({
       role: m.from==="user"?"user":"assistant",
       content: m.text
     }));
@@ -4111,13 +4162,15 @@ function CoachChat({player, source, analysis, charId, isPro}) {
         body: JSON.stringify({
           char_id: charId,
           system: char.system,
-          stats: statsCtx + analysisCtx,
+          stats: statsCtx + analysisCtx + memoryCtx,
           messages: history,
           steamid: player?.steamid||"",
         })
       });
       const d = await r.json();
-      setMsgs(m=>[...m, {from:"coach", text:d.reply||"..."}]);
+      const finalMsgs = [...newMsgs, {from:"coach", text:d.reply||"..."}];
+      setMsgs(finalMsgs);
+      saveMemory(finalMsgs);
     } catch {
       setMsgs(m=>[...m, {from:"coach", text:"Соединение потеряно. Попробуй ещё раз."}]);
     }
@@ -4132,10 +4185,17 @@ function CoachChat({player, source, analysis, charId, isPro}) {
         borderBottom:`1px solid ${char.color}22`,
         display:"flex",alignItems:"center",gap:"10px"}}>
         <span style={{fontSize:"22px"}}>{char.emoji}</span>
-        <div>
+        <div style={{flex:1}}>
           <div style={{fontSize:"12px",color:char.color,fontWeight:700,letterSpacing:"2px"}}>{char.name.toUpperCase()} · ЧАТ</div>
           <div style={{fontSize:"11px",color:C.muted}}>{char.desc}</div>
         </div>
+        {memorySummary&&(
+          <div title={memorySummary} style={{fontSize:"10px",color:char.color,opacity:0.7,
+            border:`1px solid ${char.color}33`,padding:"2px 7px",letterSpacing:"1px",
+            cursor:"help",flexShrink:0}}>
+            🧠 ПАМЯТЬ
+          </div>
+        )}
       </div>
 
       {/* Сообщения */}
@@ -8089,6 +8149,25 @@ function PracticeTab({player}) {
 function SettingsModal({player, isPro, onClose, onLogout, onProModal}) {
   const [notifOn, setNotifOn] = useState(()=>{ try{ return localStorage.getItem("cs2_notif")!=="0"; }catch{ return true; } });
   const [activeSection, setActiveSection] = useState("account");
+  const [refStats, setRefStats] = useState(null);
+  const [refCopied, setRefCopied] = useState(false);
+
+  useEffect(()=>{
+    if (!player?.steamid) return;
+    fetch(`${BACKEND}/referral/stats/${player.steamid}`)
+      .then(r=>r.json())
+      .then(d=>{ if(d.ok) setRefStats(d); })
+      .catch(()=>{});
+  },[player?.steamid]);
+
+  const refNick = (player?.faceit?.nickname || player?.username || "").toLowerCase().replace(/[^a-z0-9_-]/g,"");
+  const refLink = `https://cs-coach.ru?ref=${refNick}`;
+
+  function copyRef() {
+    try { navigator.clipboard.writeText(refLink); } catch {}
+    setRefCopied(true);
+    setTimeout(()=>setRefCopied(false), 2000);
+  }
 
   const toggle = (key, val, setter) => {
     setter(val);
@@ -8213,6 +8292,48 @@ function SettingsModal({player, isPro, onClose, onLogout, onProModal}) {
               <div style={{color:C.label,fontWeight:600,marginBottom:"4px",fontSize:"11px",letterSpacing:"1px"}}>STEAM ID</div>
               <div style={{fontFamily:"monospace",color:C.blue,fontSize:"12px"}}>{player?.steamid||"—"}</div>
             </div>
+
+            {/* Реферальная программа */}
+            {refNick&&<div style={{marginBottom:"12px",padding:"14px",background:"#0d0d09",
+              border:`1px solid ${C.yellow}33`,borderTop:`2px solid ${C.yellow}`}}>
+              <div style={{fontSize:"11px",color:C.yellow,letterSpacing:"2px",fontWeight:700,marginBottom:"10px"}}>
+                🎁 РЕФЕРАЛЬНАЯ ПРОГРАММА
+              </div>
+              <div style={{fontSize:"12px",color:C.text,lineHeight:1.7,marginBottom:"10px"}}>
+                Приглашай друзей — получай <span style={{color:C.yellow,fontWeight:700}}>+7 дней PRO</span> за каждого.
+              </div>
+              <div style={{display:"flex",gap:"6px",marginBottom:"10px"}}>
+                <div style={{flex:1,background:"#080807",border:`1px solid ${C.border}`,
+                  padding:"8px 10px",fontSize:"11px",color:C.blue,fontFamily:"monospace",
+                  overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                  {refLink}
+                </div>
+                <button onClick={copyRef} style={{
+                  padding:"8px 14px",background:refCopied?C.win+"22":C.yellow+"18",
+                  border:`1px solid ${refCopied?C.win+"55":C.yellow+"44"}`,
+                  color:refCopied?C.win:C.yellow,cursor:"pointer",
+                  fontSize:"11px",fontFamily:"inherit",fontWeight:700,
+                  letterSpacing:"1px",flexShrink:0,transition:"all .2s"}}>
+                  {refCopied?"✓ СКОПИРОВАНО":"КОПИРОВАТЬ"}
+                </button>
+              </div>
+              <div style={{display:"flex",gap:"8px"}}>
+                <div style={{flex:1,background:"#080807",border:`1px solid ${C.border}`,
+                  padding:"8px 10px",textAlign:"center"}}>
+                  <div style={{fontSize:"18px",color:C.yellow,fontWeight:700}}>
+                    {refStats?.invited_count||0}
+                  </div>
+                  <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>приглашено</div>
+                </div>
+                <div style={{flex:1,background:"#080807",border:`1px solid ${C.border}`,
+                  padding:"8px 10px",textAlign:"center"}}>
+                  <div style={{fontSize:"18px",color:C.win,fontWeight:700}}>
+                    {(refStats?.rewarded_count||0)*7}
+                  </div>
+                  <div style={{fontSize:"10px",color:C.muted,marginTop:"2px"}}>дней PRO получено</div>
+                </div>
+              </div>
+            </div>}
 
             <button onClick={()=>{if(window.confirm("Выйти из аккаунта?")){ onLogout(); onClose(); }}}
               style={{width:"100%",padding:"9px",background:"transparent",border:`1px solid ${C.lose}44`,
@@ -8647,6 +8768,29 @@ export default function App() {
                 faceit: d.faceit || p.faceit || null};
               setPlayer(fresh);
               try{localStorage.setItem("cs2_player_v3",JSON.stringify(fresh));}catch{}
+
+              // Реферальная инициализация
+              try {
+                const refNick = (fresh.faceit?.nickname || fresh.username || "").toLowerCase().replace(/[^a-z0-9_-]/g,"");
+                if (refNick && fresh.steamid) {
+                  fetch(`${BACKEND}/referral/init`, {
+                    method:"POST", headers:{"Content-Type":"application/json"},
+                    body: JSON.stringify({steamid: fresh.steamid, nickname: refNick})
+                  }).catch(()=>{});
+                }
+                // Если пришли по реферальной ссылке — регистрируем
+                const urlRef = new URLSearchParams(window.location.search).get("ref");
+                const refStorageKey = `cs2_ref_used_${fresh.steamid}`;
+                if (urlRef && !localStorage.getItem(refStorageKey)) {
+                  fetch(`${BACKEND}/referral/register`, {
+                    method:"POST", headers:{"Content-Type":"application/json"},
+                    body: JSON.stringify({steamid: fresh.steamid, ref: urlRef.toLowerCase()})
+                  })
+                    .then(r=>r.json())
+                    .then(rd=>{ if(rd.ok) localStorage.setItem(refStorageKey,"1"); })
+                    .catch(()=>{});
+                }
+              } catch {}
               // Автоснапшот рейтинга при каждом входе (раз в день)
               try {
                 const fc2 = fresh.faceit;
