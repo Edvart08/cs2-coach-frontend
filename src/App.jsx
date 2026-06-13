@@ -8400,7 +8400,7 @@ function SettingsModal({player, isPro, onClose, onLogout, onProModal}) {
               icon="⚡"
               connected={hasFaceit}
               info={hasFaceit ? `LVL ${player.faceit?.level} · ${player.faceit?.elo} ELO · ${player.faceit?.nickname}` : ""}
-              linkHref="https://www.faceit.com/ru/players-registration"
+              linkHref="https://www.faceit.com/en/players-registration"
             />
 
             <ConnBlock
