@@ -1302,6 +1302,7 @@ function WeeklyReport({player, source, isPro, onUpgrade}) {
 function EloChart({faceit}) {
   const currentElo = parseInt(faceit?.elo) || 0;
   const matches = arr(faceit?.matches).slice().reverse();
+  const [hovered, setHovered] = React.useState(null);
   if (!currentElo || matches.length < 2) return null;
 
   const eloPoints = (() => {
@@ -1312,7 +1313,7 @@ function EloChart({faceit}) {
       elo -= change;
       points.unshift(elo);
     }
-    return points.slice(-13);
+    return points.slice(-21);
   })();
 
   const min = Math.min(...eloPoints) - 30;
@@ -1357,30 +1358,47 @@ function EloChart({faceit}) {
           </div>
         </div>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"80px",overflow:"visible",display:"block"}}
-        preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="eloGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={diffColor} stopOpacity="0.3"/>
-            <stop offset="100%" stopColor={diffColor} stopOpacity="0.02"/>
-          </linearGradient>
-        </defs>
-        <polygon points={area} fill="url(#eloGrad)"/>
-        <polyline points={polyline} fill="none" stroke={diffColor}
-          strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
-        {pts.map((p,i)=>(
-          <circle key={i} cx={p.x} cy={p.y}
-            r={i===pts.length-1?"2.8":"1.5"}
-            fill={i===pts.length-1?diffColor:diffColor+"99"}/>
-        ))}
-      </svg>
+      <div style={{position:"relative"}}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"90px",overflow:"visible",display:"block"}}
+          preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="eloGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={diffColor} stopOpacity="0.3"/>
+              <stop offset="100%" stopColor={diffColor} stopOpacity="0.02"/>
+            </linearGradient>
+          </defs>
+          <polygon points={area} fill="url(#eloGrad)"/>
+          <polyline points={polyline} fill="none" stroke={diffColor}
+            strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
+          {pts.map((p,i)=>(
+            <circle key={i} cx={p.x} cy={p.y}
+              r={i===pts.length-1?"2.8":hovered===i?"2.4":"1.5"}
+              fill={i===pts.length-1?diffColor:hovered===i?diffColor:diffColor+"99"}
+              style={{cursor:"crosshair"}}
+              onMouseEnter={()=>setHovered(i)}
+              onMouseLeave={()=>setHovered(null)}
+            />
+          ))}
+        </svg>
+        {hovered!==null&&pts[hovered]&&(
+          <div style={{
+            position:"absolute",
+            left:`clamp(0px, calc(${pts[hovered].x}% - 28px), calc(100% - 64px))`,
+            top:`${Math.max(0,(pts[hovered].y/H)*90-30)}px`,
+            background:C.card,border:`1px solid ${diffColor}66`,
+            padding:"3px 9px",fontSize:"11px",color:C.value,fontWeight:700,
+            pointerEvents:"none",whiteSpace:"nowrap",zIndex:10,letterSpacing:"1px",
+          }}>
+            {pts[hovered].elo} ELO
+          </div>
+        )}
+      </div>
       <div style={{display:"flex",justifyContent:"space-between",marginTop:"6px",marginBottom:"10px"}}>
         <span style={{fontSize:"10px",color:C.muted}}>{eloPoints[0]} ELO</span>
         <span style={{fontSize:"10px",color:C.muted}}>{currentElo} ELO</span>
       </div>
       {/* ELO прогноз */}
       {eloPoints.length>=5&&(()=>{
-        // Линейная регрессия по последним точкам
         const n = eloPoints.length;
         const avgX = (n-1)/2;
         const avgY = eloPoints.reduce((s,v)=>s+v,0)/n;
