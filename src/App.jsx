@@ -8217,7 +8217,47 @@ function SettingsModal({player, isPro, onClose, onLogout, onProModal}) {
   );
 
   const hasFaceit = !!(player?.faceit?.elo || player?.faceit?.nickname);
-  const tgLinked = false; // TODO: добавить TG link на бэке
+  const [tgLinked, setTgLinked] = useState(false);
+  const [tgLoading, setTgLoading] = useState(false);
+
+  useEffect(()=>{
+    if (!player?.steamid) return;
+    fetch(`${BACKEND}/telegram/status/${player.steamid}`)
+      .then(r=>r.json())
+      .then(d=>{ if(d.linked) setTgLinked(true); })
+      .catch(()=>{});
+  },[player?.steamid]);
+
+  async function connectTelegram() {
+    if (!player?.steamid) return;
+    setTgLoading(true);
+    try {
+      const d = await fetch(`${BACKEND}/telegram/link/${player.steamid}`).then(r=>r.json());
+      if (d.ok && d.link) {
+        window.open(d.link, "_blank");
+        setTimeout(()=>{
+          fetch(`${BACKEND}/telegram/status/${player.steamid}`)
+            .then(r=>r.json())
+            .then(s=>{ if(s.linked) setTgLinked(true); })
+            .catch(()=>{});
+        }, 5000);
+      } else {
+        alert("Бот не настроен. Напиши @cs2coach_support.");
+      }
+    } catch { alert("Ошибка сети"); }
+    setTgLoading(false);
+  }
+
+  async function unlinkTelegram() {
+    if (!player?.steamid) return;
+    try {
+      await fetch(`${BACKEND}/telegram/unlink`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({steamid: player.steamid})
+      });
+      setTgLinked(false);
+    } catch {}
+  }
 
   const SECTIONS = [
     {id:"account", label:"Аккаунт"},
@@ -8368,15 +8408,19 @@ function SettingsModal({player, isPro, onClose, onLogout, onProModal}) {
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill={tgLinked?"#66ee66":"#9a9270"}><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.03 9.566c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.48 14.4l-2.96-.924c-.643-.2-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.836.186z"/></svg>}
               connected={tgLinked}
               info={tgLinked?"Уведомления о матчах активны":"Получай уведомления о матчах в Telegram"}
-              onLink={(e)=>{
-                e.preventDefault();
-                window.open("https://t.me/cs2coach_support","_blank");
-              }}
+              onLink={(e)=>{ e.preventDefault(); connectTelegram(); }}
+              onUnlink={tgLinked?unlinkTelegram:undefined}
             />
+
+            {tgLoading&&<div style={{fontSize:"11px",color:C.muted,padding:"6px 14px"}}>
+              ⏳ Открываем Telegram...
+            </div>}
 
             <div style={{marginTop:"4px",padding:"10px 14px",background:"#0d0d0a",
               border:`1px solid ${C.blue}22`,fontSize:"11px",color:C.muted,lineHeight:1.6}}>
-              💡 Подключи Telegram для получения уведомлений о новых матчах и достижениях
+              {tgLinked
+                ? "✅ Ты получишь уведомление после каждого матча FACEIT и ежедневное напоминание"
+                : "💡 Нажми ПОДКЛЮЧИТЬ — откроется Telegram, напиши боту /start"}
             </div>
           </>}
 
