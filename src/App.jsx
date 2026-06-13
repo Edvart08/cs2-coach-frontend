@@ -5331,7 +5331,7 @@ function OnboardingModal({player, onClose, onGoTab}) {
                     marginBottom:"16px",fontSize:"13px",color:C.win}}>
                     ✓ FACEIT уже подключён — уровень {player.faceit?.level}, {player.faceit?.elo} ELO
                   </div>
-                : <a href="https://www.faceit.com/ru/players-registration" target="_blank" rel="noreferrer"
+                : <a href="https://www.faceit.com" target="_blank" rel="noreferrer"
                     style={{display:"block",padding:"12px",background:"#ff7733",color:"#fff",
                       textDecoration:"none",fontWeight:700,fontSize:"13px",marginBottom:"12px",
                       letterSpacing:"1px",textAlign:"center"}}>
@@ -8400,7 +8400,7 @@ function SettingsModal({player, isPro, onClose, onLogout, onProModal}) {
               icon="⚡"
               connected={hasFaceit}
               info={hasFaceit ? `LVL ${player.faceit?.level} · ${player.faceit?.elo} ELO · ${player.faceit?.nickname}` : ""}
-              linkHref="https://www.faceit.com/en/players-registration"
+              linkHref="https://www.faceit.com"
             />
 
             <ConnBlock
