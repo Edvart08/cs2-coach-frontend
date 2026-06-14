@@ -8399,8 +8399,10 @@ function SettingsModal({player, isPro, onClose, onLogout, onProModal}) {
               title={"FACEIT"}
               icon="⚡"
               connected={hasFaceit}
-              info={hasFaceit ? `LVL ${player.faceit?.level} · ${player.faceit?.elo} ELO · ${player.faceit?.nickname}` : ""}
-              linkHref="https://www.faceit.com"
+              info={hasFaceit
+                ? `LVL ${player.faceit?.level} · ${player.faceit?.elo} ELO · ${player.faceit?.nickname}`
+                : "Введи FACEIT никнейм в поиск на главной странице сайта"}
+              onLink={hasFaceit ? undefined : (e)=>{ e.preventDefault(); onClose && onClose(); }}
             />
 
             <ConnBlock
